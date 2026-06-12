@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tchapo Tchapo - Entregas Rápidas Beira</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="assets/logo.png" alt="Tchapo Tchapo" class="logo-img">
+            </div>
+            <div class="nav-right">
+                <div class="auth-menu" id="auth-menu">
+                    <button class="btn-auth" id="btn-open-auth">👤 Entrar</button>
+                    <div class="auth-user-dropdown" id="auth-user-info" style="display: none;">
+                        <span id="auth-user-name">Olá, User</span>
+                        <button class="btn-logout" id="btn-logout" title="Sair da conta">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        </button>
+                    </div>
+                </div>
+                <button class="btn-meus-pedidos" id="btn-meus-pedidos">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    </svg>
+                    Os Meus Pedidos
+                </button>
+                <div class="cart-icon" id="cart-toggle">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    <span class="cart-count" id="cart-count">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Tudo o que precisas, entregue em 4 horas.</h1>
+                <p>Tecnologia, gadgets e acessórios com pagamento na entrega. Rápido, seguro e exclusivo para a cidade da Beira, Sofala.</p>
+                <a href="#produtos" class="btn-primary">Ver Produtos</a>
+            </div>
+        </section>
+
+        <!-- Products Section -->
+        <section id="produtos" class="products">
+            <!-- Category filter tabs -->
+            <div class="category-tabs" id="category-tabs">
+                <!-- Injected via JS -->
+            </div>
+            <!-- Products Grid -->
+            <div class="products-grid" id="products-grid">
+                <!-- Injected via JS -->
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="faq-section" id="faq">
+            <div class="faq-container">
+                <h2>Perguntas Frequentes (FAQ)</h2>
+                <div class="faq-item">
+                    <details>
+                        <summary>Como funciona o pagamento?</summary>
+                        <p>O pagamento é feito exclusivamente no momento da entrega! Podes pagar em Dinheiro, M-Pesa, eMola ou Cartão (POS).</p>
+                    </details>
+                </div>
+                <div class="faq-item">
+                    <details>
+                        <summary>Quanto tempo demora a entrega?</summary>
+                        <p>Garantimos a entrega num prazo máximo de 4 horas dentro da cidade da Beira, dependendo da disponibilidade dos nossos estafetas.</p>
+                    </details>
+                </div>
+                <div class="faq-item">
+                    <details>
+                        <summary>Posso cancelar ou devolver o pedido?</summary>
+                        <p>Podes cancelar antes de o pedido sair para entrega. Se houver algum defeito de fábrica, cobrimos a garantia num prazo estipulado por produto.</p>
+                    </details>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <p>&copy; 2026 Tchapo Tchapo. Todos os direitos reservados.</p>
+    </footer>
+
+    <!-- Product Detail Modal -->
+    <div class="modal-overlay" id="product-modal-overlay"></div>
+    <div class="product-modal" id="product-modal">
+        <button class="close-modal" id="close-product-modal">&times;</button>
+        <div class="product-modal-content" id="product-modal-content">
+            <!-- Injected via JS -->
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div class="cart-overlay" id="cart-overlay"></div>
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h2>Seu Carrinho</h2>
+            <button class="close-cart" id="close-cart">&times;</button>
+        </div>
+        <div class="cart-items" id="cart-items">
+            <div class="empty-cart-msg" id="empty-cart-msg">Seu carrinho está vazio.</div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span class="total-amount" id="total-amount">0 MT</span>
+            </div>
+
+            <form class="checkout-form" id="checkout-form" style="display: none;">
+                <h3>Detalhes de Entrega (Beira)</h3>
+                <input type="text" id="customer-name" placeholder="Seu Nome Completo" required>
+                <input type="tel" id="customer-phone" placeholder="Número de Telefone (ex: 84 123 4567)" required
+                    pattern="[0-9\s+\-()]{8,15}">
+
+                <select id="customer-bairro" required>
+                    <option value="" disabled selected>Selecione o Bairro...</option>
+                    <option value="Macuti">Macuti</option>
+                    <option value="Ponta Gêa">Ponta Gêa</option>
+                    <option value="Maquinino">Maquinino</option>
+                    <option value="Pioneiros">Pioneiros</option>
+                    <option value="Chota">Chota</option>
+                    <option value="Estoril">Estoril</option>
+                    <option value="Palmeiras">Palmeiras</option>
+                    <option value="Munhava">Munhava</option>
+                    <option value="Manga">Manga</option>
+                    <option value="Inhamizua">Inhamizua</option>
+                    <option value="Matacuane">Matacuane</option>
+                    <option value="Macurungo">Macurungo</option>
+                </select>
+
+                <input type="text" id="customer-address" placeholder="Morada e Ponto de Referência detalhado" required>
+
+                <select id="customer-time" required>
+                    <option value="" disabled selected>Horário de Entrega...</option>
+                    <option value="Imediato (Até 2h) (+200 MT)">Imediato (Até 2h) (+200 MT)</option>
+                    <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
+                    <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
+                    <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
+                </select>
+
+                <select id="customer-payment" required>
+                    <option value="" disabled selected>Método de Pagamento na Entrega...</option>
+                    <option value="M-Pesa">M-Pesa</option>
+                    <option value="eMola">eMola</option>
+                    <option value="Cartão (POS)">Cartão (Máquina POS)</option>
+                    <option value="Dinheiro Físico">Dinheiro Físico</option>
+                </select>
+
+                <button type="submit" class="btn-checkout" id="btn-checkout">
+                    Finalizar Pedido
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Meus Pedidos Modal -->
+    <div class="modal-overlay" id="meus-pedidos-overlay"></div>
+    <div class="product-modal" id="meus-pedidos-modal" style="max-width:700px;">
+        <button class="close-modal" id="close-meus-pedidos">&times;</button>
+        <div style="padding:2rem;">
+            <h2 style="margin-bottom:0.25rem;">📦 Os Meus Pedidos</h2>
+            <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1.5rem;">O estado é actualizado automaticamente a
+                partir do servidor.</p>
+            <div id="meus-pedidos-content">
+                <div style="text-align:center;padding:2rem;color:#9ca3af;">A carregar...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Order Modal -->
+    <div class="modal-overlay" id="quick-order-overlay"></div>
+    <div class="product-modal" id="quick-order-modal">
+        <button class="close-modal" id="close-quick-order">&times;</button>
+        <div class="product-modal-content" id="quick-order-content">
+            <!-- Injected via JS -->
+        </div>
+    </div>
+
+    <!-- Tracking Modal -->
+    <div class="tracking-overlay" id="tracking-overlay">
+        <div class="tracking-modal">
+            <div class="tracking-header">
+                <button class="btn-back-tracking" onclick="closeTracking()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    Voltar à Loja
+                </button>
+                <div>
+                    <h2>Acompanhar Pedido</h2>
+                    <p id="tracking-order-id">Pedido #8492</p>
+                </div>
+            </div>
+
+            <div class="tracking-timer">
+                <p>Tempo estimado para entrega:</p>
+                <div class="timer-display" id="timer-display">02:00:00</div>
+            </div>
+
+            <div class="tracking-progress">
+                <div class="progress-line"></div>
+                <div class="progress-step active" id="step-1">
+                    <div class="step-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <polyline points="10 9 9 9 8 9" />
+                        </svg>
+                    </div>
+                    <p>Processando</p>
+                </div>
+                <div class="progress-step" id="step-2">
+                    <div class="step-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                        </svg>
+                    </div>
+                    <p>Preparando</p>
+                </div>
+                <div class="progress-step" id="step-3">
+                    <div class="step-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="5.5" cy="17.5" r="3.5" />
+                            <circle cx="18.5" cy="17.5" r="3.5" />
+                            <path d="M15 6H9" />
+                            <path d="M9 17.5H1V12l8-8h10l2 5v9h-2" />
+                        </svg>
+                    </div>
+                    <p>Com Motorista</p>
+                </div>
+                <div class="progress-step" id="step-4">
+                    <div class="step-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </div>
+                    <p>Entregue</p>
+                </div>
+            </div>
+
+            <div class="driver-profile" id="driver-profile" style="display: none;">
+                <img src="" alt="Motorista" id="driver-img" class="driver-img">
+                <div class="driver-info">
+                    <h4>Motorista João</h4>
+                    <p class="driver-rating">⭐ 4.9 (124 entregas)</p>
+                    <p class="driver-vehicle">Yamaha DT - Matrícula AHD 452 MC</p>
+                </div>
+                <button class="btn-whatsapp-driver" onclick="contactDriver()">Contactar no WhatsApp</button>
+            </div>
+
+            <div class="tracking-actions">
+                <div class="live-indicator" id="live-indicator">
+                    <span class="live-dot"></span> A actualizar em tempo real...
+                </div>
+                <button class="btn-secondary" id="btn-simulate-next" style="display:none">Simular</button>
+                <button class="btn-secondary" id="btn-close-tracking" style="display:none;"
+                    onclick="location.reload()">Fechar e Voltar à Loja</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">Produto adicionado ao carrinho!</div>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="auth-overlay"></div>
+    <div class="modal auth-modal" id="auth-modal">
+        <button class="close-modal" id="close-auth">×</button>
+        
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login">Entrar</button>
+            <button class="auth-tab" id="tab-register">Criar Conta</button>
+        </div>
+
+        <!-- Login Form -->
+        <form class="auth-form active" id="form-login">
+            <h3>Bem-vindo de volta!</h3>
+            <p>Faça login para encomendas rápidas.</p>
+            <input type="email" id="login-email" placeholder="Email" required>
+            <input type="password" id="login-password" placeholder="Palavra-passe" required>
+            <div id="login-error" class="auth-error" style="display:none; color:red; font-size:0.85rem; margin-bottom:1rem;"></div>
+            <button type="submit" class="btn-primary" id="btn-submit-login">Entrar na Loja</button>
+        </form>
+
+        <!-- Register Form -->
+        <form class="auth-form" id="form-register">
+            <h3>Nova Conta</h3>
+            <p>Guarde os seus dados para futuras compras.</p>
+            <input type="text" id="reg-name" placeholder="Nome Completo" required>
+            <input type="tel" id="reg-phone" placeholder="Número de Telefone (ex: 84 123 4567)" required pattern="[0-9\s+\-()]{8,15}">
+            <input type="email" id="reg-email" placeholder="Email" required>
+            <input type="password" id="reg-password" placeholder="Palavra-passe (mín. 6 caracteres)" minlength="6" required>
+            <div id="reg-error" class="auth-error" style="display:none; color:red; font-size:0.85rem; margin-bottom:1rem;"></div>
+            <button type="submit" class="btn-primary" id="btn-submit-register">Criar Conta</button>
+        </form>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

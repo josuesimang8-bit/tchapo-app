@@ -63,34 +63,49 @@ const supabaseUrl = process.env.SUPABASE_URL || 'https://rkempjcqoefhdthvwewm.su
 const supabaseKey = process.env.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+function formatOrderResponse(order) {
+    if (!order) return order;
+    let itemsArray = [];
+    if (order.items) {
+        try {
+            itemsArray = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+        } catch (e) {
+            itemsArray = [];
+        }
+    }
+    const normalizedItems = Array.isArray(itemsArray) ? itemsArray.map(item => ({
+        product_name: item.product_name || item.name || 'Produto',
+        quantity: item.quantity || 1,
+        price: item.price || 0
+    })) : [];
+
+    return {
+        ...order,
+        items: normalizedItems,
+        order_items: normalizedItems
+    };
+}
+
 // GET orders
 app.get('/api/orders', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(*), drivers(*)')
+            .select('*, drivers(*)')
             .order('created_at', { ascending: false });
         
         if (error) {
-            // Fallback se a relação/tabela drivers ou order_items ainda não existir no Supabase
-            if (error.message.includes('drivers') || error.message.includes('relationship') || error.message.includes('order_items')) {
+            if (error.message.includes('drivers') || error.message.includes('relationship')) {
                 const { data: fallbackData, error: fallbackError } = await supabase
                     .from('orders')
-                    .select('*, order_items(*)')
+                    .select('*')
                     .order('created_at', { ascending: false });
-                if (fallbackError) {
-                    const { data: finalFallback, error: finalError } = await supabase
-                        .from('orders')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-                    if (finalError) throw finalError;
-                    return res.json(finalFallback);
-                }
-                return res.json(fallbackData);
+                if (fallbackError) throw fallbackError;
+                return res.json(fallbackData.map(formatOrderResponse));
             }
             throw error;
         }
-        res.json(data);
+        res.json(data.map(formatOrderResponse));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -102,24 +117,23 @@ app.get('/api/orders/user/:userId', async (req, res) => {
         const { userId } = req.params;
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(*), drivers(*)')
+            .select('*, drivers(*)')
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
             
         if (error) {
-            // Fallback se a relação/tabela drivers ainda não existir no Supabase
             if (error.message.includes('drivers') || error.message.includes('relationship')) {
                 const { data: fallbackData, error: fallbackError } = await supabase
                     .from('orders')
-                    .select('*, order_items(*)')
+                    .select('*')
                     .eq('user_id', userId)
                     .order('created_at', { ascending: false });
                 if (fallbackError) throw fallbackError;
-                return res.json(fallbackData);
+                return res.json(fallbackData.map(formatOrderResponse));
             }
             throw error;
         }
-        res.json(data);
+        res.json(data.map(formatOrderResponse));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -130,29 +144,37 @@ app.post('/api/orders', async (req, res) => {
     try {
         const { customer_name, phone, bairro, address, time, payment, total, items, user_id } = req.body;
         
-        // Insert order
-        const { data: order, error: orderError } = await supabase
+        let order;
+        // Try inserting with items column (directly saving products array)
+        const { data: dataWithItems, error: errorWithItems } = await supabase
             .from('orders')
             .insert([{ 
-                customer_name, phone, bairro, address, time, payment, total, status: 'Processando', user_id: user_id || null
+                customer_name, phone, bairro, address, time, payment, total, status: 'Processando', user_id: user_id || null,
+                items: items || []
             }])
             .select()
             .single();
 
-        if (orderError) throw orderError;
-
-        // Optionally handle items in a separate table
-        if (items && items.length > 0) {
-            const orderItems = items.map(item => ({
-                order_id: order.id,
-                product_name: item.name,
-                quantity: item.quantity,
-                price: item.price
-            }));
-            await supabase.from('order_items').insert(orderItems);
+        if (errorWithItems) {
+            // Fallback: If "items" column doesn't exist yet, insert without it
+            if (errorWithItems.message.includes('column') || errorWithItems.message.includes('items')) {
+                const { data: fallbackData, error: fallbackError } = await supabase
+                    .from('orders')
+                    .insert([{ 
+                        customer_name, phone, bairro, address, time, payment, total, status: 'Processando', user_id: user_id || null
+                    }])
+                    .select()
+                    .single();
+                if (fallbackError) throw fallbackError;
+                order = fallbackData;
+            } else {
+                throw errorWithItems;
+            }
+        } else {
+            order = dataWithItems;
         }
 
-        res.status(201).json(order);
+        res.status(201).json(formatOrderResponse(order));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -164,32 +186,23 @@ app.get('/api/orders/:id', async (req, res) => {
         const { id } = req.params;
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(*), drivers(*)')
+            .select('*, drivers(*)')
             .eq('id', id)
             .single();
             
         if (error) {
-            // Fallback se a relação/tabela drivers ou order_items ainda não existir no Supabase
-            if (error.message.includes('drivers') || error.message.includes('relationship') || error.message.includes('order_items')) {
+            if (error.message.includes('drivers') || error.message.includes('relationship')) {
                 const { data: fallbackData, error: fallbackError } = await supabase
                     .from('orders')
-                    .select('*, order_items(*)')
+                    .select('*')
                     .eq('id', id)
                     .single();
-                if (fallbackError) {
-                    const { data: finalFallback, error: finalError } = await supabase
-                        .from('orders')
-                        .select('*')
-                        .eq('id', id)
-                        .single();
-                    if (finalError) throw finalError;
-                    return res.json(finalFallback);
-                }
-                return res.json(fallbackData);
+                if (fallbackError) throw fallbackError;
+                return res.json(formatOrderResponse(fallbackData));
             }
             throw error;
         }
-        res.json(data);
+        res.json(formatOrderResponse(data));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

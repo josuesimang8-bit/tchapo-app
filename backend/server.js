@@ -240,7 +240,7 @@ app.post('/api/drivers/upload', upload.single('photo'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
-    const photoUrl = `http://localhost:3000/uploads/drivers/${req.file.filename}`;
+    const photoUrl = `/uploads/drivers/${req.file.filename}`;
     res.json({ photo_url: photoUrl });
 });
 
@@ -282,6 +282,14 @@ app.delete('/api/drivers/:id', async (req, res) => {
 });
 
 // ─── PRODUCTS ENDPOINTS ────────────────────────────────────────────────
+// Helper to fix localhost image URLs in product data
+function fixImageUrls(products) {
+    return products.map(p => ({
+        ...p,
+        image: p.image ? p.image.replace(/^https?:\/\/localhost:\d+/, '') : p.image
+    }));
+}
+
 // GET active products (storefront)
 app.get('/api/products', async (req, res) => {
     try {
@@ -296,7 +304,7 @@ app.get('/api/products', async (req, res) => {
             console.error('Erro ao ler produtos do Supabase:', error.message);
             return res.json([]);
         }
-        res.json(data);
+        res.json(fixImageUrls(data));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -347,7 +355,7 @@ app.post('/api/products/upload', uploadProduct.single('photo'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
-    const photoUrl = `http://localhost:3000/uploads/products/${req.file.filename}`;
+    const photoUrl = `/uploads/products/${req.file.filename}`;
     res.json({ photo_url: photoUrl });
 });
 

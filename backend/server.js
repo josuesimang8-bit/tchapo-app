@@ -247,6 +247,40 @@ app.get('/api/drivers', async (req, res) => {
     }
 });
 
+async function uploadToSupabaseStorage(bucketName, file) {
+    try {
+        const fileBuffer = fs.readFileSync(file.path);
+        const { data, error } = await supabase.storage
+            .from(bucketName)
+            .upload(file.filename, fileBuffer, {
+                contentType: file.mimetype,
+                cacheControl: '3600',
+                upsert: true
+            });
+            
+        if (error) {
+            console.error(`Supabase storage upload error to ${bucketName}:`, error);
+            return null;
+        }
+        
+        const { data: publicUrlData } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(file.filename);
+            
+        // Delete local temp file
+        try {
+            fs.unlinkSync(file.path);
+        } catch (e) {
+            console.error('Failed to delete temp file:', e);
+        }
+        
+        return publicUrlData.publicUrl;
+    } catch (err) {
+        console.error(`Failed to upload to Supabase storage ${bucketName}:`, err);
+        return null;
+    }
+}
+
 // POST new driver
 app.post('/api/drivers', async (req, res) => {
     try {
@@ -264,12 +298,19 @@ app.post('/api/drivers', async (req, res) => {
 });
 
 // POST upload photo for driver
-app.post('/api/drivers/upload', upload.single('photo'), (req, res) => {
+app.post('/api/drivers/upload', upload.single('photo'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
-    const photoUrl = `/uploads/drivers/${req.file.filename}`;
-    res.json({ photo_url: photoUrl });
+    
+    const publicUrl = await uploadToSupabaseStorage('drivers', req.file);
+    if (publicUrl) {
+        res.json({ photo_url: publicUrl });
+    } else {
+        // Fallback to local file
+        const photoUrl = `/uploads/drivers/${req.file.filename}`;
+        res.json({ photo_url: photoUrl });
+    }
 });
 
 // PUT update driver
@@ -379,12 +420,19 @@ app.post('/api/products', async (req, res) => {
 });
 
 // POST upload photo for product
-app.post('/api/products/upload', uploadProduct.single('photo'), (req, res) => {
+app.post('/api/products/upload', uploadProduct.single('photo'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
-    const photoUrl = `/uploads/products/${req.file.filename}`;
-    res.json({ photo_url: photoUrl });
+    
+    const publicUrl = await uploadToSupabaseStorage('products', req.file);
+    if (publicUrl) {
+        res.json({ photo_url: publicUrl });
+    } else {
+        // Fallback to local file
+        const photoUrl = `/uploads/products/${req.file.filename}`;
+        res.json({ photo_url: photoUrl });
+    }
 });
 
 // PUT update product

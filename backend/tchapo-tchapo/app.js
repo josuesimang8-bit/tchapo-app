@@ -272,7 +272,7 @@ function renderProducts() {
             <p class="product-desc">${product.desc || ''}</p>
             <div class="product-price">${formatCurrency(product.price)}</div>
             <div class="product-actions">
-                <button class="btn-add-to-cart" onclick="${getDeviceSelectionType(product) !== 'none' ? `openProductModal(${product.id})` : `addToCart(${product.id}); showToast()`}">
+                <button class="btn-add-to-cart" onclick="${(getDeviceSelectionType(product) !== 'none' || getColorSelectionType(product) !== 'none') ? `openProductModal(${product.id})` : `addToCart(${product.id}); showToast()`}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                     Carrinho
                 </button>
@@ -289,15 +289,13 @@ function renderProducts() {
 function addCaseToCartFromModal(id) {
     const product = products.find(p => p.id === id);
     const devSelType = getDeviceSelectionType(product);
+    const colorSelType = getColorSelectionType(product);
     
-    let device = 'iPhone 15 Pro Max';
-    let color = 'Preto';
+    let device = null;
+    let color = null;
     
     if (devSelType !== 'none') {
         const deviceEl = document.getElementById('pm-device');
-        const colorEl = document.getElementById('pm-color');
-        if (colorEl) color = colorEl.value;
-        
         if (devSelType === 'outro') {
             const customInput = document.getElementById('pm-custom-device');
             const customVal = customInput ? customInput.value.trim() : '';
@@ -324,6 +322,11 @@ function addCaseToCartFromModal(id) {
         }
     }
     
+    if (colorSelType !== 'none') {
+        const colorEl = document.getElementById('pm-color');
+        if (colorEl) color = colorEl.value;
+    }
+    
     addToCart(id, device, color);
     closeModals();
     showToast();
@@ -334,29 +337,35 @@ function openProductModal(id) {
     const devSelType = getDeviceSelectionType(product);
     
     let optionsHtml = '';
-    if (devSelType !== 'none') {
+    const colorSelType = getColorSelectionType(product);
+    if (devSelType !== 'none' || colorSelType !== 'none') {
         let deviceSelectHtml = '';
-        if (devSelType === 'iphone' || devSelType === 'iphone_outro') {
-            deviceSelectHtml = `
-                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                    <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Selecione o Dispositivo:</label>
-                    <select id="pm-device" onchange="togglePmCustomDeviceInput(this.value, '${devSelType}')" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
-                        ${DEVICE_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
-                        ${devSelType === 'iphone_outro' ? `<option value="outro">Outro (Digitar...)</option>` : ''}
-                    </select>
+        if (devSelType !== 'none') {
+            if (devSelType === 'iphone' || devSelType === 'iphone_outro') {
+                deviceSelectHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                        <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Selecione o Dispositivo:</label>
+                        <select id="pm-device" onchange="togglePmCustomDeviceInput(this.value, '${devSelType}')" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
+                            ${DEVICE_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                            ${devSelType === 'iphone_outro' ? `<option value="outro">Outro (Digitar...)</option>` : ''}
+                        </select>
+                    </div>
+                `;
+            }
+        }
+        
+        let customDeviceInputHtml = '';
+        if (devSelType !== 'none') {
+            customDeviceInputHtml = `
+                <div id="pm-custom-device-container" style="display: ${devSelType === 'outro' ? 'flex' : 'none'}; flex-direction: column; gap: 0.35rem;">
+                    <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Escreva o Dispositivo:</label>
+                    <input id="pm-custom-device" type="text" placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc." style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff; box-sizing: border-box;">
                 </div>
             `;
         }
-        
-        let customDeviceInputHtml = `
-            <div id="pm-custom-device-container" style="display: ${devSelType === 'outro' ? 'flex' : 'none'}; flex-direction: column; gap: 0.35rem;">
-                <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Escreva o Dispositivo:</label>
-                <input id="pm-custom-device" type="text" placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc." style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff; box-sizing: border-box;">
-            </div>
-        `;
 
         let colorSelectHtml = '';
-        if (getColorSelectionType(product) !== 'none') {
+        if (colorSelType !== 'none') {
             colorSelectHtml = `
                 <div style="display: flex; flex-direction: column; gap: 0.35rem;">
                     <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Cor:</label>
@@ -390,11 +399,11 @@ function openProductModal(id) {
             </ul>
             ${optionsHtml}
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;">
-                <button class="btn-add-cart" style="flex:1" onclick="${devSelType !== 'none' ? `addCaseToCartFromModal(${product.id})` : `addToCart(${product.id}); closeModals(); showToast()`}">
+                <button class="btn-add-cart" style="flex:1" onclick="${(devSelType !== 'none' || colorSelType !== 'none') ? `addCaseToCartFromModal(${product.id})` : `addToCart(${product.id}); closeModals(); showToast()`}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                     Adicionar ao Carrinho
                 </button>
-                <button class="btn-buy-now-modal" style="flex:1" onclick="${devSelType !== 'none' ? `closeModals(); openQuickOrder(${product.id}, true)` : `closeModals(); openQuickOrder(${product.id})`}">
+                <button class="btn-buy-now-modal" style="flex:1" onclick="${(devSelType !== 'none' || colorSelType !== 'none') ? `closeModals(); openQuickOrder(${product.id}, true)` : `closeModals(); openQuickOrder(${product.id})`}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     Pedir Agora
                 </button>
@@ -430,31 +439,37 @@ function openQuickOrder(id, fromModal = false) {
     }
 
     let optionsHtml = '';
-    if (devSelType !== 'none') {
+    const colorSelType = getColorSelectionType(quickOrderProduct);
+    if (devSelType !== 'none' || colorSelType !== 'none') {
         let deviceSelectHtml = '';
-        if (devSelType === 'iphone' || devSelType === 'iphone_outro') {
-            deviceSelectHtml = `
-                <div style="display: flex; flex-direction: column; gap: 0.2rem; width: 100%;">
-                    <label style="font-weight: 600; font-size: 0.8rem; color: #4b5563; text-align: left;">Dispositivo:</label>
-                    <select id="qo-device" onchange="toggleQoCustomDeviceInput(this.value, '${devSelType}')" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff;">
-                        ${DEVICE_OPTIONS.map(d => `<option value="${d}" ${d === selectedDevVal ? 'selected' : ''}>${d}</option>`).join('')}
-                        ${devSelType === 'iphone_outro' ? `<option value="outro" ${selectedDevVal === 'outro' ? 'selected' : ''}>Outro (Digitar...)</option>` : ''}
-                    </select>
-                </div>
-            `;
+        if (devSelType !== 'none') {
+            if (devSelType === 'iphone' || devSelType === 'iphone_outro') {
+                deviceSelectHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 0.2rem; width: 100%;">
+                        <label style="font-weight: 600; font-size: 0.8rem; color: #4b5563; text-align: left;">Dispositivo:</label>
+                        <select id="qo-device" onchange="toggleQoCustomDeviceInput(this.value, '${devSelType}')" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff;">
+                            ${DEVICE_OPTIONS.map(d => `<option value="${d}" ${d === selectedDevVal ? 'selected' : ''}>${d}</option>`).join('')}
+                            ${devSelType === 'iphone_outro' ? `<option value="outro" ${selectedDevVal === 'outro' ? 'selected' : ''}>Outro (Digitar...)</option>` : ''}
+                        </select>
+                    </div>
+                `;
+            }
         }
         
         const showCustom = devSelType === 'outro' || (devSelType === 'iphone_outro' && selectedDevVal === 'outro');
         
-        let customDeviceInputHtml = `
-            <div id="qo-custom-device-container" style="display: ${showCustom ? 'flex' : 'none'}; flex-direction: column; gap: 0.2rem; width: 100%;">
-                <label style="font-weight: 600; font-size: 0.8rem; color: #4b5563; text-align: left;">Escreva o Dispositivo:</label>
-                <input id="qo-custom-device" type="text" placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc." value="${customDevVal}" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff; box-sizing: border-box;">
-            </div>
-        `;
+        let customDeviceInputHtml = '';
+        if (devSelType !== 'none') {
+            customDeviceInputHtml = `
+                <div id="qo-custom-device-container" style="display: ${showCustom ? 'flex' : 'none'}; flex-direction: column; gap: 0.2rem; width: 100%;">
+                    <label style="font-weight: 600; font-size: 0.8rem; color: #4b5563; text-align: left;">Escreva o Dispositivo:</label>
+                    <input id="qo-custom-device" type="text" placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc." value="${customDevVal}" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff; box-sizing: border-box;">
+                </div>
+            `;
+        }
         
         let colorSelectHtml = '';
-        if (getColorSelectionType(quickOrderProduct) !== 'none') {
+        if (colorSelType !== 'none') {
             colorSelectHtml = `
                 <div style="display: flex; flex-direction: column; gap: 0.2rem; width: 100%;">
                     <label style="font-weight: 600; font-size: 0.8rem; color: #4b5563; text-align: left;">Cor:</label>
@@ -570,26 +585,17 @@ function handleQuickOrder(e) {
     }
 
     const devSelType = getDeviceSelectionType(quickOrderProduct);
+    const colorSelType = getColorSelectionType(quickOrderProduct);
     const productItem = { ...quickOrderProduct };
 
-    if (devSelType !== 'none') {
+    if (devSelType !== 'none' || colorSelType !== 'none') {
         let dev = '';
-        const colorSelType = getColorSelectionType(quickOrderProduct);
         const hasColorSel = colorSelType !== 'none';
         const colEl = document.getElementById('qo-color');
         const col = (hasColorSel && colEl) ? colEl.value : null;
         
-        if (devSelType === 'outro') {
-            const customInput = document.getElementById('qo-custom-device');
-            const customVal = customInput ? customInput.value.trim() : '';
-            if (!customVal) {
-                showStatusToast('⚠️ Por favor, escreva o modelo do seu dispositivo.');
-                return;
-            }
-            dev = customVal;
-        } else if (devSelType === 'iphone_outro') {
-            const selectVal = document.getElementById('qo-device').value;
-            if (selectVal === 'outro') {
+        if (devSelType !== 'none') {
+            if (devSelType === 'outro') {
                 const customInput = document.getElementById('qo-custom-device');
                 const customVal = customInput ? customInput.value.trim() : '';
                 if (!customVal) {
@@ -597,14 +603,29 @@ function handleQuickOrder(e) {
                     return;
                 }
                 dev = customVal;
+            } else if (devSelType === 'iphone_outro') {
+                const selectVal = document.getElementById('qo-device').value;
+                if (selectVal === 'outro') {
+                    const customInput = document.getElementById('qo-custom-device');
+                    const customVal = customInput ? customInput.value.trim() : '';
+                    if (!customVal) {
+                        showStatusToast('⚠️ Por favor, escreva o modelo do seu dispositivo.');
+                        return;
+                    }
+                    dev = customVal;
+                } else {
+                    dev = selectVal;
+                }
             } else {
-                dev = selectVal;
+                dev = document.getElementById('qo-device').value;
             }
-        } else {
-            dev = document.getElementById('qo-device').value;
         }
         
-        productItem.name = hasColorSel ? `${quickOrderProduct.name} (${dev} - ${col})` : `${quickOrderProduct.name} (${dev})`;
+        if (devSelType !== 'none') {
+            productItem.name = hasColorSel ? `${quickOrderProduct.name} (${dev} - ${col})` : `${quickOrderProduct.name} (${dev})`;
+        } else {
+            productItem.name = hasColorSel ? `${quickOrderProduct.name} (${col})` : quickOrderProduct.name;
+        }
     }
 
     const orderData = {
@@ -671,16 +692,17 @@ function addToCart(productId, device = null, color = null) {
     const devSelType = getDeviceSelectionType(product);
     const hasDeviceSel = devSelType !== 'none';
     const colorSelType = getColorSelectionType(product);
-    const hasColorSel = hasDeviceSel && colorSelType !== 'none';
+    const hasColorSel = colorSelType !== 'none';
     
+    const finalDevice = hasDeviceSel ? device : null;
     const finalColor = hasColorSel ? color : null;
     
     const cartItemId = hasDeviceSel 
-        ? (hasColorSel ? `${productId}-${device}-${finalColor}` : `${productId}-${device}`)
-        : productId;
+        ? (hasColorSel ? `${productId}-${finalDevice}-${finalColor}` : `${productId}-${finalDevice}`)
+        : (hasColorSel ? `${productId}-${finalColor}` : productId);
     const cartItemName = hasDeviceSel 
-        ? (hasColorSel ? `${product.name} (${device} - ${finalColor})` : `${product.name} (${device})`)
-        : product.name;
+        ? (hasColorSel ? `${product.name} (${finalDevice} - ${finalColor})` : `${product.name} (${finalDevice})`)
+        : (hasColorSel ? `${product.name} (${finalColor})` : product.name);
     
     const existing = cart.find(item => item.id === cartItemId);
     if (existing) { 

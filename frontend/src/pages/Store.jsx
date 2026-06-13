@@ -326,7 +326,7 @@ export default function Store() {
         const devSelType = getDeviceSelectionType(product);
         const hasDeviceSel = devSelType !== 'none';
         const colorSelType = getColorSelectionType(product);
-        const hasColorSel = hasDeviceSel && colorSelType !== 'none';
+        const hasColorSel = colorSelType !== 'none';
         
         let finalDevice = null;
         if (hasDeviceSel) {
@@ -347,10 +347,10 @@ export default function Store() {
         
         const cartItemId = hasDeviceSel 
             ? (hasColorSel ? `${product.id}-${finalDevice}-${finalColor}` : `${product.id}-${finalDevice}`)
-            : product.id;
+            : (hasColorSel ? `${product.id}-${finalColor}` : product.id);
         const cartItemName = hasDeviceSel 
             ? (hasColorSel ? `${product.name} (${finalDevice} - ${finalColor})` : `${product.name} (${finalDevice})`)
-            : product.name;
+            : (hasColorSel ? `${product.name} (${finalColor})` : product.name);
         
         const existing = cart.find(item => item.id === cartItemId);
         if (existing) {
@@ -470,7 +470,7 @@ export default function Store() {
         const devSelType = getDeviceSelectionType(quickOrderProduct);
         const hasDeviceSel = devSelType !== 'none';
         const colorSelType = getColorSelectionType(quickOrderProduct);
-        const hasColorSel = hasDeviceSel && colorSelType !== 'none';
+        const hasColorSel = colorSelType !== 'none';
         
         let finalDevice = '';
         if (hasDeviceSel) {
@@ -483,7 +483,7 @@ export default function Store() {
         
         const finalName = hasDeviceSel 
             ? (hasColorSel ? `${quickOrderProduct.name} (${finalDevice} - ${selectedColor})` : `${quickOrderProduct.name} (${finalDevice})`)
-            : quickOrderProduct.name;
+            : (hasColorSel ? `${quickOrderProduct.name} (${selectedColor})` : quickOrderProduct.name);
 
         const orderData = {
             customer_name: quickOrderForm.name,
@@ -742,7 +742,7 @@ export default function Store() {
                                 <p className="product-desc">{prod.desc || ''}</p>
                                 <div className="product-price">{formatCurrency(prod.price)}</div>
                                 <div className="product-actions">
-                                    <button className="btn-add-to-cart" onClick={() => getDeviceSelectionType(prod) !== 'none' ? setSelectedProduct(prod) : addToCart(prod)}>
+                                    <button className="btn-add-to-cart" onClick={() => (getDeviceSelectionType(prod) !== 'none' || getColorSelectionType(prod) !== 'none') ? setSelectedProduct(prod) : addToCart(prod)}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                                         Carrinho
                                     </button>
@@ -814,61 +814,66 @@ export default function Store() {
 
                                 {(() => {
                                     const devSelType = getDeviceSelectionType(activeSelectedProduct);
-                                    if (devSelType === 'none') return null;
+                                    const colorSelType = getColorSelectionType(activeSelectedProduct);
+                                    if (devSelType === 'none' && colorSelType === 'none') return null;
                                     return (
                                         <div className="product-options" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
-                                            {(devSelType === 'iphone' || devSelType === 'iphone_outro') && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
-                                                    <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Selecione o Dispositivo:</label>
-                                                    <select 
-                                                        value={selectedDevice}
-                                                        onChange={(e) => setSelectedDevice(e.target.value)}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.75rem',
-                                                            border: '1.5px solid var(--gray-light)',
-                                                            borderRadius: '10px',
-                                                            fontFamily: 'inherit',
-                                                            fontSize: '0.95rem',
-                                                            outline: 'none',
-                                                            backgroundColor: '#fff'
-                                                        }}
-                                                    >
-                                                        {DEVICE_OPTIONS.map(dev => (
-                                                            <option key={dev} value={dev}>{dev}</option>
-                                                        ))}
-                                                        {devSelType === 'iphone_outro' && (
-                                                            <option value="outro">Outro (Digitar...)</option>
-                                                        )}
-                                                    </select>
-                                                </div>
+                                            {devSelType !== 'none' && (
+                                                <>
+                                                    {(devSelType === 'iphone' || devSelType === 'iphone_outro') && (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
+                                                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Selecione o Dispositivo:</label>
+                                                            <select 
+                                                                value={selectedDevice}
+                                                                onChange={(e) => setSelectedDevice(e.target.value)}
+                                                                style={{
+                                                                    width: '100%',
+                                                                    padding: '0.75rem',
+                                                                    border: '1.5px solid var(--gray-light)',
+                                                                    borderRadius: '10px',
+                                                                    fontFamily: 'inherit',
+                                                                    fontSize: '0.95rem',
+                                                                    outline: 'none',
+                                                                    backgroundColor: '#fff'
+                                                                }}
+                                                            >
+                                                                {DEVICE_OPTIONS.map(dev => (
+                                                                    <option key={dev} value={dev}>{dev}</option>
+                                                                ))}
+                                                                {devSelType === 'iphone_outro' && (
+                                                                    <option value="outro">Outro (Digitar...)</option>
+                                                                )}
+                                                            </select>
+                                                        </div>
+                                                    )}
+
+                                                    {(devSelType === 'outro' || (devSelType === 'iphone_outro' && selectedDevice === 'outro')) && (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
+                                                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Escreva o Dispositivo:</label>
+                                                            <input 
+                                                                type="text"
+                                                                value={customDevice}
+                                                                onChange={(e) => setCustomDevice(e.target.value)}
+                                                                placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc."
+                                                                required
+                                                                style={{
+                                                                    width: '100%',
+                                                                    padding: '0.75rem',
+                                                                    border: '1.5px solid var(--gray-light)',
+                                                                    borderRadius: '10px',
+                                                                    fontFamily: 'inherit',
+                                                                    fontSize: '0.95rem',
+                                                                    outline: 'none',
+                                                                    backgroundColor: '#fff',
+                                                                    boxSizing: 'border-box'
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
 
-                                            {(devSelType === 'outro' || (devSelType === 'iphone_outro' && selectedDevice === 'outro')) && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
-                                                    <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Escreva o Dispositivo:</label>
-                                                    <input 
-                                                        type="text"
-                                                        value={customDevice}
-                                                        onChange={(e) => setCustomDevice(e.target.value)}
-                                                        placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc."
-                                                        required
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.75rem',
-                                                            border: '1.5px solid var(--gray-light)',
-                                                            borderRadius: '10px',
-                                                            fontFamily: 'inherit',
-                                                            fontSize: '0.95rem',
-                                                            outline: 'none',
-                                                            backgroundColor: '#fff',
-                                                            boxSizing: 'border-box'
-                                                        }}
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {getColorSelectionType(activeSelectedProduct) !== 'none' && (
+                                            {colorSelType !== 'none' && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
                                                     <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Cor:</label>
                                                     <select 
@@ -1036,7 +1041,8 @@ export default function Store() {
                                 )}
                                 {(() => {
                                     const devSelType = getDeviceSelectionType(activeQuickOrderProduct);
-                                    if (devSelType === 'none') return null;
+                                    const colorSelType = getColorSelectionType(activeQuickOrderProduct);
+                                    if (devSelType === 'none' && colorSelType === 'none') return null;
                                     return (
                                         <div className="product-options" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
                                             {(devSelType === 'iphone' || devSelType === 'iphone_outro') && (

@@ -68,17 +68,24 @@ app.get('/api/orders', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('orders')
-            .select('*, drivers(*)')
+            .select('*, order_items(*), drivers(*)')
             .order('created_at', { ascending: false });
         
         if (error) {
-            // Fallback se a relação/tabela drivers ainda não existir no Supabase
-            if (error.message.includes('drivers') || error.message.includes('relationship')) {
+            // Fallback se a relação/tabela drivers ou order_items ainda não existir no Supabase
+            if (error.message.includes('drivers') || error.message.includes('relationship') || error.message.includes('order_items')) {
                 const { data: fallbackData, error: fallbackError } = await supabase
                     .from('orders')
-                    .select('*')
+                    .select('*, order_items(*)')
                     .order('created_at', { ascending: false });
-                if (fallbackError) throw fallbackError;
+                if (fallbackError) {
+                    const { data: finalFallback, error: finalError } = await supabase
+                        .from('orders')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    if (finalError) throw finalError;
+                    return res.json(finalFallback);
+                }
                 return res.json(fallbackData);
             }
             throw error;
@@ -157,19 +164,27 @@ app.get('/api/orders/:id', async (req, res) => {
         const { id } = req.params;
         const { data, error } = await supabase
             .from('orders')
-            .select('*, drivers(*)')
+            .select('*, order_items(*), drivers(*)')
             .eq('id', id)
             .single();
             
         if (error) {
-            // Fallback se a relação/tabela drivers ainda não existir no Supabase
-            if (error.message.includes('drivers') || error.message.includes('relationship')) {
+            // Fallback se a relação/tabela drivers ou order_items ainda não existir no Supabase
+            if (error.message.includes('drivers') || error.message.includes('relationship') || error.message.includes('order_items')) {
                 const { data: fallbackData, error: fallbackError } = await supabase
                     .from('orders')
-                    .select('*')
+                    .select('*, order_items(*)')
                     .eq('id', id)
                     .single();
-                if (fallbackError) throw fallbackError;
+                if (fallbackError) {
+                    const { data: finalFallback, error: finalError } = await supabase
+                        .from('orders')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+                    if (finalError) throw finalError;
+                    return res.json(finalFallback);
+                }
                 return res.json(fallbackData);
             }
             throw error;
@@ -416,8 +431,24 @@ app.delete('/api/orders/:id', async (req, res) => {
 app.get('/api/orders/:id/pdf', async (req, res) => {
     try {
         const { id } = req.params;
-        const { data: order, error } = await supabase.from('orders').select('*').eq('id', id).single();
-        if (error) throw error;
+        let order;
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*, order_items(*)')
+            .eq('id', id)
+            .single();
+            
+        if (error) {
+            const { data: fallbackData, error: fallbackError } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (fallbackError) throw fallbackError;
+            order = fallbackData;
+        } else {
+            order = data;
+        }
 
         const doc = new PDFDocument();
         res.setHeader('Content-Type', 'application/pdf');
@@ -438,6 +469,18 @@ app.get('/api/orders/:id/pdf', async (req, res) => {
         doc.moveDown();
         doc.text(`Status: ${order.status}`);
         doc.moveDown();
+
+        doc.fontSize(14).text('Produtos:', { underline: true });
+        doc.moveDown(0.5);
+        if (order.order_items && order.order_items.length > 0) {
+            order.order_items.forEach((item, index) => {
+                doc.fontSize(12).text(`${index + 1}. ${item.product_name} - Qtd: ${item.quantity} - Preço: ${Number(item.price).toLocaleString('pt-MZ')} MT`);
+            });
+        } else {
+            doc.fontSize(12).text('Nenhum item encontrado para este pedido.');
+        }
+        doc.moveDown();
+
         doc.fontSize(16).text(`Total: ${Number(order.total).toLocaleString('pt-MZ')} MT`, { align: 'right' });
 
         doc.end();

@@ -311,6 +311,32 @@ export default function DriverPortal() {
                                 </div>
                             </div>
 
+                            {/* Products List */}
+                            <div style={{ padding: '0.25rem 0.5rem' }}>
+                                <strong style={{ color: '#4b5563', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>Produtos do Pedido:</strong>
+                                {order.order_items && order.order_items.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {order.order_items.map((item, i) => (
+                                            <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.88rem' }}>
+                                                <span style={{
+                                                    background: '#ede9fe', 
+                                                    color: '#5b21b6',
+                                                    padding: '2px 8px', 
+                                                    borderRadius: '12px', 
+                                                    fontWeight: 700,
+                                                    fontSize: '0.78rem'
+                                                }}>
+                                                    {item.quantity}x
+                                                </span>
+                                                <span style={{ fontWeight: 600, color: '#111827' }}>{item.product_name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.85rem' }}>Nenhum item encontrado</span>
+                                )}
+                            </div>
+
                             {/* Action Buttons */}
                             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
                                 {order.phone && (

@@ -693,6 +693,7 @@ export default function Admin() {
                                     <tr>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>ID</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Cliente</th>
+                                        <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Produtos Pedidos</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Bairro</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Pagamento</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Total</th>
@@ -725,6 +726,29 @@ export default function Admin() {
                                                         <div style={{ fontSize: '0.78rem', color: '#9ca3af', fontWeight: 400 }}>
                                                             {order.address}
                                                         </div>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '1rem 1.25rem', color: '#374151', fontSize: '0.85rem' }}>
+                                                    {order.order_items && order.order_items.length > 0 ? (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                            {order.order_items.map((item, i) => (
+                                                                <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                                    <span style={{
+                                                                        background: '#f3f4f6',
+                                                                        padding: '2px 6px',
+                                                                        borderRadius: '12px',
+                                                                        fontWeight: 700,
+                                                                        fontSize: '0.75rem',
+                                                                        color: '#4b5563'
+                                                                    }}>
+                                                                        {item.quantity}x
+                                                                    </span>
+                                                                    <span style={{ fontWeight: 500 }}>{item.product_name}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Nenhum item</span>
                                                     )}
                                                 </td>
                                                 <td style={{ padding: '1rem 1.25rem', color: '#374151' }}>{order.bairro}</td>
@@ -800,7 +824,7 @@ export default function Admin() {
                                     })}
                                     {orders.length === 0 && (
                                         <tr>
-                                            <td colSpan="9" style={{
+                                            <td colSpan="10" style={{
                                                 padding: '3rem', textAlign: 'center',
                                                 color: '#9ca3af', fontSize: '0.95rem'
                                             }}>

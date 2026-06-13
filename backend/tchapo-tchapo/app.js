@@ -216,7 +216,7 @@ async function init() {
 
 async function fetchActiveProducts() {
     try {
-        const res = await fetch('http://localhost:3000/api/products');
+        const res = await fetch('/api/products');
         if (res.ok) {
             const data = await res.json();
             if (data && data.length > 0) {
@@ -616,7 +616,7 @@ function handleQuickOrder(e) {
     submitBtn.textContent = '⏳ A enviar pedido...';
     submitBtn.disabled = true;
 
-    fetch('http://localhost:3000/api/orders', {
+    fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
@@ -794,7 +794,7 @@ function handleCheckout(e) {
     submitBtn.textContent = '⏳ A enviar pedido...';
     submitBtn.disabled = true;
 
-    fetch('http://localhost:3000/api/orders', {
+    fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
@@ -915,7 +915,7 @@ let currentDriverPhone = '258840000000';
 
 async function pollOrderStatus(orderId) {
     try {
-        const res = await fetch(`http://localhost:3000/api/orders/${orderId}`);
+        const res = await fetch(`/api/orders/${orderId}`);
         if (!res.ok) return;
         const order = await res.json();
         applyRealStatus(order.status, order.drivers);
@@ -1081,7 +1081,7 @@ async function renderMeusPedidos() {
     
     if (currentUser) {
         try {
-            const res = await fetch(`http://localhost:3000/api/orders/user/${currentUser.id}`);
+            const res = await fetch(`/api/orders/user/${currentUser.id}`);
             if (res.ok) {
                 const dbOrders = await res.json();
                 history = dbOrders.map(o => ({
@@ -1144,7 +1144,7 @@ async function renderMeusPedidos() {
     // Fetch live status for each order
     for (const o of history) {
         try {
-            const res = await fetch(`http://localhost:3000/api/orders/${o.id}`);
+            const res = await fetch(`/api/orders/${o.id}`);
             if (!res.ok) continue;
             const order = await res.json();
             const statusEl = document.getElementById(`mp-status-${o.id}`);

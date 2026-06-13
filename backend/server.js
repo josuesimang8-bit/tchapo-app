@@ -444,24 +444,14 @@ app.delete('/api/orders/:id', async (req, res) => {
 app.get('/api/orders/:id/pdf', async (req, res) => {
     try {
         const { id } = req.params;
-        let order;
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(*)')
+            .select('*')
             .eq('id', id)
             .single();
             
-        if (error) {
-            const { data: fallbackData, error: fallbackError } = await supabase
-                .from('orders')
-                .select('*')
-                .eq('id', id)
-                .single();
-            if (fallbackError) throw fallbackError;
-            order = fallbackData;
-        } else {
-            order = data;
-        }
+        if (error) throw error;
+        const order = formatOrderResponse(data);
 
         const doc = new PDFDocument();
         res.setHeader('Content-Type', 'application/pdf');

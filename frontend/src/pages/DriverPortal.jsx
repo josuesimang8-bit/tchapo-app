@@ -9,6 +9,20 @@ const STATUS_COLORS = {
     'Cancelado':      { bg: '#fee2e2', color: '#991b1b' },
 };
 
+const formatMZCurrency = (value) => {
+    try {
+        const num = Number(value);
+        if (isNaN(num)) return '0';
+        return num.toLocaleString('pt-MZ');
+    } catch (e) {
+        try {
+            return Number(value).toLocaleString();
+        } catch (err) {
+            return String(value);
+        }
+    }
+};
+
 export default function DriverPortal() {
     const [drivers, setDrivers]           = useState([]);
     const [selectedDriver, setSelectedDriver] = useState(null);
@@ -22,11 +36,12 @@ export default function DriverPortal() {
             const res = await fetch(import.meta.env.VITE_API_URL + '/api/drivers');
             if (res.ok) {
                 const data = await res.json();
-                setDrivers(data);
+                const arrayData = Array.isArray(data) ? data : [];
+                setDrivers(arrayData);
                 
                 // If a driver was already selected, update their state from the new list
                 if (selectedDriver) {
-                    const updated = data.find(d => d.id === selectedDriver.id);
+                    const updated = arrayData.find(d => d && d.id === selectedDriver.id);
                     if (updated) setSelectedDriver(updated);
                 }
             }
@@ -44,11 +59,11 @@ export default function DriverPortal() {
             if (res.ok) {
                 const allOrders = await res.json();
                 // Filter orders for this driver that are not completed or cancelled
-                const filtered = allOrders.filter(o => 
-                    o.driver_id === selectedDriver.id && 
+                const filtered = Array.isArray(allOrders) ? allOrders.filter(o => 
+                    o && o.driver_id === selectedDriver.id && 
                     o.status !== 'Entregue' && 
                     o.status !== 'Cancelado'
-                );
+                ) : [];
                 setOrders(filtered);
             }
         } catch (err) {
@@ -154,7 +169,7 @@ export default function DriverPortal() {
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '300px', overflowY: 'auto' }}>
-                        {drivers.map(d => (
+                        {Array.isArray(drivers) && drivers.filter(Boolean).map(d => (
                             <button
                                 key={d.id}
                                 onClick={() => setSelectedDriver(d)}
@@ -181,7 +196,7 @@ export default function DriverPortal() {
                                 <span style={{ fontSize: '1.2rem', color: '#f59e0b' }}>→</span>
                             </button>
                         ))}
-                        {drivers.length === 0 && (
+                        {(!drivers || drivers.length === 0) && (
                             <div style={{ padding: '2rem', color: '#9ca3af', fontSize: '0.9rem' }}>
                                 Nenhum motorista registado na loja. Solicite ao administrador para adicionar o seu perfil.
                             </div>
@@ -255,8 +270,8 @@ export default function DriverPortal() {
                     <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>A carregar entregas...</div>
                 )}
 
-                {!loading && orders.map(order => {
-                    const statusColor = STATUS_COLORS[order.status] || STATUS_COLORS['Pendente'];
+                {!loading && Array.isArray(orders) && orders.filter(Boolean).map(order => {
+                    const statusColor = (STATUS_COLORS[order.status] || STATUS_COLORS['Pendente']) || { bg: '#fef3c7', color: '#92400e' };
                     return (
                         <div
                             key={order.id}
@@ -306,7 +321,7 @@ export default function DriverPortal() {
                                 <div>
                                     <strong style={{ color: '#4b5563' }}>Total a Receber:</strong>
                                     <span style={{ marginLeft: '4px', color: '#111827', fontWeight: 800, fontSize: '1rem' }}>
-                                        {Number(order.total).toLocaleString('pt-MZ')} MT
+                                        {formatMZCurrency(order.total)} MT
                                     </span>
                                 </div>
                             </div>
@@ -314,9 +329,9 @@ export default function DriverPortal() {
                             {/* Products List */}
                             <div style={{ padding: '0.25rem 0.5rem' }}>
                                 <strong style={{ color: '#4b5563', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>Produtos do Pedido:</strong>
-                                {order.order_items && order.order_items.length > 0 ? (
+                                {Array.isArray(order.order_items) && order.order_items.filter(Boolean).length > 0 ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        {order.order_items.map((item, i) => (
+                                        {order.order_items.filter(Boolean).map((item, i) => (
                                             <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.88rem' }}>
                                                 <span style={{
                                                     background: '#ede9fe', 
@@ -326,9 +341,9 @@ export default function DriverPortal() {
                                                     fontWeight: 700,
                                                     fontSize: '0.78rem'
                                                 }}>
-                                                    {item.quantity}x
+                                                    {item.quantity || 1}x
                                                 </span>
-                                                <span style={{ fontWeight: 600, color: '#111827' }}>{item.product_name}</span>
+                                                <span style={{ fontWeight: 600, color: '#111827' }}>{item.product_name || item.name || 'Produto'}</span>
                                             </div>
                                         ))}
                                     </div>

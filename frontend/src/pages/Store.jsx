@@ -214,7 +214,7 @@ export default function Store() {
 
     // Lock body scroll when modals are open
     useEffect(() => {
-        const isModalOpen = isCartOpen || isAuthOpen || isMeusPedidosOpen || isReferralOpen || selectedProduct !== null || quickOrderProduct !== null || trackingOrder !== null;
+        const isModalOpen = isPromoOpen || isCartOpen || isAuthOpen || isMeusPedidosOpen || isReferralOpen || selectedProduct !== null || quickOrderProduct !== null || trackingOrder !== null;
         if (isModalOpen) {
             document.body.style.overflow = 'hidden';
             document.body.style.height = '100%';
@@ -232,9 +232,10 @@ export default function Store() {
             document.documentElement.style.overflow = '';
             document.documentElement.style.height = '';
         };
-    }, [isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, selectedProduct, quickOrderProduct, trackingOrder]);
+    }, [isPromoOpen, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, selectedProduct, quickOrderProduct, trackingOrder]);
 
     // Referral states
+    const [isPromoOpen, setIsPromoOpen] = useState(true);
     const [referralInput, setReferralInput] = useState('');
     const [appliedReferralCode, setAppliedReferralCode] = useState('');
     const [referralError, setReferralError] = useState('');
@@ -1550,7 +1551,7 @@ export default function Store() {
                                                 Copiar
                                             </button>
                                         </div>
-                                        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>Os seus amigos ganham 10% de desconto e você ganha 50 MT na primeira indicação e 20 MT nas seguintes!</p>
+                                        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>Dá 10% de desconto aos teus amigos. Ganhas até 1000 meticais por indicação</p>
                                     </div>
 
                                     {/* Stats Grid */}
@@ -1777,6 +1778,17 @@ export default function Store() {
                                 </button>
                             </form>
                         )}
+                    </div>
+                </>
+            )}
+
+            {/* Promo Modal */}
+            {isPromoOpen && (
+                <>
+                    <div className="modal-overlay active" onClick={() => setIsPromoOpen(false)}></div>
+                    <div className="promo-modal active">
+                        <button className="promo-close-btn" onClick={() => setIsPromoOpen(false)}>×</button>
+                        <img src="/assets/referral_promo.jpg" alt="Promoção Indica e Ganha" />
                     </div>
                 </>
             )}

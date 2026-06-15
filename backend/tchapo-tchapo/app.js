@@ -213,6 +213,7 @@ async function init() {
     await fetchActiveProducts();
     setupEventListeners();
     loadCart();
+    initPromoPopup();
 }
 
 async function fetchActiveProducts() {
@@ -1683,7 +1684,7 @@ function renderReferralsUI(refData, txs, wds) {
                     </button>
                 </div>
                 <p style="margin: 0.75rem 0 0 0; font-size: 0.75rem; color: #b45309; line-height: 1.4;">
-                    Dá 10% de desconto aos teus amigos. Ganhas 50 MT na primeira indicação deles e 20 MT nas seguintes!
+                    Dá 10% de desconto aos teus amigos. Ganhas até 1000 meticais por indicação
                 </p>
             </div>
 
@@ -1855,6 +1856,28 @@ function updateScrollLock() {
         document.documentElement.style.overflow = 'hidden';
         document.documentElement.style.height = '100%';
     }
+}
+
+function initPromoPopup() {
+    const promoOverlay = document.getElementById('promo-overlay');
+    const promoModal = document.getElementById('promo-modal');
+    const closePromoBtn = document.getElementById('close-promo');
+
+    if (!promoOverlay || !promoModal) return;
+
+    // Show immediately
+    promoOverlay.classList.add('active');
+    promoModal.classList.add('active');
+    updateScrollLock();
+
+    const closePopup = () => {
+        promoOverlay.classList.remove('active');
+        promoModal.classList.remove('active');
+        updateScrollLock();
+    };
+
+    if (closePromoBtn) closePromoBtn.addEventListener('click', closePopup);
+    if (promoOverlay) promoOverlay.addEventListener('click', closePopup);
 }
 
 // ─── INIT CALL ───────────────────────────────────────────────────────

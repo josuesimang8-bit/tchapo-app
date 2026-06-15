@@ -52,6 +52,10 @@ export default function Admin() {
 
     // --- Product management state ---
     const [products, setProducts]             = useState([]);
+
+    // Referral withdrawals state
+    const [withdrawals, setWithdrawals] = useState([]);
+    const [pendingWithdrawalsCount, setPendingWithdrawalsCount] = useState(0);
     
     // New Product form state
     const [newProdName, setNewProdName]       = useState('');
@@ -150,6 +154,49 @@ export default function Admin() {
         }
     }, []);
 
+    // --- Fetch withdrawals ---
+    const fetchWithdrawals = useCallback(async () => {
+        try {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/api/referrals/admin/withdrawals');
+            if (!res.ok) return;
+            const data = await res.json();
+            setWithdrawals(data);
+            const pending = data.filter(w => w.status === 'Pendente');
+            
+            if (pending.length > pendingWithdrawalsCount) {
+                setToast('🔔 Nova solicitação de saque recebida!');
+                setTimeout(() => setToast(null), 4000);
+            }
+            
+            setPendingWithdrawalsCount(pending.length);
+        } catch (err) {
+            console.error('Erro ao buscar saques:', err);
+        }
+    }, [pendingWithdrawalsCount]);
+
+    const handleProcessWithdrawal = async (id, status) => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/referrals/admin/withdrawals/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                setToast(`Saque marcado como ${status === 'Pago' ? 'pago' : 'cancelado'} com sucesso!`);
+                setTimeout(() => setToast(null), 3000);
+                fetchWithdrawals();
+            } else {
+                const err = await res.json();
+                setToast(`Erro: ${err.error || 'Não foi possível atualizar o estado.'}`);
+                setTimeout(() => setToast(null), 3000);
+            }
+        } catch (err) {
+            console.error('Erro ao processar saque:', err);
+            setToast('Erro de rede ao processar saque.');
+            setTimeout(() => setToast(null), 3000);
+        }
+    };
+
     // --- Auto-refresh every 10s when logged in ---
     useEffect(() => {
         if (isLoggedIn) {
@@ -157,14 +204,16 @@ export default function Admin() {
             fetchOrders();
             fetchDrivers();
             fetchProducts();
+            fetchWithdrawals();
             intervalRef.current = setInterval(() => {
                 fetchOrders();
                 fetchDrivers();
                 fetchProducts();
+                fetchWithdrawals();
             }, 10000);
         }
         return () => clearInterval(intervalRef.current);
-    }, [isLoggedIn, fetchOrders, fetchDrivers, fetchProducts, requestNotifPermission]);
+    }, [isLoggedIn, fetchOrders, fetchDrivers, fetchProducts, fetchWithdrawals, requestNotifPermission]);
 
     // --- Tab title badge ---
     useEffect(() => {
@@ -649,6 +698,23 @@ export default function Admin() {
                     }}
                 >
                     🏷️ Produtos
+                </button>
+                <button
+                    onClick={() => setActiveTab('referrals')}
+                    style={{
+                        background: activeTab === 'referrals' ? '#374151' : 'transparent',
+                        color: activeTab === 'referrals' ? '#fff' : '#9ca3af',
+                        border: 'none', padding: '0.5rem 1rem', borderRadius: '6px',
+                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+                        display: 'flex', alignItems: 'center', gap: '0.35rem'
+                    }}
+                >
+                    🎁 Saques
+                    {pendingWithdrawalsCount > 0 && (
+                        <span style={{ backgroundColor: '#ef4444', color: '#fff', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '10px', fontWeight: 'bold' }}>
+                            {pendingWithdrawalsCount}
+                        </span>
+                    )}
                 </button>
             </div>
 
@@ -1151,6 +1217,106 @@ export default function Admin() {
                                 )}
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'referrals' && (
+                <div style={{ padding: '2rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                        <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                            <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>💰</span>
+                            <span style={{ fontSize: '0.85rem', color: '#6b7280', display: 'block' }}>Total de Saques Solicitados</span>
+                            <strong style={{ fontSize: '1.8rem', color: '#111827' }}>
+                                {withdrawals.reduce((sum, w) => sum + Number(w.amount), 0).toLocaleString()} MT
+                            </strong>
+                        </div>
+                        <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                            <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>⏳</span>
+                            <span style={{ fontSize: '0.85rem', color: '#6b7280', display: 'block' }}>Saques Pendentes</span>
+                            <strong style={{ fontSize: '1.8rem', color: '#f59e0b' }}>
+                                {withdrawals.filter(w => w.status === 'Pendente').reduce((sum, w) => sum + Number(w.amount), 0).toLocaleString()} MT
+                            </strong>
+                        </div>
+                        <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                            <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>✅</span>
+                            <span style={{ fontSize: '0.85rem', color: '#6b7280', display: 'block' }}>Total Pago</span>
+                            <strong style={{ fontSize: '1.8rem', color: '#10b981' }}>
+                                {withdrawals.filter(w => w.status === 'Pago').reduce((sum, w) => sum + Number(w.amount), 0).toLocaleString()} MT
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0, color: '#111827' }}>📋 Gerenciamento de Saques (Indicações)</h3>
+                            <button onClick={fetchWithdrawals} style={{ backgroundColor: '#f59e0b', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                Atualizar
+                            </button>
+                        </div>
+
+                        {withdrawals.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>Nenhuma solicitação de saque registada.</div>
+                        ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '2px solid #e5e7eb', color: '#374151', fontSize: '0.9rem' }}>
+                                            <th style={{ padding: '0.75rem' }}>Cliente</th>
+                                            <th style={{ padding: '0.75rem' }}>Email</th>
+                                            <th style={{ padding: '0.75rem' }}>Valor</th>
+                                            <th style={{ padding: '0.75rem' }}>Nº M-Pesa</th>
+                                            <th style={{ padding: '0.75rem' }}>Data</th>
+                                            <th style={{ padding: '0.75rem' }}>Estado</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'center' }}>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {withdrawals.map(w => (
+                                            <tr key={w.id} style={{ borderBottom: '1px solid #f3f4f6', fontSize: '0.85rem', color: '#4b5563' }}>
+                                                <td style={{ padding: '0.75rem', fontWeight: 600, color: '#111827' }}>{w.user_name}</td>
+                                                <td style={{ padding: '0.75rem' }}>{w.user_email}</td>
+                                                <td style={{ padding: '0.75rem', fontWeight: 'bold', color: '#111827' }}>{Number(w.amount).toLocaleString()} MT</td>
+                                                <td style={{ padding: '0.75rem', fontWeight: 'bold', color: '#2563eb' }}>{w.payment_phone}</td>
+                                                <td style={{ padding: '0.75rem' }}>{new Date(w.created_at).toLocaleString('pt-MZ')}</td>
+                                                <td style={{ padding: '0.75rem' }}>
+                                                    <span style={{
+                                                        padding: '0.2rem 0.5rem',
+                                                        borderRadius: '12px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 'bold',
+                                                        backgroundColor: w.status === 'Pago' ? '#d1fae5' : (w.status === 'Cancelado' ? '#fee2e2' : '#fef3c7'),
+                                                        color: w.status === 'Pago' ? '#065f46' : (w.status === 'Cancelado' ? '#991b1b' : '#92400e')
+                                                    }}>
+                                                        {w.status}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                                    {w.status === 'Pendente' ? (
+                                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                                            <button 
+                                                                onClick={() => handleProcessWithdrawal(w.id, 'Pago')}
+                                                                style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', padding: '0.35rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                                            >
+                                                                Pagar (M-Pesa)
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleProcessWithdrawal(w.id, 'Cancelado')}
+                                                                style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', padding: '0.35rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                                            >
+                                                                Cancelar
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Processado</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

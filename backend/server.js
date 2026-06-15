@@ -142,7 +142,7 @@ app.get('/api/orders/user/:userId', async (req, res) => {
 // POST new order
 app.post('/api/orders', async (req, res) => {
     try {
-        const { customer_name, phone, bairro, address, time, payment, total, items, user_id } = req.body;
+        const { customer_name, phone, bairro, address, time, payment, total, items, user_id, referral_code, referral_discount } = req.body;
         
         let order;
         // Try inserting with items column (directly saving products array)
@@ -150,7 +150,9 @@ app.post('/api/orders', async (req, res) => {
             .from('orders')
             .insert([{ 
                 customer_name, phone, bairro, address, time, payment, total, status: 'Processando', user_id: user_id || null,
-                items: items || []
+                items: items || [],
+                referral_code: referral_code || null,
+                referral_discount: referral_discount ? Number(referral_discount) : 0.00
             }])
             .select()
             .single();
@@ -161,7 +163,9 @@ app.post('/api/orders', async (req, res) => {
                 const { data: fallbackData, error: fallbackError } = await supabase
                     .from('orders')
                     .insert([{ 
-                        customer_name, phone, bairro, address, time, payment, total, status: 'Processando', user_id: user_id || null
+                        customer_name, phone, bairro, address, time, payment, total, status: 'Processando', user_id: user_id || null,
+                        referral_code: referral_code || null,
+                        referral_discount: referral_discount ? Number(referral_discount) : 0.00
                     }])
                     .select()
                     .single();
@@ -208,6 +212,99 @@ app.get('/api/orders/:id', async (req, res) => {
     }
 });
 
+async function processReferralCommission(order) {
+    try {
+        const orderId = order.id;
+        const code = order.referral_code;
+        if (!code) return;
+        
+        // 1. Check if this order has already been credited in referral_transactions
+        const { data: existingTx, error: txError } = await supabase
+            .from('referral_transactions')
+            .select('id')
+            .eq('order_id', orderId)
+            .limit(1);
+            
+        if (txError) {
+            console.error('Error checking existing referral transaction:', txError);
+            return;
+        }
+        
+        if (existingTx && existingTx.length > 0) {
+            console.log(`Referral commission for order #${orderId} already processed.`);
+            return;
+        }
+        
+        // 2. Find the referrer by referral code
+        const { data: referrer, error: refError } = await supabase
+            .from('referrals')
+            .select('*')
+            .eq('code', code.trim().toUpperCase())
+            .maybeSingle();
+            
+        if (refError || !referrer) {
+            console.error(`Referrer not found for code "${code}":`, refError);
+            return;
+        }
+        
+        // Prevent self-referral
+        if (referrer.user_id === order.user_id) {
+            console.log('Self-referral detected. Skipping commission.');
+            return;
+        }
+        
+        // 3. Count how many previous transactions this referrer has completed
+        const { data: prevTxs, count, error: countError } = await supabase
+            .from('referral_transactions')
+            .select('id', { count: 'exact', head: true })
+            .eq('referrer_id', referrer.user_id);
+            
+        if (countError) {
+            console.error('Error counting previous transactions:', countError);
+            return;
+        }
+        
+        // 4. Calculate commission amount: 50 MT if first, 20 MT if subsequent
+        const commissionAmount = (count === 0) ? 50.00 : 20.00;
+        
+        // 5. Insert transaction
+        const { error: insertTxError } = await supabase
+            .from('referral_transactions')
+            .insert([{
+                referrer_id: referrer.user_id,
+                order_id: orderId,
+                amount: commissionAmount,
+                buyer_name: order.customer_name,
+                order_total: order.total
+            }]);
+            
+        if (insertTxError) {
+            console.error('Error inserting referral transaction:', insertTxError);
+            return;
+        }
+        
+        // 6. Update referrer's balance, total_earned
+        const newBalance = Number(referrer.balance) + commissionAmount;
+        const newTotalEarned = Number(referrer.total_earned) + commissionAmount;
+        
+        const { error: updateRefError } = await supabase
+            .from('referrals')
+            .update({
+                balance: newBalance,
+                total_earned: newTotalEarned
+            })
+            .eq('id', referrer.id);
+            
+        if (updateRefError) {
+            console.error('Error updating referrer balance:', updateRefError);
+        } else {
+            console.log(`Successfully credited ${commissionAmount} MT to user ${referrer.user_name} (${referrer.user_email}) for order #${orderId}`);
+        }
+    } catch (err) {
+        console.error('Failed to process referral commission:', err);
+    }
+}
+
 // PUT update status and/or driver
 app.put('/api/orders/:id/status', async (req, res) => {
     try {
@@ -226,6 +323,13 @@ app.put('/api/orders/:id/status', async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // If marked as Entregue, process referral earnings
+        if (status === 'Entregue' && data && data.referral_code) {
+            console.log(`Order #${id} marked as Entregue. Processing referral code: ${data.referral_code}`);
+            await processReferralCommission(data);
+        }
+
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -602,6 +706,295 @@ app.get('/api/orders/:id/pdf', async (req, res) => {
         doc.fontSize(16).text(`Total: ${Number(order.total).toLocaleString('pt-MZ')} MT`, { align: 'right' });
 
         doc.end();
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ─── REFERRALS ENDPOINTS ──────────────────────────────────────────────
+
+// GET user referral code and balance stats (or auto-generate code)
+app.post('/api/referrals/my-code', async (req, res) => {
+    try {
+        const { user_id, email, name } = req.body;
+        if (!user_id || !email) {
+            return res.status(400).json({ error: 'User ID and Email are required.' });
+        }
+        
+        // Find existing referral record
+        let { data, error } = await supabase
+            .from('referrals')
+            .select('*')
+            .eq('user_id', user_id)
+            .maybeSingle();
+            
+        if (error) throw error;
+        
+        if (!data) {
+            // Generate a unique referral code
+            // format: JOSUE12AB (first name up to 6 chars + last 4 chars of user_id)
+            const cleanName = (name || email.split('@')[0])
+                .replace(/[^a-zA-Z]/g, '')
+                .toUpperCase();
+            const prefix = cleanName.substring(0, 6) || 'TCHAPO';
+            const suffix = user_id.replace(/[^a-zA-Z0-9]/g, '').slice(-4).toUpperCase() || Math.random().toString(36).substring(2, 6).toUpperCase();
+            let uniqueCode = `${prefix}${suffix}`;
+            
+            // Just in case it clashes, check and append a digit
+            const { data: existingCode } = await supabase
+                .from('referrals')
+                .select('id')
+                .eq('code', uniqueCode)
+                .maybeSingle();
+                
+            if (existingCode) {
+                uniqueCode = `${uniqueCode}${Math.floor(Math.random() * 10)}`;
+            }
+            
+            const { data: newRecord, error: insertError } = await supabase
+                .from('referrals')
+                .insert([{
+                    user_id,
+                    user_email: email,
+                    user_name: name || email.split('@')[0],
+                    code: uniqueCode,
+                    balance: 0.00,
+                    total_earned: 0.00,
+                    total_withdrawn: 0.00
+                }])
+                .select()
+                .single();
+                
+            if (insertError) throw insertError;
+            data = newRecord;
+        }
+        
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET validate a referral code
+app.get('/api/referrals/validate', async (req, res) => {
+    try {
+        const { code, user_id } = req.query;
+        if (!code) {
+            return res.status(400).json({ error: 'Code is required.' });
+        }
+        
+        const { data, error } = await supabase
+            .from('referrals')
+            .select('*')
+            .eq('code', code.trim().toUpperCase())
+            .maybeSingle();
+            
+        if (error) throw error;
+        
+        if (!data) {
+            return res.json({ valid: false, message: 'Código de indicação inválido.' });
+        }
+        
+        if (user_id && data.user_id === user_id) {
+            return res.json({ valid: false, message: 'Não pode usar o seu próprio código.' });
+        }
+        
+        res.json({ valid: true, referrer_name: data.user_name || 'Usuário' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET referral transactions (earnings history)
+app.get('/api/referrals/transactions', async (req, res) => {
+    try {
+        const { user_id } = req.query;
+        if (!user_id) {
+            return res.status(400).json({ error: 'User ID is required.' });
+        }
+        
+        const { data, error } = await supabase
+            .from('referral_transactions')
+            .select('*')
+            .eq('referrer_id', user_id)
+            .order('created_at', { ascending: false });
+            
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET referral withdrawals history for a user
+app.get('/api/referrals/withdrawals', async (req, res) => {
+    try {
+        const { user_id } = req.query;
+        if (!user_id) {
+            return res.status(400).json({ error: 'User ID is required.' });
+        }
+        
+        const { data, error } = await supabase
+            .from('referral_withdrawals')
+            .select('*')
+            .eq('user_id', user_id)
+            .order('created_at', { ascending: false });
+            
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST request withdrawal (Saque)
+app.post('/api/referrals/withdraw', async (req, res) => {
+    try {
+        const { user_id, amount, phone } = req.body;
+        const withdrawAmount = Number(amount);
+        
+        if (!user_id || !phone || isNaN(withdrawAmount)) {
+            return res.status(400).json({ error: 'Campos obrigatórios em falta.' });
+        }
+        
+        if (withdrawAmount < 50) {
+            return res.status(400).json({ error: 'O saque mínimo é de 50 meticais.' });
+        }
+        
+        // 1. Fetch user's referral balance
+        const { data: referrer, error: refError } = await supabase
+            .from('referrals')
+            .select('*')
+            .eq('user_id', user_id)
+            .single();
+            
+        if (refError || !referrer) {
+            return res.status(400).json({ error: 'Utilizador não registado no sistema de indicações.' });
+        }
+        
+        if (Number(referrer.balance) < withdrawAmount) {
+            return res.status(400).json({ error: 'Saldo insuficiente para este saque.' });
+        }
+        
+        // 2. Insert withdrawal request (status Pendente)
+        const { error: insertError } = await supabase
+            .from('referral_withdrawals')
+            .insert([{
+                user_id,
+                user_email: referrer.user_email,
+                user_name: referrer.user_name || referrer.user_email.split('@')[0],
+                amount: withdrawAmount,
+                payment_phone: phone,
+                status: 'Pendente'
+            }]);
+            
+        if (insertError) throw insertError;
+        
+        // 3. Deduct from balance to prevent double-spending
+        const newBalance = Number(referrer.balance) - withdrawAmount;
+        
+        const { error: updateError } = await supabase
+            .from('referrals')
+            .update({ balance: newBalance })
+            .eq('id', referrer.id);
+            
+        if (updateError) throw updateError;
+        
+        res.json({ success: true, message: 'Pedido de saque registado com sucesso!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET admin - list all withdrawals
+app.get('/api/referrals/admin/withdrawals', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('referral_withdrawals')
+            .select('*')
+            .order('created_at', { ascending: false });
+            
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PUT admin - update withdrawal status (Pago or Cancelado)
+app.put('/api/referrals/admin/withdrawals/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body; // 'Pago' or 'Cancelado'
+        
+        if (status !== 'Pago' && status !== 'Cancelado') {
+            return res.status(400).json({ error: 'Estado inválido.' });
+        }
+        
+        // 1. Fetch current withdrawal request
+        const { data: withdrawal, error: fetchError } = await supabase
+            .from('referral_withdrawals')
+            .select('*')
+            .eq('id', id)
+            .single();
+            
+        if (fetchError || !withdrawal) {
+            return res.status(404).json({ error: 'Pedido de saque não encontrado.' });
+        }
+        
+        if (withdrawal.status !== 'Pendente') {
+            return res.status(400).json({ error: 'Este saque já foi processado.' });
+        }
+        
+        // 2. If Pago, update status and increment referrals.total_withdrawn
+        if (status === 'Pago') {
+            const { error: updateWithdrawalError } = await supabase
+                .from('referral_withdrawals')
+                .update({ status: 'Pago' })
+                .eq('id', id);
+                
+            if (updateWithdrawalError) throw updateWithdrawalError;
+            
+            // Increment total_withdrawn
+            const { data: referrer, error: refError } = await supabase
+                .from('referrals')
+                .select('*')
+                .eq('user_id', withdrawal.user_id)
+                .single();
+                
+            if (!refError && referrer) {
+                const newTotalWithdrawn = Number(referrer.total_withdrawn) + Number(withdrawal.amount);
+                await supabase
+                    .from('referrals')
+                    .update({ total_withdrawn: newTotalWithdrawn })
+                    .eq('id', referrer.id);
+            }
+        } 
+        // 3. If Cancelado, refund referrals.balance
+        else if (status === 'Cancelado') {
+            const { error: updateWithdrawalError } = await supabase
+                .from('referral_withdrawals')
+                .update({ status: 'Cancelado' })
+                .eq('id', id);
+                
+            if (updateWithdrawalError) throw updateWithdrawalError;
+            
+            const { data: referrer, error: refError } = await supabase
+                .from('referrals')
+                .select('*')
+                .eq('user_id', withdrawal.user_id)
+                .single();
+                
+            if (!refError && referrer) {
+                const newBalance = Number(referrer.balance) + Number(withdrawal.amount);
+                await supabase
+                    .from('referrals')
+                    .update({ balance: newBalance })
+                    .eq('id', referrer.id);
+            }
+        }
+        
+        res.json({ success: true, message: `Pedido de saque marcado como ${status}!` });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

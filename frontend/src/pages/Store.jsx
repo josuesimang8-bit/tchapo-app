@@ -212,6 +212,139 @@ export default function Store() {
     const [trackingStatus, setTrackingStatus] = useState('Pendente');
     const [trackingDriver, setTrackingDriver] = useState(null);
 
+    // Referral states
+    const [referralInput, setReferralInput] = useState('');
+    const [appliedReferralCode, setAppliedReferralCode] = useState('');
+    const [referralError, setReferralError] = useState('');
+    const [validatingReferral, setValidatingReferral] = useState(false);
+
+    const [isReferralOpen, setIsReferralOpen] = useState(false);
+    const [referralData, setReferralData] = useState(null);
+    const [referralTxs, setReferralTxs] = useState([]);
+    const [referralWithdrawalsList, setReferralWithdrawalsList] = useState([]);
+    const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [withdrawPhone, setWithdrawPhone] = useState('');
+    const [withdrawLoading, setWithdrawLoading] = useState(false);
+    const [withdrawError, setWithdrawError] = useState('');
+    const [withdrawSuccess, setWithdrawSuccess] = useState('');
+
+    const fetchReferralData = async () => {
+        if (!currentUser) return;
+        try {
+            const codeRes = await fetch(`${import.meta.env.VITE_API_URL}/api/referrals/my-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    email: currentUser.email,
+                    name: currentUser.user_metadata?.full_name
+                })
+            });
+            if (codeRes.ok) {
+                const data = await codeRes.json();
+                setReferralData(data);
+                if (!withdrawPhone) {
+                    setWithdrawPhone(currentUser.user_metadata?.phone || '');
+                }
+            }
+
+            const txsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/referrals/transactions?user_id=${currentUser.id}`);
+            if (txsRes.ok) {
+                const txs = await txsRes.json();
+                setReferralTxs(txs);
+            }
+
+            const wRes = await fetch(`${import.meta.env.VITE_API_URL}/api/referrals/withdrawals?user_id=${currentUser.id}`);
+            if (wRes.ok) {
+                const list = await wRes.json();
+                setReferralWithdrawalsList(list);
+            }
+        } catch (err) {
+            console.error('Failed to load referral data', err);
+        }
+    };
+
+    const handleOpenReferrals = () => {
+        setIsReferralOpen(true);
+        fetchReferralData();
+    };
+
+    const handleValidateReferral = async () => {
+        if (!referralInput.trim()) return;
+        setReferralError('');
+        setValidatingReferral(true);
+        try {
+            const queryParams = new URLSearchParams({
+                code: referralInput.trim(),
+                user_id: currentUser ? currentUser.id : ''
+            });
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/referrals/validate?${queryParams.toString()}`);
+            const data = await res.json();
+            if (data.valid) {
+                setAppliedReferralCode(referralInput.trim().toUpperCase());
+                setReferralError('');
+                showToastMessage(`Código aplicado! Desconto de 10% garantido por ${data.referrer_name}`);
+            } else {
+                setReferralError(data.message || 'Código inválido.');
+            }
+        } catch (err) {
+            console.error('Error validating referral code', err);
+            setReferralError('Erro ao validar código.');
+        } finally {
+            setValidatingReferral(false);
+        }
+    };
+
+    const handleRemoveReferral = () => {
+        setAppliedReferralCode('');
+        setReferralInput('');
+        setReferralError('');
+    };
+
+    const handleWithdrawSubmit = async (e) => {
+        e.preventDefault();
+        setWithdrawError('');
+        setWithdrawSuccess('');
+        
+        const amountNum = Number(withdrawAmount);
+        if (isNaN(amountNum) || amountNum < 50) {
+            setWithdrawError('O saque mínimo é de 50 MT.');
+            return;
+        }
+        
+        if (!referralData || Number(referralData.balance) < amountNum) {
+            setWithdrawError('Saldo insuficiente.');
+            return;
+        }
+        
+        setWithdrawLoading(true);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/referrals/withdraw`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    amount: amountNum,
+                    phone: withdrawPhone
+                })
+            });
+            
+            const resData = await res.json();
+            if (res.ok) {
+                setWithdrawSuccess(resData.message || 'Saque solicitado com sucesso!');
+                setWithdrawAmount('');
+                await fetchReferralData();
+            } else {
+                setWithdrawError(resData.error || 'Erro ao processar saque.');
+            }
+        } catch (err) {
+            console.error('Failed to submit withdrawal request', err);
+            setWithdrawError('Erro ao conectar ao servidor.');
+        } finally {
+            setWithdrawLoading(false);
+        }
+    };
+
     // Load dynamic products (with real-time polling updates every 3 seconds)
     useEffect(() => {
         const fetchProducts = async () => {
@@ -408,8 +541,9 @@ export default function Store() {
         }
 
         const itemsTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const referralDiscount = appliedReferralCode ? (itemsTotal * 0.1) : 0;
         const shippingFee = checkoutForm.time.startsWith('Imediato') ? 200 : 0;
-        const total = itemsTotal + shippingFee;
+        const total = itemsTotal - referralDiscount + shippingFee;
 
         const orderData = {
             customer_name: checkoutForm.name,
@@ -421,7 +555,9 @@ export default function Store() {
             total: total,
             user_id: currentUser.id,
             items: cart,
-            status: 'Pendente'
+            status: 'Pendente',
+            referral_code: appliedReferralCode || null,
+            referral_discount: referralDiscount
         };
 
         const submitBtn = document.getElementById('btn-checkout');
@@ -437,6 +573,8 @@ export default function Store() {
                 const order = await res.json();
                 saveOrderToHistory(order, checkoutForm.name, cart);
                 setCart([]);
+                setAppliedReferralCode('');
+                setReferralInput('');
                 setIsCartOpen(false);
                 setTrackingStatus('Pendente');
                 setTrackingDriver(null);
@@ -464,8 +602,9 @@ export default function Store() {
         }
 
         const itemsTotal = quickOrderProduct.price * quickOrderQty;
+        const referralDiscount = appliedReferralCode ? (itemsTotal * 0.1) : 0;
         const shippingFee = quickOrderForm.time.startsWith('Imediato') ? 200 : 0;
-        const total = itemsTotal + shippingFee;
+        const total = itemsTotal - referralDiscount + shippingFee;
 
         const devSelType = getDeviceSelectionType(quickOrderProduct);
         const hasDeviceSel = devSelType !== 'none';
@@ -499,7 +638,9 @@ export default function Store() {
                 name: finalName, 
                 quantity: quickOrderQty 
             }],
-            status: 'Pendente'
+            status: 'Pendente',
+            referral_code: appliedReferralCode || null,
+            referral_discount: referralDiscount
         };
 
         try {
@@ -512,6 +653,8 @@ export default function Store() {
                 const order = await res.json();
                 saveOrderToHistory(order, quickOrderForm.name, [{ ...quickOrderProduct, quantity: quickOrderQty }]);
                 setQuickOrderProduct(null);
+                setAppliedReferralCode('');
+                setReferralInput('');
                 setQuickOrderQty(1);
                 setTrackingStatus('Pendente');
                 setTrackingDriver(null);
@@ -664,11 +807,13 @@ export default function Store() {
         return sum + (price * item.quantity);
     }, 0);
     const cartShippingFee = checkoutForm.time.startsWith('Imediato') ? 200 : 0;
-    const cartTotal = cartItemsTotal + cartShippingFee;
+    const cartReferralDiscount = appliedReferralCode ? (cartItemsTotal * 0.1) : 0;
+    const cartTotal = cartItemsTotal - cartReferralDiscount + cartShippingFee;
 
     const quickOrderItemsTotal = (activeQuickOrderProduct ? activeQuickOrderProduct.price : 0) * quickOrderQty;
     const quickOrderShippingFee = quickOrderForm.time.startsWith('Imediato') ? 200 : 0;
-    const quickOrderTotal = quickOrderItemsTotal + quickOrderShippingFee;
+    const quickOrderReferralDiscount = appliedReferralCode ? (quickOrderItemsTotal * 0.1) : 0;
+    const quickOrderTotal = quickOrderItemsTotal - quickOrderReferralDiscount + quickOrderShippingFee;
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -693,6 +838,11 @@ export default function Store() {
                                 </div>
                             )}
                         </div>
+                        {currentUser && (
+                            <button className="btn-meus-pedidos" onClick={handleOpenReferrals} style={{ backgroundColor: '#f97316', color: '#fff', marginRight: '0.5rem' }}>
+                                🎁 Indique e Ganha
+                            </button>
+                        )}
                         <button className="btn-meus-pedidos" onClick={fetchMyOrders}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /></svg>
                             Os Meus Pedidos
@@ -953,6 +1103,16 @@ export default function Store() {
                     <div className="cart-footer">
                         <div className="cart-total" style={{ flexDirection: 'column', gap: '0.2rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                                <span>Subtotal:</span>
+                                <span>{formatCurrency(cartItemsTotal)}</span>
+                            </div>
+                            {appliedReferralCode && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', color: '#10b981', fontWeight: 'bold' }}>
+                                    <span>Desconto Indicação (10%):</span>
+                                    <span>-{formatCurrency(cartReferralDiscount)}</span>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderTop: '1px solid #374151', paddingTop: '0.25rem', marginTop: '0.25rem', fontWeight: 'bold' }}>
                                 <span>Total:</span>
                                 <span>{formatCurrency(cartTotal)}</span>
                             </div>
@@ -1017,6 +1177,43 @@ export default function Store() {
                                 <option value="Cartão (POS)">Cartão (Máquina POS)</option>
                                 <option value="Dinheiro Físico">Dinheiro Físico</option>
                             </select>
+
+                            <div className="referral-input-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '0.5rem', marginTop: '0.5rem' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Código de Indicação"
+                                    value={referralInput}
+                                    onChange={e => setReferralInput(e.target.value)}
+                                    disabled={!!appliedReferralCode}
+                                    style={{ flex: 1, textTransform: 'uppercase', padding: '0.5rem', background: '#374151', border: '1px solid #4b5563', borderRadius: '6px', color: '#fff' }}
+                                />
+                                {appliedReferralCode ? (
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveReferral}
+                                        style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer' }}
+                                    >
+                                        Remover
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={handleValidateReferral}
+                                        disabled={validatingReferral || !referralInput.trim()}
+                                        style={{ backgroundColor: '#eab308', color: '#000', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                    >
+                                        {validatingReferral ? '...' : 'Aplicar'}
+                                    </button>
+                                )}
+                            </div>
+                            {referralError && (
+                                <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', width: '100%' }}>{referralError}</span>
+                            )}
+                            {appliedReferralCode && (
+                                <span style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', fontWeight: 'bold', width: '100%' }}>
+                                    ✓ Código '{appliedReferralCode}' aplicado!
+                                </span>
+                            )}
 
                             <button type="submit" className="btn-checkout" id="btn-checkout">
                                 Finalizar Pedido
@@ -1120,6 +1317,11 @@ export default function Store() {
                                     );
                                 })()}
                                 <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    {appliedReferralCode && (
+                                        <span style={{ fontSize: '0.9rem', color: '#10b981', fontWeight: 'bold' }}>
+                                            Desconto: -{formatCurrency(quickOrderReferralDiscount)}
+                                        </span>
+                                    )}
                                     <span>{formatCurrency(quickOrderTotal)}</span>
                                     {quickOrderForm.time.startsWith('Imediato') && (
                                         <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 'normal' }}>(inclui +200 MT taxa urgente)</span>
@@ -1192,6 +1394,43 @@ export default function Store() {
                                         <option value="Dinheiro Físico">Dinheiro Físico</option>
                                     </select>
 
+                                    <div className="referral-input-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '0.5rem', marginTop: '0.5rem' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Código de Indicação"
+                                            value={referralInput}
+                                            onChange={e => setReferralInput(e.target.value)}
+                                            disabled={!!appliedReferralCode}
+                                            style={{ flex: 1, textTransform: 'uppercase', padding: '0.5rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: '6px', color: '#000' }}
+                                        />
+                                        {appliedReferralCode ? (
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveReferral}
+                                                style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer' }}
+                                            >
+                                                Remover
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={handleValidateReferral}
+                                                disabled={validatingReferral || !referralInput.trim()}
+                                                style={{ backgroundColor: '#eab308', color: '#000', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                            >
+                                                {validatingReferral ? '...' : 'Aplicar'}
+                                            </button>
+                                        )}
+                                    </div>
+                                    {referralError && (
+                                        <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', width: '100%' }}>{referralError}</span>
+                                    )}
+                                    {appliedReferralCode && (
+                                        <span style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', fontWeight: 'bold', width: '100%' }}>
+                                            ✓ Código '{appliedReferralCode}' aplicado!
+                                        </span>
+                                    )}
+
                                     <button type="submit" className="btn-checkout">
                                         Confirmar Pedido
                                     </button>
@@ -1252,6 +1491,151 @@ export default function Store() {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Indique e Ganha Modal */}
+            {isReferralOpen && (
+                <>
+                    <div className="modal-overlay active" onClick={() => setIsReferralOpen(false)}></div>
+                    <div className="product-modal active" style={{ maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto', background: '#fff', color: '#111827' }}>
+                        <button className="close-modal" onClick={() => setIsReferralOpen(false)}>&times;</button>
+                        <div style={{ padding: '2rem' }}>
+                            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                                <span style={{ fontSize: '3rem' }}>🎁</span>
+                                <h2 style={{ marginTop: '0.5rem', color: '#111827' }}>Indique e Ganha</h2>
+                                <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>Compartilhe o seu código e ganhe saldo por cada encomenda dos seus amigos!</p>
+                            </div>
+
+                            {referralData ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    {/* Código de Indicação Section */}
+                                    <div style={{ backgroundColor: '#fff7ed', border: '1px dashed #f97316', borderRadius: '12px', padding: '1rem', textAlign: 'center' }}>
+                                        <span style={{ fontSize: '0.85rem', color: '#ea580c', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>O SEU CÓDIGO DE INDICAÇÃO:</span>
+                                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+                                            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ea580c', letterSpacing: '2px' }}>{referralData.code}</span>
+                                            <button 
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(referralData.code);
+                                                    showToastMessage('Código copiado!');
+                                                }}
+                                                style={{ backgroundColor: '#f97316', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.35rem 0.75rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                            >
+                                                Copiar
+                                            </button>
+                                        </div>
+                                        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>Os seus amigos ganham 10% de desconto e você ganha 50 MT na primeira indicação e 20 MT nas seguintes!</p>
+                                    </div>
+
+                                    {/* Stats Grid */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', textAlign: 'center' }}>
+                                        <div style={{ background: '#f9fafb', borderRadius: '8px', padding: '0.75rem', border: '1px solid #e5e7eb' }}>
+                                            <span style={{ fontSize: '0.75rem', color: '#6b7280', display: 'block' }}>Saldo Disponível</span>
+                                            <strong style={{ fontSize: '1.2rem', color: '#111827' }}>{formatCurrency(referralData.balance)}</strong>
+                                        </div>
+                                        <div style={{ background: '#f9fafb', borderRadius: '8px', padding: '0.75rem', border: '1px solid #e5e7eb' }}>
+                                            <span style={{ fontSize: '0.75rem', color: '#6b7280', display: 'block' }}>Total Ganho</span>
+                                            <strong style={{ fontSize: '1.2rem', color: '#10b981' }}>{formatCurrency(referralData.total_earned)}</strong>
+                                        </div>
+                                        <div style={{ background: '#f9fafb', borderRadius: '8px', padding: '0.75rem', border: '1px solid #e5e7eb' }}>
+                                            <span style={{ fontSize: '0.75rem', color: '#6b7280', display: 'block' }}>Total Sacado</span>
+                                            <strong style={{ fontSize: '1.2rem', color: '#ef4444' }}>{formatCurrency(referralData.total_withdrawn)}</strong>
+                                        </div>
+                                    </div>
+
+                                    {/* Payout Form */}
+                                    <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem' }}>
+                                        <h3 style={{ fontSize: '1rem', color: '#111827', marginBottom: '0.75rem' }}>💸 Reivindicar Dinheiro (Saque)</h3>
+                                        <form onSubmit={handleWithdrawSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                                <input
+                                                    type="number"
+                                                    placeholder="Valor (mín. 50 MT)"
+                                                    value={withdrawAmount}
+                                                    onChange={e => setWithdrawAmount(e.target.value)}
+                                                    min="50"
+                                                    step="any"
+                                                    required
+                                                    style={{ flex: 1, padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px', background: '#fff', color: '#000' }}
+                                                />
+                                                <input
+                                                    type="tel"
+                                                    placeholder="Nº M-Pesa para Saque"
+                                                    value={withdrawPhone}
+                                                    onChange={e => setWithdrawPhone(e.target.value)}
+                                                    required
+                                                    style={{ flex: 1, padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px', background: '#fff', color: '#000' }}
+                                                />
+                                            </div>
+                                            {withdrawError && <div style={{ color: '#ef4444', fontSize: '0.8rem' }}>{withdrawError}</div>}
+                                            {withdrawSuccess && <div style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: 'bold' }}>{withdrawSuccess}</div>}
+                                            <button 
+                                                type="submit" 
+                                                disabled={withdrawLoading || Number(referralData.balance) < 50}
+                                                style={{ backgroundColor: '#ea580c', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.7rem', fontWeight: 'bold', cursor: 'pointer' }}
+                                            >
+                                                {withdrawLoading ? 'A processar...' : 'Solicitar Saque (M-Pesa)'}
+                                            </button>
+                                            {Number(referralData.balance) < 50 && (
+                                                <span style={{ fontSize: '0.75rem', color: '#6b7280', textAlign: 'center' }}>O saque mínimo é de 50 MT. Saldo atual: {formatCurrency(referralData.balance)}</span>
+                                            )}
+                                        </form>
+                                    </div>
+
+                                    {/* History Tabs (Txs and Withdrawals) */}
+                                    <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem' }}>
+                                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
+                                            <h4 style={{ fontSize: '0.9rem', color: '#111827', margin: 0 }}>Histórico de Indicações ({referralTxs.length})</h4>
+                                        </div>
+
+                                        {referralTxs.length === 0 ? (
+                                            <p style={{ color: '#6b7280', fontSize: '0.8rem', textAlign: 'center' }}>Nenhuma indicação registada ainda. Comece a partilhar!</p>
+                                        ) : (
+                                            <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                {referralTxs.map(tx => (
+                                                    <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: '#f9fafb', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '0.8rem' }}>
+                                                        <div>
+                                                            <strong style={{ display: 'block', color: '#374151' }}>Amigo: {tx.buyer_name || 'Comprador'}</strong>
+                                                            <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>Encomenda #{tx.order_id} • {new Date(tx.created_at).toLocaleDateString()}</span>
+                                                        </div>
+                                                        <span style={{ color: '#10b981', fontWeight: 'bold', alignSelf: 'center' }}>+{formatCurrency(tx.amount)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <h4 style={{ fontSize: '0.9rem', color: '#111827', marginTop: '1.5rem', marginBottom: '0.75rem' }}>Histórico de Saques</h4>
+                                        {referralWithdrawalsList.length === 0 ? (
+                                            <p style={{ color: '#6b7280', fontSize: '0.8rem', textAlign: 'center' }}>Nenhum saque solicitado ainda.</p>
+                                        ) : (
+                                            <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                {referralWithdrawalsList.map(w => (
+                                                    <div key={w.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: '#f9fafb', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '0.8rem' }}>
+                                                        <div>
+                                                            <strong style={{ display: 'block', color: '#374151' }}>Saque via M-Pesa ({w.payment_phone})</strong>
+                                                            <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>{new Date(w.created_at).toLocaleDateString()}</span>
+                                                        </div>
+                                                        <div style={{ textAlign: 'right', alignSelf: 'center' }}>
+                                                            <strong style={{ display: 'block', color: '#ef4444' }}>-{formatCurrency(w.amount)}</strong>
+                                                            <span style={{ 
+                                                                fontSize: '0.7rem', 
+                                                                color: w.status === 'Pago' ? '#10b981' : (w.status === 'Cancelado' ? '#ef4444' : '#f59e0b'), 
+                                                                fontWeight: 'bold' 
+                                                            }}>
+                                                                {w.status}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>Carregando dados de indicação...</div>
+                            )}
                         </div>
                     </div>
                 </>

@@ -281,6 +281,45 @@ async function uploadToSupabaseStorage(bucketName, file) {
     }
 }
 
+async function uploadToCatbox(file) {
+    try {
+        const formData = new FormData();
+        formData.append('reqtype', 'fileupload');
+        
+        const fileBuffer = fs.readFileSync(file.path);
+        const blob = new Blob([fileBuffer], { type: file.mimetype });
+        formData.append('fileToUpload', blob, file.filename);
+
+        const response = await fetch('https://catbox.moe/user/api.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            console.error(`Catbox upload HTTP error for ${file.filename}:`, response.statusText);
+            return null;
+        }
+
+        const text = await response.text();
+        const url = text.trim();
+        
+        // Delete local temp file since we uploaded it successfully
+        try {
+            fs.unlinkSync(file.path);
+        } catch (e) {
+            console.error('Failed to delete temp file after Catbox upload:', e);
+        }
+        
+        if (url && url.startsWith('http')) {
+            return url;
+        }
+        return null;
+    } catch (err) {
+        console.error(`Failed to upload to Catbox ${file.filename}:`, err);
+        return null;
+    }
+}
+
 // POST new driver
 app.post('/api/drivers', async (req, res) => {
     try {
@@ -303,7 +342,13 @@ app.post('/api/drivers/upload', upload.single('photo'), async (req, res) => {
         return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
     
-    const publicUrl = await uploadToSupabaseStorage('drivers', req.file);
+    let publicUrl = await uploadToSupabaseStorage('drivers', req.file);
+    
+    if (!publicUrl) {
+        console.log('Supabase storage failed for driver photo, using Catbox fallback...');
+        publicUrl = await uploadToCatbox(req.file);
+    }
+    
     if (publicUrl) {
         res.json({ photo_url: publicUrl });
     } else {
@@ -351,12 +396,28 @@ app.delete('/api/drivers/:id', async (req, res) => {
 });
 
 // ─── PRODUCTS ENDPOINTS ────────────────────────────────────────────────
-// Helper to fix localhost image URLs in product data
-function fixImageUrls(products) {
-    return products.map(p => ({
-        ...p,
-        image: p.image ? p.image.replace(/^https?:\/\/localhost:\d+/, '') : p.image
-    }));
+// Helper to resolve product image URLs dynamically to the backend host origin
+function fixImageUrls(req, products) {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+    
+    const arrayProducts = Array.isArray(products) ? products : [products];
+    const resolved = arrayProducts.map(p => {
+        if (!p || !p.image) return p;
+        let img = p.image;
+        // If it starts with localhost or is a relative path, resolve it using the current request's baseUrl
+        if (img.startsWith('http://localhost:3000') || img.startsWith('http://localhost:5173') || !img.startsWith('http')) {
+            const cleanPath = img.replace(/^https?:\/\/localhost:\d+/, '');
+            const relativePath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+            img = `${baseUrl}${relativePath}`;
+        }
+        return {
+            ...p,
+            image: img
+        };
+    });
+    return Array.isArray(products) ? resolved : resolved[0];
 }
 
 // GET active products (storefront)
@@ -373,7 +434,7 @@ app.get('/api/products', async (req, res) => {
             console.error('Erro ao ler produtos do Supabase:', error.message);
             return res.json([]);
         }
-        res.json(fixImageUrls(data));
+        res.json(fixImageUrls(req, data));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -388,7 +449,7 @@ app.get('/api/products/admin', async (req, res) => {
             .order('id', { ascending: false });
         
         if (error) throw error;
-        res.json(data);
+        res.json(fixImageUrls(req, data));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -413,7 +474,7 @@ app.post('/api/products', async (req, res) => {
             .single();
         
         if (error) throw error;
-        res.status(201).json(data);
+        res.status(201).json(fixImageUrls(req, data));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -425,7 +486,13 @@ app.post('/api/products/upload', uploadProduct.single('photo'), async (req, res)
         return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
     
-    const publicUrl = await uploadToSupabaseStorage('products', req.file);
+    let publicUrl = await uploadToSupabaseStorage('products', req.file);
+    
+    if (!publicUrl) {
+        console.log('Supabase storage failed for product photo, using Catbox fallback...');
+        publicUrl = await uploadToCatbox(req.file);
+    }
+    
     if (publicUrl) {
         res.json({ photo_url: publicUrl });
     } else {
@@ -458,7 +525,7 @@ app.put('/api/products/:id', async (req, res) => {
             .single();
             
         if (error) throw error;
-        res.json(data);
+        res.json(fixImageUrls(req, data));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

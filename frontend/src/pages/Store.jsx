@@ -212,6 +212,28 @@ export default function Store() {
     const [trackingStatus, setTrackingStatus] = useState('Pendente');
     const [trackingDriver, setTrackingDriver] = useState(null);
 
+    // Lock body scroll when modals are open
+    useEffect(() => {
+        const isModalOpen = isCartOpen || isAuthOpen || isMeusPedidosOpen || isReferralOpen || selectedProduct !== null || quickOrderProduct !== null || trackingOrder !== null;
+        if (isModalOpen) {
+            document.body.style.overflow = 'hidden';
+            document.body.style.height = '100%';
+            document.documentElement.style.overflow = 'hidden';
+            document.documentElement.style.height = '100%';
+        } else {
+            document.body.style.overflow = '';
+            document.body.style.height = '';
+            document.documentElement.style.overflow = '';
+            document.documentElement.style.height = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+            document.body.style.height = '';
+            document.documentElement.style.overflow = '';
+            document.documentElement.style.height = '';
+        };
+    }, [isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, selectedProduct, quickOrderProduct, trackingOrder]);
+
     // Referral states
     const [referralInput, setReferralInput] = useState('');
     const [appliedReferralCode, setAppliedReferralCode] = useState('');
@@ -224,6 +246,7 @@ export default function Store() {
     const [referralWithdrawalsList, setReferralWithdrawalsList] = useState([]);
     const [withdrawAmount, setWithdrawAmount] = useState('');
     const [withdrawPhone, setWithdrawPhone] = useState('');
+    const [withdrawMethod, setWithdrawMethod] = useState('M-Pesa');
     const [withdrawLoading, setWithdrawLoading] = useState(false);
     const [withdrawError, setWithdrawError] = useState('');
     const [withdrawSuccess, setWithdrawSuccess] = useState('');
@@ -325,7 +348,8 @@ export default function Store() {
                 body: JSON.stringify({
                     user_id: currentUser.id,
                     amount: amountNum,
-                    phone: withdrawPhone
+                    phone: withdrawPhone,
+                    payment_method: withdrawMethod
                 })
             });
             
@@ -831,7 +855,7 @@ export default function Store() {
                                 <button className="btn-auth" onClick={() => { setAuthTab('login'); setIsAuthOpen(true); }}>👤 Entrar</button>
                             ) : (
                                 <div className="auth-user-dropdown" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span>Olá, {currentUser.user_metadata?.full_name?.split(' ')[0] || currentUser.email.split('@')[0]}</span>
+                                    <span id="auth-user-name"><span className="welcome-text">Olá, </span>{currentUser.user_metadata?.full_name?.split(' ')[0] || currentUser.email.split('@')[0]}</span>
                                     <button className="btn-logout" onClick={handleLogout} title="Sair da conta">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                                     </button>
@@ -839,13 +863,13 @@ export default function Store() {
                             )}
                         </div>
                         {currentUser && (
-                            <button className="btn-meus-pedidos" onClick={handleOpenReferrals} style={{ backgroundColor: '#f97316', color: '#fff', marginRight: '0.5rem' }}>
-                                🎁 Indique e Ganha
+                            <button className="btn-referrals" onClick={handleOpenReferrals} style={{ backgroundColor: '#f97316', color: '#fff', marginRight: '0.5rem' }}>
+                                🎁 <span className="nav-btn-text">Indique e Ganha</span>
                             </button>
                         )}
                         <button className="btn-meus-pedidos" onClick={fetchMyOrders}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /></svg>
-                            Os Meus Pedidos
+                            <span className="nav-btn-text">Os Meus Pedidos</span>
                         </button>
                         <div className="cart-icon" onClick={() => setIsCartOpen(true)}>
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
@@ -1549,24 +1573,34 @@ export default function Store() {
                                     <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem' }}>
                                         <h3 style={{ fontSize: '1rem', color: '#111827', marginBottom: '0.75rem' }}>💸 Reivindicar Dinheiro (Saque)</h3>
                                         <form onSubmit={handleWithdrawSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Valor (mín. 50 MT)"
-                                                    value={withdrawAmount}
-                                                    onChange={e => setWithdrawAmount(e.target.value)}
-                                                    min="50"
-                                                    step="any"
-                                                    required
-                                                    style={{ flex: 1, padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px', background: '#fff', color: '#000' }}
-                                                />
+                                            <div style={{ display: 'flex', gap: '0.75rem', flexDirection: 'column' }}>
+                                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                                    <select
+                                                        value={withdrawMethod}
+                                                        onChange={e => setWithdrawMethod(e.target.value)}
+                                                        style={{ flex: 1, padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px', background: '#fff', color: '#000' }}
+                                                    >
+                                                        <option value="M-Pesa">M-Pesa</option>
+                                                        <option value="eMola">eMola</option>
+                                                    </select>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="Valor (mín. 50 MT)"
+                                                        value={withdrawAmount}
+                                                        onChange={e => setWithdrawAmount(e.target.value)}
+                                                        min="50"
+                                                        step="any"
+                                                        required
+                                                        style={{ flex: 1, padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px', background: '#fff', color: '#000' }}
+                                                    />
+                                                </div>
                                                 <input
                                                     type="tel"
-                                                    placeholder="Nº M-Pesa para Saque"
+                                                    placeholder={`Nº de Telefone ${withdrawMethod} para Saque`}
                                                     value={withdrawPhone}
                                                     onChange={e => setWithdrawPhone(e.target.value)}
                                                     required
-                                                    style={{ flex: 1, padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px', background: '#fff', color: '#000' }}
+                                                    style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px', background: '#fff', color: '#000', boxSizing: 'border-box' }}
                                                 />
                                             </div>
                                             {withdrawError && <div style={{ color: '#ef4444', fontSize: '0.8rem' }}>{withdrawError}</div>}
@@ -1576,7 +1610,7 @@ export default function Store() {
                                                 disabled={withdrawLoading || Number(referralData.balance) < 50}
                                                 style={{ backgroundColor: '#ea580c', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.7rem', fontWeight: 'bold', cursor: 'pointer' }}
                                             >
-                                                {withdrawLoading ? 'A processar...' : 'Solicitar Saque (M-Pesa)'}
+                                                {withdrawLoading ? 'A processar...' : `Solicitar Saque (${withdrawMethod})`}
                                             </button>
                                             {Number(referralData.balance) < 50 && (
                                                 <span style={{ fontSize: '0.75rem', color: '#6b7280', textAlign: 'center' }}>O saque mínimo é de 50 MT. Saldo atual: {formatCurrency(referralData.balance)}</span>
@@ -1614,7 +1648,7 @@ export default function Store() {
                                                 {referralWithdrawalsList.map(w => (
                                                     <div key={w.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: '#f9fafb', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '0.8rem' }}>
                                                         <div>
-                                                            <strong style={{ display: 'block', color: '#374151' }}>Saque via M-Pesa ({w.payment_phone})</strong>
+                                                            <strong style={{ display: 'block', color: '#374151' }}>Saque via {w.payment_method || 'M-Pesa'} ({w.payment_phone})</strong>
                                                             <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>{new Date(w.created_at).toLocaleDateString()}</span>
                                                         </div>
                                                         <div style={{ textAlign: 'right', alignSelf: 'center' }}>

@@ -892,7 +892,7 @@ app.get('/api/referrals/withdrawals', async (req, res) => {
 // POST request withdrawal (Saque)
 app.post('/api/referrals/withdraw', async (req, res) => {
     try {
-        const { user_id, amount, phone } = req.body;
+        const { user_id, amount, phone, payment_method } = req.body;
         const withdrawAmount = Number(amount);
         
         if (!user_id || !phone || isNaN(withdrawAmount)) {
@@ -927,6 +927,7 @@ app.post('/api/referrals/withdraw', async (req, res) => {
                 user_name: referrer.user_name || referrer.user_email.split('@')[0],
                 amount: withdrawAmount,
                 payment_phone: phone,
+                payment_method: payment_method || 'M-Pesa',
                 status: 'Pendente'
             }]);
             

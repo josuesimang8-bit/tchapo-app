@@ -413,6 +413,7 @@ function openProductModal(id) {
     `;
     productModal.classList.add('active');
     productModalOverlay.classList.add('active');
+    updateScrollLock();
 }
 
 // ─── QUICK ORDER MODAL ───────────────────────────────────────────────
@@ -560,6 +561,7 @@ function openQuickOrder(id, fromModal = false) {
     }
     quickOrderModal.classList.add('active');
     quickOrderOverlay.classList.add('active');
+    updateScrollLock();
 }
 
 let qoQty = 1;
@@ -695,12 +697,14 @@ function handleQuickOrder(e) {
 function closeModals() {
     productModal.classList.remove('active');
     productModalOverlay.classList.remove('active');
+    updateScrollLock();
 }
 
 function closeQuickOrderModal() {
     quickOrderModal.classList.remove('active');
     quickOrderOverlay.classList.remove('active');
     qoQty = 1;
+    updateScrollLock();
 }
 
 // ─── CART ────────────────────────────────────────────────────────────
@@ -734,6 +738,7 @@ function setupEventListeners() {
 function toggleCart() {
     cartSidebar.classList.toggle('active');
     cartOverlay.classList.toggle('active');
+    updateScrollLock();
 }
 
 function addToCart(productId, device = null, color = null) {
@@ -982,6 +987,7 @@ function startTracking(orderId, customerName, createdAt) {
 
     // Reset UI
     trackingOverlay.classList.add('active');
+    updateScrollLock();
     timerDisplay.style.color = 'var(--primary)';
     timerDisplay.textContent = ''; // clear any old ENTREGUE/CANCELADO text
     driverProfile.style.display = 'none';
@@ -1023,6 +1029,7 @@ function closeTracking() {
     clearInterval(statusPollInterval);
     trackingOverlay.classList.remove('active');
     currentOrderId = null;
+    updateScrollLock();
 }
 
 let currentDriverPhone = '258840000000';
@@ -1182,12 +1189,14 @@ const meusPedidosContent  = document.getElementById('meus-pedidos-content');
 function openMeusPedidos() {
     meusPedidosOverlay.classList.add('active');
     meusPedidosModal.classList.add('active');
+    updateScrollLock();
     renderMeusPedidos();
 }
 
 function closeMeusPedidos() {
     meusPedidosOverlay.classList.remove('active');
     meusPedidosModal.classList.remove('active');
+    updateScrollLock();
 }
 
 async function renderMeusPedidos() {
@@ -1304,11 +1313,13 @@ function initAuth() {
 function openAuthModal() {
     authModal.classList.add('active');
     authOverlay.classList.add('active');
+    updateScrollLock();
 }
 
 function closeAuthModal() {
     authModal.classList.remove('active');
     authOverlay.classList.remove('active');
+    updateScrollLock();
 }
 
 function switchAuthTab(tab) {
@@ -1333,7 +1344,7 @@ function updateAuthUI() {
         if (btnReferrals) btnReferrals.style.display = 'inline-flex';
         const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
         const phone = currentUser.user_metadata?.phone || '';
-        if (authUserName) authUserName.textContent = `Olá, ${name.split(' ')[0]}`;
+        if (authUserName) authUserName.innerHTML = `<span class="welcome-text">Olá, </span>${name.split(' ')[0]}`;
         fillUserForms(name, phone);
     } else {
         if (btnOpenAuth) btnOpenAuth.style.display = 'block';
@@ -1540,6 +1551,7 @@ function openReferrals() {
     if (referralsOverlay && referralsModal) {
         referralsOverlay.classList.add('active');
         referralsModal.classList.add('active');
+        updateScrollLock();
         loadReferralsData();
     }
 }
@@ -1550,6 +1562,7 @@ function closeReferrals() {
     if (referralsOverlay && referralsModal) {
         referralsOverlay.classList.remove('active');
         referralsModal.classList.remove('active');
+        updateScrollLock();
     }
 }
 
@@ -1645,7 +1658,7 @@ function renderReferralsUI(refData, txs, wds) {
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem;">
                     <div>
                         <span style="font-weight: 600; color: var(--dark);">${formatCurrency(Number(wd.amount))}</span>
-                        <span style="color: #6b7280; font-size: 0.75rem; display: block;">${wd.payment_method} (${wd.payment_phone})</span>
+                        <span style="color: #6b7280; font-size: 0.75rem; display: block;">${wd.payment_method || 'M-Pesa'} (${wd.payment_phone})</span>
                     </div>
                     <span style="color: ${statusColor}; background: ${statusBg}; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 12px; font-weight: 600;">${wd.status}</span>
                 </div>
@@ -1692,20 +1705,27 @@ function renderReferralsUI(refData, txs, wds) {
 
             <!-- Withdrawal Form -->
             <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; box-sizing: border-box;">
-                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--dark); font-weight: 600;">Solicitar Saque (M-Pesa)</h4>
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--dark); font-weight: 600;">Solicitar Saque</h4>
                 <form id="ref-withdraw-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; width: 100%;">
-                        <div style="flex: 1; min-width: 150px;">
-                            <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.25rem;">Número M-Pesa:</label>
-                            <input type="tel" id="ref-withdraw-phone" placeholder="84XXXXXXX" required pattern="[0-9]{9}" style="width: 100%; padding: 0.6rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; margin-bottom: 0; box-sizing: border-box;">
+                        <div style="flex: 1; min-width: 120px;">
+                            <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.25rem;">Método de Pagamento:</label>
+                            <select id="ref-withdraw-method" onchange="updateWithdrawPlaceholder(this.value)" style="width: 100%; padding: 0.6rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff; box-sizing: border-box; height: 39px;">
+                                <option value="M-Pesa">M-Pesa</option>
+                                <option value="eMola">eMola</option>
+                            </select>
                         </div>
                         <div style="flex: 1; min-width: 120px;">
                             <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.25rem;">Montante (MT):</label>
-                            <input type="number" id="ref-withdraw-amount" placeholder="Min 50 MT" required min="50" style="width: 100%; padding: 0.6rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; margin-bottom: 0; box-sizing: border-box;">
+                            <input type="number" id="ref-withdraw-amount" placeholder="Min 50 MT" required min="50" style="width: 100%; padding: 0.6rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; margin-bottom: 0; box-sizing: border-box; height: 39px;">
                         </div>
                     </div>
-                    <button type="submit" style="background: var(--dark); color: #fff; border: none; padding: 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; width: 100%; box-sizing: border-box;">
-                        Solicitar Saque
+                    <div style="width: 100%;">
+                        <label id="ref-withdraw-phone-label" style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.25rem;">Número M-Pesa:</label>
+                        <input type="tel" id="ref-withdraw-phone" placeholder="84XXXXXXX" required pattern="[0-9]{9}" style="width: 100%; padding: 0.6rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; margin-bottom: 0; box-sizing: border-box;">
+                    </div>
+                    <button type="submit" id="btn-submit-withdraw" style="background: var(--dark); color: #fff; border: none; padding: 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; width: 100%; box-sizing: border-box;">
+                        Solicitar Saque (M-Pesa)
                     </button>
                     <div id="ref-withdraw-message" style="font-size: 0.8rem; text-align: center; display: none;"></div>
                 </form>
@@ -1745,12 +1765,14 @@ async function handleWithdrawSubmit(e) {
     e.preventDefault();
     const phoneInput = document.getElementById('ref-withdraw-phone');
     const amountInput = document.getElementById('ref-withdraw-amount');
+    const methodInput = document.getElementById('ref-withdraw-method');
     const msgEl = document.getElementById('ref-withdraw-message');
     
     if (!phoneInput || !amountInput || !msgEl) return;
     
     const phone = phoneInput.value.trim();
     const amount = Number(amountInput.value);
+    const payment_method = methodInput ? methodInput.value : 'M-Pesa';
     
     msgEl.style.display = 'block';
     msgEl.style.color = 'var(--dark)';
@@ -1763,7 +1785,8 @@ async function handleWithdrawSubmit(e) {
             body: JSON.stringify({
                 user_id: currentUser.id,
                 phone: phone,
-                amount: amount
+                amount: amount,
+                payment_method: payment_method
             })
         });
         
@@ -1794,6 +1817,45 @@ window.copyReferralCode = function(code) {
         showStatusToast('⚠️ Não foi possível copiar. Selecione e copie manualmente: ' + code);
     });
 };
+
+window.updateWithdrawPlaceholder = function(val) {
+    const label = document.getElementById('ref-withdraw-phone-label');
+    const input = document.getElementById('ref-withdraw-phone');
+    const btn = document.getElementById('btn-submit-withdraw');
+    if (label) label.textContent = `Número ${val}:`;
+    if (input) {
+        if (val === 'M-Pesa') {
+            input.placeholder = '84XXXXXXX';
+        } else {
+            input.placeholder = '86XXXXXXX ou 87XXXXXXX';
+        }
+    }
+    if (btn) btn.textContent = `Solicitar Saque (${val})`;
+};
+
+function updateScrollLock() {
+    const activeModals = document.querySelectorAll(
+        '.product-modal.active, .modal.active, .cart-sidebar.active, .tracking-overlay.active, .modal-overlay.active, .cart-overlay.active'
+    );
+    let anyOpen = false;
+    for (const el of activeModals) {
+        if (el.classList.contains('active') && el.style.display !== 'none') {
+            anyOpen = true;
+            break;
+        }
+    }
+    if (!anyOpen) {
+        document.body.style.overflow = '';
+        document.body.style.height = '';
+        document.documentElement.style.overflow = '';
+        document.documentElement.style.height = '';
+    } else {
+        document.body.style.overflow = 'hidden';
+        document.body.style.height = '100%';
+        document.documentElement.style.overflow = 'hidden';
+        document.documentElement.style.height = '100%';
+    }
+}
 
 // ─── INIT CALL ───────────────────────────────────────────────────────
 init();

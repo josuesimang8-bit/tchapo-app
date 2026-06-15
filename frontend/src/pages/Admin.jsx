@@ -1265,7 +1265,7 @@ export default function Admin() {
                                             <th style={{ padding: '0.75rem' }}>Cliente</th>
                                             <th style={{ padding: '0.75rem' }}>Email</th>
                                             <th style={{ padding: '0.75rem' }}>Valor</th>
-                                            <th style={{ padding: '0.75rem' }}>Nº M-Pesa</th>
+                                            <th style={{ padding: '0.75rem' }}>Método / Telefone</th>
                                             <th style={{ padding: '0.75rem' }}>Data</th>
                                             <th style={{ padding: '0.75rem' }}>Estado</th>
                                             <th style={{ padding: '0.75rem', textAlign: 'center' }}>Ações</th>
@@ -1277,7 +1277,7 @@ export default function Admin() {
                                                 <td style={{ padding: '0.75rem', fontWeight: 600, color: '#111827' }}>{w.user_name}</td>
                                                 <td style={{ padding: '0.75rem' }}>{w.user_email}</td>
                                                 <td style={{ padding: '0.75rem', fontWeight: 'bold', color: '#111827' }}>{Number(w.amount).toLocaleString()} MT</td>
-                                                <td style={{ padding: '0.75rem', fontWeight: 'bold', color: '#2563eb' }}>{w.payment_phone}</td>
+                                                <td style={{ padding: '0.75rem', fontWeight: 'bold', color: '#2563eb' }}>{w.payment_method || 'M-Pesa'}: {w.payment_phone}</td>
                                                 <td style={{ padding: '0.75rem' }}>{new Date(w.created_at).toLocaleString('pt-MZ')}</td>
                                                 <td style={{ padding: '0.75rem' }}>
                                                     <span style={{

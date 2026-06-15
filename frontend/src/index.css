@@ -1092,6 +1092,72 @@ body {
     .category-tabs { gap: 0.4rem; }
     .cat-tab { font-size: 0.8rem; padding: 0.45rem 0.9rem; }
     .product-actions { flex-direction: column; }
+
+    /* Navbar mobile overrides */
+    .nav-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .logo {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .nav-right {
+        width: 100%;
+        justify-content: center;
+        gap: 0.65rem;
+    }
+
+    .btn-meus-pedidos, .btn-referrals {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.75rem;
+        gap: 0.25rem;
+    }
+    .btn-meus-pedidos svg, .btn-referrals svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    .btn-auth {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.75rem;
+    }
+
+    .auth-user-dropdown {
+        padding: 0.2rem 0.4rem 0.2rem 0.5rem;
+        gap: 0.35rem;
+    }
+
+    .welcome-text {
+        display: none;
+    }
+
+    #auth-user-name {
+        font-size: 0.75rem;
+        max-width: 85px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .auth-user-dropdown .btn-logout {
+        width: 22px;
+        height: 22px;
+    }
+
+    .auth-user-dropdown .btn-logout svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .cart-icon svg {
+        width: 20px;
+        height: 20px;
+    }
 }
 
 /* ─── AUTH MODAL & MENU ─── */
@@ -1410,5 +1476,20 @@ body {
     .whatsapp-float svg {
         width: 28px;
         height: 28px;
+    }
+
+    .nav-btn-text {
+        display: none;
+    }
+
+    .btn-meus-pedidos, .btn-referrals {
+        padding: 0.45rem;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0 !important;
     }
 }

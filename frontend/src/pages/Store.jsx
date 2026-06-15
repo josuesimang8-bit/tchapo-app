@@ -214,7 +214,7 @@ export default function Store() {
 
     // Lock body scroll when modals are open
     useEffect(() => {
-        const isModalOpen = isPromoOpen || isCartOpen || isAuthOpen || isMeusPedidosOpen || isReferralOpen || selectedProduct !== null || quickOrderProduct !== null || trackingOrder !== null;
+        const isModalOpen = (activePromo !== null) || isCartOpen || isAuthOpen || isMeusPedidosOpen || isReferralOpen || selectedProduct !== null || quickOrderProduct !== null || trackingOrder !== null;
         if (isModalOpen) {
             document.body.style.overflow = 'hidden';
             document.body.style.height = '100%';
@@ -232,11 +232,10 @@ export default function Store() {
             document.documentElement.style.overflow = '';
             document.documentElement.style.height = '';
         };
-    }, [isPromoOpen, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, selectedProduct, quickOrderProduct, trackingOrder]);
+    }, [activePromo, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, selectedProduct, quickOrderProduct, trackingOrder]);
 
     // Referral states
-    const [isPromoOpen, setIsPromoOpen] = useState(true);
-    const [promoIndex, setPromoIndex] = useState(0);
+    const [activePromo, setActivePromo] = useState('delivery'); // 'delivery', 'referral', or null
     const [referralInput, setReferralInput] = useState('');
     const [appliedReferralCode, setAppliedReferralCode] = useState('');
     const [referralError, setReferralError] = useState('');
@@ -1783,28 +1782,23 @@ export default function Store() {
                 </>
             )}
 
-            {/* Promo Modal */}
-            {isPromoOpen && (
+            {/* Promo Modals */}
+            {activePromo === 'delivery' && (
                 <>
-                    <div className="modal-overlay active" onClick={() => setIsPromoOpen(false)}></div>
+                    <div className="modal-overlay active" onClick={() => setActivePromo('referral')}></div>
                     <div className="promo-modal active">
-                        <button className="promo-close-btn" onClick={() => setIsPromoOpen(false)}>×</button>
-                        <div className="promo-carousel-container">
-                            <div className="promo-carousel-slides" style={{ transform: `translateX(-${promoIndex * 100}%)` }}>
-                                <div className="promo-carousel-slide">
-                                    <img src="/assets/delivery_promo.jpg" alt="Entrega Rápida" />
-                                </div>
-                                <div className="promo-carousel-slide">
-                                    <img src="/assets/referral_promo.jpg" alt="Indica e Ganha" />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="promo-carousel-dots">
-                            <span className={`promo-dot ${promoIndex === 0 ? 'active' : ''}`} onClick={() => setPromoIndex(0)}></span>
-                            <span className={`promo-dot ${promoIndex === 1 ? 'active' : ''}`} onClick={() => setPromoIndex(1)}></span>
-                        </div>
-                        <button className="promo-carousel-prev" onClick={() => setPromoIndex(prev => (prev === 0 ? 1 : 0))}>‹</button>
-                        <button className="promo-carousel-next" onClick={() => setPromoIndex(prev => (prev === 1 ? 0 : 1))}>›</button>
+                        <button className="promo-close-btn" onClick={() => setActivePromo('referral')}>×</button>
+                        <img src="/assets/delivery_promo.jpg" alt="Entrega Rápida" />
+                    </div>
+                </>
+            )}
+
+            {activePromo === 'referral' && (
+                <>
+                    <div className="modal-overlay active" onClick={() => setActivePromo(null)}></div>
+                    <div className="promo-modal active">
+                        <button className="promo-close-btn" onClick={() => setActivePromo(null)}>×</button>
+                        <img src="/assets/referral_promo.jpg" alt="Promoção Indica e Ganha" />
                     </div>
                 </>
             )}

@@ -1859,62 +1859,42 @@ function updateScrollLock() {
 }
 
 function initPromoPopup() {
-    const promoOverlay = document.getElementById('promo-overlay');
-    const promoModal = document.getElementById('promo-modal');
-    const closePromoBtn = document.getElementById('close-promo');
-    const slides = document.getElementById('promo-slides');
-    const dots = document.querySelectorAll('.promo-dot');
-    const prevBtn = document.getElementById('promo-prev');
-    const nextBtn = document.getElementById('promo-next');
+    const deliveryOverlay = document.getElementById('delivery-promo-overlay');
+    const deliveryModal = document.getElementById('delivery-promo-modal');
+    const closeDelivery = document.getElementById('close-delivery-promo');
 
-    if (!promoOverlay || !promoModal) return;
+    const referralOverlay = document.getElementById('referral-promo-overlay');
+    const referralModal = document.getElementById('referral-promo-modal');
+    const closeReferral = document.getElementById('close-referral-promo');
 
-    let currentIndex = 0;
+    if (!deliveryOverlay || !deliveryModal || !referralOverlay || !referralModal) return;
 
-    const updateCarousel = (index) => {
-        currentIndex = index;
-        if (slides) {
-            slides.style.transform = `translateX(-${currentIndex * 100}%)`;
-        }
-        dots.forEach((dot, idx) => {
-            if (idx === currentIndex) {
-                dot.classList.add('active');
-            } else {
-                dot.classList.remove('active');
-            }
-        });
-    };
-
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            updateCarousel(currentIndex === 0 ? 1 : 0);
-        });
-    }
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            updateCarousel(currentIndex === 1 ? 0 : 1);
-        });
-    }
-    dots.forEach((dot) => {
-        dot.addEventListener('click', () => {
-            const slideIdx = parseInt(dot.getAttribute('data-slide') || '0', 10);
-            updateCarousel(slideIdx);
-        });
-    });
-
-    // Show immediately
-    promoOverlay.classList.add('active');
-    promoModal.classList.add('active');
+    // Show Delivery promo first
+    deliveryOverlay.classList.add('active');
+    deliveryModal.classList.add('active');
     updateScrollLock();
 
-    const closePopup = () => {
-        promoOverlay.classList.remove('active');
-        promoModal.classList.remove('active');
+    const transitionToReferral = () => {
+        deliveryOverlay.classList.remove('active');
+        deliveryModal.classList.remove('active');
+        
+        // Show Referral promo second
+        referralOverlay.classList.add('active');
+        referralModal.classList.add('active');
         updateScrollLock();
     };
 
-    if (closePromoBtn) closePromoBtn.addEventListener('click', closePopup);
-    if (promoOverlay) promoOverlay.addEventListener('click', closePopup);
+    const closeAllPromos = () => {
+        referralOverlay.classList.remove('active');
+        referralModal.classList.remove('active');
+        updateScrollLock();
+    };
+
+    if (closeDelivery) closeDelivery.addEventListener('click', transitionToReferral);
+    if (deliveryOverlay) deliveryOverlay.addEventListener('click', transitionToReferral);
+
+    if (closeReferral) closeReferral.addEventListener('click', closeAllPromos);
+    if (referralOverlay) referralOverlay.addEventListener('click', closeAllPromos);
 }
 
 // ─── INIT CALL ───────────────────────────────────────────────────────

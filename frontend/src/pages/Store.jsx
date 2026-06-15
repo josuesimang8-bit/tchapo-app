@@ -236,6 +236,7 @@ export default function Store() {
 
     // Referral states
     const [isPromoOpen, setIsPromoOpen] = useState(true);
+    const [promoIndex, setPromoIndex] = useState(0);
     const [referralInput, setReferralInput] = useState('');
     const [appliedReferralCode, setAppliedReferralCode] = useState('');
     const [referralError, setReferralError] = useState('');
@@ -1788,7 +1789,22 @@ export default function Store() {
                     <div className="modal-overlay active" onClick={() => setIsPromoOpen(false)}></div>
                     <div className="promo-modal active">
                         <button className="promo-close-btn" onClick={() => setIsPromoOpen(false)}>×</button>
-                        <img src="/assets/referral_promo.jpg" alt="Promoção Indica e Ganha" />
+                        <div className="promo-carousel-container">
+                            <div className="promo-carousel-slides" style={{ transform: `translateX(-${promoIndex * 100}%)` }}>
+                                <div className="promo-carousel-slide">
+                                    <img src="/assets/delivery_promo.jpg" alt="Entrega Rápida" />
+                                </div>
+                                <div className="promo-carousel-slide">
+                                    <img src="/assets/referral_promo.jpg" alt="Indica e Ganha" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="promo-carousel-dots">
+                            <span className={`promo-dot ${promoIndex === 0 ? 'active' : ''}`} onClick={() => setPromoIndex(0)}></span>
+                            <span className={`promo-dot ${promoIndex === 1 ? 'active' : ''}`} onClick={() => setPromoIndex(1)}></span>
+                        </div>
+                        <button className="promo-carousel-prev" onClick={() => setPromoIndex(prev => (prev === 0 ? 1 : 0))}>‹</button>
+                        <button className="promo-carousel-next" onClick={() => setPromoIndex(prev => (prev === 1 ? 0 : 1))}>›</button>
                     </div>
                 </>
             )}

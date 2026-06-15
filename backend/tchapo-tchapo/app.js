@@ -1862,8 +1862,45 @@ function initPromoPopup() {
     const promoOverlay = document.getElementById('promo-overlay');
     const promoModal = document.getElementById('promo-modal');
     const closePromoBtn = document.getElementById('close-promo');
+    const slides = document.getElementById('promo-slides');
+    const dots = document.querySelectorAll('.promo-dot');
+    const prevBtn = document.getElementById('promo-prev');
+    const nextBtn = document.getElementById('promo-next');
 
     if (!promoOverlay || !promoModal) return;
+
+    let currentIndex = 0;
+
+    const updateCarousel = (index) => {
+        currentIndex = index;
+        if (slides) {
+            slides.style.transform = `translateX(-${currentIndex * 100}%)`;
+        }
+        dots.forEach((dot, idx) => {
+            if (idx === currentIndex) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    };
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            updateCarousel(currentIndex === 0 ? 1 : 0);
+        });
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            updateCarousel(currentIndex === 1 ? 0 : 1);
+        });
+    }
+    dots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+            const slideIdx = parseInt(dot.getAttribute('data-slide') || '0', 10);
+            updateCarousel(slideIdx);
+        });
+    });
 
     // Show immediately
     promoOverlay.classList.add('active');

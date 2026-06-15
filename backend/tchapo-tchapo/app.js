@@ -159,6 +159,7 @@ let CATEGORIES = ['Todos', ...new Set(products.map(p => p.category))];
 let cart = [];
 let activeCategory = 'Todos';
 let quickOrderProduct = null;
+let appliedCoupon = null;
 
 // ─── DOM REFS ────────────────────────────────────────────────────────
 const productsGrid          = document.getElementById('products-grid');
@@ -531,6 +532,18 @@ function openQuickOrder(id, fromModal = false) {
                     <option value="Cartão (POS)">Cartão (Máquina POS)</option>
                     <option value="Dinheiro Físico">Dinheiro Físico</option>
                 </select>
+
+                <div class="coupon-section" style="margin-top: 0.75rem; margin-bottom: 0.75rem; width: 100%;">
+                    <label style="font-size: 0.8rem; font-weight: 600; color: #4b5563; margin-bottom: 0.25rem; display: block; text-align: left;">Código de Indicação (10% Desconto):</label>
+                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                        <input type="text" id="qo-coupon" placeholder="CÓDIGO" value="${appliedCoupon ? appliedCoupon.code : ''}" style="margin-bottom: 0; flex: 1; text-transform: uppercase; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff; box-sizing: border-box;">
+                        <button type="button" id="btn-apply-qo-coupon" style="background: var(--dark); color: var(--white); border: none; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Aplicar</button>
+                    </div>
+                    <div id="qo-coupon-message" style="font-size: 0.75rem; margin-top: 0.2rem; display: ${appliedCoupon ? 'block' : 'none'}; color: #10b981; text-align: left;">
+                        ${appliedCoupon ? '✅ Código de indicação aplicado! 10% de desconto.' : ''}
+                    </div>
+                </div>
+
                 <button type="submit" class="btn-checkout" style="margin-top:0.5rem">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     Confirmar Pedido
@@ -539,6 +552,8 @@ function openQuickOrder(id, fromModal = false) {
         </div>
     `;
     document.getElementById('quick-order-form').addEventListener('submit', handleQuickOrder);
+    const applyQoCouponBtn = document.getElementById('btn-apply-qo-coupon');
+    if (applyQoCouponBtn) applyQoCouponBtn.addEventListener('click', applyQuickOrderCoupon);
     const timeSelect = document.getElementById('qo-time');
     if (timeSelect) {
         timeSelect.addEventListener('change', updateQuickOrderPrice);
@@ -550,18 +565,27 @@ function openQuickOrder(id, fromModal = false) {
 let qoQty = 1;
 function updateQuickOrderPrice() {
     if (!quickOrderProduct) return;
-    let total = quickOrderProduct.price * qoQty;
+    let subtotal = quickOrderProduct.price * qoQty;
+    let discount = appliedCoupon ? Math.round(subtotal * 0.1) : 0;
+    let total = subtotal - discount;
     const timeSelect = document.getElementById('qo-time');
     const isImediato = timeSelect && timeSelect.value.startsWith('Imediato');
     
     const priceEl = document.getElementById('qo-display-price');
     if (priceEl) {
+        let displayHtml = '';
+        if (appliedCoupon) {
+            displayHtml += `<span style="font-size:0.85rem;color:#6b7280;text-decoration:line-through;font-weight:normal;">Subtotal: ${formatCurrency(subtotal)}</span><br>`;
+            displayHtml += `<span style="font-size:0.85rem;color:#10b981;font-weight:normal;">Desconto (10%): -${formatCurrency(discount)}</span><br>`;
+        }
+        
         if (isImediato) {
             total += 200;
-            priceEl.innerHTML = `${formatCurrency(total)} <br><span style="font-size:0.75rem;color:#10b981;font-weight:normal;">(inclui +200 MT taxa urgente)</span>`;
+            displayHtml += `<strong>Total: ${formatCurrency(total)}</strong> <br><span style="font-size:0.75rem;color:#10b981;font-weight:normal;">(inclui +200 MT taxa urgente)</span>`;
         } else {
-            priceEl.textContent = formatCurrency(total);
+            displayHtml += `<strong>Total: ${formatCurrency(total)}</strong>`;
         }
+        priceEl.innerHTML = displayHtml;
     }
 }
 
@@ -579,10 +603,6 @@ function handleQuickOrder(e) {
     const address = document.getElementById('qo-address').value;
     const time    = document.getElementById('qo-time').value;
     const payment = document.getElementById('qo-payment').value;
-    let total   = quickOrderProduct.price * qoQty;
-    if (time.startsWith('Imediato')) {
-        total += 200;
-    }
 
     const devSelType = getDeviceSelectionType(quickOrderProduct);
     const colorSelType = getColorSelectionType(quickOrderProduct);
@@ -628,9 +648,26 @@ function handleQuickOrder(e) {
         }
     }
 
+    let subtotal = quickOrderProduct.price * qoQty;
+    let discount = appliedCoupon ? Math.round(subtotal * 0.1) : 0;
+    let total = subtotal - discount;
+    if (time.startsWith('Imediato')) {
+        total += 200;
+    }
+
     const orderData = {
-        customer_name: name, phone, bairro, address, time, payment, total, status: 'Pendente', user_id: currentUser ? currentUser.id : null,
-        items: [{ ...productItem, quantity: qoQty }]
+        customer_name: name, 
+        phone, 
+        bairro, 
+        address, 
+        time, 
+        payment, 
+        total, 
+        status: 'Pendente', 
+        user_id: currentUser ? currentUser.id : null,
+        items: [{ ...productItem, quantity: qoQty }],
+        referral_code: appliedCoupon ? appliedCoupon.code : null,
+        referral_discount: discount
     };
 
     const submitBtn = document.querySelector('#quick-order-form .btn-checkout');
@@ -646,6 +683,7 @@ function handleQuickOrder(e) {
     .then(order => {
         if (order) saveOrderToHistory(order, name, orderData.items);
         closeQuickOrderModal();
+        appliedCoupon = null; // Clear applied coupon
         startTracking(order ? order.id : null, name, order ? order.created_at : null);
     })
     .catch(() => {
@@ -680,6 +718,17 @@ function setupEventListeners() {
     document.getElementById('close-meus-pedidos').addEventListener('click', closeMeusPedidos);
     document.getElementById('meus-pedidos-overlay').addEventListener('click', closeMeusPedidos);
     document.getElementById('customer-time').addEventListener('change', updateCartUI);
+
+    // Referrals modal event listeners
+    const btnReferrals = document.getElementById('btn-referrals');
+    if (btnReferrals) btnReferrals.addEventListener('click', openReferrals);
+    const closeReferralsBtn = document.getElementById('close-referrals');
+    if (closeReferralsBtn) closeReferralsBtn.addEventListener('click', closeReferrals);
+    const referralsOverlay = document.getElementById('referrals-overlay');
+    if (referralsOverlay) referralsOverlay.addEventListener('click', closeReferrals);
+
+    const applyCouponBtn = document.getElementById('btn-apply-coupon');
+    if (applyCouponBtn) applyCouponBtn.addEventListener('click', applyCoupon);
 }
 
 function toggleCart() {
@@ -734,12 +783,18 @@ function updateCartUI() {
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     cartCount.textContent = totalItems;
 
+    const cartSubtotalEl = document.getElementById('cart-subtotal');
+    const cartDiscountRow = document.getElementById('cart-discount-row');
+    const cartDiscountEl = document.getElementById('cart-discount');
+
     if (cart.length === 0) {
         emptyCartMsg.style.display = 'block';
         checkoutForm.style.display = 'none';
         cartItemsContainer.innerHTML = '';
         cartItemsContainer.appendChild(emptyCartMsg);
         totalAmountEl.textContent = '0 MT';
+        if (cartSubtotalEl) cartSubtotalEl.textContent = '0 MT';
+        if (cartDiscountRow) cartDiscountRow.style.display = 'none';
     } else {
         emptyCartMsg.style.display = 'none';
         checkoutForm.style.display = 'flex';
@@ -765,15 +820,32 @@ function updateCartUI() {
             `;
         }).join('');
         
-        let total = cart.reduce((sum, item) => {
+        let subtotal = cart.reduce((sum, item) => {
             const baseId = typeof item.id === 'string' && item.id.includes('-') ? Number(item.id.split('-')[0]) : item.id;
             const liveItem = products.find(p => p.id === baseId);
             const price = liveItem ? liveItem.price : item.price;
             return sum + (price * item.quantity);
         }, 0);
+
+        let discount = 0;
+        if (appliedCoupon) {
+            discount = Math.round(subtotal * appliedCoupon.discountPercent);
+            if (cartDiscountRow) {
+                cartDiscountRow.style.display = 'flex';
+                cartDiscountEl.textContent = `-${formatCurrency(discount)}`;
+            }
+        } else {
+            if (cartDiscountRow) cartDiscountRow.style.display = 'none';
+        }
+
+        let total = subtotal - discount;
         const timeSelect = document.getElementById('customer-time');
         const isImediato = timeSelect && timeSelect.value.startsWith('Imediato');
         
+        if (cartSubtotalEl) {
+            cartSubtotalEl.textContent = formatCurrency(subtotal);
+        }
+
         if (isImediato) {
             total += 200;
             totalAmountEl.innerHTML = `${formatCurrency(total)} <br><span style="font-size:0.8rem;color:#10b981;font-weight:normal;">(inclui +200 MT taxa urgente)</span>`;
@@ -800,17 +872,32 @@ function handleCheckout(e) {
     const time    = document.getElementById('customer-time').value;
     const payment = document.getElementById('customer-payment').value;
     
-    let total = cart.reduce((sum, item) => {
+    let subtotal = cart.reduce((sum, item) => {
         const baseId = typeof item.id === 'string' && item.id.includes('-') ? Number(item.id.split('-')[0]) : item.id;
         const liveItem = products.find(p => p.id === baseId);
         const price = liveItem ? liveItem.price : item.price;
         return sum + (price * item.quantity);
     }, 0);
+    let discount = appliedCoupon ? Math.round(subtotal * appliedCoupon.discountPercent) : 0;
+    let total = subtotal - discount;
     if (time.startsWith('Imediato')) {
         total += 200;
     }
 
-    const orderData = { customer_name: name, phone, bairro, address, time, payment, total, user_id: currentUser ? currentUser.id : null, items: cart, status: 'Pendente' };
+    const orderData = { 
+        customer_name: name, 
+        phone, 
+        bairro, 
+        address, 
+        time, 
+        payment, 
+        total, 
+        user_id: currentUser ? currentUser.id : null, 
+        items: cart, 
+        status: 'Pendente',
+        referral_code: appliedCoupon ? appliedCoupon.code : null,
+        referral_discount: discount
+    };
 
     const submitBtn = document.getElementById('btn-checkout');
     submitBtn.textContent = '⏳ A enviar pedido...';
@@ -826,6 +913,11 @@ function handleCheckout(e) {
         if (order) saveOrderToHistory(order, name, cart);
         toggleCart();
         cart = [];
+        appliedCoupon = null; // Clear coupon on success
+        const couponInput = document.getElementById('customer-coupon');
+        if (couponInput) couponInput.value = '';
+        const couponMsg = document.getElementById('coupon-message');
+        if (couponMsg) couponMsg.style.display = 'none';
         saveCart();
         updateCartUI();
         submitBtn.textContent = 'Finalizar Pedido';
@@ -1234,9 +1326,11 @@ function switchAuthTab(tab) {
 }
 
 function updateAuthUI() {
+    const btnReferrals = document.getElementById('btn-referrals');
     if (currentUser) {
         if (btnOpenAuth) btnOpenAuth.style.display = 'none';
         if (authUserInfo) authUserInfo.style.display = 'flex';
+        if (btnReferrals) btnReferrals.style.display = 'inline-flex';
         const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
         const phone = currentUser.user_metadata?.phone || '';
         if (authUserName) authUserName.textContent = `Olá, ${name.split(' ')[0]}`;
@@ -1244,6 +1338,8 @@ function updateAuthUI() {
     } else {
         if (btnOpenAuth) btnOpenAuth.style.display = 'block';
         if (authUserInfo) authUserInfo.style.display = 'none';
+        if (btnReferrals) btnReferrals.style.display = 'none';
+        appliedCoupon = null; // Clear coupon on logout
     }
 }
 
@@ -1342,6 +1438,362 @@ async function handleLogout() {
     if (cartName) cartName.value = '';
     if (cartPhone) cartPhone.value = '';
 }
+
+// ─── REFERRAL SYSTEM ──────────────────────────────────────────────────
+async function applyCoupon() {
+    const couponInput = document.getElementById('customer-coupon');
+    const couponMsg = document.getElementById('coupon-message');
+    if (!couponInput || !couponMsg) return;
+
+    const code = couponInput.value.trim().toUpperCase();
+    if (!code) {
+        couponMsg.textContent = '⚠️ Por favor, insira um código.';
+        couponMsg.style.color = '#ef4444';
+        couponMsg.style.display = 'block';
+        return;
+    }
+
+    if (!currentUser) {
+        couponMsg.textContent = '⚠️ Por favor, inicie sessão primeiro.';
+        couponMsg.style.color = '#ef4444';
+        couponMsg.style.display = 'block';
+        return;
+    }
+
+    try {
+        couponMsg.textContent = '⏳ A validar código...';
+        couponMsg.style.color = 'var(--dark)';
+        couponMsg.style.display = 'block';
+
+        const res = await fetch(`/api/referrals/validate?code=${encodeURIComponent(code)}&user_id=${currentUser.id}`);
+        const data = await res.json();
+
+        if (res.ok && data.valid) {
+            appliedCoupon = { code: code, discountPercent: 0.10 };
+            couponMsg.textContent = '✅ Código de indicação aplicado! 10% de desconto.';
+            couponMsg.style.color = '#10b981';
+            updateCartUI();
+        } else {
+            appliedCoupon = null;
+            couponMsg.textContent = `❌ ${data.error || 'Código inválido.'}`;
+            couponMsg.style.color = '#ef4444';
+            updateCartUI();
+        }
+    } catch (err) {
+        appliedCoupon = null;
+        couponMsg.textContent = '❌ Erro ao validar código.';
+        couponMsg.style.color = '#ef4444';
+        updateCartUI();
+    }
+}
+
+async function applyQuickOrderCoupon() {
+    const couponInput = document.getElementById('qo-coupon');
+    const couponMsg = document.getElementById('qo-coupon-message');
+    if (!couponInput || !couponMsg) return;
+
+    const code = couponInput.value.trim().toUpperCase();
+    if (!code) {
+        couponMsg.textContent = '⚠️ Por favor, insira um código.';
+        couponMsg.style.color = '#ef4444';
+        couponMsg.style.display = 'block';
+        return;
+    }
+
+    if (!currentUser) {
+        couponMsg.textContent = '⚠️ Por favor, inicie sessão primeiro.';
+        couponMsg.style.color = '#ef4444';
+        couponMsg.style.display = 'block';
+        return;
+    }
+
+    try {
+        couponMsg.textContent = '⏳ A validar código...';
+        couponMsg.style.color = '#4b5563';
+        couponMsg.style.display = 'block';
+
+        const res = await fetch(`/api/referrals/validate?code=${encodeURIComponent(code)}&user_id=${currentUser.id}`);
+        const data = await res.json();
+
+        if (res.ok && data.valid) {
+            appliedCoupon = { code: code, discountPercent: 0.10 };
+            couponMsg.textContent = '✅ Código de indicação aplicado! 10% de desconto.';
+            couponMsg.style.color = '#10b981';
+            updateQuickOrderPrice();
+        } else {
+            appliedCoupon = null;
+            couponMsg.textContent = `❌ ${data.error || 'Código inválido.'}`;
+            couponMsg.style.color = '#ef4444';
+            updateQuickOrderPrice();
+        }
+    } catch (err) {
+        appliedCoupon = null;
+        couponMsg.textContent = '❌ Erro ao validar código.';
+        couponMsg.style.color = '#ef4444';
+        updateQuickOrderPrice();
+    }
+}
+
+function openReferrals() {
+    const referralsOverlay = document.getElementById('referrals-overlay');
+    const referralsModal = document.getElementById('referrals-modal');
+    if (referralsOverlay && referralsModal) {
+        referralsOverlay.classList.add('active');
+        referralsModal.classList.add('active');
+        loadReferralsData();
+    }
+}
+
+function closeReferrals() {
+    const referralsOverlay = document.getElementById('referrals-overlay');
+    const referralsModal = document.getElementById('referrals-modal');
+    if (referralsOverlay && referralsModal) {
+        referralsOverlay.classList.remove('active');
+        referralsModal.classList.remove('active');
+    }
+}
+
+async function loadReferralsData() {
+    const referralsContent = document.getElementById('referrals-content');
+    if (!referralsContent) return;
+
+    if (!currentUser) {
+        referralsContent.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                ⚠️ Por favor, inicie sessão para ver o seu código de indicação.
+            </div>
+        `;
+        return;
+    }
+
+    try {
+        referralsContent.innerHTML = '<div style="text-align: center; padding: 2rem; color: #9ca3af;">A carregar dados do programa...</div>';
+
+        // 1. Get or generate user's referral code and balance
+        const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+        const resCode = await fetch('/api/referrals/my-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                email: currentUser.email,
+                name: name
+            })
+        });
+
+        if (!resCode.ok) {
+            throw new Error('Falha ao obter código de indicação.');
+        }
+
+        const refData = await resCode.json();
+
+        // 2. Get history of transactions
+        const resTx = await fetch(`/api/referrals/transactions?user_id=${currentUser.id}`);
+        const txs = resTx.ok ? await resTx.json() : [];
+
+        // 3. Get history of withdrawals
+        const resWd = await fetch(`/api/referrals/withdrawals?user_id=${currentUser.id}`);
+        const wds = resWd.ok ? await resWd.json() : [];
+
+        renderReferralsUI(refData, txs, wds);
+
+    } catch (err) {
+        console.error(err);
+        referralsContent.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                ❌ Ocorreu um erro ao carregar as informações. Por favor, tente novamente mais tarde.
+            </div>
+        `;
+    }
+}
+
+function renderReferralsUI(refData, txs, wds) {
+    const referralsContent = document.getElementById('referrals-content');
+    if (!referralsContent) return;
+
+    const code = refData.code;
+    const balance = Number(refData.balance);
+    const totalEarned = Number(refData.total_earned);
+    const totalWithdrawn = Number(refData.total_withdrawn);
+
+    let txsListHtml = '';
+    if (txs.length === 0) {
+        txsListHtml = '<p style="color: #9ca3af; font-size: 0.85rem; text-align: center; padding: 0.5rem 0;">Ainda não tens indicações concluídas.</p>';
+    } else {
+        txsListHtml = txs.map(tx => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem;">
+                <div>
+                    <span style="font-weight: 600; color: var(--dark);">${tx.buyer_name || 'Amigo'}</span>
+                    <span style="color: #6b7280; font-size: 0.75rem; display: block;">Encomenda #${tx.order_id}</span>
+                </div>
+                <span style="color: #10b981; font-weight: 600;">+${formatCurrency(Number(tx.amount))}</span>
+            </div>
+        `).join('');
+    }
+
+    let wdsListHtml = '';
+    if (wds.length === 0) {
+        wdsListHtml = '<p style="color: #9ca3af; font-size: 0.85rem; text-align: center; padding: 0.5rem 0;">Nenhum saque solicitado.</p>';
+    } else {
+        wdsListHtml = wds.map(wd => {
+            let statusColor = '#9ca3af';
+            let statusBg = '#f3f4f6';
+            if (wd.status === 'Pago') { statusColor = '#10b981'; statusBg = '#dcfce7'; }
+            else if (wd.status === 'Pendente') { statusColor = '#d97706'; statusBg = '#fef3c7'; }
+            else if (wd.status === 'Cancelado') { statusColor = '#ef4444'; statusBg = '#fee2e2'; }
+            return `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem;">
+                    <div>
+                        <span style="font-weight: 600; color: var(--dark);">${formatCurrency(Number(wd.amount))}</span>
+                        <span style="color: #6b7280; font-size: 0.75rem; display: block;">${wd.payment_method} (${wd.payment_phone})</span>
+                    </div>
+                    <span style="color: ${statusColor}; background: ${statusBg}; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 12px; font-weight: 600;">${wd.status}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    referralsContent.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <!-- Code Sharing Card -->
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border: 1.5px solid #fde68a; border-radius: 14px; padding: 1.25rem; text-align: center; box-sizing: border-box;">
+                <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: #b45309; font-weight: 500;">O teu Código de Indicação:</p>
+                <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center; max-width: 320px; margin: 0 auto; width: 100%; box-sizing: border-box;">
+                    <span id="ref-code-text" style="font-size: 1.5rem; font-weight: 700; color: #78350f; letter-spacing: 1.5px; background: #fff; padding: 0.4rem 1.25rem; border-radius: 8px; border: 1px solid #fde68a; flex: 1;">${code}</span>
+                    <button onclick="copyReferralCode('${code}')" style="background: #78350f; color: #fff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copiar
+                    </button>
+                </div>
+                <p style="margin: 0.75rem 0 0 0; font-size: 0.75rem; color: #b45309; line-height: 1.4;">
+                    Dá 10% de desconto aos teus amigos. Ganhas 50 MT na primeira indicação deles e 20 MT nas seguintes!
+                </p>
+            </div>
+
+            <!-- Stats Row -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; width: 100%; box-sizing: border-box;">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.75rem; text-align: center;">
+                    <span style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.25rem;">Saldo Disponível</span>
+                    <span style="font-size: 1.15rem; font-weight: 700; color: var(--dark);">${formatCurrency(balance)}</span>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.75rem; text-align: center;">
+                    <span style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.25rem;">Total Ganho</span>
+                    <span style="font-size: 1.15rem; font-weight: 700; color: #10b981;">${formatCurrency(totalEarned)}</span>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.75rem; text-align: center;">
+                    <span style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.25rem;">Total Sacado</span>
+                    <span style="font-size: 1.15rem; font-weight: 700; color: #3b82f6;">${formatCurrency(totalWithdrawn)}</span>
+                </div>
+            </div>
+
+            <!-- Withdrawal Form -->
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; box-sizing: border-box;">
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--dark); font-weight: 600;">Solicitar Saque (M-Pesa)</h4>
+                <form id="ref-withdraw-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; width: 100%;">
+                        <div style="flex: 1; min-width: 150px;">
+                            <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.25rem;">Número M-Pesa:</label>
+                            <input type="tel" id="ref-withdraw-phone" placeholder="84XXXXXXX" required pattern="[0-9]{9}" style="width: 100%; padding: 0.6rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; margin-bottom: 0; box-sizing: border-box;">
+                        </div>
+                        <div style="flex: 1; min-width: 120px;">
+                            <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.25rem;">Montante (MT):</label>
+                            <input type="number" id="ref-withdraw-amount" placeholder="Min 50 MT" required min="50" style="width: 100%; padding: 0.6rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; margin-bottom: 0; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    <button type="submit" style="background: var(--dark); color: #fff; border: none; padding: 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; width: 100%; box-sizing: border-box;">
+                        Solicitar Saque
+                    </button>
+                    <div id="ref-withdraw-message" style="font-size: 0.8rem; text-align: center; display: none;"></div>
+                </form>
+            </div>
+
+            <!-- Tabs/Lists -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; box-sizing: border-box; margin-top: 0.5rem;">
+                
+                <!-- Earnings History -->
+                <div>
+                    <h4 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--dark); font-weight: 600; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 0.35rem;">Histórico de Ganhos</h4>
+                    <div style="max-height: 180px; overflow-y: auto; padding-right: 0.25rem;">
+                        ${txsListHtml}
+                    </div>
+                </div>
+
+                <!-- Withdrawals History -->
+                <div>
+                    <h4 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--dark); font-weight: 600; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 0.35rem;">Pedidos de Saque</h4>
+                    <div style="max-height: 180px; overflow-y: auto; padding-right: 0.25rem;">
+                        ${wdsListHtml}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    `;
+
+    // Add submit handler for withdrawal form
+    const wdForm = document.getElementById('ref-withdraw-form');
+    if (wdForm) {
+        wdForm.addEventListener('submit', handleWithdrawSubmit);
+    }
+}
+
+async function handleWithdrawSubmit(e) {
+    e.preventDefault();
+    const phoneInput = document.getElementById('ref-withdraw-phone');
+    const amountInput = document.getElementById('ref-withdraw-amount');
+    const msgEl = document.getElementById('ref-withdraw-message');
+    
+    if (!phoneInput || !amountInput || !msgEl) return;
+    
+    const phone = phoneInput.value.trim();
+    const amount = Number(amountInput.value);
+    
+    msgEl.style.display = 'block';
+    msgEl.style.color = 'var(--dark)';
+    msgEl.textContent = '⏳ A processar pedido de saque...';
+    
+    try {
+        const res = await fetch('/api/referrals/withdraw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                phone: phone,
+                amount: amount
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            msgEl.textContent = '✅ Pedido de saque efetuado! Aguarde processamento.';
+            msgEl.style.color = '#10b981';
+            phoneInput.value = '';
+            amountInput.value = '';
+            
+            // Reload referral data to update balance and withdrawal history
+            setTimeout(loadReferralsData, 1500);
+        } else {
+            msgEl.textContent = `❌ ${data.error || 'Erro ao efetuar saque.'}`;
+            msgEl.style.color = '#ef4444';
+        }
+    } catch (err) {
+        msgEl.textContent = '❌ Erro de rede ao efetuar saque.';
+        msgEl.style.color = '#ef4444';
+    }
+}
+
+window.copyReferralCode = function(code) {
+    navigator.clipboard.writeText(code).then(() => {
+        showStatusToast('📋 Código copiado com sucesso!');
+    }).catch(() => {
+        showStatusToast('⚠️ Não foi possível copiar. Selecione e copie manualmente: ' + code);
+    });
+};
 
 // ─── INIT CALL ───────────────────────────────────────────────────────
 init();

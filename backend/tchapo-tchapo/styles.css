@@ -142,6 +142,29 @@ body {
     transform: translateY(-1px);
 }
 
+.btn-referrals {
+    background: linear-gradient(135deg, #ff6b00 0%, #ff8c3a 100%);
+    color: var(--white);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 0 2px 4px rgba(255, 107, 0, 0.2);
+}
+
+.btn-referrals:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 107, 0, 0.4);
+    opacity: 0.95;
+}
+
 /* Order history cards */
 .mp-card {
     background: #f8fafc;
@@ -1130,6 +1153,16 @@ body {
         gap: 0.25rem;
     }
     .btn-meus-pedidos svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    .btn-referrals {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.75rem;
+        gap: 0.25rem;
+    }
+    .btn-referrals svg {
         width: 15px;
         height: 15px;
     }

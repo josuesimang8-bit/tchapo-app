@@ -1475,7 +1475,7 @@ async function applyCoupon() {
             updateCartUI();
         } else {
             appliedCoupon = null;
-            couponMsg.textContent = `❌ ${data.error || 'Código inválido.'}`;
+            couponMsg.textContent = `❌ ${data.message || data.error || 'Código inválido.'}`;
             couponMsg.style.color = '#ef4444';
             updateCartUI();
         }
@@ -1522,7 +1522,7 @@ async function applyQuickOrderCoupon() {
             updateQuickOrderPrice();
         } else {
             appliedCoupon = null;
-            couponMsg.textContent = `❌ ${data.error || 'Código inválido.'}`;
+            couponMsg.textContent = `❌ ${data.message || data.error || 'Código inválido.'}`;
             couponMsg.style.color = '#ef4444';
             updateQuickOrderPrice();
         }

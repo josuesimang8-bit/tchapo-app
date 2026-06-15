@@ -144,15 +144,41 @@ app.post('/api/orders', async (req, res) => {
     try {
         const { customer_name, phone, bairro, address, time, payment, total, items, user_id, referral_code, referral_discount } = req.body;
         
+        let finalReferralCode = referral_code || null;
+        let finalReferralDiscount = referral_discount ? Number(referral_discount) : 0.00;
+        let finalTotal = total;
+
+        if (user_id && finalReferralCode) {
+            // Verify if user already has non-cancelled orders
+            const { data: userOrders, error: ordersError } = await supabase
+                .from('orders')
+                .select('id')
+                .eq('user_id', user_id)
+                .neq('status', 'Cancelado')
+                .limit(1);
+                
+            if (ordersError) throw ordersError;
+            
+            if (userOrders && userOrders.length > 0) {
+                // Not eligible for referral discount on subsequent orders
+                // Clear the discount and restore the original total
+                finalReferralCode = null;
+                if (finalReferralDiscount > 0) {
+                    finalTotal += finalReferralDiscount;
+                    finalReferralDiscount = 0.00;
+                }
+            }
+        }
+
         let order;
         // Try inserting with items column (directly saving products array)
         const { data: dataWithItems, error: errorWithItems } = await supabase
             .from('orders')
             .insert([{ 
-                customer_name, phone, bairro, address, time, payment, total, status: 'Processando', user_id: user_id || null,
+                customer_name, phone, bairro, address, time, payment, total: finalTotal, status: 'Processando', user_id: user_id || null,
                 items: items || [],
-                referral_code: referral_code || null,
-                referral_discount: referral_discount ? Number(referral_discount) : 0.00
+                referral_code: finalReferralCode,
+                referral_discount: finalReferralDiscount
             }])
             .select()
             .single();
@@ -163,9 +189,9 @@ app.post('/api/orders', async (req, res) => {
                 const { data: fallbackData, error: fallbackError } = await supabase
                     .from('orders')
                     .insert([{ 
-                        customer_name, phone, bairro, address, time, payment, total, status: 'Processando', user_id: user_id || null,
-                        referral_code: referral_code || null,
-                        referral_discount: referral_discount ? Number(referral_discount) : 0.00
+                        customer_name, phone, bairro, address, time, payment, total: finalTotal, status: 'Processando', user_id: user_id || null,
+                        referral_code: finalReferralCode,
+                        referral_discount: finalReferralDiscount
                     }])
                     .select()
                     .single();
@@ -795,8 +821,24 @@ app.get('/api/referrals/validate', async (req, res) => {
             return res.json({ valid: false, message: 'Código de indicação inválido.' });
         }
         
-        if (user_id && data.user_id === user_id) {
-            return res.json({ valid: false, message: 'Não pode usar o seu próprio código.' });
+        if (user_id) {
+            if (data.user_id === user_id) {
+                return res.json({ valid: false, message: 'Não pode usar o seu próprio código.' });
+            }
+            
+            // Check if this is the user's first purchase (excluding cancelled orders)
+            const { data: userOrders, error: ordersError } = await supabase
+                .from('orders')
+                .select('id')
+                .eq('user_id', user_id)
+                .neq('status', 'Cancelado')
+                .limit(1);
+                
+            if (ordersError) throw ordersError;
+            
+            if (userOrders && userOrders.length > 0) {
+                return res.json({ valid: false, message: 'O desconto de indicação só é válido para a primeira compra.' });
+            }
         }
         
         res.json({ valid: true, referrer_name: data.user_name || 'Usuário' });

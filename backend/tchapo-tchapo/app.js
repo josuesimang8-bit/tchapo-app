@@ -1859,6 +1859,10 @@ function updateScrollLock() {
 }
 
 function initPromoPopup() {
+    const deliveryPaymentOverlay = document.getElementById('delivery-payment-promo-overlay');
+    const deliveryPaymentModal = document.getElementById('delivery-payment-promo-modal');
+    const closeDeliveryPayment = document.getElementById('close-delivery-payment-promo');
+
     const deliveryOverlay = document.getElementById('delivery-promo-overlay');
     const deliveryModal = document.getElementById('delivery-promo-modal');
     const closeDelivery = document.getElementById('close-delivery-promo');
@@ -1867,18 +1871,28 @@ function initPromoPopup() {
     const referralModal = document.getElementById('referral-promo-modal');
     const closeReferral = document.getElementById('close-referral-promo');
 
-    if (!deliveryOverlay || !deliveryModal || !referralOverlay || !referralModal) return;
+    if (!deliveryPaymentOverlay || !deliveryPaymentModal || !deliveryOverlay || !deliveryModal || !referralOverlay || !referralModal) return;
 
-    // Show Delivery promo first
-    deliveryOverlay.classList.add('active');
-    deliveryModal.classList.add('active');
+    // Show Delivery Payment promo first
+    deliveryPaymentOverlay.classList.add('active');
+    deliveryPaymentModal.classList.add('active');
     updateScrollLock();
+
+    const transitionToDelivery = () => {
+        deliveryPaymentOverlay.classList.remove('active');
+        deliveryPaymentModal.classList.remove('active');
+        
+        // Show Delivery promo second
+        deliveryOverlay.classList.add('active');
+        deliveryModal.classList.add('active');
+        updateScrollLock();
+    };
 
     const transitionToReferral = () => {
         deliveryOverlay.classList.remove('active');
         deliveryModal.classList.remove('active');
         
-        // Show Referral promo second
+        // Show Referral promo third
         referralOverlay.classList.add('active');
         referralModal.classList.add('active');
         updateScrollLock();
@@ -1889,6 +1903,9 @@ function initPromoPopup() {
         referralModal.classList.remove('active');
         updateScrollLock();
     };
+
+    if (closeDeliveryPayment) closeDeliveryPayment.addEventListener('click', transitionToDelivery);
+    if (deliveryPaymentOverlay) deliveryPaymentOverlay.addEventListener('click', transitionToDelivery);
 
     if (closeDelivery) closeDelivery.addEventListener('click', transitionToReferral);
     if (deliveryOverlay) deliveryOverlay.addEventListener('click', transitionToReferral);

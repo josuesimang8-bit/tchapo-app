@@ -249,6 +249,13 @@ export default function Admin() {
     };
 
     const updateStatus = async (id, status) => {
+        if (status === 'Com Motorista') {
+            const order = orders.find(o => o.id === id);
+            if (!order || !order.driver_id) {
+                alert('Por favor, designe um motorista para este pedido primeiro.');
+                return;
+            }
+        }
         try {
             await fetch(import.meta.env.VITE_API_URL + `/api/orders/${id}/status`, {
                 method: 'PUT',

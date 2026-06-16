@@ -341,6 +341,23 @@ app.put('/api/orders/:id/status', async (req, res) => {
         if (status !== undefined) updates.status = status;
         if (driver_id !== undefined) updates.driver_id = driver_id;
         
+        // If transitioning from Pendente to an active status, reset created_at to now
+        if (status !== undefined) {
+            const { data: currentOrder } = await supabase
+                .from('orders')
+                .select('status')
+                .eq('id', id)
+                .single();
+                
+            if (currentOrder) {
+                const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente';
+                const isNowActive = status !== 'Pendente' && status !== 'Cancelado' && status !== 'Entregue';
+                if (wasPendente && isNowActive) {
+                    updates.created_at = new Date().toISOString();
+                }
+            }
+        }
+        
         const { data, error } = await supabase
             .from('orders')
             .update(updates)

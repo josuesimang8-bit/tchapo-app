@@ -464,11 +464,15 @@ export default function Store() {
     // Real-time tracking timer countdown
     useEffect(() => {
         if (!trackingOrder) return;
+        if (trackingStatus === 'Pendente') {
+            setTrackingTimeLeft(4 * 3600);
+            return;
+        }
         const timer = setInterval(() => {
             setTrackingTimeLeft(prev => Math.max(0, prev - 1));
         }, 1000);
         return () => clearInterval(timer);
-    }, [trackingOrder]);
+    }, [trackingOrder, trackingStatus]);
 
     // Real-time tracking order status poll
     useEffect(() => {
@@ -483,8 +487,12 @@ export default function Store() {
                     setTrackingStatus(order.status);
                     setTrackingDriver(order.drivers || null);
                     
-                    const elapsed = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 1000);
-                    setTrackingTimeLeft(Math.max(0, 4 * 3600 - elapsed));
+                    if (order.status === 'Pendente') {
+                        setTrackingTimeLeft(4 * 3600);
+                    } else {
+                        const elapsed = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 1000);
+                        setTrackingTimeLeft(Math.max(0, 4 * 3600 - elapsed));
+                    }
                     
                     if (order.status === 'Com Motorista') {
                         showToastMessage('O teu motorista está a caminho!');

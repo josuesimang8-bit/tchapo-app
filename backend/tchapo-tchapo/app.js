@@ -696,11 +696,11 @@ function handleQuickOrder(e) {
         if (order) saveOrderToHistory(order, name, orderData.items);
         closeQuickOrderModal();
         appliedCoupon = null; // Clear applied coupon
-        startTracking(order ? order.id : null, name, order ? order.created_at : null);
+        startTracking(order ? order.id : null, name, order ? order.created_at : null, order ? order.status : 'Pendente');
     })
     .catch(() => {
         closeQuickOrderModal();
-        startTracking(null, name, new Date().toISOString());
+        startTracking(null, name, new Date().toISOString(), 'Pendente');
     });
 }
 
@@ -940,14 +940,14 @@ function handleCheckout(e) {
         updateCartUI();
         submitBtn.textContent = 'Finalizar Pedido';
         submitBtn.disabled = false;
-        startTracking(order ? order.id : null, name, order ? order.created_at : null);
+        startTracking(order ? order.id : null, name, order ? order.created_at : null, order ? order.status : 'Pendente');
     })
     .catch(() => {
         toggleCart();
         cart = [];
         saveCart();
         updateCartUI();
-        startTracking(null, name, new Date().toISOString());
+        startTracking(null, name, new Date().toISOString(), 'Pendente');
     });
 }
 
@@ -957,6 +957,7 @@ let statusPollInterval;
 let totalSeconds = 7200;
 let currentOrderId = null;
 let currentStep = 1;
+let trackingStatus = 'Pendente';
 
 const STATUS_STEPS = {
     'Pendente':      1,
@@ -985,13 +986,16 @@ const STATUS_COLORS = {
     'Cancelado':     '#fee2e2',
 };
 
-function startTracking(orderId, customerName, createdAt) {
+function startTracking(orderId, customerName, createdAt, initialStatus = 'Pendente') {
     currentOrderId = orderId;
     currentStep = 1;
+    trackingStatus = initialStatus;
 
     // ── REAL TIMER: subtract elapsed time since order was placed ──
     const ORDER_DURATION = 4 * 3600; // 4 hours in seconds
-    if (createdAt) {
+    if (initialStatus === 'Pendente') {
+        totalSeconds = ORDER_DURATION;
+    } else if (createdAt) {
         const elapsedSeconds = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
         totalSeconds = Math.max(0, ORDER_DURATION - elapsedSeconds);
     } else {
@@ -1025,8 +1029,13 @@ function startTracking(orderId, customerName, createdAt) {
     clearInterval(countdownInterval);
     updateTimerDisplay();
     countdownInterval = setInterval(() => {
-        if (totalSeconds > 0) totalSeconds--;
-        updateTimerDisplay();
+        if (trackingStatus !== 'Pendente') {
+            if (totalSeconds > 0) totalSeconds--;
+            updateTimerDisplay();
+        } else {
+            totalSeconds = ORDER_DURATION;
+            updateTimerDisplay();
+        }
     }, 1000);
 
     // Start real-time status polling (every 5 seconds)
@@ -1058,7 +1067,8 @@ async function pollOrderStatus(orderId) {
     }
 }
 
-function applyRealStatus(status, driver) {
+function applyRealStatus(status, driver, createdAt = null) {
+    trackingStatus = status;
     const step = STATUS_STEPS[status] || 1;
     
     // Update step indicators
@@ -1067,6 +1077,15 @@ function applyRealStatus(status, driver) {
         el.classList.remove('active', 'completed');
         if (i < step) { el.classList.add('completed', 'active'); }
         else if (i === step) { el.classList.add('active'); }
+    }
+
+    // Update timer based on status and transition created_at
+    const ORDER_DURATION = 4 * 3600;
+    if (status === 'Pendente') {
+        totalSeconds = ORDER_DURATION;
+    } else if (createdAt) {
+        const elapsedSeconds = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
+        totalSeconds = Math.max(0, ORDER_DURATION - elapsedSeconds);
     }
 
     // Step 3: Com Motorista — show driver profile
@@ -1087,12 +1106,12 @@ function applyRealStatus(status, driver) {
             const driverInfoEl = driverProfile.querySelector('.driver-info');
             if (driverInfoEl) {
                 driverInfoEl.innerHTML = `
-                    <h4>Motorista João</h4>
-                    <p class="driver-rating">⭐ 4.9 (124 entregas)</p>
-                    <p class="driver-vehicle">Yamaha DT - Matrícula AHD 452 MC</p>
+                    <h4>Aguardando atribuição de motorista...</h4>
+                    <p class="driver-rating">Tchapo Tchapo Suporte</p>
+                    <p class="driver-vehicle">O teu motorista será atribuído em breve.</p>
                 `;
             }
-            currentDriverPhone = '258840000000';
+            currentDriverPhone = '258855737578';
         }
         driverProfile.style.display = 'flex';
         if (step === 3 && currentStep !== 3) {
@@ -1270,7 +1289,7 @@ async function renderMeusPedidos() {
                 <span class="mp-total">${Number(o.total).toLocaleString('pt-MZ')} MT</span>
                 <span class="mp-payment">💳 ${o.payment}</span>
                 <span class="mp-date">${new Date(o.created_at).toLocaleDateString('pt', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
-                <button class="mp-track-btn" onclick="closeMeusPedidos(); startTracking(${o.id}, '${o.customer_name}', '${o.created_at}')">
+                <button class="mp-track-btn" onclick="closeMeusPedidos(); startTracking(${o.id}, '${o.customer_name}', '${o.created_at}', '${o.status || 'Pendente'}')">
                     Acompanhar
                 </button>
             </div>

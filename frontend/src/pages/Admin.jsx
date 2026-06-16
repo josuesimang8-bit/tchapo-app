@@ -57,6 +57,7 @@ export default function Admin() {
     // Referral withdrawals state
     const [withdrawals, setWithdrawals] = useState([]);
     const [pendingWithdrawalsCount, setPendingWithdrawalsCount] = useState(0);
+    const [referralsSubTab, setReferralsSubTab] = useState('pending'); // 'pending' or 'completed'
     
     // New Product form state
     const [newProdName, setNewProdName]       = useState('');
@@ -1279,8 +1280,36 @@ export default function Admin() {
                             </button>
                         </div>
 
-                        {withdrawals.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>Nenhuma solicitação de saque registada.</div>
+                        {/* Sub-tabs selector */}
+                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.75rem' }}>
+                            <button
+                                onClick={() => setReferralsSubTab('pending')}
+                                style={{
+                                    background: referralsSubTab === 'pending' ? '#f59e0b' : 'transparent',
+                                    color: referralsSubTab === 'pending' ? '#fff' : '#6b7280',
+                                    border: 'none', padding: '0.5rem 1rem', borderRadius: '6px',
+                                    cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
+                                }}
+                            >
+                                ⏳ Solicitados / Pendentes ({withdrawals.filter(w => w.status === 'Pendente').length})
+                            </button>
+                            <button
+                                onClick={() => setReferralsSubTab('completed')}
+                                style={{
+                                    background: referralsSubTab === 'completed' ? '#10b981' : 'transparent',
+                                    color: referralsSubTab === 'completed' ? '#fff' : '#6b7280',
+                                    border: 'none', padding: '0.5rem 1rem', borderRadius: '6px',
+                                    cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
+                                }}
+                            >
+                                ✅ Efetuados / Cancelados ({withdrawals.filter(w => w.status !== 'Pendente').length})
+                            </button>
+                        </div>
+
+                        {withdrawals.filter(w => referralsSubTab === 'pending' ? w.status === 'Pendente' : w.status !== 'Pendente').length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                                {referralsSubTab === 'pending' ? 'Nenhuma solicitação de saque pendente.' : 'Nenhum saque efetuado ou cancelado ainda.'}
+                            </div>
                         ) : (
                             <div style={{ overflowX: 'auto' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
@@ -1292,11 +1321,11 @@ export default function Admin() {
                                             <th style={{ padding: '0.75rem' }}>Método / Telefone</th>
                                             <th style={{ padding: '0.75rem' }}>Data</th>
                                             <th style={{ padding: '0.75rem' }}>Estado</th>
-                                            <th style={{ padding: '0.75rem', textAlign: 'center' }}>Ações</th>
+                                            {referralsSubTab === 'pending' && <th style={{ padding: '0.75rem', textAlign: 'center' }}>Ações</th>}
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {withdrawals.map(w => (
+                                        {withdrawals.filter(w => referralsSubTab === 'pending' ? w.status === 'Pendente' : w.status !== 'Pendente').map(w => (
                                             <tr key={w.id} style={{ borderBottom: '1px solid #f3f4f6', fontSize: '0.85rem', color: '#4b5563' }}>
                                                 <td style={{ padding: '0.75rem', fontWeight: 600, color: '#111827' }}>{w.user_name}</td>
                                                 <td style={{ padding: '0.75rem' }}>{w.user_email}</td>
@@ -1315,14 +1344,14 @@ export default function Admin() {
                                                         {w.status}
                                                     </span>
                                                 </td>
-                                                <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                                    {w.status === 'Pendente' ? (
+                                                {referralsSubTab === 'pending' && (
+                                                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                                                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                                                             <button 
                                                                 onClick={() => handleProcessWithdrawal(w.id, 'Pago')}
                                                                 style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', padding: '0.35rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
                                                             >
-                                                                Pagar (M-Pesa)
+                                                                Pagar ({w.payment_method || 'M-Pesa'})
                                                             </button>
                                                             <button 
                                                                 onClick={() => handleProcessWithdrawal(w.id, 'Cancelado')}
@@ -1331,10 +1360,8 @@ export default function Admin() {
                                                                 Cancelar
                                                             </button>
                                                         </div>
-                                                    ) : (
-                                                        <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Processado</span>
-                                                    )}
-                                                </td>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))}
                                     </tbody>

@@ -1061,7 +1061,7 @@ async function pollOrderStatus(orderId) {
         const res = await fetch(`/api/orders/${orderId}`);
         if (!res.ok) return;
         const order = await res.json();
-        applyRealStatus(order.status, order.drivers);
+        applyRealStatus(order.status, order.drivers, order.created_at);
     } catch (e) {
         // backend down — keep timer going silently
     }
@@ -1077,6 +1077,12 @@ function applyRealStatus(status, driver, createdAt = null) {
         el.classList.remove('active', 'completed');
         if (i < step) { el.classList.add('completed', 'active'); }
         else if (i === step) { el.classList.add('active'); }
+    }
+
+    // Update step 1 label based on Pendente/Processando
+    const step1Label = document.querySelector('#step-1 p');
+    if (step1Label) {
+        step1Label.textContent = status === 'Pendente' ? 'Pendente' : 'Processando';
     }
 
     // Update timer based on status and transition created_at
@@ -1156,6 +1162,15 @@ function showStatusToast(msg) {
 }
 
 function updateTimerDisplay() {
+    if (trackingStatus === 'Pendente') {
+        timerDisplay.textContent = '⏳ PENDENTE';
+        timerDisplay.style.color = '#f59e0b';
+        return;
+    } else {
+        if (timerDisplay.style.color === 'rgb(245, 158, 11)' || timerDisplay.style.color === '#f59e0b') {
+            timerDisplay.style.color = 'var(--primary)';
+        }
+    }
     if (timerDisplay.textContent.includes('✅') || timerDisplay.textContent.includes('❌')) return;
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);

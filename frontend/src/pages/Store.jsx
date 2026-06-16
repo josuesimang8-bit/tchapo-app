@@ -1728,17 +1728,17 @@ export default function Store() {
 
                         <div className="tracking-timer">
                             <p>Tempo estimado para entrega:</p>
-                            <div className="timer-display" style={{ color: trackingStatus === 'Cancelado' ? '#ef4444' : trackingStatus === 'Entregue' ? '#10b981' : 'var(--primary)' }}>
-                                {trackingStatus === 'Cancelado' ? '❌ CANCELADO' : trackingStatus === 'Entregue' ? '✅ ENTREGUE!' : formatTimeLeft(trackingTimeLeft)}
+                            <div className="timer-display" style={{ color: trackingStatus === 'Cancelado' ? '#ef4444' : trackingStatus === 'Entregue' ? '#10b981' : trackingStatus === 'Pendente' ? '#f59e0b' : 'var(--primary)' }}>
+                                {trackingStatus === 'Cancelado' ? '❌ CANCELADO' : trackingStatus === 'Entregue' ? '✅ ENTREGUE!' : trackingStatus === 'Pendente' ? '⏳ PENDENTE' : formatTimeLeft(trackingTimeLeft)}
                             </div>
                         </div>
 
                         <div className="tracking-progress" style={{ display: trackingStatus === 'Cancelado' ? 'none' : 'flex' }}>
                             <div className="progress-line"></div>
-                            {['Processando', 'Preparando', 'Com Motorista', 'Entregue'].map((step, idx) => {
+                            {[(trackingStatus === 'Pendente' ? 'Pendente' : 'Processando'), 'Preparando', 'Com Motorista', 'Entregue'].map((step, idx) => {
                                 const stepNum = idx + 1;
                                 const currentStepNum = STATUS_STEPS[trackingStatus] || 1;
-                                const isActive = stepNum === currentStepNum;
+                                const isActive = stepNum <= currentStepNum;
                                 const isCompleted = stepNum < currentStepNum || trackingStatus === 'Entregue';
                                 return (
                                     <div key={step} className={`progress-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>

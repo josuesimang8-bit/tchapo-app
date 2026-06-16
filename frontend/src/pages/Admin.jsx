@@ -40,6 +40,7 @@ export default function Admin() {
     const [deleteToConfirm, setDeleteToConfirm] = useState(null);
     const intervalRef                   = useRef(null);
     const prevOrdersRef                 = useRef([]);
+    const prevWithdrawalsRef            = useRef([]);
     
     // Tabs state: 'orders', 'drivers' or 'products'
     const [activeTab, setActiveTab]     = useState('orders');
@@ -162,17 +163,33 @@ export default function Admin() {
             const data = await res.json();
             setWithdrawals(data);
             const pending = data.filter(w => w.status === 'Pendente');
+            const prev = prevWithdrawalsRef.current;
             
-            if (pending.length > pendingWithdrawalsCount) {
+            if (prev.length > 0 && pending.length > pendingWithdrawalsCount) {
+                const newWithdrawals = pending.filter(w => !prev.find(oldW => oldW.id === w.id));
+                newWithdrawals.forEach(w => {
+                    playNotificationSound();
+                    if (notifAllowed) {
+                        const n = new Notification('💰 Novo Saque Solicitado!', {
+                            body: `${w.user_name} • ${w.payment_method || 'M-Pesa'}: ${w.payment_phone} • ${w.amount} MT`,
+                            icon: '/favicon.ico',
+                            badge: '/favicon.ico',
+                            tag: `withdraw-${w.id}`,
+                            requireInteraction: true,
+                        });
+                        n.onclick = () => { window.focus(); n.close(); };
+                    }
+                });
                 setToast('🔔 Nova solicitação de saque recebida!');
                 setTimeout(() => setToast(null), 4000);
             }
             
+            prevWithdrawalsRef.current = pending;
             setPendingWithdrawalsCount(pending.length);
         } catch (err) {
             console.error('Erro ao buscar saques:', err);
         }
-    }, [pendingWithdrawalsCount]);
+    }, [pendingWithdrawalsCount, notifAllowed]);
 
     const handleProcessWithdrawal = async (id, status) => {
         try {

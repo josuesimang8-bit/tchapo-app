@@ -520,6 +520,7 @@ body {
     opacity: 0;
     visibility: hidden;
     transition: var(--transition);
+    touch-action: none;
 }
 
 .modal-overlay.active, .cart-overlay.active, .tracking-overlay.active {
@@ -1512,6 +1513,7 @@ body {
     opacity: 0;
     visibility: hidden;
     transition: var(--transition);
+    touch-action: none;
 }
 .promo-modal.active {
     transform: translate(-50%, -50%);

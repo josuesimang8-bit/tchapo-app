@@ -216,21 +216,38 @@ export default function Store() {
     useEffect(() => {
         const isModalOpen = (activePromo !== null) || isCartOpen || isAuthOpen || isMeusPedidosOpen || isReferralOpen || selectedProduct !== null || quickOrderProduct !== null || trackingOrder !== null;
         if (isModalOpen) {
-            document.body.style.overflow = 'hidden';
-            document.body.style.height = '100%';
-            document.documentElement.style.overflow = 'hidden';
-            document.documentElement.style.height = '100%';
+            if (document.body.style.position !== 'fixed') {
+                const scrollY = window.scrollY;
+                document.body.setAttribute('data-scroll-y', scrollY.toString());
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${scrollY}px`;
+                document.body.style.width = '100%';
+                document.body.style.overflow = 'hidden';
+                document.documentElement.style.overflow = 'hidden';
+            }
         } else {
-            document.body.style.overflow = '';
-            document.body.style.height = '';
-            document.documentElement.style.overflow = '';
-            document.documentElement.style.height = '';
+            if (document.body.style.position === 'fixed') {
+                const scrollY = parseInt(document.body.getAttribute('data-scroll-y') || '0', 10);
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                document.body.removeAttribute('data-scroll-y');
+                window.scrollTo(0, scrollY);
+            }
         }
         return () => {
-            document.body.style.overflow = '';
-            document.body.style.height = '';
-            document.documentElement.style.overflow = '';
-            document.documentElement.style.height = '';
+            if (document.body.style.position === 'fixed') {
+                const scrollY = parseInt(document.body.getAttribute('data-scroll-y') || '0', 10);
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                document.body.removeAttribute('data-scroll-y');
+                window.scrollTo(0, scrollY);
+            }
         };
     }, [activePromo, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, selectedProduct, quickOrderProduct, trackingOrder]);
 
@@ -240,6 +257,16 @@ export default function Store() {
     const [appliedReferralCode, setAppliedReferralCode] = useState('');
     const [referralError, setReferralError] = useState('');
     const [validatingReferral, setValidatingReferral] = useState(false);
+
+    const trackProductClick = async (productId) => {
+        try {
+            await fetch(`${import.meta.env.VITE_API_URL}/api/products/${productId}/click`, {
+                method: 'POST'
+            });
+        } catch (err) {
+            console.error('Error tracking click:', err);
+        }
+    };
 
     const [isReferralOpen, setIsReferralOpen] = useState(false);
     const [referralData, setReferralData] = useState(null);
@@ -909,19 +936,19 @@ export default function Store() {
                     <div className="products-grid">
                         {filteredProducts.map(prod => (
                             <div key={prod.id} className="product-card">
-                                <div className="product-image-container" onClick={() => setSelectedProduct(prod)}>
+                                <div className="product-image-container" onClick={() => { setSelectedProduct(prod); trackProductClick(prod.id); }}>
                                     <img src={prod.image} alt={prod.name} className="product-img" />
                                 </div>
                                 <div className="product-category-tag">{getCategoryIcon(prod.category)} {prod.category}</div>
-                                <h3 className="product-title" onClick={() => setSelectedProduct(prod)}>{prod.name}</h3>
+                                <h3 className="product-title" onClick={() => { setSelectedProduct(prod); trackProductClick(prod.id); }}>{prod.name}</h3>
                                 <p className="product-desc">{prod.desc || ''}</p>
                                 <div className="product-price">{formatCurrency(prod.price)}</div>
                                 <div className="product-actions">
-                                    <button className="btn-add-to-cart" onClick={() => (getDeviceSelectionType(prod) !== 'none' || getColorSelectionType(prod) !== 'none') ? setSelectedProduct(prod) : addToCart(prod)}>
+                                    <button className="btn-add-to-cart" onClick={() => { (getDeviceSelectionType(prod) !== 'none' || getColorSelectionType(prod) !== 'none') ? setSelectedProduct(prod) : addToCart(prod); trackProductClick(prod.id); }}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                                         Carrinho
                                     </button>
-                                    <button className="btn-buy-now" onClick={() => openQuickOrder(prod)}>
+                                    <button className="btn-buy-now" onClick={() => { openQuickOrder(prod); trackProductClick(prod.id); }}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                                         Pedir Agora
                                     </button>

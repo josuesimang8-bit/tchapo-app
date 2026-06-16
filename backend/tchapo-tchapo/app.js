@@ -334,7 +334,13 @@ function addCaseToCartFromModal(id) {
     showToast();
 }
 
+function trackProductClick(productId) {
+    fetch(`/api/products/${productId}/click`, { method: 'POST' })
+        .catch(err => console.error('Error tracking click:', err));
+}
+
 function openProductModal(id) {
+    trackProductClick(id);
     const product = products.find(p => p.id === id);
     const devSelType = getDeviceSelectionType(product);
     
@@ -419,6 +425,9 @@ function openProductModal(id) {
 
 // ─── QUICK ORDER MODAL ───────────────────────────────────────────────
 function openQuickOrder(id, fromModal = false) {
+    if (!fromModal) {
+        trackProductClick(id);
+    }
     if (!currentUser) {
         openAuthModal();
         showStatusToast('Por favor, faça login ou crie conta para encomendar.');
@@ -743,6 +752,9 @@ function toggleCart() {
 }
 
 function addToCart(productId, device = null, color = null) {
+    if (!device && !color) {
+        trackProductClick(productId);
+    }
     const product = products.find(p => p.id === productId);
     const devSelType = getDeviceSelectionType(product);
     const hasDeviceSel = devSelType !== 'none';
@@ -1846,15 +1858,26 @@ function updateScrollLock() {
         }
     }
     if (!anyOpen) {
-        document.body.style.overflow = '';
-        document.body.style.height = '';
-        document.documentElement.style.overflow = '';
-        document.documentElement.style.height = '';
+        if (document.body.style.position === 'fixed') {
+            const scrollY = parseInt(document.body.getAttribute('data-scroll-y') || '0', 10);
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+            document.body.removeAttribute('data-scroll-y');
+            window.scrollTo(0, scrollY);
+        }
     } else {
-        document.body.style.overflow = 'hidden';
-        document.body.style.height = '100%';
-        document.documentElement.style.overflow = 'hidden';
-        document.documentElement.style.height = '100%';
+        if (document.body.style.position !== 'fixed') {
+            const scrollY = window.scrollY;
+            document.body.setAttribute('data-scroll-y', scrollY.toString());
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        }
     }
 }
 

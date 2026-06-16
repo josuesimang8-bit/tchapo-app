@@ -551,20 +551,78 @@ function fixImageUrls(req, products) {
 }
 
 // GET active products (storefront)
+function getClicks(product) {
+    if (!product || !product.features || !Array.isArray(product.features)) return 0;
+    const flag = product.features.find(f => f.startsWith('_clicks:'));
+    if (flag) {
+        const val = parseInt(flag.split(':')[1], 10);
+        return isNaN(val) ? 0 : val;
+    }
+    return 0;
+}
+
+// GET active products (storefront) - Sorted by clicks descending
 app.get('/api/products', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('products')
             .select('*')
-            .eq('active', true)
-            .order('id', { ascending: false });
+            .eq('active', true);
         
         if (error) {
-            // Fallback se a tabela de produtos ainda não existir ou falhar
             console.error('Erro ao ler produtos do Supabase:', error.message);
             return res.json([]);
         }
-        res.json(fixImageUrls(req, data));
+
+        // Sort by clicks descending, fallback to ID descending
+        const sorted = data.sort((a, b) => {
+            const clicksA = getClicks(a);
+            const clicksB = getClicks(b);
+            if (clicksA !== clicksB) {
+                return clicksB - clicksA;
+            }
+            return b.id - a.id;
+        });
+        
+        res.json(fixImageUrls(req, sorted));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST increment click count for product
+app.post('/api/products/:id/click', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { data: product, error: fetchError } = await supabase
+            .from('products')
+            .select('features')
+            .eq('id', id)
+            .single();
+            
+        if (fetchError) throw fetchError;
+        
+        let features = product.features || [];
+        if (!Array.isArray(features)) {
+            features = [];
+        }
+        
+        const clickIndex = features.findIndex(f => f.startsWith('_clicks:'));
+        if (clickIndex !== -1) {
+            const currentClicks = parseInt(features[clickIndex].split(':')[1], 10) || 0;
+            features[clickIndex] = `_clicks:${currentClicks + 1}`;
+        } else {
+            features.push(`_clicks:1`);
+        }
+        
+        const { error: updateError } = await supabase
+            .from('products')
+            .update({ features })
+            .eq('id', id);
+            
+        if (updateError) throw updateError;
+        
+        res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

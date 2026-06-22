@@ -973,7 +973,7 @@ export default function Store() {
                         <div className="faq-item" style={{ borderBottom: '1px solid #e5e7eb', padding: '1rem 0' }}>
                             <details style={{ cursor: 'pointer' }}>
                                 <summary style={{ fontWeight: 600, fontSize: '1.1rem' }}>Como funciona o pagamento?</summary>
-                                <p style={{ color: '#6b7280', marginTop: '0.5rem', paddingLeft: '1rem' }}>O pagamento é feito exclusivamente no momento da entrega! Podes pagar em Dinheiro, M-Pesa, eMola ou Cartão (POS).</p>
+                                <p style={{ color: '#6b7280', marginTop: '0.5rem', paddingLeft: '1rem' }}>O pagamento é feito exclusivamente no momento da entrega! Podes pagar em Dinheiro, M-Pesa ou eMola.</p>
                             </details>
                         </div>
                         <div className="faq-item" style={{ borderBottom: '1px solid #e5e7eb', padding: '1rem 0' }}>
@@ -1234,7 +1234,6 @@ export default function Store() {
                                 <option value="" disabled>Método de Pagamento...</option>
                                 <option value="M-Pesa">M-Pesa</option>
                                 <option value="eMola">eMola</option>
-                                <option value="Cartão (POS)">Cartão (Máquina POS)</option>
                                 <option value="Dinheiro Físico">Dinheiro Físico</option>
                             </select>
 
@@ -1450,7 +1449,6 @@ export default function Store() {
                                         <option value="" disabled>Método de Pagamento...</option>
                                         <option value="M-Pesa">M-Pesa</option>
                                         <option value="eMola">eMola</option>
-                                        <option value="Cartão (POS)">Cartão (Máquina POS)</option>
                                         <option value="Dinheiro Físico">Dinheiro Físico</option>
                                     </select>
 

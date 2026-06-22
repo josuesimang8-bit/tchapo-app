@@ -540,7 +540,6 @@ function openQuickOrder(id, fromModal = false) {
                     <option value="" disabled selected>Método de Pagamento...</option>
                     <option value="M-Pesa">M-Pesa</option>
                     <option value="eMola">eMola</option>
-                    <option value="Cartão (POS)">Cartão (Máquina POS)</option>
                     <option value="Dinheiro Físico">Dinheiro Físico</option>
                 </select>
 

@@ -1116,7 +1116,7 @@ function applyRealStatus(status, driver, createdAt = null) {
                     <p class="driver-vehicle">O teu motorista será atribuído em breve.</p>
                 `;
             }
-            currentDriverPhone = '258855737578';
+            currentDriverPhone = '258850741435';
         }
         driverProfile.style.display = 'flex';
         if (step === 3 && currentStep !== 3) {

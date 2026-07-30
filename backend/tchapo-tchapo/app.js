@@ -261,9 +261,40 @@ function filterCategory(cat) {
     renderProducts();
 }
 
+let searchQuery = '';
+
+function clearSearch() {
+    searchQuery = '';
+    const input = document.getElementById('product-search');
+    if (input) input.value = '';
+    const btn = document.getElementById('search-clear');
+    if (btn) btn.style.display = 'none';
+    renderProducts();
+}
+
 // ─── PRODUCTS RENDER ─────────────────────────────────────────────────
 function renderProducts() {
-    const filtered = activeCategory === 'Todos' ? products : products.filter(p => p.category === activeCategory);
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = products.filter(p => {
+        const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;
+        const matchesSearch = !q ||
+            p.name.toLowerCase().includes(q) ||
+            (p.desc && p.desc.toLowerCase().includes(q)) ||
+            (p.category && p.category.toLowerCase().includes(q));
+        return matchesCategory && matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+        productsGrid.innerHTML = `
+            <div class="search-no-results">
+                <span style="font-size: 2.5rem;">🔍</span>
+                <p>Nenhum produto encontrado para <strong>"${searchQuery}"</strong></p>
+                <button class="btn-primary" style="margin-top: 0.75rem; padding: 0.5rem 1.5rem; font-size: 0.9rem;" onclick="clearSearch()">Limpar pesquisa</button>
+            </div>
+        `;
+        return;
+    }
+
     productsGrid.innerHTML = filtered.map(product => `
         <div class="product-card">
             <div class="product-image-container" onclick="openProductModal(${product.id})">
@@ -742,6 +773,24 @@ function setupEventListeners() {
 
     const applyCouponBtn = document.getElementById('btn-apply-coupon');
     if (applyCouponBtn) applyCouponBtn.addEventListener('click', applyCoupon);
+
+    // Search bar event listeners
+    const searchInput = document.getElementById('product-search');
+    const searchClearBtn = document.getElementById('search-clear');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            if (searchClearBtn) searchClearBtn.style.display = searchQuery ? 'flex' : 'none';
+            renderProducts();
+        });
+    }
+
+    if (searchClearBtn) {
+        searchClearBtn.addEventListener('click', () => {
+            clearSearch();
+        });
+    }
 }
 
 function toggleCart() {

@@ -27,6 +27,54 @@ body {
     line-height: 1.5;
 }
 
+/* Maintenance Top Banner */
+.maintenance-top-banner {
+    background: linear-gradient(90deg, #1e1b4b 0%, #7c2d12 50%, #1e1b4b 100%);
+    color: #ffffff;
+    padding: 0.65rem 1rem;
+    text-align: center;
+    font-size: 0.88rem;
+    position: relative;
+    z-index: 60;
+    border-bottom: 2px solid #f59e0b;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.maintenance-banner-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    line-height: 1.4;
+}
+
+.maintenance-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    animation: maintenance-pulse 2s infinite ease-in-out;
+}
+
+.maintenance-text strong {
+    color: #fbbf24;
+    font-weight: 700;
+}
+
+@keyframes maintenance-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.85; }
+}
+
+@media (max-width: 640px) {
+    .maintenance-top-banner {
+        padding: 0.55rem 0.75rem;
+        font-size: 0.8rem;
+    }
+}
+
 /* Navbar */
 .navbar {
     background-color: var(--white);

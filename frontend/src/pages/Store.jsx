@@ -877,6 +877,16 @@ export default function Store() {
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            {/* Maintenance Top Banner */}
+            <div className="maintenance-top-banner">
+                <div className="maintenance-banner-content">
+                    <span className="maintenance-icon">🛠️</span>
+                    <span className="maintenance-text">
+                        <strong>Aviso de Manutenção:</strong> A nossa loja está atualmente em manutenção para melhorias no sistema. Agradecemos a sua paciência e compreensão!
+                    </span>
+                </div>
+            </div>
+
             {/* Navbar */}
             <header className="navbar">
                 <div className="nav-container">

@@ -189,6 +189,8 @@ export default function Store() {
     const [quickOrderQty, setQuickOrderQty] = useState(1);
     const [quickOrderForm, setQuickOrderForm] = useState({ name: '', phone: '', bairro: '', address: '', time: '', payment: '' });
     
+    const [searchQuery, setSearchQuery] = useState('');
+
     // Auth inputs
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
@@ -855,9 +857,15 @@ export default function Store() {
         ? products.find(p => p.id === quickOrderProduct.id) || quickOrderProduct
         : null;
 
-    const filteredProducts = activeCategory === 'Todos'
-        ? products
-        : products.filter(p => p.category === activeCategory);
+    const filteredProducts = products.filter(p => {
+        const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;
+        const q = searchQuery.trim().toLowerCase();
+        const matchesSearch = !q ||
+            p.name.toLowerCase().includes(q) ||
+            (p.desc && p.desc.toLowerCase().includes(q)) ||
+            (p.category && p.category.toLowerCase().includes(q));
+        return matchesCategory && matchesSearch;
+    });
 
     const totalItemsInCart = cart.reduce((a, b) => a + b.quantity, 0);
     const cartItemsTotal = cart.reduce((sum, item) => {
@@ -937,6 +945,29 @@ export default function Store() {
 
                 {/* Catalog Container */}
                 <section id="catalog" className="products">
+                    {/* Search Bar */}
+                    <div className="search-bar-wrapper">
+                        <div className="search-bar-inner">
+                            <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input
+                                id="product-search"
+                                className="search-input"
+                                type="text"
+                                placeholder="Pesquisar produtos..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                autoComplete="off"
+                            />
+                            {searchQuery && (
+                                <button className="search-clear" onClick={() => setSearchQuery('')} title="Limpar">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            )}
+                        </div>
+                    </div>
                     {/* Category tabs */}
                     <div className="category-tabs">
                         {categories.map(cat => (
@@ -952,6 +983,13 @@ export default function Store() {
 
                     {/* Products Grid */}
                     <div className="products-grid">
+                        {filteredProducts.length === 0 && (
+                            <div className="search-no-results">
+                                <span style={{ fontSize: '2.5rem' }}>🔍</span>
+                                <p>Nenhum produto encontrado para <strong>"{searchQuery}"</strong></p>
+                                <button className="btn-primary" style={{ marginTop: '0.75rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem' }} onClick={() => setSearchQuery('')}>Limpar pesquisa</button>
+                            </div>
+                        )}
                         {filteredProducts.map(prod => (
                             <div key={prod.id} className="product-card">
                                 <div className="product-image-container" onClick={() => { setSelectedProduct(prod); trackProductClick(prod.id); }}>

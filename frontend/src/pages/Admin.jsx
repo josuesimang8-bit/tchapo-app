@@ -887,9 +887,6 @@ export default function Admin() {
                                                 <td style={{ padding: '1rem 1.25rem', color: '#6b7280', fontSize: '0.85rem' }}>
                                                     <div>{order.time || new Date(order.created_at).toLocaleTimeString('pt', { hour: '2-digit', minute: '2-digit' })}</div>
                                                     {(() => {
-                                                        if (order.status === 'Pendente') {
-                                                            return <div style={{ marginTop: '4px', fontSize: '0.78rem', color: '#b45309', fontWeight: 600 }}>⏳ Pendente (Timer Pausado)</div>;
-                                                        }
                                                         if (order.status === 'Entregue') {
                                                             return <div style={{ marginTop: '4px', fontSize: '0.78rem', color: '#15803d', fontWeight: 600 }}>✅ Entregue a Tempo</div>;
                                                         }

@@ -588,7 +588,7 @@ function tickTimers() {
     document.querySelectorAll('[data-timer]').forEach(el => {
         const created = +el.dataset.timer;
         const status  = el.dataset.status;
-        if (['Entregue','Cancelado','Perdido'].includes(status)) return;
+        if (['Pendente','Entregue','Cancelado','Perdido'].includes(status)) return;
         const rem = 4 * 3600 - (nowMs - created) / 1000;
         if (rem <= 0) {
             el.className = 'timer-lost';

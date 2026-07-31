@@ -844,6 +844,27 @@ export default function Store() {
         setQuickOrderQty(1);
     };
 
+    const handleContinueAsGuest = () => {
+        setIsAuthOpen(false);
+        if (quickOrderProduct) {
+            return;
+        }
+        if (selectedProduct) {
+            openQuickOrder(selectedProduct);
+            setSelectedProduct(null);
+            return;
+        }
+        if (cart.length > 0) {
+            setIsCartOpen(true);
+            return;
+        }
+        const catalogEl = document.getElementById('catalog');
+        if (catalogEl) {
+            catalogEl.scrollIntoView({ behavior: 'smooth' });
+        }
+        showToastMessage('💡 Modo sem conta ativo! Escolha um produto para preencher os dados de entrega.');
+    };
+
     const contactDriver = () => {
         if (!trackingDriver) return;
         let cleanedPhone = trackingDriver.phone.replace(/\s+/g, '').replace('+', '');
@@ -1857,7 +1878,7 @@ export default function Store() {
                         <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
                             <button 
                                 type="button" 
-                                onClick={() => setIsAuthOpen(false)}
+                                onClick={handleContinueAsGuest}
                                 style={{
                                     width: '100%',
                                     padding: '0.75rem',

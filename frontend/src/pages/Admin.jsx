@@ -895,6 +895,24 @@ export default function Admin() {
                                                         if (order.status === 'Cancelado') {
                                                             return <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', fontSize: '0.78rem', fontWeight: 700 }}>❌ Cancelado</div>;
                                                         }
+                                                        if (order.status === 'Pendente' || !order.status) {
+                                                            return (
+                                                                <div style={{
+                                                                    padding: '5px 10px',
+                                                                    borderRadius: '8px',
+                                                                    background: '#fef3c7',
+                                                                    border: '1px solid #fde68a',
+                                                                    color: '#92400e',
+                                                                    fontSize: '0.82rem',
+                                                                    fontWeight: 800,
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px'
+                                                                }}>
+                                                                    ⏳ 04:00:00 (Pausado)
+                                                                </div>
+                                                            );
+                                                        }
 
                                                         const createdMs = new Date(order.created_at || Date.now()).getTime();
                                                         const elapsedSecs = Math.floor((now - createdMs) / 1000);
@@ -914,7 +932,7 @@ export default function Admin() {
                                                         const s = Math.floor(remSecs % 60);
                                                         const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
-                                                        const isWarning = remSecs < 1800; // less than 30 mins remaining
+                                                        const isWarning = remSecs < 1800;
                                                         return (
                                                             <div style={{
                                                                 padding: '5px 10px',

@@ -3,502 +3,1168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin – Tchapo Tchapo</title>
+    <title>Admin — Tchapo Tchapo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --dark: #111827;
-            --gray: #6b7280;
-            --gray-light: #e5e7eb;
-            --bg: #f1f5f9;
-            --card: #ffffff;
-        }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #111827; min-height: 100vh; }
 
-        /* ── PIN SCREEN ── */
+        /* PIN Screen */
         #pin-screen {
-            position: fixed; inset: 0; background: linear-gradient(135deg,#1e293b,#0f172a);
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             display: flex; align-items: center; justify-content: center; z-index: 9999;
         }
         .pin-card {
-            background: #fff; border-radius: 20px; padding: 2.5rem 2rem; width: 340px;
-            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            background: #fff; border-radius: 24px; padding: 2.5rem 2rem;
+            width: 360px; text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
         }
-        .pin-card h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.4rem; }
-        .pin-card p  { color: var(--gray); font-size: 0.9rem; margin-bottom: 1.5rem; }
-        .pin-card input {
-            width: 100%; padding: 0.9rem; border: 2px solid var(--gray-light); border-radius: 12px;
-            font-size: 1.4rem; text-align: center; letter-spacing: 0.5rem; outline: none;
-            font-family: inherit; transition: border-color 0.2s;
+        .pin-card h1 { font-size: 1.4rem; font-weight: 700; color: #111827; margin-bottom: 0.4rem; }
+        .pin-card p  { color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .pin-input {
+            width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 12px;
+            font-size: 1.5rem; text-align: center; letter-spacing: 0.6rem;
+            outline: none; font-family: inherit; transition: border-color 0.2s; color: #111827;
         }
-        .pin-card input:focus { border-color: var(--primary); }
-        .pin-card button {
-            margin-top: 1rem; width: 100%; padding: 0.9rem; background: var(--primary);
-            color: #fff; border: none; border-radius: 12px; font-size: 1rem;
-            font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.2s;
+        .pin-input:focus { border-color: #3b82f6; }
+        .pin-btn {
+            margin-top: 1rem; width: 100%; padding: 0.9rem;
+            background: #f59e0b; color: #fff; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit;
+            transition: background 0.2s;
         }
-        .pin-card button:hover { background: var(--primary-dark); }
-        .pin-error { color: var(--danger); font-size: 0.85rem; margin-top: 0.75rem; }
+        .pin-btn:hover { background: #d97706; }
+        .pin-error { color: #ef4444; font-size: 0.85rem; margin-top: 0.75rem; min-height: 1.2em; }
 
-        /* ── HEADER ── */
+        /* Admin Layout */
+        #admin-app { display: none; min-height: 100vh; }
+
+        /* Header */
         .admin-header {
-            background: var(--dark); color: #fff; padding: 1rem 1.5rem;
+            background: #111827; color: #fff; padding: 1.25rem 2rem;
             display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            position: sticky; top: 0; z-index: 100;
         }
-        .admin-header h1 { font-size: 1.15rem; font-weight: 700; }
-        .admin-header a { color: #93c5fd; font-size: 0.85rem; text-decoration: none; }
-        .admin-header a:hover { color: #fff; }
-
-        /* ── TABS ── */
-        .tabs { display: flex; gap: 0.5rem; padding: 1rem 1.5rem 0; flex-wrap: wrap; }
-        .tab-btn {
-            padding: 0.55rem 1.1rem; border-radius: 10px; border: 1.5px solid var(--gray-light);
-            background: #fff; font-size: 0.85rem; font-weight: 600; cursor: pointer;
-            font-family: inherit; transition: all 0.2s;
+        .header-left { display: flex; align-items: center; gap: 0.75rem; }
+        .header-left h1 { font-size: 1.2rem; font-weight: 700; }
+        .header-left p { color: #9ca3af; font-size: 0.8rem; margin-top: 1px; }
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+        .notif-badge {
+            background: #ef4444; color: #fff; border-radius: 999px;
+            padding: 0.25rem 0.75rem; font-size: 0.85rem; font-weight: 700; cursor: pointer;
         }
-        .tab-btn:hover  { border-color: var(--primary); color: var(--primary); }
-        .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .btn-yellow {
+            background: #f59e0b; color: #fff; border: none; padding: 0.6rem 1.25rem;
+            border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem;
+            font-family: inherit; transition: background 0.2s;
+        }
+        .btn-yellow:hover { background: #d97706; }
+        .back-link { color: #93c5fd; font-size: 0.85rem; text-decoration: none; }
+        .back-link:hover { color: #fff; }
 
-        /* ── MAIN CONTENT ── */
-        .admin-main { padding: 1.25rem 1.5rem; }
-        .tab-section { display: none; }
-        .tab-section.active { display: block; }
+        /* Nav Tabs */
+        .admin-nav {
+            background: #1f2937; padding: 0.5rem 2rem;
+            display: flex; gap: 0.5rem; border-bottom: 1px solid #374151;
+            flex-wrap: wrap;
+        }
+        .nav-tab {
+            background: transparent; color: #9ca3af; border: none;
+            padding: 0.5rem 1rem; border-radius: 6px;
+            cursor: pointer; font-weight: 600; font-size: 0.9rem;
+            font-family: inherit; transition: all 0.15s;
+            display: flex; align-items: center; gap: 0.35rem;
+        }
+        .nav-tab:hover { color: #fff; }
+        .nav-tab.active { background: #374151; color: #fff; }
+        .tab-badge {
+            background: #ef4444; color: #fff; font-size: 0.7rem;
+            padding: 0.1rem 0.4rem; border-radius: 10px; font-weight: 700;
+        }
 
-        /* ── CARDS / TABLE ── */
-        .section-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; color: var(--dark); }
-        .orders-table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-        thead th { background: var(--dark); color: #fff; padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
-        tbody tr { border-bottom: 1px solid var(--gray-light); transition: background 0.15s; }
-        tbody tr:hover { background: #f8fafc; }
-        tbody td { padding: 0.75rem 1rem; font-size: 0.83rem; vertical-align: middle; }
+        /* Main Content */
+        .admin-main { background: #f1f5f9; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Stats Bar */
+        .stats-bar { display: flex; gap: 1rem; padding: 1.5rem 2rem; flex-wrap: wrap; }
+        .stat-card {
+            padding: 0.75rem 1.25rem; border-radius: 12px;
+            font-weight: 700; font-size: 0.9rem; flex: 1; text-align: center;
+            min-width: 110px;
+        }
+        .stat-card .stat-num { font-size: 1.5rem; margin-bottom: 0.2rem; }
+
+        /* Tables */
+        .table-wrap { padding: 0 2rem 2rem; }
+        .table-scroll { overflow-x: auto; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.07); }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        thead { background: #111827; color: #fff; }
+        thead th {
+            padding: 1rem 1.25rem; text-align: left;
+            font-weight: 600; font-size: 0.85rem; white-space: nowrap;
+        }
+        tbody tr { border-bottom: 1px solid #f3f4f6; transition: background 0.15s; }
+        tbody tr:nth-child(even) { background: #fafafa; }
+        tbody tr:hover { background: #f0f9ff; }
+        tbody td { padding: 1rem 1.25rem; vertical-align: middle; }
         tbody tr:last-child { border-bottom: none; }
 
-        /* ── STATUS BADGE ── */
-        .status-badge {
-            display: inline-block; padding: 0.3rem 0.7rem; border-radius: 999px;
-            font-size: 0.75rem; font-weight: 600; white-space: nowrap;
-        }
-
-        /* ── TIMER ── */
-        .timer-badge {
-            font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.6rem;
-            border-radius: 8px; white-space: nowrap;
-        }
-        .timer-ok   { background: #dbeafe; color: #1d4ed8; }
-        .timer-warn { background: #fef3c7; color: #b45309; }
-        .timer-lost { background: #fee2e2; color: #b91c1c; }
-
-        /* ── STATUS SELECT ── */
+        /* Status select */
         .status-select {
-            padding: 0.3rem 0.5rem; border-radius: 8px; border: 1.5px solid var(--gray-light);
-            font-size: 0.8rem; font-family: inherit; cursor: pointer; outline: none;
+            padding: 0.4rem 0.75rem; border-radius: 8px; border: none;
+            font-weight: 600; cursor: pointer; font-size: 0.85rem;
+            font-family: inherit; outline: none;
+        }
+        .driver-select {
+            padding: 0.4rem 0.75rem; border-radius: 8px;
+            border: 1px solid #d1d5db; background: #fff;
+            font-size: 0.85rem; cursor: pointer; outline: none; font-family: inherit;
         }
 
-        /* ── ONLINE BADGE ── */
-        .online-dot  { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; background: var(--success); }
-        .offline-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; background: #9ca3af; }
+        /* Timer badges */
+        .timer-ok   { display:inline-block;padding:4px 8px;border-radius:6px;background:#eff6ff;color:#1d4ed8;font-size:0.78rem;font-weight:700; }
+        .timer-warn { display:inline-block;padding:4px 8px;border-radius:6px;background:#fef3c7;color:#b45309;font-size:0.78rem;font-weight:700; }
+        .timer-lost { display:inline-block;padding:4px 8px;border-radius:6px;background:#fee2e2;color:#991b1b;font-size:0.78rem;font-weight:700; }
+        .timer-done { display:inline-block;padding:4px 8px;border-radius:6px;background:#dcfce7;color:#15803d;font-size:0.78rem;font-weight:700; }
+        .timer-pend { display:inline-block;padding:4px 8px;border-radius:6px;background:#fef3c7;color:#b45309;font-size:0.78rem;font-weight:600; }
 
-        /* ── EMPTY STATE ── */
-        .empty-state { text-align: center; padding: 3rem; color: var(--gray); }
-        .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
-
-        /* ── LOADING ── */
-        .loading { text-align: center; padding: 2rem; color: var(--gray); font-size: 0.9rem; }
-
-        /* ── REFRESH BTN ── */
-        .btn-refresh {
-            padding: 0.5rem 1rem; background: #fff; border: 1.5px solid var(--gray-light);
-            border-radius: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 600;
-            font-family: inherit; transition: all 0.2s; margin-bottom: 1rem;
+        /* Action buttons */
+        .btn-pdf {
+            background: #3b82f6; color: #fff; border: none;
+            padding: 0.45rem 0.9rem; border-radius: 8px;
+            cursor: pointer; font-weight: 600; font-size: 0.85rem; font-family: inherit;
         }
-        .btn-refresh:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-delete {
+            background: #fee2e2; color: #991b1b; border: none;
+            padding: 0.45rem 0.9rem; border-radius: 8px;
+            cursor: pointer; font-weight: 600; font-size: 0.85rem; font-family: inherit;
+        }
 
-        @media (max-width: 640px) {
-            .admin-main { padding: 1rem; }
-            .tabs { padding: 0.75rem 1rem 0; }
+        /* Cards area (drivers / products) */
+        .cards-area { padding: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
+        .card {
+            background: #fff; padding: 2rem; border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .card h3 { margin: 0 0 1.5rem; color: #111827; }
+        .form-field { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-field label { font-weight: 600; font-size: 0.9rem; color: #374151; }
+        .form-input, .form-select, .form-textarea {
+            padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px;
+            font-size: 0.9rem; outline: none; font-family: inherit; width: 100%;
+            box-sizing: border-box; background: #fff;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #3b82f6; }
+        .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .driver-card {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem; background: #f9fafb; border-radius: 12px;
+            border: 1px solid #f3f4f6;
+        }
+        .driver-info { display: flex; align-items: center; gap: 1rem; }
+        .driver-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #e5e7eb; }
+        .driver-actions { display: flex; align-items: center; gap: 0.75rem; }
+        .btn-toggle-online  { border: none; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; cursor: pointer; background: #d1fae5; color: #065f46; font-family: inherit; }
+        .btn-toggle-offline { border: none; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; cursor: pointer; background: #fee2e2; color: #991b1b; font-family: inherit; }
+        .btn-trash { border: none; background: transparent; color: #ef4444; cursor: pointer; font-size: 1rem; }
+        .product-list { display: flex; flex-direction: column; gap: 0.75rem; max-height: 500px; overflow-y: auto; }
+        .product-item {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;
+            background: #f9fafb; border-radius: 10px; border: 1px solid #f3f4f6;
+        }
+        .product-img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; background: #e5e7eb; }
+
+        /* Referrals sub-tabs */
+        .sub-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
+        .sub-tab {
+            padding: 0.45rem 1rem; border-radius: 8px; border: 1.5px solid #e5e7eb;
+            background: #fff; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .sub-tab.active { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+
+        /* Users */
+        .users-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .users-table-wrap { background: #fff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden; }
+        .users-th { background: #f9fafb; border-bottom: 1px solid #e5e7eb; color: #374151; font-size: 0.8rem; text-transform: uppercase; }
+        .badge-online  { background: #dcfce7; color: #15803d; padding: 0.25rem 0.75rem; border-radius: 999px; font-weight: 700; font-size: 0.8rem; }
+        .badge-offline { background: #f3f4f6; color: #6b7280; padding: 0.25rem 0.75rem; border-radius: 999px; font-weight: 600; font-size: 0.8rem; }
+
+        /* Empty / Loading */
+        .empty { text-align: center; padding: 3rem; color: #9ca3af; font-size: 0.95rem; }
+
+        /* Toast */
+        #toast-msg {
+            position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
+            background: #111827; color: #fff; padding: 1rem 1.5rem;
+            border-radius: 14px; font-weight: 600; font-size: 0.9rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            transform: translateX(200%); transition: transform 0.3s;
+            max-width: 340px;
+        }
+        #toast-msg.show { transform: translateX(0); }
+
+        /* Confirm Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; backdrop-filter: blur(4px);
+        }
+        .modal-box {
+            background: #fff; border-radius: 20px; padding: 2.5rem;
+            max-width: 420px; width: 90%; text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+        .modal-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .modal-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
+        .btn-cancel { padding: 0.75rem 1.5rem; border-radius: 10px; border: 2px solid #e5e7eb; background: #fff; font-weight: 600; cursor: pointer; font-size: 0.95rem; font-family: inherit; }
+        .btn-danger { padding: 0.75rem 1.5rem; border-radius: 10px; border: none; background: #ef4444; color: #fff; font-weight: 700; cursor: pointer; font-size: 0.95rem; font-family: inherit; }
+
+        /* Edit Product Modal */
+        #edit-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); }
+        #edit-modal.open { display: flex; }
+        .edit-box {
+            background: #fff; border-radius: 20px; padding: 2.5rem;
+            max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 768px) {
+            .admin-header { padding: 1rem; }
+            .admin-nav { padding: 0.5rem 1rem; }
+            .stats-bar { padding: 1rem; }
+            .table-wrap { padding: 0 1rem 1rem; }
+            .cards-area { padding: 1rem; }
+            .header-left p { display: none; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-<!-- ── PIN SCREEN ── -->
+<!-- PIN Screen -->
 <div id="pin-screen">
     <div class="pin-card">
-        <div style="font-size:2.5rem;margin-bottom:0.75rem;">🔐</div>
-        <h1>Painel Admin</h1>
-        <p>Insira o PIN para aceder ao painel de gestão.</p>
-        <input type="password" id="pin-input" maxlength="6" placeholder="••••" autofocus>
-        <button onclick="checkPin()">Entrar</button>
+        <div style="font-size:2.5rem;margin-bottom:0.75rem;">🛍️</div>
+        <h1>Painel de Gestão</h1>
+        <p>Tchapo Tchapo — Insira o PIN de acesso</p>
+        <input type="password" class="pin-input" id="pin-input" maxlength="6" placeholder="••••" autofocus>
+        <button class="pin-btn" onclick="checkPin()">Entrar no Painel</button>
         <div class="pin-error" id="pin-error"></div>
     </div>
 </div>
 
-<!-- ── ADMIN INTERFACE (hidden until PIN correct) ── -->
-<div id="admin-app" style="display:none;">
+<!-- Admin App -->
+<div id="admin-app">
 
+    <!-- Header -->
     <header class="admin-header">
-        <h1>🛒 Tchapo Tchapo — Painel Admin</h1>
-        <a href="/">← Voltar à Loja</a>
+        <div class="header-left">
+            <span style="font-size:1.5rem;">🛍️</span>
+            <div>
+                <h1>Painel de Gestão — Tchapo Tchapo</h1>
+                <p>Actualizado automaticamente a cada 10 segundos</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="notif-badge" id="notif-badge" style="display:none;" onclick="clearNotif()">🔔 0 novos</span>
+            <button class="btn-yellow" onclick="refreshAll()">↻ Atualizar Dados</button>
+            <a class="back-link" href="/">← Loja</a>
+        </div>
     </header>
 
-    <nav class="tabs">
-        <button class="tab-btn active" onclick="showTab('orders')">📦 Encomendas</button>
-        <button class="tab-btn" onclick="showTab('products')">🏷️ Produtos</button>
-        <button class="tab-btn" onclick="showTab('drivers')">🛵 Motoristas</button>
-        <button class="tab-btn" onclick="showTab('withdrawals')">🎁 Saques</button>
-        <button class="tab-btn" onclick="showTab('users')">👥 Contas / Utilizadores</button>
+    <!-- Nav Tabs -->
+    <nav class="admin-nav">
+        <button class="nav-tab active" id="nav-orders"   onclick="showTab('orders')">📦 Encomendas</button>
+        <button class="nav-tab"        id="nav-drivers"  onclick="showTab('drivers')">🛵 Motoristas</button>
+        <button class="nav-tab"        id="nav-products" onclick="showTab('products')">🏷️ Produtos</button>
+        <button class="nav-tab"        id="nav-referrals" onclick="showTab('referrals')">🎁 Saques <span class="tab-badge" id="badge-referrals" style="display:none;">0</span></button>
+        <button class="nav-tab"        id="nav-users"    onclick="showTab('users')">👥 Contas / Utilizadores</button>
     </nav>
 
+    <!-- Main -->
     <main class="admin-main">
 
-        <!-- ── ORDERS TAB ── -->
-        <section id="tab-orders" class="tab-section active">
-            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
-                <span class="section-title" style="margin:0;">📦 Encomendas</span>
-                <button class="btn-refresh" onclick="loadOrders()">🔄 Actualizar</button>
+        <!-- ── ORDERS ── -->
+        <div id="panel-orders" class="tab-panel active">
+            <!-- Stats -->
+            <div class="stats-bar" id="stats-bar"></div>
+            <!-- Table -->
+            <div class="table-wrap">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Produtos Pedidos</th>
+                                <th>Bairro</th>
+                                <th>Pagamento</th>
+                                <th>Total</th>
+                                <th>Hora / ⏱️ Entrega</th>
+                                <th>Designar Motorista</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-tbody">
+                            <tr><td colspan="10" class="empty">⏳ A carregar encomendas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="orders-table-wrap" id="orders-container">
-                <div class="loading">⏳ A carregar encomendas...</div>
-            </div>
-        </section>
+        </div>
 
-        <!-- ── PRODUCTS TAB ── -->
-        <section id="tab-products" class="tab-section">
-            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
-                <span class="section-title" style="margin:0;">🏷️ Produtos</span>
-                <button class="btn-refresh" onclick="loadProducts()">🔄 Actualizar</button>
+        <!-- ── DRIVERS ── -->
+        <div id="panel-drivers" class="tab-panel">
+            <div class="cards-area">
+                <!-- Register Driver -->
+                <div class="card">
+                    <h3>👥 Registar Novo Motorista</h3>
+                    <form id="form-add-driver" style="display:flex;flex-direction:column;gap:1.25rem;">
+                        <div class="form-field">
+                            <label>Nome Completo</label>
+                            <input class="form-input" id="d-name" type="text" required placeholder="Ex: Carlos Alberto">
+                        </div>
+                        <div class="form-field">
+                            <label>Contacto WhatsApp (com indicativo)</label>
+                            <input class="form-input" id="d-phone" type="text" required placeholder="Ex: 258841234567">
+                        </div>
+                        <div class="form-field">
+                            <label>Foto de Perfil</label>
+                            <input class="form-input" id="d-photo" type="file" accept="image/*" style="padding:0.4rem 0;">
+                        </div>
+                        <button type="submit" class="btn-yellow" id="btn-add-driver">Adicionar Motorista</button>
+                    </form>
+                </div>
+                <!-- Drivers List -->
+                <div class="card">
+                    <h3>🛵 Motoristas Registados</h3>
+                    <div id="drivers-list" style="display:flex;flex-direction:column;gap:1rem;max-height:420px;overflow-y:auto;">
+                        <div class="empty">⏳ A carregar...</div>
+                    </div>
+                </div>
             </div>
-            <div id="products-container"><div class="loading">⏳ A carregar produtos...</div></div>
-        </section>
+        </div>
 
-        <!-- ── DRIVERS TAB ── -->
-        <section id="tab-drivers" class="tab-section">
-            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
-                <span class="section-title" style="margin:0;">🛵 Motoristas</span>
-                <button class="btn-refresh" onclick="loadDrivers()">🔄 Actualizar</button>
+        <!-- ── PRODUCTS ── -->
+        <div id="panel-products" class="tab-panel">
+            <div class="cards-area">
+                <!-- Register Product -->
+                <div class="card">
+                    <h3>🏷️ Registar Novo Produto</h3>
+                    <form id="form-add-product" style="display:flex;flex-direction:column;gap:1.25rem;">
+                        <div class="form-field">
+                            <label>Nome do Produto</label>
+                            <input class="form-input" id="p-name" type="text" required placeholder="Ex: iPhone 15 Pro Max">
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="form-field">
+                                <label>Preço (MT)</label>
+                                <input class="form-input" id="p-price" type="number" required min="0" step="any" placeholder="Ex: 89000">
+                            </div>
+                            <div class="form-field">
+                                <label>Categoria</label>
+                                <select class="form-select" id="p-category" onchange="toggleCustomCat('p-custom-cat',this.value)">
+                                    <option value="Smartphones">Smartphones</option>
+                                    <option value="Áudio">Áudio</option>
+                                    <option value="Wearables">Wearables</option>
+                                    <option value="Acessórios">Acessórios</option>
+                                    <option value="Outro">Outra (Customizada)...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-field" id="p-custom-cat" style="display:none;">
+                            <label>Nome da Categoria Customizada</label>
+                            <input class="form-input" id="p-custom-cat-val" type="text" placeholder="Ex: Eletrodomésticos">
+                        </div>
+                        <div class="form-field">
+                            <label>Destaques / Features (separados por vírgula)</label>
+                            <input class="form-input" id="p-features" type="text" placeholder="Ex: 🔋 Bateria 48h, 📸 Câmera 48MP">
+                        </div>
+                        <div class="form-field">
+                            <label>Seleção de Dispositivo na Loja</label>
+                            <select class="form-select" id="p-device-sel">
+                                <option value="none">Nenhum (Venda Normal)</option>
+                                <option value="iphone">Modelos de iPhone (Fixed List)</option>
+                                <option value="iphone_outro">Modelos de iPhone + Opção "Outro"</option>
+                                <option value="outro">Digitação Livre (Apenas "Outro")</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Seleção de Cor na Loja</label>
+                            <select class="form-select" id="p-color-sel">
+                                <option value="show">Sim (Exibir seleção de cor)</option>
+                                <option value="none">Não (Ocultar seleção de cor)</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Descrição do Produto</label>
+                            <textarea class="form-textarea" id="p-desc" rows="3" placeholder="Descrição detalhada sobre o produto..."></textarea>
+                        </div>
+                        <div class="form-field">
+                            <label>Foto do Produto</label>
+                            <input class="form-input" id="p-photo" type="file" accept="image/*" style="padding:0.4rem 0;">
+                        </div>
+                        <button type="submit" class="btn-yellow" id="btn-add-product">Adicionar Produto</button>
+                    </form>
+                </div>
+                <!-- Product List -->
+                <div class="card">
+                    <h3>📦 Produtos Registados</h3>
+                    <div id="products-list" class="product-list">
+                        <div class="empty">⏳ A carregar...</div>
+                    </div>
+                </div>
             </div>
-            <div id="drivers-container"><div class="loading">⏳ A carregar motoristas...</div></div>
-        </section>
+        </div>
 
-        <!-- ── WITHDRAWALS TAB ── -->
-        <section id="tab-withdrawals" class="tab-section">
-            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
-                <span class="section-title" style="margin:0;">🎁 Saques de Indicação</span>
-                <button class="btn-refresh" onclick="loadWithdrawals()">🔄 Actualizar</button>
+        <!-- ── REFERRALS / SAQUES ── -->
+        <div id="panel-referrals" class="tab-panel">
+            <div style="padding:2rem;">
+                <div class="sub-tabs">
+                    <button class="sub-tab active" id="sub-pending"   onclick="showSubTab('pending')">⏳ Pendentes</button>
+                    <button class="sub-tab"        id="sub-completed" onclick="showSubTab('completed')">✅ Processados</button>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th><th>Utilizador</th><th>Valor</th>
+                                <th>Método</th><th>Telefone</th><th>Data</th><th>Estado</th><th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawals-tbody">
+                            <tr><td colspan="8" class="empty">⏳ A carregar...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div id="withdrawals-container"><div class="loading">⏳ A carregar saques...</div></div>
-        </section>
+        </div>
 
-        <!-- ── USERS TAB ── -->
-        <section id="tab-users" class="tab-section">
-            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
-                <span class="section-title" style="margin:0;">👥 Contas / Utilizadores</span>
-                <button class="btn-refresh" onclick="loadUsers()">🔄 Actualizar</button>
+        <!-- ── USERS ── -->
+        <div id="panel-users" class="tab-panel">
+            <div style="padding:1.5rem 2rem;">
+                <div class="users-header">
+                    <div>
+                        <h2 style="font-size:1.25rem;color:#111827;">👥 Contas Criadas e Acessos à Loja</h2>
+                        <p style="color:#6b7280;font-size:0.85rem;margin-top:0.2rem;">Visualização de todas as contas registadas e atividade em tempo real.</p>
+                    </div>
+                    <button class="btn-yellow" onclick="loadUsers()">↻ Atualizar Lista</button>
+                </div>
+                <div class="users-table-wrap">
+                    <table style="width:100%;border-collapse:collapse;text-align:left;font-size:0.9rem;">
+                        <thead>
+                            <tr class="users-th">
+                                <th style="padding:0.85rem 1.25rem;">Utilizador / Nome</th>
+                                <th style="padding:0.85rem 1.25rem;">Email &amp; Contacto</th>
+                                <th style="padding:0.85rem 1.25rem;">Data de Criação</th>
+                                <th style="padding:0.85rem 1.25rem;">Último Acesso</th>
+                                <th style="padding:0.85rem 1.25rem;">Estado</th>
+                                <th style="padding:0.85rem 1.25rem;">Histórico Pedidos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <tr><td colspan="6" class="empty">⏳ A carregar utilizadores...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div id="users-container"><div class="loading">⏳ A carregar utilizadores...</div></div>
-        </section>
+        </div>
 
     </main>
 </div>
 
+<!-- Toast -->
+<div id="toast-msg"></div>
+
+<!-- Delete Order Confirm Modal -->
+<div id="modal-delete-order" style="display:none;" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-icon">🗑️</div>
+        <h3 id="modal-delete-title" style="margin-bottom:0.5rem;color:#111827;">Apagar Pedido?</h3>
+        <p id="modal-delete-body" style="color:#6b7280;font-size:0.9rem;"></p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+            <button class="btn-danger" id="btn-confirm-delete">Sim, Apagar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div id="edit-modal">
+    <div class="edit-box">
+        <h3 style="margin:0 0 1.5rem;color:#111827;">✏️ Editar Produto</h3>
+        <form id="form-edit-product" style="display:flex;flex-direction:column;gap:1.25rem;">
+            <input type="hidden" id="ep-id">
+            <div class="form-field">
+                <label>Nome do Produto</label>
+                <input class="form-input" id="ep-name" type="text" required>
+            </div>
+            <div class="form-grid-2">
+                <div class="form-field">
+                    <label>Preço (MT)</label>
+                    <input class="form-input" id="ep-price" type="number" required min="0" step="any">
+                </div>
+                <div class="form-field">
+                    <label>Categoria</label>
+                    <select class="form-select" id="ep-category" onchange="toggleCustomCat('ep-custom-cat',this.value)">
+                        <option value="Smartphones">Smartphones</option>
+                        <option value="Áudio">Áudio</option>
+                        <option value="Wearables">Wearables</option>
+                        <option value="Acessórios">Acessórios</option>
+                        <option value="Outro">Outra (Customizada)...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-field" id="ep-custom-cat" style="display:none;">
+                <label>Categoria Customizada</label>
+                <input class="form-input" id="ep-custom-cat-val" type="text">
+            </div>
+            <div class="form-field">
+                <label>Destaques / Features (separados por vírgula)</label>
+                <input class="form-input" id="ep-features" type="text">
+            </div>
+            <div class="form-field">
+                <label>Seleção de Dispositivo na Loja</label>
+                <select class="form-select" id="ep-device-sel">
+                    <option value="none">Nenhum (Venda Normal)</option>
+                    <option value="iphone">Modelos de iPhone (Fixed List)</option>
+                    <option value="iphone_outro">Modelos de iPhone + Opção "Outro"</option>
+                    <option value="outro">Digitação Livre</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label>Seleção de Cor na Loja</label>
+                <select class="form-select" id="ep-color-sel">
+                    <option value="show">Sim (Exibir seleção de cor)</option>
+                    <option value="none">Não (Ocultar seleção de cor)</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label>Descrição do Produto</label>
+                <textarea class="form-textarea" id="ep-desc" rows="3"></textarea>
+            </div>
+            <div class="form-field">
+                <label>Nova Foto do Produto (opcional)</label>
+                <input class="form-input" id="ep-photo" type="file" accept="image/*" style="padding:0.4rem 0;">
+                <div id="ep-img-preview" style="margin-top:0.5rem;"></div>
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+                <button type="button" class="btn-cancel" style="flex:1;" onclick="closeEditModal()">Cancelar</button>
+                <button type="submit" class="btn-yellow" style="flex:1;" id="btn-save-product">Guardar Alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+// ── CONFIG ──────────────────────────────────────────────────────────────
 const ADMIN_PIN = '1234';
-const API = '';
-
-// ── TIMER: live 1-second ticker ──────────────────────────
 let nowMs = Date.now();
-setInterval(() => { nowMs = Date.now(); refreshTimers(); }, 1000);
+let autoRefreshInterval = null;
 
-function refreshTimers() {
-    document.querySelectorAll('[data-created-at]').forEach(el => {
-        const created = new Date(el.dataset.createdAt).getTime();
-        const status  = el.dataset.status || '';
-        const badge   = el.querySelector('.timer-badge');
-        if (!badge) return;
+let allOrders = [];
+let allDrivers = [];
+let allWithdrawals = [];
+let newOrderCount = 0;
+let activeSubTab = 'pending';
 
-        if (['Entregue','Cancelado','Perdido'].includes(status)) return; // don't tick finished orders
+// ── LIVE TIMER TICKER ────────────────────────────────────────────────────
+setInterval(() => {
+    nowMs = Date.now();
+    tickTimers();
+}, 1000);
 
-        const elapsed = (nowMs - created) / 1000;
-        const rem     = 4 * 3600 - elapsed;
-
+function tickTimers() {
+    document.querySelectorAll('[data-timer]').forEach(el => {
+        const created = +el.dataset.timer;
+        const status  = el.dataset.status;
+        if (['Entregue','Cancelado','Perdido'].includes(status)) return;
+        const rem = 4 * 3600 - (nowMs - created) / 1000;
         if (rem <= 0) {
-            badge.className = 'timer-badge timer-lost';
-            badge.textContent = '🔴 PERDIDO — Pagar 50% ao Estafeta';
+            el.className = 'timer-lost';
+            el.innerHTML = '🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Estafeta/Cliente</div>';
         } else {
-            const h = Math.floor(rem / 3600);
-            const m = Math.floor((rem % 3600) / 60);
-            const s = Math.floor(rem % 60);
-            const fmt = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-            badge.className = rem < 1800 ? 'timer-badge timer-warn' : 'timer-badge timer-ok';
-            badge.textContent = `⏱️ ${fmt} restantes`;
+            const h = Math.floor(rem / 3600), m = Math.floor((rem % 3600)/60), s = Math.floor(rem % 60);
+            const fmt = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            el.className = rem < 1800 ? 'timer-warn' : 'timer-ok';
+            el.textContent = `⏱️ ${fmt} restantes`;
         }
     });
 }
+function pad(n) { return String(n).padStart(2,'0'); }
 
-// ── PIN ──────────────────────────────────────────────────
-function checkPin() {
-    const val = document.getElementById('pin-input').value.trim();
-    if (val === ADMIN_PIN) {
-        document.getElementById('pin-screen').style.display = 'none';
-        document.getElementById('admin-app').style.display  = 'block';
-        loadOrders();
-    } else {
-        document.getElementById('pin-error').textContent = '❌ PIN incorreto.';
-    }
-}
-document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
-
-// ── TABS ─────────────────────────────────────────────────
-function showTab(name) {
-    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    event.currentTarget.classList.add('active');
-    if (name === 'orders')      loadOrders();
-    if (name === 'products')    loadProducts();
-    if (name === 'drivers')     loadDrivers();
-    if (name === 'withdrawals') loadWithdrawals();
-    if (name === 'users')       loadUsers();
-}
-
-// ── HELPERS ──────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────────────
 const STATUS_COLORS = {
-    'Pendente':      '#fef3c7',
-    'Processando':   '#dbeafe',
-    'Preparando':    '#ede9fe',
-    'Com Motorista': '#d1fae5',
-    'Entregue':      '#dcfce7',
-    'Cancelado':     '#fee2e2',
-    'Perdido':       '#fee2e2',
+    'Pendente':      { bg:'#fef3c7', color:'#92400e' },
+    'Processando':   { bg:'#dbeafe', color:'#1e40af' },
+    'Preparando':    { bg:'#ede9fe', color:'#5b21b6' },
+    'Com Motorista': { bg:'#d1fae5', color:'#065f46' },
+    'Entregue':      { bg:'#dcfce7', color:'#166534' },
+    'Cancelado':     { bg:'#fee2e2', color:'#991b1b' },
+    'Perdido':       { bg:'#fee2e2', color:'#991b1b' },
 };
-function statusBadge(s) {
-    const bg = STATUS_COLORS[s] || '#f3f4f6';
-    return `<span class="status-badge" style="background:${bg}">${s}</span>`;
-}
+
 function fmtDate(d) {
     if (!d) return '—';
     return new Date(d).toLocaleString('pt', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
-function fmtCur(v) { return Number(v || 0).toLocaleString('pt-MZ') + ' MT'; }
+function fmtDateShort(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('pt', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function fmtCur(v) { return Number(v||0).toLocaleString('pt-MZ') + ' MT'; }
 
-// ── ORDERS ───────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg) {
+    const el = document.getElementById('toast-msg');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+// ── PIN ──────────────────────────────────────────────────────────────────
+function checkPin() {
+    const val = document.getElementById('pin-input').value.trim();
+    if (val === ADMIN_PIN) {
+        document.getElementById('pin-screen').style.display = 'none';
+        document.getElementById('admin-app').style.display = 'block';
+        startApp();
+    } else {
+        document.getElementById('pin-error').textContent = '❌ PIN incorreto. Tente novamente.';
+        document.getElementById('pin-input').value = '';
+        document.getElementById('pin-input').focus();
+    }
+}
+document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+
+// ── APP INIT ─────────────────────────────────────────────────────────────
+function startApp() {
+    if (Notification && Notification.permission === 'default') Notification.requestPermission();
+    refreshAll();
+    autoRefreshInterval = setInterval(refreshAll, 10000);
+}
+
+function refreshAll() {
+    const tab = document.querySelector('.nav-tab.active')?.id?.replace('nav-','') || 'orders';
+    loadOrders();
+    loadDrivers();
+    loadProducts();
+    loadWithdrawals();
+    loadUsers();
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────────
+function showTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+}
+
+function showSubTab(name) {
+    activeSubTab = name;
+    document.getElementById('sub-pending').classList.toggle('active', name === 'pending');
+    document.getElementById('sub-completed').classList.toggle('active', name === 'completed');
+    renderWithdrawals();
+}
+
+function clearNotif() {
+    newOrderCount = 0;
+    document.getElementById('notif-badge').style.display = 'none';
+    document.title = 'Admin — Tchapo Tchapo';
+}
+
+function toggleCustomCat(fieldId, val) {
+    document.getElementById(fieldId).style.display = val === 'Outro' ? 'flex' : 'none';
+}
+
+// ── ORDERS ───────────────────────────────────────────────────────────────
 async function loadOrders() {
-    const c = document.getElementById('orders-container');
-    c.innerHTML = '<div class="loading">⏳ A carregar...</div>';
     try {
-        const res  = await fetch('/api/orders');
-        const list = await res.json();
-        if (!list.length) { c.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>Sem encomendas ainda.</p></div>'; return; }
+        const res = await fetch('/api/orders');
+        if (!res.ok) return;
+        const data = await res.json();
 
-        c.innerHTML = `
-        <table>
-            <thead><tr>
-                <th>#ID</th><th>Cliente</th><th>Bairro</th><th>Total</th><th>Pagamento</th>
-                <th>Data</th><th>⏱️ Entrega</th><th>Estado</th><th>Ação</th>
-            </tr></thead>
-            <tbody>
-            ${list.map(o => {
-                const created = o.created_at || '';
-                const items   = (o.order_items || []).map(i => `${i.quantity}× ${i.product_name}`).join(', ') || '—';
-                const isFinished = ['Entregue','Cancelado','Perdido'].includes(o.status);
-                return `
-                <tr>
-                    <td><strong>#${o.id}</strong><br><small style="color:#6b7280;font-size:0.72rem;">${items}</small></td>
-                    <td>${o.customer_name || '—'}<br><small style="color:#6b7280">${o.customer_phone || ''}</small></td>
-                    <td>${o.bairro || '—'}</td>
-                    <td><strong>${fmtCur(o.total)}</strong></td>
-                    <td>${o.payment || '—'}</td>
-                    <td style="white-space:nowrap;font-size:0.78rem;">${fmtDate(created)}</td>
-                    <td data-created-at="${created}" data-status="${o.status}">
-                        ${isFinished
-                            ? `<span class="timer-badge ${o.status === 'Entregue' ? 'timer-ok' : 'timer-lost'}">${o.status === 'Entregue' ? '✅ Entregue' : '🔴 ' + o.status}</span>`
-                            : `<span class="timer-badge timer-ok">⏳ a calcular...</span>`
-                        }
-                    </td>
-                    <td>${statusBadge(o.status)}</td>
-                    <td>
-                        <select class="status-select" onchange="updateOrderStatus(${o.id}, this.value)">
-                            ${['Pendente','Processando','Preparando','Com Motorista','Entregue','Cancelado','Perdido']
-                                .map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
-                        </select>
-                    </td>
-                </tr>`;
-            }).join('')}
-            </tbody>
-        </table>`;
-        refreshTimers();
-    } catch (e) {
-        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro ao carregar encomendas: ${e.message}</p></div>`;
-    }
-}
-
-async function updateOrderStatus(id, status) {
-    try {
-        const res = await fetch(`/api/orders/${id}/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status })
-        });
-        if (res.ok) {
-            const row = document.querySelector(`[data-created-at][data-status]`);
-            // refresh table
-            setTimeout(loadOrders, 400);
+        // Detect new orders
+        if (allOrders.length > 0 && data.length > allOrders.length) {
+            const newOnes = data.filter(o => !allOrders.find(p => p.id === o.id));
+            newOnes.forEach(o => {
+                newOrderCount++;
+                playBeep();
+                if (Notification.permission === 'granted') {
+                    new Notification('🛍️ Novo Pedido — Tchapo Tchapo!', {
+                        body: `${o.customer_name} • ${o.bairro} • ${fmtCur(o.total)}`,
+                        icon: '/favicon.ico', tag: `order-${o.id}`
+                    });
+                }
+            });
+            toast(`🔔 ${newOnes.length} novo(s) pedido(s) recebido(s)!`);
+            document.title = `(${newOrderCount}) Novos Pedidos — Admin Tchapo`;
+            const badge = document.getElementById('notif-badge');
+            badge.textContent = `🔔 ${newOrderCount} novo${newOrderCount>1?'s':''}`;
+            badge.style.display = '';
         }
-    } catch(e) { alert('Erro ao actualizar estado: ' + e.message); }
+
+        allOrders = data;
+        renderOrders();
+        renderStats();
+    } catch(e) { console.error(e); }
 }
 
-// ── PRODUCTS ─────────────────────────────────────────────
-async function loadProducts() {
-    const c = document.getElementById('products-container');
-    c.innerHTML = '<div class="loading">⏳ A carregar...</div>';
-    try {
-        const res  = await fetch('/api/products/admin');
-        const list = await res.json();
-        if (!list.length) { c.innerHTML = '<div class="empty-state"><div class="icon">🏷️</div><p>Sem produtos.</p></div>'; return; }
-        c.innerHTML = `
-        <table>
-            <thead><tr><th>#</th><th>Imagem</th><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estado</th></tr></thead>
-            <tbody>
-            ${list.map(p => `
-                <tr>
-                    <td>#${p.id}</td>
-                    <td>${p.image ? `<img src="${p.image}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;">` : '—'}</td>
-                    <td><strong>${p.name}</strong></td>
-                    <td>${p.category || '—'}</td>
-                    <td>${fmtCur(p.price)}</td>
-                    <td><span class="status-badge" style="background:${p.active !== false ? '#dcfce7' : '#fee2e2'}">${p.active !== false ? '✅ Activo' : '❌ Inactivo'}</span></td>
-                </tr>`).join('')}
-            </tbody>
-        </table>`;
-    } catch(e) {
-        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro: ${e.message}</p></div>`;
+function renderStats() {
+    const statuses = ['Pendente','Processando','Preparando','Com Motorista','Entregue'];
+    const bar = document.getElementById('stats-bar');
+    bar.innerHTML = statuses.map(s => {
+        const cnt = allOrders.filter(o => o.status === s || (s==='Pendente' && !o.status)).length;
+        const c = STATUS_COLORS[s] || STATUS_COLORS['Pendente'];
+        return `<div class="stat-card" style="background:${c.bg};color:${c.color};">
+            <div class="stat-num">${cnt}</div>${s}
+        </div>`;
+    }).join('') + `<div class="stat-card" style="background:#ede9fe;color:#5b21b6;">
+        <div class="stat-num">${allOrders.length}</div>Total
+    </div>`;
+}
+
+function renderOrders() {
+    const tbody = document.getElementById('orders-tbody');
+    if (!allOrders.length) {
+        tbody.innerHTML = `<tr><td colspan="10" class="empty">Nenhum pedido encontrado. A aguardar pedidos... 🕐</td></tr>`;
+        return;
     }
+    tbody.innerHTML = allOrders.map((o, idx) => {
+        const sc = STATUS_COLORS[o.status] || STATUS_COLORS['Pendente'];
+        const createdMs = new Date(o.created_at || Date.now()).getTime();
+        const elapsedSecs = (nowMs - createdMs) / 1000;
+        const remSecs = 4 * 3600 - elapsedSecs;
+
+        // Timer HTML
+        let timerHtml = '';
+        if (o.status === 'Pendente') {
+            timerHtml = `<div class="timer-pend">⏳ Pendente (Timer Pausado)</div>`;
+        } else if (o.status === 'Entregue') {
+            timerHtml = `<div class="timer-done">✅ Entregue a Tempo</div>`;
+        } else if (o.status === 'Cancelado') {
+            timerHtml = `<div class="timer-lost">❌ Cancelado</div>`;
+        } else if (o.status === 'Perdido' || remSecs <= 0) {
+            timerHtml = `<div class="timer-lost" data-timer="${createdMs}" data-status="${o.status}">🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Estafeta/Cliente</div></div>`;
+        } else {
+            timerHtml = `<span class="timer-ok" data-timer="${createdMs}" data-status="${o.status}">⏱️ calculando...</span>`;
+        }
+
+        // Items
+        const items = o.order_items && o.order_items.length
+            ? o.order_items.map(i => `<div style="display:flex;gap:6px;align-items:center;margin-bottom:2px;"><span style="background:#f3f4f6;padding:2px 6px;border-radius:12px;font-weight:700;font-size:0.75rem;color:#4b5563;">${i.quantity}x</span><span style="font-weight:500;">${i.product_name}</span></div>`).join('')
+            : '<span style="color:#9ca3af;font-style:italic;">Nenhum item</span>';
+
+        // Driver options
+        const driverOpts = allDrivers.filter(d => d.active).map(d =>
+            `<option value="${d.id}" ${o.driver_id == d.id ? 'selected':''}>${d.name}</option>`).join('');
+
+        return `<tr style="background:${idx%2===0?'#fff':'#fafafa'}">
+            <td style="color:#6b7280;font-size:0.85rem;">#${o.id}</td>
+            <td style="font-weight:600;">
+                ${o.customer_name}
+                ${o.phone ? `<div style="font-size:0.8rem;color:#3b82f6;font-weight:600;margin-top:2px;">📞 ${o.phone}</div>`:''}
+                ${o.address ? `<div style="font-size:0.78rem;color:#9ca3af;">${o.address}</div>`:''}
+            </td>
+            <td style="font-size:0.85rem;color:#374151;">${items}</td>
+            <td>${o.bairro}</td>
+            <td>${o.payment||'—'}</td>
+            <td style="font-weight:700;">${fmtCur(o.total)}</td>
+            <td style="font-size:0.85rem;color:#6b7280;">
+                <div>${o.time || new Date(o.created_at).toLocaleTimeString('pt',{hour:'2-digit',minute:'2-digit'})}</div>
+                <div style="margin-top:4px;">${timerHtml}</div>
+            </td>
+            <td>
+                <select class="driver-select" onchange="assignDriver(${o.id}, this.value)">
+                    <option value="">Nenhum Motorista</option>
+                    ${driverOpts}
+                </select>
+            </td>
+            <td>
+                <select class="status-select" style="background:${sc.bg};color:${sc.color};"
+                    onchange="updateStatus(${o.id}, this.value)">
+                    <option value="Pendente">📋 Pendente</option>
+                    <option value="Processando">🔄 Processando</option>
+                    <option value="Preparando">📦 Preparando</option>
+                    <option value="Com Motorista">🛵 Com Motorista</option>
+                    <option value="Entregue">✅ Entregue</option>
+                    <option value="Perdido">🔴 Perdido (Multa 50%)</option>
+                    <option value="Cancelado">❌ Cancelado</option>
+                </select>
+            </td>
+            <td>
+                <div style="display:flex;gap:0.5rem;">
+                    <button class="btn-pdf" onclick="downloadPDF(${o.id})">PDF</button>
+                    <button class="btn-delete" onclick="promptDeleteOrder(${o.id},'${o.customer_name}')">Apagar</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+
+    // Set correct selected option on status selects
+    document.querySelectorAll('#orders-tbody select.status-select').forEach((sel, i) => {
+        sel.value = allOrders[i].status || 'Pendente';
+    });
+
+    tickTimers();
 }
 
-// ── DRIVERS ──────────────────────────────────────────────
+async function updateStatus(id, status) {
+    if (status === 'Com Motorista') {
+        const order = allOrders.find(o => o.id == id);
+        if (!order?.driver_id) { alert('Por favor, designe um motorista primeiro.'); return; }
+    }
+    await fetch(`/api/orders/${id}/status`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status })
+    });
+    loadOrders();
+}
+
+async function assignDriver(orderId, driverId) {
+    await fetch(`/api/orders/${orderId}/status`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ driver_id: driverId ? parseInt(driverId) : null })
+    });
+    loadOrders();
+    toast('Motorista designado com sucesso!');
+}
+
+function downloadPDF(id) { window.open(`/api/orders/${id}/pdf`, '_blank'); }
+
+let deleteOrderId = null;
+function promptDeleteOrder(id, name) {
+    deleteOrderId = id;
+    document.getElementById('modal-delete-title').textContent = `Apagar Pedido #${id}?`;
+    document.getElementById('modal-delete-body').textContent = `O pedido de ${name} será removido permanentemente.`;
+    document.getElementById('modal-delete-order').style.display = 'flex';
+    document.getElementById('btn-confirm-delete').onclick = () => deleteOrder(id);
+}
+function closeDeleteModal() {
+    document.getElementById('modal-delete-order').style.display = 'none';
+}
+async function deleteOrder(id) {
+    await fetch(`/api/orders/${id}`, { method:'DELETE' });
+    allOrders = allOrders.filter(o => o.id != id);
+    renderOrders(); renderStats();
+    closeDeleteModal();
+    toast('Pedido apagado com sucesso.');
+}
+
+// ── DRIVERS ──────────────────────────────────────────────────────────────
 async function loadDrivers() {
-    const c = document.getElementById('drivers-container');
-    c.innerHTML = '<div class="loading">⏳ A carregar...</div>';
     try {
-        const res  = await fetch('/api/drivers');
-        const list = await res.json();
-        if (!list.length) { c.innerHTML = '<div class="empty-state"><div class="icon">🛵</div><p>Sem motoristas registados.</p></div>'; return; }
-        c.innerHTML = `
-        <table>
-            <thead><tr><th>#</th><th>Foto</th><th>Nome</th><th>Telefone</th><th>Veículo</th><th>Estado</th></tr></thead>
-            <tbody>
-            ${list.map(d => `
-                <tr>
-                    <td>#${d.id}</td>
-                    <td>${d.photo_url ? `<img src="${d.photo_url}" style="width:40px;height:40px;object-fit:cover;border-radius:50%;">` : '👤'}</td>
-                    <td><strong>${d.name}</strong></td>
-                    <td>${d.phone || '—'}</td>
-                    <td>${d.vehicle || '—'}</td>
-                    <td><span class="status-badge" style="background:${d.available ? '#dcfce7' : '#fee2e2'}">${d.available ? '🟢 Disponível' : '🔴 Ocupado'}</span></td>
-                </tr>`).join('')}
-            </tbody>
-        </table>`;
-    } catch(e) {
-        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro: ${e.message}</p></div>`;
-    }
+        const res = await fetch('/api/drivers');
+        if (!res.ok) return;
+        allDrivers = await res.json();
+        renderDrivers();
+    } catch(e) {}
 }
 
-// ── WITHDRAWALS ───────────────────────────────────────────
+function renderDrivers() {
+    const el = document.getElementById('drivers-list');
+    if (!allDrivers.length) { el.innerHTML = '<div class="empty">Nenhum motorista cadastrado.</div>'; return; }
+    el.innerHTML = allDrivers.map(d => `
+        <div class="driver-card">
+            <div class="driver-info">
+                <img class="driver-img" src="${d.photo_url||'https://via.placeholder.com/50'}" alt="${d.name}">
+                <div>
+                    <h4 style="margin:0;color:#111827;font-weight:600;">${d.name}</h4>
+                    <p style="margin:2px 0 0;color:#6b7280;font-size:0.8rem;">📲 ${d.phone||'—'}</p>
+                </div>
+            </div>
+            <div class="driver-actions">
+                <button class="${d.active ? 'btn-toggle-online':'btn-toggle-offline'}" onclick="toggleDriver(${d.id},${!d.active})">
+                    ${d.active ? 'Online 🟢':'Offline 🔴'}
+                </button>
+                <button class="btn-trash" onclick="deleteDriver(${d.id})" title="Remover">🗑️</button>
+            </div>
+        </div>`).join('');
+}
+
+document.getElementById('form-add-driver').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-add-driver');
+    btn.textContent = 'A carregar...'; btn.disabled = true;
+    let photoUrl = '';
+    const file = document.getElementById('d-photo').files[0];
+    if (file) {
+        const fd = new FormData(); fd.append('photo', file);
+        const r = await fetch('/api/drivers/upload', { method:'POST', body:fd });
+        if (r.ok) { const d = await r.json(); photoUrl = d.photo_url; }
+    }
+    await fetch('/api/drivers', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ name: document.getElementById('d-name').value, phone: document.getElementById('d-phone').value, photo_url: photoUrl })
+    });
+    e.target.reset();
+    btn.textContent = 'Adicionar Motorista'; btn.disabled = false;
+    loadDrivers(); toast('Motorista adicionado com sucesso!');
+});
+
+async function toggleDriver(id, active) {
+    await fetch(`/api/drivers/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ active }) });
+    loadDrivers();
+}
+
+async function deleteDriver(id) {
+    if (!confirm('Remover este motorista?')) return;
+    await fetch(`/api/drivers/${id}`, { method:'DELETE' });
+    loadDrivers(); toast('Motorista removido.');
+}
+
+// ── PRODUCTS ─────────────────────────────────────────────────────────────
+let allProducts = [];
+
+async function loadProducts() {
+    try {
+        const res = await fetch('/api/products/admin');
+        if (!res.ok) return;
+        allProducts = await res.json();
+        renderProducts();
+    } catch(e) {}
+}
+
+function renderProducts() {
+    const el = document.getElementById('products-list');
+    if (!allProducts.length) { el.innerHTML = '<div class="empty">Nenhum produto registado.</div>'; return; }
+    el.innerHTML = allProducts.map(p => `
+        <div class="product-item">
+            ${p.image ? `<img class="product-img" src="${p.image}" alt="${p.name}">` : '<div class="product-img"></div>'}
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                <div style="font-size:0.75rem;color:#6b7280;">${p.category} · ${fmtCur(p.price)}</div>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+                <button class="btn-pdf" onclick="openEditProduct(${p.id})">✏️ Editar</button>
+                <button class="btn-delete" onclick="promptDeleteProduct(${p.id},'${p.name.replace(/'/g,'')}')">🗑️</button>
+            </div>
+        </div>`).join('');
+}
+
+document.getElementById('form-add-product').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-add-product');
+    btn.textContent = 'A guardar...'; btn.disabled = true;
+    let photoUrl = '';
+    const file = document.getElementById('p-photo').files[0];
+    if (file) {
+        const fd = new FormData(); fd.append('photo', file);
+        const r = await fetch('/api/products/upload', { method:'POST', body:fd });
+        if (r.ok) { const d = await r.json(); photoUrl = d.photo_url; }
+    }
+    const catEl = document.getElementById('p-category');
+    const cat = catEl.value === 'Outro' ? document.getElementById('p-custom-cat-val').value : catEl.value;
+    const feats = (document.getElementById('p-features').value || '').split(',').map(f => f.trim()).filter(Boolean);
+    feats.push(`_device_selection:${document.getElementById('p-device-sel').value}`);
+    feats.push(`_color_selection:${document.getElementById('p-color-sel').value}`);
+    await fetch('/api/products', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+            name: document.getElementById('p-name').value,
+            price: parseFloat(document.getElementById('p-price').value),
+            category: cat || 'Acessórios',
+            image: photoUrl || 'assets/default_product.png',
+            desc: document.getElementById('p-desc').value,
+            features: feats,
+            active: true
+        })
+    });
+    e.target.reset();
+    btn.textContent = 'Adicionar Produto'; btn.disabled = false;
+    loadProducts(); toast('Produto adicionado com sucesso!');
+});
+
+function openEditProduct(id) {
+    const p = allProducts.find(x => x.id == id);
+    if (!p) return;
+    document.getElementById('ep-id').value = p.id;
+    document.getElementById('ep-name').value = p.name;
+    document.getElementById('ep-price').value = p.price;
+    const knownCats = ['Smartphones','Áudio','Wearables','Acessórios'];
+    const catEl = document.getElementById('ep-category');
+    if (knownCats.includes(p.category)) { catEl.value = p.category; document.getElementById('ep-custom-cat').style.display='none'; }
+    else { catEl.value='Outro'; document.getElementById('ep-custom-cat').style.display='flex'; document.getElementById('ep-custom-cat-val').value=p.category; }
+    const devFlag = Array.isArray(p.features) ? p.features.find(f=>f.startsWith('_device_selection:')) : null;
+    document.getElementById('ep-device-sel').value = devFlag ? devFlag.split(':')[1] : 'none';
+    const colFlag = Array.isArray(p.features) ? p.features.find(f=>f.startsWith('_color_selection:')) : null;
+    document.getElementById('ep-color-sel').value = colFlag ? colFlag.split(':')[1] : 'show';
+    const userFeats = Array.isArray(p.features) ? p.features.filter(f=>!f.startsWith('_device_selection:')&&!f.startsWith('_color_selection:')) : [];
+    document.getElementById('ep-features').value = userFeats.join(', ');
+    document.getElementById('ep-desc').value = p.desc || '';
+    document.getElementById('ep-photo').value = '';
+    document.getElementById('ep-img-preview').innerHTML = p.image ? `<span style="font-size:0.8rem;color:#6b7280;">Foto atual:</span> <img src="${p.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;vertical-align:middle;">` : '';
+    document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }
+
+document.getElementById('form-edit-product').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-product');
+    btn.textContent = 'A guardar...'; btn.disabled = true;
+    const id = document.getElementById('ep-id').value;
+    let photoUrl = '';
+    const file = document.getElementById('ep-photo').files[0];
+    if (file) {
+        const fd = new FormData(); fd.append('photo', file);
+        const r = await fetch('/api/products/upload', { method:'POST', body:fd });
+        if (r.ok) { const d = await r.json(); photoUrl = d.photo_url; }
+    } else {
+        const p = allProducts.find(x => x.id == id);
+        photoUrl = p?.image || '';
+    }
+    const catEl = document.getElementById('ep-category');
+    const cat = catEl.value === 'Outro' ? document.getElementById('ep-custom-cat-val').value : catEl.value;
+    const feats = (document.getElementById('ep-features').value || '').split(',').map(f => f.trim()).filter(Boolean);
+    feats.push(`_device_selection:${document.getElementById('ep-device-sel').value}`);
+    feats.push(`_color_selection:${document.getElementById('ep-color-sel').value}`);
+    await fetch(`/api/products/${id}`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+            name: document.getElementById('ep-name').value,
+            price: parseFloat(document.getElementById('ep-price').value),
+            category: cat,
+            image: photoUrl,
+            desc: document.getElementById('ep-desc').value,
+            features: feats,
+        })
+    });
+    btn.textContent = 'Guardar Alterações'; btn.disabled = false;
+    closeEditModal(); loadProducts(); toast('Produto actualizado com sucesso!');
+});
+
+function promptDeleteProduct(id, name) {
+    if (!confirm(`Apagar o produto "${name}"? Esta acção não pode ser revertida.`)) return;
+    deleteProduct(id);
+}
+async function deleteProduct(id) {
+    await fetch(`/api/products/${id}`, { method:'DELETE' });
+    loadProducts(); toast('Produto removido.');
+}
+
+// ── WITHDRAWALS ───────────────────────────────────────────────────────────
 async function loadWithdrawals() {
-    const c = document.getElementById('withdrawals-container');
-    c.innerHTML = '<div class="loading">⏳ A carregar...</div>';
     try {
-        const res  = await fetch('/api/referrals/admin/withdrawals');
-        const list = await res.json();
-        if (!list.length) { c.innerHTML = '<div class="empty-state"><div class="icon">🎁</div><p>Sem saques pendentes.</p></div>'; return; }
-        c.innerHTML = `
-        <table>
-            <thead><tr><th>#</th><th>Utilizador</th><th>Valor</th><th>Método</th><th>Telefone</th><th>Data</th><th>Estado</th><th>Ação</th></tr></thead>
-            <tbody>
-            ${list.map(w => `
-                <tr>
-                    <td>#${w.id}</td>
-                    <td>${w.user_id || '—'}</td>
-                    <td><strong>${fmtCur(w.amount)}</strong></td>
-                    <td>${w.payment_method || '—'}</td>
-                    <td>${w.phone || '—'}</td>
-                    <td style="white-space:nowrap;font-size:0.78rem;">${fmtDate(w.created_at)}</td>
-                    <td>${statusBadge(w.status)}</td>
-                    <td>
-                        <select class="status-select" onchange="updateWithdrawal(${w.id}, this.value)">
-                            ${['Pendente','Pago','Cancelado'].map(s => `<option value="${s}" ${s===w.status?'selected':''}>${s}</option>`).join('')}
-                        </select>
-                    </td>
-                </tr>`).join('')}
-            </tbody>
-        </table>`;
-    } catch(e) {
-        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro: ${e.message}</p></div>`;
+        const res = await fetch('/api/referrals/admin/withdrawals');
+        if (!res.ok) return;
+        allWithdrawals = await res.json();
+        const pending = allWithdrawals.filter(w => w.status === 'Pendente').length;
+        const badge = document.getElementById('badge-referrals');
+        badge.textContent = pending;
+        badge.style.display = pending > 0 ? '' : 'none';
+        renderWithdrawals();
+    } catch(e) {}
+}
+
+function renderWithdrawals() {
+    const list = activeSubTab === 'pending'
+        ? allWithdrawals.filter(w => w.status === 'Pendente')
+        : allWithdrawals.filter(w => w.status !== 'Pendente');
+    const tbody = document.getElementById('withdrawals-tbody');
+    if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">${activeSubTab==='pending'?'Nenhum saque pendente.':'Nenhum saque processado.'}</td></tr>`;
+        return;
     }
+    tbody.innerHTML = list.map(w => {
+        const sc = STATUS_COLORS[w.status] || {bg:'#f3f4f6',color:'#374151'};
+        return `<tr>
+            <td>#${w.id}</td>
+            <td>${w.user_name||w.user_id||'—'}</td>
+            <td><strong>${fmtCur(w.amount)}</strong></td>
+            <td>${w.payment_method||'—'}</td>
+            <td>${w.payment_phone||w.phone||'—'}</td>
+            <td style="white-space:nowrap;font-size:0.8rem;">${fmtDate(w.created_at)}</td>
+            <td><span style="background:${sc.bg};color:${sc.color};padding:0.25rem 0.6rem;border-radius:999px;font-weight:700;font-size:0.78rem;">${w.status}</span></td>
+            <td>
+                ${w.status==='Pendente' ? `
+                <div style="display:flex;gap:0.5rem;">
+                    <button class="btn-pdf" onclick="processWithdrawal(${w.id},'Pago')">✅ Pago</button>
+                    <button class="btn-delete" onclick="processWithdrawal(${w.id},'Cancelado')">Cancelar</button>
+                </div>` : '—'}
+            </td>
+        </tr>`;
+    }).join('');
 }
 
-async function updateWithdrawal(id, status) {
-    try {
-        await fetch(`/api/referrals/admin/withdrawals/${id}`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status })
-        });
-        setTimeout(loadWithdrawals, 400);
-    } catch(e) { alert('Erro: ' + e.message); }
+async function processWithdrawal(id, status) {
+    await fetch(`/api/referrals/admin/withdrawals/${id}`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status })
+    });
+    loadWithdrawals();
+    toast(`Saque marcado como ${status === 'Pago' ? 'pago' : 'cancelado'}!`);
 }
 
-// ── USERS ─────────────────────────────────────────────────
+// ── USERS ─────────────────────────────────────────────────────────────────
 async function loadUsers() {
-    const c = document.getElementById('users-container');
-    c.innerHTML = '<div class="loading">⏳ A carregar utilizadores...</div>';
     try {
-        const res  = await fetch('/api/users/admin');
+        const res = await fetch('/api/users/admin');
+        if (!res.ok) return;
         const list = await res.json();
-        if (!list || !list.length) {
-            c.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Sem contas registadas.</p></div>'; return;
-        }
-        const onlineThreshold = Date.now() - 3 * 60 * 1000; // 3 minutos
-        c.innerHTML = `
-        <table>
-            <thead><tr>
-                <th>#</th><th>Nome</th><th>Email</th><th>Telefone</th>
-                <th>Conta criada</th><th>Último acesso</th><th>Estado</th><th>Pedidos</th>
-            </tr></thead>
-            <tbody>
-            ${list.map(u => {
-                const lastSeen = u.last_seen_at ? new Date(u.last_seen_at).getTime() : 0;
-                const isOnline = lastSeen > onlineThreshold;
-                return `
-                <tr>
-                    <td>#${u.id ? u.id.substring(0,8) : '—'}…</td>
-                    <td><strong>${u.name || u.full_name || '—'}</strong></td>
-                    <td style="font-size:0.78rem;">${u.email || '—'}</td>
-                    <td>${u.phone || '—'}</td>
-                    <td style="white-space:nowrap;font-size:0.78rem;">${fmtDate(u.created_at)}</td>
-                    <td style="white-space:nowrap;font-size:0.78rem;">${u.last_seen_at ? fmtDate(u.last_seen_at) : '—'}</td>
-                    <td>
-                        ${isOnline
-                            ? `<span><span class="online-dot"></span>🟢 Online</span>`
-                            : `<span><span class="offline-dot"></span>⚪ Offline</span>`
-                        }
-                    </td>
-                    <td style="text-align:center;font-weight:700;">${u.order_count || 0}</td>
-                </tr>`;
-            }).join('')}
-            </tbody>
-        </table>`;
-    } catch(e) {
-        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro: ${e.message}</p></div>`;
+        renderUsers(list);
+    } catch(e) {}
+}
+
+function renderUsers(list) {
+    const tbody = document.getElementById('users-tbody');
+    if (!list || !list.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Nenhum utilizador registado até ao momento.</td></tr>`;
+        return;
     }
+    const onlineThreshold = Date.now() - 3 * 60 * 1000;
+    tbody.innerHTML = list.map((u, idx) => {
+        const lastSeen = u.last_seen_at ? new Date(u.last_seen_at).getTime() : 0;
+        const isOnline = lastSeen > onlineThreshold;
+        const bg = idx % 2 === 0 ? '#fff' : '#fafafa';
+        return `<tr style="border-bottom:1px solid #f3f4f6;background:${bg};">
+            <td style="padding:1rem 1.25rem;font-weight:600;color:#111827;">👤 ${u.name||'—'}</td>
+            <td style="padding:1rem 1.25rem;color:#4b5563;">
+                <div>📧 ${u.email||'—'}</div>
+                ${u.phone && u.phone!=='Sem telefone' ? `<div style="font-size:0.8rem;color:#2563eb;font-weight:600;">📞 ${u.phone}</div>` : ''}
+            </td>
+            <td style="padding:1rem 1.25rem;color:#6b7280;font-size:0.85rem;">
+                📅 ${u.created_at ? new Date(u.created_at).toLocaleDateString('pt-MZ',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—'}
+            </td>
+            <td style="padding:1rem 1.25rem;color:#6b7280;font-size:0.85rem;">
+                🕒 ${u.last_seen_at ? fmtDateShort(u.last_seen_at) : '—'}
+            </td>
+            <td style="padding:1rem 1.25rem;">
+                <span class="${isOnline ? 'badge-online' : 'badge-offline'}">${isOnline ? '🟢 Online' : '⚪ Offline'}</span>
+            </td>
+            <td style="padding:1rem 1.25rem;font-weight:700;color:#111827;">
+                📦 ${u.order_count||0} pedido${(u.order_count||0)!==1?'s':''}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ── AUDIO BEEP ────────────────────────────────────────────────────────────
+function playBeep() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 0.15, 0.3].forEach(t => {
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = t===0?880:t===0.15?1100:1320;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.4, ctx.currentTime + t);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.12);
+            osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + 0.15);
+        });
+    } catch(e) {}
 }
 </script>
 </body>

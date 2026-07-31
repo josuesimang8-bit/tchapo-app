@@ -922,14 +922,29 @@ function updateCartUI() {
 }
 
 // ─── CHECKOUT (via cart) ──────────────────────────────────────────────
-function handleCheckout(e) {
-    e.preventDefault();
-
-    if (!currentUser) {
-        openAuthModal();
-        showStatusToast('Por favor, faça login ou crie conta para finalizar a encomenda.');
+window.handleContinueAsGuest = function() {
+    closeAuthModal();
+    if (quickOrderProduct) {
+        quickOrderModal.classList.add('active');
+        quickOrderOverlay.classList.add('active');
+        updateScrollLock();
         return;
     }
+    if (cart.length > 0) {
+        cartSidebar.classList.add('active');
+        cartOverlay.classList.add('active');
+        updateScrollLock();
+        return;
+    }
+    const catalogEl = document.getElementById('catalog');
+    if (catalogEl) {
+        catalogEl.scrollIntoView({ behavior: 'smooth' });
+    }
+    showStatusToast('💡 Modo sem conta ativo! Escolha um produto para preencher os dados de entrega.');
+};
+
+function handleCheckout(e) {
+    e.preventDefault();
 
     const name    = document.getElementById('customer-name').value;
     const phone   = document.getElementById('customer-phone').value;

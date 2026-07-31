@@ -180,7 +180,7 @@ app.post('/api/orders', async (req, res) => {
         const { data: dataWithItems, error: errorWithItems } = await supabase
             .from('orders')
             .insert([{ 
-                customer_name, phone, bairro, address, time, payment, total: finalTotal, status: status || 'Pendente', user_id: user_id || null,
+                customer_name, phone, bairro, address, time, payment, total: finalTotal, status: 'Pendente', user_id: user_id || null,
                 items: items || [],
                 referral_code: finalReferralCode,
                 referral_discount: finalReferralDiscount
@@ -194,7 +194,7 @@ app.post('/api/orders', async (req, res) => {
                 const { data: fallbackData, error: fallbackError } = await supabase
                     .from('orders')
                     .insert([{ 
-                        customer_name, phone, bairro, address, time, payment, total: finalTotal, status: status || 'Pendente', user_id: user_id || null,
+                        customer_name, phone, bairro, address, time, payment, total: finalTotal, status: 'Pendente', user_id: user_id || null,
                         referral_code: finalReferralCode,
                         referral_discount: finalReferralDiscount
                     }])

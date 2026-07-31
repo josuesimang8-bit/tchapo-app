@@ -1118,6 +1118,99 @@ app.put('/api/referrals/admin/withdrawals/:id', async (req, res) => {
     }
 });
 
+// POST /api/users/heartbeat - Atualizar última atividade do utilizador
+app.post('/api/users/heartbeat', async (req, res) => {
+    try {
+        const { user_id, user_email } = req.body;
+        if (!user_id && !user_email) return res.status(400).json({ error: 'Informação do utilizador obrigatória.' });
+
+        const now = new Date().toISOString();
+        if (user_id) {
+            await supabase.from('referrals').update({ last_seen_at: now }).eq('user_id', user_id);
+        } else if (user_email) {
+            await supabase.from('referrals').update({ last_seen_at: now }).eq('user_email', user_email);
+        }
+        res.json({ success: true, timestamp: now });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/users/admin - Listar contas criadas e estado de acesso
+app.get('/api/users/admin', async (req, res) => {
+    try {
+        const { data: refUsers } = await supabase
+            .from('referrals')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        const { data: orders } = await supabase
+            .from('orders')
+            .select('customer_name, customer_phone, customer_email, created_at, user_id')
+            .order('created_at', { ascending: false });
+
+        const userMap = new Map();
+
+        if (refUsers && Array.isArray(refUsers)) {
+            refUsers.forEach(u => {
+                const key = u.user_email || u.user_id;
+                userMap.set(key, {
+                    id: u.user_id,
+                    name: u.user_name || (u.user_email ? u.user_email.split('@')[0] : 'Cliente'),
+                    email: u.user_email || 'Sem email',
+                    phone: u.user_phone || 'Sem telefone',
+                    created_at: u.created_at,
+                    last_seen_at: u.last_seen_at || u.created_at,
+                    referral_code: u.referral_code || 'N/A',
+                    balance: u.balance || 0,
+                    order_count: 0
+                });
+            });
+        }
+
+        if (orders && Array.isArray(orders)) {
+            orders.forEach(o => {
+                const key = o.customer_email || o.user_id || o.customer_name;
+                if (!userMap.has(key)) {
+                    userMap.set(key, {
+                        id: o.user_id || `order-${o.customer_name}`,
+                        name: o.customer_name || 'Cliente',
+                        email: o.customer_email || 'N/A',
+                        phone: o.customer_phone || 'N/A',
+                        created_at: o.created_at,
+                        last_seen_at: o.created_at,
+                        referral_code: 'N/A',
+                        balance: 0,
+                        order_count: 1
+                    });
+                } else {
+                    const existing = userMap.get(key);
+                    existing.order_count += 1;
+                    if (new Date(o.created_at) > new Date(existing.last_seen_at)) {
+                        existing.last_seen_at = o.created_at;
+                    }
+                    if ((!existing.phone || existing.phone === 'Sem telefone') && o.customer_phone) {
+                        existing.phone = o.customer_phone;
+                    }
+                }
+            });
+        }
+
+        const userList = Array.from(userMap.values()).map(u => {
+            const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000);
+            const isOnline = new Date(u.last_seen_at) > tenMinsAgo;
+            return {
+                ...u,
+                is_online: isOnline
+            };
+        });
+
+        res.json(userList);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Backend server running on http://localhost:${PORT}`);

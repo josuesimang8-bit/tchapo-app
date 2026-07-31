@@ -214,6 +214,22 @@ export default function Store() {
     const [trackingStatus, setTrackingStatus] = useState('Pendente');
     const [trackingDriver, setTrackingDriver] = useState(null);
 
+    // User activity heartbeat to report online status to admin
+    useEffect(() => {
+        if (currentUser) {
+            const sendHeartbeat = () => {
+                fetch(import.meta.env.VITE_API_URL + '/api/users/heartbeat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id, user_email: currentUser.email })
+                }).catch(() => {});
+            };
+            sendHeartbeat();
+            const interval = setInterval(sendHeartbeat, 60000);
+            return () => clearInterval(interval);
+        }
+    }, [currentUser]);
+
     // Lock body scroll when modals are open
     useEffect(() => {
         const isModalOpen = (activePromo !== null) || isCartOpen || isAuthOpen || isMeusPedidosOpen || isReferralOpen || selectedProduct !== null || quickOrderProduct !== null || trackingOrder !== null;
@@ -1849,6 +1865,40 @@ export default function Store() {
                                 </button>
                             </form>
                         )}
+
+                        <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
+                            <button 
+                                type="button" 
+                                onClick={() => setIsAuthOpen(false)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    background: '#f3f4f6',
+                                    color: '#374151',
+                                    border: '1.5px solid #d1d5db',
+                                    borderRadius: '12px',
+                                    fontWeight: 700,
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                ⏩ Continuar sem Conta
+                            </button>
+                            <div style={{
+                                marginTop: '0.75rem',
+                                padding: '0.75rem 1rem',
+                                background: '#fffbeb',
+                                border: '1px solid #fde68a',
+                                borderRadius: '10px',
+                                color: '#b45309',
+                                fontSize: '0.78rem',
+                                textAlign: 'center',
+                                lineHeight: '1.4'
+                            }}>
+                                ⚠️ <strong>Aviso Importante:</strong> Ao continuar sem criar conta, os dados do seu pedido e histórico podem ser perdidos caso limpe a cache ou feche a sessão do navegador.
+                            </div>
+                        </div>
                     </div>
                 </>
             )}

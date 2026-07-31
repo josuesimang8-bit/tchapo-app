@@ -7,6 +7,7 @@ const STATUS_COLORS = {
     'Com Motorista':  { bg: '#d1fae5', color: '#065f46' },
     'Entregue':       { bg: '#dcfce7', color: '#166534' },
     'Cancelado':      { bg: '#fee2e2', color: '#991b1b' },
+    'Perdido':        { bg: '#fee2e2', color: '#991b1b' },
 };
 
 // Generates a short notification sound using Web Audio API
@@ -58,6 +59,10 @@ export default function Admin() {
     const [withdrawals, setWithdrawals] = useState([]);
     const [pendingWithdrawalsCount, setPendingWithdrawalsCount] = useState(0);
     const [referralsSubTab, setReferralsSubTab] = useState('pending'); // 'pending' or 'completed'
+
+    // Live clock ticker & Users state
+    const [now, setNow] = useState(Date.now());
+    const [usersList, setUsersList] = useState([]);
     
     // New Product form state
     const [newProdName, setNewProdName]       = useState('');
@@ -215,6 +220,24 @@ export default function Admin() {
         }
     };
 
+    // --- Fetch users ---
+    const fetchUsers = useCallback(async () => {
+        try {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/api/users/admin');
+            if (!res.ok) return;
+            const data = await res.json();
+            setUsersList(data);
+        } catch (err) {
+            console.error('Erro ao buscar utilizadores:', err);
+        }
+    }, []);
+
+    // --- Live 1s clock ticker ---
+    useEffect(() => {
+        const timer = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
     // --- Auto-refresh every 10s when logged in ---
     useEffect(() => {
         if (isLoggedIn) {
@@ -223,15 +246,17 @@ export default function Admin() {
             fetchDrivers();
             fetchProducts();
             fetchWithdrawals();
+            fetchUsers();
             intervalRef.current = setInterval(() => {
                 fetchOrders();
                 fetchDrivers();
                 fetchProducts();
                 fetchWithdrawals();
+                fetchUsers();
             }, 10000);
         }
         return () => clearInterval(intervalRef.current);
-    }, [isLoggedIn, fetchOrders, fetchDrivers, fetchProducts, fetchWithdrawals, requestNotifPermission]);
+    }, [isLoggedIn, fetchOrders, fetchDrivers, fetchProducts, fetchWithdrawals, fetchUsers, requestNotifPermission]);
 
     // --- Tab title badge ---
     useEffect(() => {
@@ -741,6 +766,18 @@ export default function Admin() {
                         </span>
                     )}
                 </button>
+                <button
+                    onClick={() => setActiveTab('users')}
+                    style={{
+                        background: activeTab === 'users' ? '#374151' : 'transparent',
+                        color: activeTab === 'users' ? '#fff' : '#9ca3af',
+                        border: 'none', padding: '0.5rem 1rem', borderRadius: '6px',
+                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+                        display: 'flex', alignItems: 'center', gap: '0.35rem'
+                    }}
+                >
+                    👥 Contas / Utilizadores
+                </button>
             </div>
 
             {activeTab === 'orders' && (
@@ -848,7 +885,42 @@ export default function Admin() {
                                                     {Number(order.total).toLocaleString('pt-MZ')} MT
                                                 </td>
                                                 <td style={{ padding: '1rem 1.25rem', color: '#6b7280', fontSize: '0.85rem' }}>
-                                                    {order.time || new Date(order.created_at).toLocaleTimeString('pt', { hour: '2-digit', minute: '2-digit' })}
+                                                    <div>{order.time || new Date(order.created_at).toLocaleTimeString('pt', { hour: '2-digit', minute: '2-digit' })}</div>
+                                                    {(() => {
+                                                        if (order.status === 'Pendente') {
+                                                            return <div style={{ marginTop: '4px', fontSize: '0.78rem', color: '#b45309', fontWeight: 600 }}>⏳ Pendente (Timer Pausado)</div>;
+                                                        }
+                                                        if (order.status === 'Entregue') {
+                                                            return <div style={{ marginTop: '4px', fontSize: '0.78rem', color: '#15803d', fontWeight: 600 }}>✅ Entregue a Tempo</div>;
+                                                        }
+                                                        if (order.status === 'Cancelado') {
+                                                            return <div style={{ marginTop: '4px', fontSize: '0.78rem', color: '#b91c1c', fontWeight: 600 }}>❌ Cancelado</div>;
+                                                        }
+
+                                                        const createdMs = new Date(order.created_at || Date.now()).getTime();
+                                                        const elapsedSecs = Math.floor((now - createdMs) / 1000);
+                                                        const remSecs = (4 * 3600) - elapsedSecs;
+
+                                                        if (order.status === 'Perdido' || remSecs <= 0) {
+                                                            return (
+                                                                <div style={{ marginTop: '4px', padding: '4px 8px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', fontSize: '0.78rem', fontWeight: 700 }}>
+                                                                    🔴 PERDIDO (Expirado 4h)
+                                                                    <div style={{ fontSize: '0.7rem', fontWeight: 500, marginTop: '2px' }}>Pagar 50% ao Estafeta/Cliente</div>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        const h = Math.floor(remSecs / 3600);
+                                                        const m = Math.floor((remSecs % 3600) / 60);
+                                                        const s = Math.floor(remSecs % 60);
+                                                        const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+                                                        return (
+                                                            <div style={{ marginTop: '4px', padding: '4px 8px', borderRadius: '6px', background: '#eff6ff', color: '#1d4ed8', fontSize: '0.78rem', fontWeight: 700 }}>
+                                                                ⏱️ {timeStr} restantes
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td style={{ padding: '1rem 1.25rem' }}>
                                                     <select
@@ -882,6 +954,7 @@ export default function Admin() {
                                                         <option value="Preparando">📦 Preparando</option>
                                                         <option value="Com Motorista">🛵 Com Motorista</option>
                                                         <option value="Entregue">✅ Entregue</option>
+                                                        <option value="Perdido">🔴 Perdido (Multa 50%)</option>
                                                         <option value="Cancelado">❌ Cancelado</option>
                                                     </select>
                                                 </td>
@@ -1368,6 +1441,77 @@ export default function Admin() {
                                 </table>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'users' && (
+                <div style={{ padding: '1.5rem 2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div>
+                            <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#111827' }}>👥 Contas Criadas e Acessos à Loja</h2>
+                            <p style={{ margin: '0.2rem 0 0', color: '#6b7280', fontSize: '0.85rem' }}>Visualização de todas as contas registadas e atividade em tempo real.</p>
+                        </div>
+                        <button onClick={fetchUsers} style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
+                            ↻ Atualizar Lista
+                        </button>
+                    </div>
+
+                    <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                            <thead>
+                                <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#374151', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+                                    <th style={{ padding: '0.85rem 1.25rem' }}>Utilizador / Nome</th>
+                                    <th style={{ padding: '0.85rem 1.25rem' }}>Email & Contacto</th>
+                                    <th style={{ padding: '0.85rem 1.25rem' }}>Data de Criação</th>
+                                    <th style={{ padding: '0.85rem 1.25rem' }}>Última Vez Acessado</th>
+                                    <th style={{ padding: '0.85rem 1.25rem' }}>Estado</th>
+                                    <th style={{ padding: '0.85rem 1.25rem' }}>Histórico Pedidos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {usersList.map((u, idx) => (
+                                    <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6', background: idx % 2 === 0 ? '#fff' : '#fafafa' }}>
+                                        <td style={{ padding: '1rem 1.25rem', fontWeight: 600, color: '#111827' }}>
+                                            👤 {u.name}
+                                        </td>
+                                        <td style={{ padding: '1rem 1.25rem', color: '#4b5563' }}>
+                                            <div>📧 {u.email}</div>
+                                            {u.phone && u.phone !== 'Sem telefone' && (
+                                                <div style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: 600 }}>📞 {u.phone}</div>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: '1rem 1.25rem', color: '#6b7280', fontSize: '0.85rem' }}>
+                                            📅 {u.created_at ? new Date(u.created_at).toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                                        </td>
+                                        <td style={{ padding: '1rem 1.25rem', color: '#6b7280', fontSize: '0.85rem' }}>
+                                            🕒 {u.last_seen_at ? new Date(u.last_seen_at).toLocaleString('pt-MZ', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '—'}
+                                        </td>
+                                        <td style={{ padding: '1rem 1.25rem' }}>
+                                            {u.is_online ? (
+                                                <span style={{ background: '#dcfce7', color: '#15803d', padding: '0.25rem 0.75rem', borderRadius: '999px', fontWeight: 700, fontSize: '0.8rem' }}>
+                                                    🟢 Online
+                                                </span>
+                                            ) : (
+                                                <span style={{ background: '#f3f4f6', color: '#6b7280', padding: '0.25rem 0.75rem', borderRadius: '999px', fontWeight: 600, fontSize: '0.8rem' }}>
+                                                    ⚪ Offline
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: '1rem 1.25rem', fontWeight: 700, color: '#111827' }}>
+                                            📦 {u.order_count} pedido{u.order_count !== 1 ? 's' : ''}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {usersList.length === 0 && (
+                                    <tr>
+                                        <td colSpan="6" style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
+                                            Nenhum utilizador registado até ao momento.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             )}

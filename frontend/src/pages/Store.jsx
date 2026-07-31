@@ -177,6 +177,7 @@ export default function Store() {
     // Dialog overlays
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [quickOrderProduct, setQuickOrderProduct] = useState(null);
+    const [pendingGuestProduct, setPendingGuestProduct] = useState(null);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [authTab, setAuthTab] = useState('login');
     const [isMeusPedidosOpen, setIsMeusPedidosOpen] = useState(false);
@@ -844,11 +845,30 @@ export default function Store() {
         setQuickOrderQty(1);
     };
 
+    const handleBuyNowClick = (prod) => {
+        trackProductClick(prod.id);
+        if (!currentUser) {
+            setPendingGuestProduct(prod);
+            setIsAuthOpen(true);
+        } else {
+            openQuickOrder(prod);
+        }
+    };
+
     const handleContinueAsGuest = () => {
         setIsAuthOpen(false);
+        if (pendingGuestProduct) {
+            openQuickOrder(pendingGuestProduct);
+            setPendingGuestProduct(null);
+            return;
+        }
         if (selectedProduct) {
             openQuickOrder(selectedProduct);
             setSelectedProduct(null);
+            return;
+        }
+        if (cart.length > 0) {
+            setIsCartOpen(true);
         }
     };
 
@@ -1006,7 +1026,7 @@ export default function Store() {
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                                         Carrinho
                                     </button>
-                                    <button className="btn-buy-now" onClick={() => { openQuickOrder(prod); trackProductClick(prod.id); }}>
+                                    <button className="btn-buy-now" onClick={() => handleBuyNowClick(prod)}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                                         Pedir Agora
                                     </button>
@@ -1164,7 +1184,7 @@ export default function Store() {
                                     <button className="btn-add-cart" style={{ flex: 1 }} onClick={() => { if (addToCart(activeSelectedProduct)) setSelectedProduct(null); }}>
                                         Adicionar ao Carrinho
                                     </button>
-                                    <button className="btn-buy-now-modal" style={{ flex: 1 }} onClick={() => { openQuickOrder(activeSelectedProduct); setSelectedProduct(null); }}>
+                                    <button className="btn-buy-now-modal" style={{ flex: 1 }} onClick={() => { const p = activeSelectedProduct; setSelectedProduct(null); handleBuyNowClick(p); }}>
                                         Pedir Agora
                                     </button>
                                 </div>

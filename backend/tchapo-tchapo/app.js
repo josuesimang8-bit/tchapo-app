@@ -455,16 +455,24 @@ function openProductModal(id) {
 }
 
 // ─── QUICK ORDER MODAL ───────────────────────────────────────────────
+let pendingGuestProductId = null;
+let pendingGuestFromModal = false;
+
 function openQuickOrder(id, fromModal = false) {
     if (!fromModal) {
         trackProductClick(id);
     }
     if (!currentUser) {
+        pendingGuestProductId = id;
+        pendingGuestFromModal = fromModal;
         openAuthModal();
-        showStatusToast('Por favor, faça login ou crie conta para encomendar.');
         return;
     }
 
+    startQuickOrderModal(id, fromModal);
+}
+
+function startQuickOrderModal(id, fromModal = false) {
     quickOrderProduct = products.find(p => p.id === id);
     const devSelType = getDeviceSelectionType(quickOrderProduct);
     
@@ -924,8 +932,14 @@ function updateCartUI() {
 // ─── CHECKOUT (via cart) ──────────────────────────────────────────────
 window.handleContinueAsGuest = function() {
     closeAuthModal();
+    if (pendingGuestProductId) {
+        startQuickOrderModal(pendingGuestProductId, pendingGuestFromModal);
+        pendingGuestProductId = null;
+        pendingGuestFromModal = false;
+        return;
+    }
     if (selectedProduct) {
-        openQuickOrderModal(selectedProduct);
+        startQuickOrderModal(selectedProduct.id, true);
         closeProductModal();
     }
 };

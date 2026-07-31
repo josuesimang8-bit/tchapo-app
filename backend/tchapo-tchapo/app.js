@@ -924,23 +924,10 @@ function updateCartUI() {
 // ─── CHECKOUT (via cart) ──────────────────────────────────────────────
 window.handleContinueAsGuest = function() {
     closeAuthModal();
-    if (quickOrderProduct) {
-        quickOrderModal.classList.add('active');
-        quickOrderOverlay.classList.add('active');
-        updateScrollLock();
-        return;
+    if (selectedProduct) {
+        openQuickOrderModal(selectedProduct);
+        closeProductModal();
     }
-    if (cart.length > 0) {
-        cartSidebar.classList.add('active');
-        cartOverlay.classList.add('active');
-        updateScrollLock();
-        return;
-    }
-    const catalogEl = document.getElementById('catalog');
-    if (catalogEl) {
-        catalogEl.scrollIntoView({ behavior: 'smooth' });
-    }
-    showStatusToast('💡 Modo sem conta ativo! Escolha um produto para preencher os dados de entrega.');
 };
 
 function handleCheckout(e) {

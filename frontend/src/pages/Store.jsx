@@ -846,23 +846,10 @@ export default function Store() {
 
     const handleContinueAsGuest = () => {
         setIsAuthOpen(false);
-        if (quickOrderProduct) {
-            return;
-        }
         if (selectedProduct) {
             openQuickOrder(selectedProduct);
             setSelectedProduct(null);
-            return;
         }
-        if (cart.length > 0) {
-            setIsCartOpen(true);
-            return;
-        }
-        const catalogEl = document.getElementById('catalog');
-        if (catalogEl) {
-            catalogEl.scrollIntoView({ behavior: 'smooth' });
-        }
-        showToastMessage('💡 Modo sem conta ativo! Escolha um produto para preencher os dados de entrega.');
     };
 
     const contactDriver = () => {

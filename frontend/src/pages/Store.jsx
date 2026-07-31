@@ -611,12 +611,6 @@ export default function Store() {
 
     const handleCheckoutSubmit = async (e) => {
         e.preventDefault();
-        if (!currentUser) {
-            setIsCartOpen(false);
-            setIsAuthOpen(true);
-            showToastMessage('Por favor, faça login ou crie conta para finalizar.');
-            return;
-        }
 
         const itemsTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         const referralDiscount = appliedReferralCode ? (itemsTotal * 0.1) : 0;
@@ -631,7 +625,7 @@ export default function Store() {
             time: checkoutForm.time,
             payment: checkoutForm.payment,
             total: total,
-            user_id: currentUser.id,
+            user_id: currentUser ? currentUser.id : null,
             items: cart,
             status: 'Pendente',
             referral_code: appliedReferralCode || null,
@@ -672,12 +666,6 @@ export default function Store() {
 
     const handleQuickOrderSubmit = async (e) => {
         e.preventDefault();
-        if (!currentUser) {
-            setQuickOrderProduct(null);
-            setIsAuthOpen(true);
-            showToastMessage('Por favor, faça login ou crie conta para encomendar.');
-            return;
-        }
 
         const itemsTotal = quickOrderProduct.price * quickOrderQty;
         const referralDiscount = appliedReferralCode ? (itemsTotal * 0.1) : 0;
@@ -710,7 +698,7 @@ export default function Store() {
             time: quickOrderForm.time,
             payment: quickOrderForm.payment,
             total: total,
-            user_id: currentUser.id,
+            user_id: currentUser ? currentUser.id : null,
             items: [{ 
                 ...quickOrderProduct, 
                 name: finalName, 

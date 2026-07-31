@@ -825,7 +825,7 @@ export default function Admin() {
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Bairro</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Pagamento</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Total</th>
-                                        <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Hora Entrega</th>
+                                        <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>⏱️ Temporizador (4h)</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Designar Motorista</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Status</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Ações</th>
@@ -885,13 +885,15 @@ export default function Admin() {
                                                     {Number(order.total).toLocaleString('pt-MZ')} MT
                                                 </td>
                                                 <td style={{ padding: '1rem 1.25rem', color: '#6b7280', fontSize: '0.85rem' }}>
-                                                    <div>{order.time || new Date(order.created_at).toLocaleTimeString('pt', { hour: '2-digit', minute: '2-digit' })}</div>
+                                                    <div style={{ fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                                                        🕒 {order.time || new Date(order.created_at).toLocaleTimeString('pt', { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
                                                     {(() => {
                                                         if (order.status === 'Entregue') {
-                                                            return <div style={{ marginTop: '4px', fontSize: '0.78rem', color: '#15803d', fontWeight: 600 }}>✅ Entregue a Tempo</div>;
+                                                            return <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#dcfce7', color: '#15803d', fontSize: '0.78rem', fontWeight: 700 }}>✅ Entregue a Tempo</div>;
                                                         }
                                                         if (order.status === 'Cancelado') {
-                                                            return <div style={{ marginTop: '4px', fontSize: '0.78rem', color: '#b91c1c', fontWeight: 600 }}>❌ Cancelado</div>;
+                                                            return <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', fontSize: '0.78rem', fontWeight: 700 }}>❌ Cancelado</div>;
                                                         }
 
                                                         const createdMs = new Date(order.created_at || Date.now()).getTime();
@@ -900,7 +902,7 @@ export default function Admin() {
 
                                                         if (order.status === 'Perdido' || remSecs <= 0) {
                                                             return (
-                                                                <div style={{ marginTop: '4px', padding: '4px 8px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', fontSize: '0.78rem', fontWeight: 700 }}>
+                                                                <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', fontSize: '0.78rem', fontWeight: 700 }}>
                                                                     🔴 PERDIDO (Expirado 4h)
                                                                     <div style={{ fontSize: '0.7rem', fontWeight: 500, marginTop: '2px' }}>Pagar 50% ao Estafeta/Cliente</div>
                                                                 </div>
@@ -912,8 +914,20 @@ export default function Admin() {
                                                         const s = Math.floor(remSecs % 60);
                                                         const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
+                                                        const isWarning = remSecs < 1800; // less than 30 mins remaining
                                                         return (
-                                                            <div style={{ marginTop: '4px', padding: '4px 8px', borderRadius: '6px', background: '#eff6ff', color: '#1d4ed8', fontSize: '0.78rem', fontWeight: 700 }}>
+                                                            <div style={{
+                                                                padding: '5px 10px',
+                                                                borderRadius: '8px',
+                                                                background: isWarning ? '#fff7ed' : '#eff6ff',
+                                                                border: isWarning ? '1px solid #ffedd5' : '1px solid #dbeafe',
+                                                                color: isWarning ? '#c2410c' : '#1d4ed8',
+                                                                fontSize: '0.82rem',
+                                                                fontWeight: 800,
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px'
+                                                            }}>
                                                                 ⏱️ {timeStr} restantes
                                                             </div>
                                                         );

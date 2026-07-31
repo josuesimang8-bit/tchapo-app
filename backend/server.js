@@ -20,6 +20,11 @@ app.use(express.json());
 // Servir o frontend estático do Tchapo Tchapo
 app.use(express.static(path.join(__dirname, 'tchapo-tchapo')));
 
+// Rota para o painel admin
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'tchapo-tchapo', 'admin.html'));
+});
+
 // Configurar multer para upload das fotos dos motoristas
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {

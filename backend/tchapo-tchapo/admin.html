@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin – Tchapo Tchapo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #111827;
+            --gray: #6b7280;
+            --gray-light: #e5e7eb;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
+
+        /* ── PIN SCREEN ── */
+        #pin-screen {
+            position: fixed; inset: 0; background: linear-gradient(135deg,#1e293b,#0f172a);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .pin-card {
+            background: #fff; border-radius: 20px; padding: 2.5rem 2rem; width: 340px;
+            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .pin-card h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.4rem; }
+        .pin-card p  { color: var(--gray); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .pin-card input {
+            width: 100%; padding: 0.9rem; border: 2px solid var(--gray-light); border-radius: 12px;
+            font-size: 1.4rem; text-align: center; letter-spacing: 0.5rem; outline: none;
+            font-family: inherit; transition: border-color 0.2s;
+        }
+        .pin-card input:focus { border-color: var(--primary); }
+        .pin-card button {
+            margin-top: 1rem; width: 100%; padding: 0.9rem; background: var(--primary);
+            color: #fff; border: none; border-radius: 12px; font-size: 1rem;
+            font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.2s;
+        }
+        .pin-card button:hover { background: var(--primary-dark); }
+        .pin-error { color: var(--danger); font-size: 0.85rem; margin-top: 0.75rem; }
+
+        /* ── HEADER ── */
+        .admin-header {
+            background: var(--dark); color: #fff; padding: 1rem 1.5rem;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }
+        .admin-header h1 { font-size: 1.15rem; font-weight: 700; }
+        .admin-header a { color: #93c5fd; font-size: 0.85rem; text-decoration: none; }
+        .admin-header a:hover { color: #fff; }
+
+        /* ── TABS ── */
+        .tabs { display: flex; gap: 0.5rem; padding: 1rem 1.5rem 0; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 0.55rem 1.1rem; border-radius: 10px; border: 1.5px solid var(--gray-light);
+            background: #fff; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: all 0.2s;
+        }
+        .tab-btn:hover  { border-color: var(--primary); color: var(--primary); }
+        .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        /* ── MAIN CONTENT ── */
+        .admin-main { padding: 1.25rem 1.5rem; }
+        .tab-section { display: none; }
+        .tab-section.active { display: block; }
+
+        /* ── CARDS / TABLE ── */
+        .section-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; color: var(--dark); }
+        .orders-table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        thead th { background: var(--dark); color: #fff; padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+        tbody tr { border-bottom: 1px solid var(--gray-light); transition: background 0.15s; }
+        tbody tr:hover { background: #f8fafc; }
+        tbody td { padding: 0.75rem 1rem; font-size: 0.83rem; vertical-align: middle; }
+        tbody tr:last-child { border-bottom: none; }
+
+        /* ── STATUS BADGE ── */
+        .status-badge {
+            display: inline-block; padding: 0.3rem 0.7rem; border-radius: 999px;
+            font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+        }
+
+        /* ── TIMER ── */
+        .timer-badge {
+            font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.6rem;
+            border-radius: 8px; white-space: nowrap;
+        }
+        .timer-ok   { background: #dbeafe; color: #1d4ed8; }
+        .timer-warn { background: #fef3c7; color: #b45309; }
+        .timer-lost { background: #fee2e2; color: #b91c1c; }
+
+        /* ── STATUS SELECT ── */
+        .status-select {
+            padding: 0.3rem 0.5rem; border-radius: 8px; border: 1.5px solid var(--gray-light);
+            font-size: 0.8rem; font-family: inherit; cursor: pointer; outline: none;
+        }
+
+        /* ── ONLINE BADGE ── */
+        .online-dot  { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; background: var(--success); }
+        .offline-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; background: #9ca3af; }
+
+        /* ── EMPTY STATE ── */
+        .empty-state { text-align: center; padding: 3rem; color: var(--gray); }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+        /* ── LOADING ── */
+        .loading { text-align: center; padding: 2rem; color: var(--gray); font-size: 0.9rem; }
+
+        /* ── REFRESH BTN ── */
+        .btn-refresh {
+            padding: 0.5rem 1rem; background: #fff; border: 1.5px solid var(--gray-light);
+            border-radius: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 600;
+            font-family: inherit; transition: all 0.2s; margin-bottom: 1rem;
+        }
+        .btn-refresh:hover { border-color: var(--primary); color: var(--primary); }
+
+        @media (max-width: 640px) {
+            .admin-main { padding: 1rem; }
+            .tabs { padding: 0.75rem 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── PIN SCREEN ── -->
+<div id="pin-screen">
+    <div class="pin-card">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem;">🔐</div>
+        <h1>Painel Admin</h1>
+        <p>Insira o PIN para aceder ao painel de gestão.</p>
+        <input type="password" id="pin-input" maxlength="6" placeholder="••••" autofocus>
+        <button onclick="checkPin()">Entrar</button>
+        <div class="pin-error" id="pin-error"></div>
+    </div>
+</div>
+
+<!-- ── ADMIN INTERFACE (hidden until PIN correct) ── -->
+<div id="admin-app" style="display:none;">
+
+    <header class="admin-header">
+        <h1>🛒 Tchapo Tchapo — Painel Admin</h1>
+        <a href="/">← Voltar à Loja</a>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="showTab('orders')">📦 Encomendas</button>
+        <button class="tab-btn" onclick="showTab('products')">🏷️ Produtos</button>
+        <button class="tab-btn" onclick="showTab('drivers')">🛵 Motoristas</button>
+        <button class="tab-btn" onclick="showTab('withdrawals')">🎁 Saques</button>
+        <button class="tab-btn" onclick="showTab('users')">👥 Contas / Utilizadores</button>
+    </nav>
+
+    <main class="admin-main">
+
+        <!-- ── ORDERS TAB ── -->
+        <section id="tab-orders" class="tab-section active">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                <span class="section-title" style="margin:0;">📦 Encomendas</span>
+                <button class="btn-refresh" onclick="loadOrders()">🔄 Actualizar</button>
+            </div>
+            <div class="orders-table-wrap" id="orders-container">
+                <div class="loading">⏳ A carregar encomendas...</div>
+            </div>
+        </section>
+
+        <!-- ── PRODUCTS TAB ── -->
+        <section id="tab-products" class="tab-section">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                <span class="section-title" style="margin:0;">🏷️ Produtos</span>
+                <button class="btn-refresh" onclick="loadProducts()">🔄 Actualizar</button>
+            </div>
+            <div id="products-container"><div class="loading">⏳ A carregar produtos...</div></div>
+        </section>
+
+        <!-- ── DRIVERS TAB ── -->
+        <section id="tab-drivers" class="tab-section">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                <span class="section-title" style="margin:0;">🛵 Motoristas</span>
+                <button class="btn-refresh" onclick="loadDrivers()">🔄 Actualizar</button>
+            </div>
+            <div id="drivers-container"><div class="loading">⏳ A carregar motoristas...</div></div>
+        </section>
+
+        <!-- ── WITHDRAWALS TAB ── -->
+        <section id="tab-withdrawals" class="tab-section">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                <span class="section-title" style="margin:0;">🎁 Saques de Indicação</span>
+                <button class="btn-refresh" onclick="loadWithdrawals()">🔄 Actualizar</button>
+            </div>
+            <div id="withdrawals-container"><div class="loading">⏳ A carregar saques...</div></div>
+        </section>
+
+        <!-- ── USERS TAB ── -->
+        <section id="tab-users" class="tab-section">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                <span class="section-title" style="margin:0;">👥 Contas / Utilizadores</span>
+                <button class="btn-refresh" onclick="loadUsers()">🔄 Actualizar</button>
+            </div>
+            <div id="users-container"><div class="loading">⏳ A carregar utilizadores...</div></div>
+        </section>
+
+    </main>
+</div>
+
+<script>
+const ADMIN_PIN = '1234';
+const API = '';
+
+// ── TIMER: live 1-second ticker ──────────────────────────
+let nowMs = Date.now();
+setInterval(() => { nowMs = Date.now(); refreshTimers(); }, 1000);
+
+function refreshTimers() {
+    document.querySelectorAll('[data-created-at]').forEach(el => {
+        const created = new Date(el.dataset.createdAt).getTime();
+        const status  = el.dataset.status || '';
+        const badge   = el.querySelector('.timer-badge');
+        if (!badge) return;
+
+        if (['Entregue','Cancelado','Perdido'].includes(status)) return; // don't tick finished orders
+
+        const elapsed = (nowMs - created) / 1000;
+        const rem     = 4 * 3600 - elapsed;
+
+        if (rem <= 0) {
+            badge.className = 'timer-badge timer-lost';
+            badge.textContent = '🔴 PERDIDO — Pagar 50% ao Estafeta';
+        } else {
+            const h = Math.floor(rem / 3600);
+            const m = Math.floor((rem % 3600) / 60);
+            const s = Math.floor(rem % 60);
+            const fmt = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            badge.className = rem < 1800 ? 'timer-badge timer-warn' : 'timer-badge timer-ok';
+            badge.textContent = `⏱️ ${fmt} restantes`;
+        }
+    });
+}
+
+// ── PIN ──────────────────────────────────────────────────
+function checkPin() {
+    const val = document.getElementById('pin-input').value.trim();
+    if (val === ADMIN_PIN) {
+        document.getElementById('pin-screen').style.display = 'none';
+        document.getElementById('admin-app').style.display  = 'block';
+        loadOrders();
+    } else {
+        document.getElementById('pin-error').textContent = '❌ PIN incorreto.';
+    }
+}
+document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+
+// ── TABS ─────────────────────────────────────────────────
+function showTab(name) {
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if (name === 'orders')      loadOrders();
+    if (name === 'products')    loadProducts();
+    if (name === 'drivers')     loadDrivers();
+    if (name === 'withdrawals') loadWithdrawals();
+    if (name === 'users')       loadUsers();
+}
+
+// ── HELPERS ──────────────────────────────────────────────
+const STATUS_COLORS = {
+    'Pendente':      '#fef3c7',
+    'Processando':   '#dbeafe',
+    'Preparando':    '#ede9fe',
+    'Com Motorista': '#d1fae5',
+    'Entregue':      '#dcfce7',
+    'Cancelado':     '#fee2e2',
+    'Perdido':       '#fee2e2',
+};
+function statusBadge(s) {
+    const bg = STATUS_COLORS[s] || '#f3f4f6';
+    return `<span class="status-badge" style="background:${bg}">${s}</span>`;
+}
+function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('pt', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function fmtCur(v) { return Number(v || 0).toLocaleString('pt-MZ') + ' MT'; }
+
+// ── ORDERS ───────────────────────────────────────────────
+async function loadOrders() {
+    const c = document.getElementById('orders-container');
+    c.innerHTML = '<div class="loading">⏳ A carregar...</div>';
+    try {
+        const res  = await fetch('/api/orders');
+        const list = await res.json();
+        if (!list.length) { c.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>Sem encomendas ainda.</p></div>'; return; }
+
+        c.innerHTML = `
+        <table>
+            <thead><tr>
+                <th>#ID</th><th>Cliente</th><th>Bairro</th><th>Total</th><th>Pagamento</th>
+                <th>Data</th><th>⏱️ Entrega</th><th>Estado</th><th>Ação</th>
+            </tr></thead>
+            <tbody>
+            ${list.map(o => {
+                const created = o.created_at || '';
+                const items   = (o.order_items || []).map(i => `${i.quantity}× ${i.product_name}`).join(', ') || '—';
+                const isFinished = ['Entregue','Cancelado','Perdido'].includes(o.status);
+                return `
+                <tr>
+                    <td><strong>#${o.id}</strong><br><small style="color:#6b7280;font-size:0.72rem;">${items}</small></td>
+                    <td>${o.customer_name || '—'}<br><small style="color:#6b7280">${o.customer_phone || ''}</small></td>
+                    <td>${o.bairro || '—'}</td>
+                    <td><strong>${fmtCur(o.total)}</strong></td>
+                    <td>${o.payment || '—'}</td>
+                    <td style="white-space:nowrap;font-size:0.78rem;">${fmtDate(created)}</td>
+                    <td data-created-at="${created}" data-status="${o.status}">
+                        ${isFinished
+                            ? `<span class="timer-badge ${o.status === 'Entregue' ? 'timer-ok' : 'timer-lost'}">${o.status === 'Entregue' ? '✅ Entregue' : '🔴 ' + o.status}</span>`
+                            : `<span class="timer-badge timer-ok">⏳ a calcular...</span>`
+                        }
+                    </td>
+                    <td>${statusBadge(o.status)}</td>
+                    <td>
+                        <select class="status-select" onchange="updateOrderStatus(${o.id}, this.value)">
+                            ${['Pendente','Processando','Preparando','Com Motorista','Entregue','Cancelado','Perdido']
+                                .map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                    </td>
+                </tr>`;
+            }).join('')}
+            </tbody>
+        </table>`;
+        refreshTimers();
+    } catch (e) {
+        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro ao carregar encomendas: ${e.message}</p></div>`;
+    }
+}
+
+async function updateOrderStatus(id, status) {
+    try {
+        const res = await fetch(`/api/orders/${id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        if (res.ok) {
+            const row = document.querySelector(`[data-created-at][data-status]`);
+            // refresh table
+            setTimeout(loadOrders, 400);
+        }
+    } catch(e) { alert('Erro ao actualizar estado: ' + e.message); }
+}
+
+// ── PRODUCTS ─────────────────────────────────────────────
+async function loadProducts() {
+    const c = document.getElementById('products-container');
+    c.innerHTML = '<div class="loading">⏳ A carregar...</div>';
+    try {
+        const res  = await fetch('/api/products/admin');
+        const list = await res.json();
+        if (!list.length) { c.innerHTML = '<div class="empty-state"><div class="icon">🏷️</div><p>Sem produtos.</p></div>'; return; }
+        c.innerHTML = `
+        <table>
+            <thead><tr><th>#</th><th>Imagem</th><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estado</th></tr></thead>
+            <tbody>
+            ${list.map(p => `
+                <tr>
+                    <td>#${p.id}</td>
+                    <td>${p.image ? `<img src="${p.image}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;">` : '—'}</td>
+                    <td><strong>${p.name}</strong></td>
+                    <td>${p.category || '—'}</td>
+                    <td>${fmtCur(p.price)}</td>
+                    <td><span class="status-badge" style="background:${p.active !== false ? '#dcfce7' : '#fee2e2'}">${p.active !== false ? '✅ Activo' : '❌ Inactivo'}</span></td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+    } catch(e) {
+        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro: ${e.message}</p></div>`;
+    }
+}
+
+// ── DRIVERS ──────────────────────────────────────────────
+async function loadDrivers() {
+    const c = document.getElementById('drivers-container');
+    c.innerHTML = '<div class="loading">⏳ A carregar...</div>';
+    try {
+        const res  = await fetch('/api/drivers');
+        const list = await res.json();
+        if (!list.length) { c.innerHTML = '<div class="empty-state"><div class="icon">🛵</div><p>Sem motoristas registados.</p></div>'; return; }
+        c.innerHTML = `
+        <table>
+            <thead><tr><th>#</th><th>Foto</th><th>Nome</th><th>Telefone</th><th>Veículo</th><th>Estado</th></tr></thead>
+            <tbody>
+            ${list.map(d => `
+                <tr>
+                    <td>#${d.id}</td>
+                    <td>${d.photo_url ? `<img src="${d.photo_url}" style="width:40px;height:40px;object-fit:cover;border-radius:50%;">` : '👤'}</td>
+                    <td><strong>${d.name}</strong></td>
+                    <td>${d.phone || '—'}</td>
+                    <td>${d.vehicle || '—'}</td>
+                    <td><span class="status-badge" style="background:${d.available ? '#dcfce7' : '#fee2e2'}">${d.available ? '🟢 Disponível' : '🔴 Ocupado'}</span></td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+    } catch(e) {
+        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro: ${e.message}</p></div>`;
+    }
+}
+
+// ── WITHDRAWALS ───────────────────────────────────────────
+async function loadWithdrawals() {
+    const c = document.getElementById('withdrawals-container');
+    c.innerHTML = '<div class="loading">⏳ A carregar...</div>';
+    try {
+        const res  = await fetch('/api/referrals/admin/withdrawals');
+        const list = await res.json();
+        if (!list.length) { c.innerHTML = '<div class="empty-state"><div class="icon">🎁</div><p>Sem saques pendentes.</p></div>'; return; }
+        c.innerHTML = `
+        <table>
+            <thead><tr><th>#</th><th>Utilizador</th><th>Valor</th><th>Método</th><th>Telefone</th><th>Data</th><th>Estado</th><th>Ação</th></tr></thead>
+            <tbody>
+            ${list.map(w => `
+                <tr>
+                    <td>#${w.id}</td>
+                    <td>${w.user_id || '—'}</td>
+                    <td><strong>${fmtCur(w.amount)}</strong></td>
+                    <td>${w.payment_method || '—'}</td>
+                    <td>${w.phone || '—'}</td>
+                    <td style="white-space:nowrap;font-size:0.78rem;">${fmtDate(w.created_at)}</td>
+                    <td>${statusBadge(w.status)}</td>
+                    <td>
+                        <select class="status-select" onchange="updateWithdrawal(${w.id}, this.value)">
+                            ${['Pendente','Pago','Cancelado'].map(s => `<option value="${s}" ${s===w.status?'selected':''}>${s}</option>`).join('')}
+                        </select>
+                    </td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+    } catch(e) {
+        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro: ${e.message}</p></div>`;
+    }
+}
+
+async function updateWithdrawal(id, status) {
+    try {
+        await fetch(`/api/referrals/admin/withdrawals/${id}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        setTimeout(loadWithdrawals, 400);
+    } catch(e) { alert('Erro: ' + e.message); }
+}
+
+// ── USERS ─────────────────────────────────────────────────
+async function loadUsers() {
+    const c = document.getElementById('users-container');
+    c.innerHTML = '<div class="loading">⏳ A carregar utilizadores...</div>';
+    try {
+        const res  = await fetch('/api/users/admin');
+        const list = await res.json();
+        if (!list || !list.length) {
+            c.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>Sem contas registadas.</p></div>'; return;
+        }
+        const onlineThreshold = Date.now() - 3 * 60 * 1000; // 3 minutos
+        c.innerHTML = `
+        <table>
+            <thead><tr>
+                <th>#</th><th>Nome</th><th>Email</th><th>Telefone</th>
+                <th>Conta criada</th><th>Último acesso</th><th>Estado</th><th>Pedidos</th>
+            </tr></thead>
+            <tbody>
+            ${list.map(u => {
+                const lastSeen = u.last_seen_at ? new Date(u.last_seen_at).getTime() : 0;
+                const isOnline = lastSeen > onlineThreshold;
+                return `
+                <tr>
+                    <td>#${u.id ? u.id.substring(0,8) : '—'}…</td>
+                    <td><strong>${u.name || u.full_name || '—'}</strong></td>
+                    <td style="font-size:0.78rem;">${u.email || '—'}</td>
+                    <td>${u.phone || '—'}</td>
+                    <td style="white-space:nowrap;font-size:0.78rem;">${fmtDate(u.created_at)}</td>
+                    <td style="white-space:nowrap;font-size:0.78rem;">${u.last_seen_at ? fmtDate(u.last_seen_at) : '—'}</td>
+                    <td>
+                        ${isOnline
+                            ? `<span><span class="online-dot"></span>🟢 Online</span>`
+                            : `<span><span class="offline-dot"></span>⚪ Offline</span>`
+                        }
+                    </td>
+                    <td style="text-align:center;font-weight:700;">${u.order_count || 0}</td>
+                </tr>`;
+            }).join('')}
+            </tbody>
+        </table>`;
+    } catch(e) {
+        c.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Erro: ${e.message}</p></div>`;
+    }
+}
+</script>
+</body>
+</html>

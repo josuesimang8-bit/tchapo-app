@@ -558,6 +558,13 @@
                     <option value="outro">Digitação Livre</option>
                 </select>
             </div>
+            <div class="form-field">
+                <label>Seleção de Cor na Loja</label>
+                <select class="form-select" id="ep-color-sel">
+                    <option value="show">Sim (Exibir seleção de cor)</option>
+                    <option value="none">Não (Ocultar seleção de cor)</option>
+                </select>
+            </div>
             <div class="form-grid-2">
                 <div class="form-field">
                     <label>🏷️ Estado do Stock</label>
@@ -1035,26 +1042,42 @@ document.getElementById('form-add-product').addEventListener('submit', async (e)
 function openEditProduct(id) {
     const p = allProducts.find(x => x.id == id);
     if (!p) return;
-    document.getElementById('ep-id').value = p.id;
-    document.getElementById('ep-name').value = p.name;
-    document.getElementById('ep-price').value = p.price;
+    const setVal = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val; };
+    setVal('ep-id', p.id);
+    setVal('ep-name', p.name);
+    setVal('ep-price', p.price);
     const knownCats = ['Smartphones','Áudio','Wearables','Acessórios'];
     const catEl = document.getElementById('ep-category');
-    if (knownCats.includes(p.category)) { catEl.value = p.category; document.getElementById('ep-custom-cat').style.display='none'; }
-    else { catEl.value='Outro'; document.getElementById('ep-custom-cat').style.display='flex'; document.getElementById('ep-custom-cat-val').value=p.category; }
+    if (catEl) {
+        if (knownCats.includes(p.category)) {
+            catEl.value = p.category;
+            const customCatBox = document.getElementById('ep-custom-cat');
+            if (customCatBox) customCatBox.style.display = 'none';
+        } else {
+            catEl.value = 'Outro';
+            const customCatBox = document.getElementById('ep-custom-cat');
+            if (customCatBox) customCatBox.style.display = 'flex';
+            setVal('ep-custom-cat-val', p.category);
+        }
+    }
     const devFlag = Array.isArray(p.features) ? p.features.find(f=>f.startsWith('_device_selection:')) : null;
-    document.getElementById('ep-device-sel').value = devFlag ? devFlag.split(':')[1] : 'none';
+    setVal('ep-device-sel', devFlag ? devFlag.split(':')[1] : 'none');
     const colFlag = Array.isArray(p.features) ? p.features.find(f=>f.startsWith('_color_selection:')) : null;
-    document.getElementById('ep-color-sel').value = colFlag ? colFlag.split(':')[1] : 'show';
+    setVal('ep-color-sel', colFlag ? colFlag.split(':')[1] : 'show');
     const stockFlag = Array.isArray(p.features) ? p.features.find(f=>f.startsWith('_stock:')) : null;
-    document.getElementById('ep-stock-status').value = stockFlag ? stockFlag.split(':')[1] : 'Em Stock';
-    document.getElementById('ep-featured').checked = Array.isArray(p.features) && p.features.includes('_featured:true');
+    setVal('ep-stock-status', stockFlag ? stockFlag.split(':')[1] : 'Em Stock');
+    
+    const featEl = document.getElementById('ep-featured');
+    if (featEl) featEl.checked = Array.isArray(p.features) && p.features.includes('_featured:true');
+    
     const userFeats = Array.isArray(p.features) ? p.features.filter(f=>!f.startsWith('_device_selection:')&&!f.startsWith('_color_selection:')&&!f.startsWith('_stock:')&&!f.startsWith('_clicks:')&&f!=='_featured:true') : [];
-    document.getElementById('ep-features').value = userFeats.join(', ');
-    document.getElementById('ep-desc').value = p.desc || '';
-    document.getElementById('ep-photo').value = '';
-    document.getElementById('ep-img-preview').innerHTML = p.image ? `<span style="font-size:0.8rem;color:#6b7280;">Foto atual:</span> <img src="${p.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;vertical-align:middle;">` : '';
-    document.getElementById('edit-modal').classList.add('open');
+    setVal('ep-features', userFeats.join(', '));
+    setVal('ep-desc', p.desc || '');
+    setVal('ep-photo', '');
+    const previewEl = document.getElementById('ep-img-preview');
+    if (previewEl) previewEl.innerHTML = p.image ? `<span style="font-size:0.8rem;color:#6b7280;">Foto atual:</span> <img src="${p.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;vertical-align:middle;">` : '';
+    const modalEl = document.getElementById('edit-modal');
+    if (modalEl) modalEl.classList.add('open');
 }
 
 function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }

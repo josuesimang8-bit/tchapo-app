@@ -1689,3 +1689,337 @@ body {
 }
 
 
+/* ====================================================
+   SHOPPING EXPERIENCE IMPROVEMENTS CSS
+   ==================================================== */
+
+/* ── 3. Price Filters Panel ── */
+.search-bar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.filter-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1rem;
+    border: 1.5px solid var(--gray-light);
+    border-radius: 10px;
+    background: #fff;
+    color: #374151;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.filter-toggle-btn:hover,
+.filter-toggle-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+.filters-panel {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border: 1.5px solid var(--gray-light);
+    border-radius: 14px;
+    margin: 0 1.5rem 0.75rem;
+    flex-wrap: wrap;
+    animation: slideDown 0.2s ease;
+    max-width: 1200px;
+    box-shadow: var(--shadow);
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 140px;
+}
+.filter-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+}
+.filter-input {
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--gray-light);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+.filter-input:focus {
+    border-color: var(--primary);
+}
+.filter-clear-btn {
+    padding: 0.6rem 1rem;
+    border: none;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+    align-self: flex-end;
+}
+.filter-clear-btn:hover { background: #fca5a5; }
+
+/* ── 4. Featured Products Section ── */
+.featured-section {
+    margin: 0 1.5rem 1.5rem;
+    max-width: 1200px;
+}
+.featured-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.featured-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #111827;
+}
+.featured-subtitle {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+.featured-scroll {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) #f3f4f6;
+}
+.featured-scroll::-webkit-scrollbar { height: 4px; }
+.featured-scroll::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 99px; }
+.featured-card {
+    flex-shrink: 0;
+    width: 200px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    border: 2px solid #fef3c7;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.featured-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(245,158,11,0.18);
+}
+.featured-card.out-of-stock {
+    opacity: 0.7;
+    pointer-events: none;
+}
+.featured-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 99px;
+    z-index: 2;
+}
+.featured-img-wrap {
+    width: 100%;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    cursor: pointer;
+}
+.featured-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.2s;
+}
+.featured-card:hover .featured-img {
+    transform: scale(1.05);
+}
+.featured-info {
+    padding: 0.75rem 0.75rem 0.85rem;
+    border-top: 1px solid #f3f4f6;
+}
+.featured-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.featured-price {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 0.6rem;
+}
+
+/* ── 5. Stock Badges ── */
+.card-stock-badge,
+.stock-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    display: inline-block;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+.stock-ok  { background: #d1fae5; color: #065f46; }
+.stock-low {
+    background: #fed7aa;
+    color: #9a3412;
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+.stock-out { background: #fee2e2; color: #991b1b; }
+@keyframes pulse-badge {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.6; }
+}
+/* Badge on featured card */
+.featured-card .stock-badge {
+    top: 8px;
+    right: 8px;
+}
+
+/* Out of stock card overlay */
+.product-card.out-of-stock .product-image-container::after {
+    content: 'Esgotado';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    border-radius: 12px;
+}
+/* Card featured star badge */
+.card-featured-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 0.9rem;
+    z-index: 4;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+/* ── 2. Image Gallery Carousel ── */
+.gallery-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+.gallery-main-img {
+    width: 100%;
+    height: 260px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #f9fafb;
+    display: block;
+    transition: opacity 0.2s;
+}
+.gallery-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 1.4rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+    transition: background 0.2s;
+}
+.gallery-arrow:hover { background: var(--primary); }
+.gallery-prev { left: 4px; }
+.gallery-next { right: 4px; }
+.gallery-dots {
+    display: flex;
+    gap: 5px;
+    margin-top: 0.25rem;
+}
+.gallery-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #d1d5db;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+.gallery-dot.active {
+    background: var(--primary);
+    transform: scale(1.3);
+}
+.gallery-thumbs {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 0.25rem 0;
+}
+.gallery-thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 0.2s, border-color 0.2s;
+}
+.gallery-thumb.active,
+.gallery-thumb:hover {
+    opacity: 1;
+    border-color: var(--primary);
+}
+
+/* Product card position: relative for absolute badges */
+.product-card {
+    position: relative;
+}
+.product-image-container {
+    position: relative;
+}

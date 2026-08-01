@@ -84,10 +84,38 @@ function formatOrderResponse(order) {
         price: item.price || 0
     })) : [];
 
+    // Timer computation from created_at
+    const createdDate = new Date(order.created_at);
+    const createdMs = createdDate.getTime();
+    const nowMs = Date.now();
+    let timer_end_at = null;
+    let timer_remaining_secs = 14400;
+
+    if (!order.status || order.status === 'Pendente') {
+        // Paused state
+        if (createdDate.getFullYear() === 1970) {
+            // Epoch marker: remaining seconds frozen at pause time
+            timer_remaining_secs = Math.floor(createdMs / 1000);
+        } else {
+            // Brand new order, full 4h
+            timer_remaining_secs = 14400;
+        }
+        timer_end_at = null; // null means paused
+    } else if (['Entregue', 'Cancelado', 'Perdido'].includes(order.status)) {
+        timer_remaining_secs = 0;
+        timer_end_at = null;
+    } else {
+        // Active: Processando, Preparando, Com Motorista
+        timer_remaining_secs = Math.max(0, 14400 - Math.floor((nowMs - createdMs) / 1000));
+        timer_end_at = new Date(createdMs + 14400 * 1000).toISOString();
+    }
+
     return {
         ...order,
         items: normalizedItems,
-        order_items: normalizedItems
+        order_items: normalizedItems,
+        timer_end_at,
+        timer_remaining_secs
     };
 }
 
@@ -346,19 +374,39 @@ app.put('/api/orders/:id/status', async (req, res) => {
         if (status !== undefined) updates.status = status;
         if (driver_id !== undefined) updates.driver_id = driver_id;
         
-        // If transitioning from Pendente to an active status, reset created_at to now
+        // Timer management on status change
         if (status !== undefined) {
             const { data: currentOrder } = await supabase
                 .from('orders')
-                .select('status')
+                .select('status, created_at')
                 .eq('id', id)
                 .single();
                 
             if (currentOrder) {
                 const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente';
-                const isNowActive = status !== 'Pendente' && status !== 'Cancelado' && status !== 'Entregue';
+                const wasActive = ['Processando', 'Preparando', 'Com Motorista'].includes(currentOrder.status);
+                const isNowActive = ['Processando', 'Preparando', 'Com Motorista'].includes(status);
+                const isNowPendente = status === 'Pendente';
+                const createdDate = new Date(currentOrder.created_at);
+                const createdMs = createdDate.getTime();
+                const nowMs = Date.now();
+                
                 if (wasPendente && isNowActive) {
-                    updates.created_at = new Date().toISOString();
+                    // Resume or start the timer
+                    if (createdDate.getFullYear() === 1970) {
+                        // Was paused with frozen remaining seconds encoded in epoch marker
+                        const remainingSecs = Math.floor(createdMs / 1000);
+                        // Set created_at so that 4h - (now - created_at) = remainingSecs
+                        // created_at = now - (14400 - remainingSecs)
+                        updates.created_at = new Date(nowMs - (14400 - remainingSecs) * 1000).toISOString();
+                    } else {
+                        // First activation: start fresh 4h timer
+                        updates.created_at = new Date().toISOString();
+                    }
+                } else if (wasActive && isNowPendente) {
+                    // Pause timer: calculate remaining time and store as frozen epoch marker (1970-01-01 + remainingSecs)
+                    const remainingSecs = Math.max(0, 14400 - Math.floor((nowMs - createdMs) / 1000));
+                    updates.created_at = new Date(remainingSecs * 1000).toISOString();
                 }
             }
         }
@@ -378,7 +426,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
             await processReferralCommission(data);
         }
 
-        res.json(data);
+        res.json(formatOrderResponse(data));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

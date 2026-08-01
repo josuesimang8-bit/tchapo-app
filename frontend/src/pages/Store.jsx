@@ -131,6 +131,27 @@ const getColorSelectionType = (product) => {
     return 'show';
 };
 
+// --- Stock status helper ---
+const getStockStatus = (product) => {
+    if (!product || !product.features) return 'Em Stock';
+    const flag = (product.features || []).find(f => f.startsWith('_stock:'));
+    return flag ? flag.split(':')[1] : 'Em Stock';
+};
+
+// --- Featured helper ---
+const isFeatured = (product) => {
+    if (!product || !product.features) return false;
+    return (product.features || []).some(f => f === '_featured:true');
+};
+
+// --- Extra images helper ---
+const getExtraImages = (product) => {
+    if (!product || !product.features) return [];
+    return (product.features || [])
+        .filter(f => f.startsWith('_img2:') || f.startsWith('_img3:') || f.startsWith('_img4:'))
+        .map(f => f.split(':').slice(1).join(':'));
+};
+
 const STATUS_STEPS = {
     'Pendente':      1,
     'Processando':   1,
@@ -191,6 +212,12 @@ export default function Store() {
     const [quickOrderForm, setQuickOrderForm] = useState({ name: '', phone: '', bairro: '', address: '', time: '', payment: '' });
     
     const [searchQuery, setSearchQuery] = useState('');
+    // Price filter states
+    const [priceMin, setPriceMin] = useState(0);
+    const [priceMax, setPriceMax] = useState(0); // 0 = no limit
+    const [showFilters, setShowFilters] = useState(false);
+    // Gallery carousel state
+    const [modalImageIndex, setModalImageIndex] = useState(0);
 
     // Auth inputs
     const [loginEmail, setLoginEmail] = useState('');
@@ -480,16 +507,21 @@ export default function Store() {
         }
     }, [currentUser]);
 
-    // Real-time tracking timer countdown
+    // Real-time tracking timer: use server's timer_end_at for perfect sync
     useEffect(() => {
         if (!trackingOrder) return;
-        if (trackingStatus === 'Pendente') {
-            setTrackingTimeLeft(4 * 3600);
-            return;
-        }
-        const timer = setInterval(() => {
-            setTrackingTimeLeft(prev => Math.max(0, prev - 1));
-        }, 1000);
+        if (['Entregue', 'Cancelado', 'Perdido'].includes(trackingStatus)) return;
+        if (trackingStatus === 'Pendente') return; // timer_remaining_secs is set by poll
+
+        // Active status: tick every second using timer_end_at
+        const tick = () => {
+            if (trackingOrder.timer_end_at) {
+                const remaining = Math.max(0, Math.floor((new Date(trackingOrder.timer_end_at).getTime() - Date.now()) / 1000));
+                setTrackingTimeLeft(remaining);
+            }
+        };
+        tick();
+        const timer = setInterval(tick, 1000);
         return () => clearInterval(timer);
     }, [trackingOrder, trackingStatus]);
 
@@ -505,13 +537,12 @@ export default function Store() {
                     const order = await res.json();
                     setTrackingStatus(order.status);
                     setTrackingDriver(order.drivers || null);
-                    
-                    if (order.status === 'Pendente') {
-                        setTrackingTimeLeft(4 * 3600);
-                    } else {
-                        const elapsed = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 1000);
-                        setTrackingTimeLeft(Math.max(0, 4 * 3600 - elapsed));
-                    }
+
+                    // Update tracking order with fresh timer data
+                    setTrackingOrder(prev => ({ ...prev, timer_end_at: order.timer_end_at, timer_remaining_secs: order.timer_remaining_secs }));
+
+                    // Use server-computed remaining secs
+                    setTrackingTimeLeft(order.timer_remaining_secs != null ? order.timer_remaining_secs : 14400);
                     
                     if (order.status === 'Com Motorista') {
                         showToastMessage('O teu motorista está a caminho!');
@@ -527,7 +558,7 @@ export default function Store() {
         poll();
         const interval = setInterval(poll, 5000);
         return () => clearInterval(interval);
-    }, [trackingOrder, trackingStatus]);
+    }, [trackingOrder?.id, trackingStatus]);
 
     const showToastMessage = (msg) => {
         setToastMessage(msg);
@@ -645,6 +676,10 @@ export default function Store() {
             if (res.ok) {
                 const order = await res.json();
                 saveOrderToHistory(order, checkoutForm.name, cart);
+                // WhatsApp confirmation
+                const itemsList = cart.map(i => `• ${i.quantity}x ${i.name}`).join('%0A');
+                const waMsg = `🛍️ *Novo Pedido Tchapo Tchapo*%0A%0A👤 *Cliente:* ${checkoutForm.name}%0A📞 *Telefone:* ${checkoutForm.phone}%0A🏠 *Bairro:* ${checkoutForm.bairro}%0A📍 *Morada:* ${checkoutForm.address}%0A%0A📦 *Produtos:*%0A${itemsList}%0A%0A💰 *Total:* ${Number(order.total).toLocaleString('pt-MZ')} MT%0A💳 *Pagamento:* ${checkoutForm.payment}%0A🕐 *Entrega:* ${checkoutForm.time}%0A%0A✅ *Pedido Nº ${order.id || 'N/A'} confirmado!*`;
+                setTimeout(() => window.open(`https://wa.me/258850741435?text=${waMsg}`, '_blank'), 500);
                 setCart([]);
                 setAppliedReferralCode('');
                 setReferralInput('');
@@ -719,6 +754,9 @@ export default function Store() {
             if (res.ok) {
                 const order = await res.json();
                 saveOrderToHistory(order, quickOrderForm.name, [{ ...quickOrderProduct, quantity: quickOrderQty }]);
+                // WhatsApp confirmation
+                const waMsg = `🛍️ *Novo Pedido Tchapo Tchapo*%0A%0A👤 *Cliente:* ${quickOrderForm.name}%0A📞 *Telefone:* ${quickOrderForm.phone}%0A🏠 *Bairro:* ${quickOrderForm.bairro}%0A📍 *Morada:* ${quickOrderForm.address}%0A%0A📦 *Produto:* ${quickOrderQty}x ${finalName}%0A%0A💰 *Total:* ${Number(order.total).toLocaleString('pt-MZ')} MT%0A💳 *Pagamento:* ${quickOrderForm.payment}%0A🕐 *Entrega:* ${quickOrderForm.time}%0A%0A✅ *Pedido Nº ${order.id || 'N/A'} confirmado!*`;
+                setTimeout(() => window.open(`https://wa.me/258850741435?text=${waMsg}`, '_blank'), 500);
                 setQuickOrderProduct(null);
                 setAppliedReferralCode('');
                 setReferralInput('');
@@ -896,8 +934,12 @@ export default function Store() {
             p.name.toLowerCase().includes(q) ||
             (p.desc && p.desc.toLowerCase().includes(q)) ||
             (p.category && p.category.toLowerCase().includes(q));
-        return matchesCategory && matchesSearch;
+        const matchesPriceMin = priceMin <= 0 || p.price >= priceMin;
+        const matchesPriceMax = priceMax <= 0 || p.price <= priceMax;
+        return matchesCategory && matchesSearch && matchesPriceMin && matchesPriceMax;
     });
+
+    const featuredProducts = products.filter(p => isFeatured(p) && p.active !== false);
 
     const totalItemsInCart = cart.reduce((a, b) => a + b.quantity, 0);
     const cartItemsTotal = cart.reduce((sum, item) => {
@@ -967,7 +1009,7 @@ export default function Store() {
 
                 {/* Catalog Container */}
                 <section id="catalog" className="products">
-                    {/* Search Bar */}
+                    {/* Search Bar + Filters */}
                     <div className="search-bar-wrapper">
                         <div className="search-bar-inner">
                             <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -989,7 +1031,43 @@ export default function Store() {
                                 </button>
                             )}
                         </div>
+                        <button
+                            className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
+                            onClick={() => setShowFilters(v => !v)}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                            Filtros {(priceMin > 0 || priceMax > 0) ? '●' : ''}
+                        </button>
                     </div>
+                    {showFilters && (
+                        <div className="filters-panel">
+                            <div className="filter-group">
+                                <label className="filter-label">💰 Preço Mínimo (MT)</label>
+                                <input
+                                    type="number" min="0" step="500"
+                                    className="filter-input"
+                                    placeholder="0"
+                                    value={priceMin || ''}
+                                    onChange={e => setPriceMin(Number(e.target.value))}
+                                />
+                            </div>
+                            <div className="filter-group">
+                                <label className="filter-label">💰 Preço Máximo (MT)</label>
+                                <input
+                                    type="number" min="0" step="500"
+                                    className="filter-input"
+                                    placeholder="Sem limite"
+                                    value={priceMax || ''}
+                                    onChange={e => setPriceMax(Number(e.target.value))}
+                                />
+                            </div>
+                            {(priceMin > 0 || priceMax > 0) && (
+                                <button className="filter-clear-btn" onClick={() => { setPriceMin(0); setPriceMax(0); }}>
+                                    🗑️ Limpar Filtros
+                                </button>
+                            )}
+                        </div>
+                    )}
                     {/* Category tabs */}
                     <div className="category-tabs">
                         {categories.map(cat => (
@@ -1003,6 +1081,44 @@ export default function Store() {
                         ))}
                     </div>
 
+                    {/* Featured Products Section */}
+                    {featuredProducts.length > 0 && activeCategory === 'Todos' && !searchQuery && (
+                        <div className="featured-section">
+                            <div className="featured-header">
+                                <span className="featured-title">⭐ Em Destaque</span>
+                                <span className="featured-subtitle">Os nossos produtos mais populares</span>
+                            </div>
+                            <div className="featured-scroll">
+                                {featuredProducts.map(prod => {
+                                    const stock = getStockStatus(prod);
+                                    const isOut = stock === 'Esgotado';
+                                    return (
+                                        <div key={prod.id} className={`featured-card ${isOut ? 'out-of-stock' : ''}`}>
+                                            <div className="featured-badge">⭐ Destaque</div>
+                                            {stock === 'Últimas Unidades' && <div className="stock-badge stock-low">🔥 Últimas Unidades</div>}
+                                            {isOut && <div className="stock-badge stock-out">❌ Esgotado</div>}
+                                            <div className="featured-img-wrap" onClick={() => !isOut && (setSelectedProduct(prod), setModalImageIndex(0), trackProductClick(prod.id))}>
+                                                <img src={prod.image} alt={prod.name} className="featured-img" />
+                                            </div>
+                                            <div className="featured-info">
+                                                <h4 className="featured-name">{prod.name}</h4>
+                                                <div className="featured-price">{formatCurrency(prod.price)}</div>
+                                                <button
+                                                    className="btn-buy-now"
+                                                    disabled={isOut}
+                                                    onClick={() => !isOut && handleBuyNowClick(prod)}
+                                                    style={{ opacity: isOut ? 0.5 : 1, cursor: isOut ? 'not-allowed' : 'pointer', fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                                                >
+                                                    {isOut ? '❌ Esgotado' : '⚡ Pedir Agora'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Products Grid */}
                     <div className="products-grid">
                         {filteredProducts.length === 0 && (
@@ -1012,27 +1128,36 @@ export default function Store() {
                                 <button className="btn-primary" style={{ marginTop: '0.75rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem' }} onClick={() => setSearchQuery('')}>Limpar pesquisa</button>
                             </div>
                         )}
-                        {filteredProducts.map(prod => (
-                            <div key={prod.id} className="product-card">
-                                <div className="product-image-container" onClick={() => { setSelectedProduct(prod); trackProductClick(prod.id); }}>
-                                    <img src={prod.image} alt={prod.name} className="product-img" />
+                        {filteredProducts.map(prod => {
+                            const stock = getStockStatus(prod);
+                            const isOut = stock === 'Esgotado';
+                            const isLow = stock === 'Últimas Unidades';
+                            return (
+                            <div key={prod.id} className={`product-card ${isOut ? 'out-of-stock' : ''}`}>
+                                {isFeatured(prod) && <div className="card-featured-badge">⭐</div>}
+                                {isLow && <div className="card-stock-badge stock-low">🔥 Últimas Unidades</div>}
+                                {isOut && <div className="card-stock-badge stock-out">❌ Esgotado</div>}
+                                {!isOut && !isLow && <div className="card-stock-badge stock-ok">✅ Em Stock</div>}
+                                <div className="product-image-container" onClick={() => { if (!isOut) { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); } }}>
+                                    <img src={prod.image} alt={prod.name} className="product-img" style={{ opacity: isOut ? 0.5 : 1 }} />
                                 </div>
                                 <div className="product-category-tag">{getCategoryIcon(prod.category)} {prod.category}</div>
-                                <h3 className="product-title" onClick={() => { setSelectedProduct(prod); trackProductClick(prod.id); }}>{prod.name}</h3>
+                                <h3 className="product-title" onClick={() => { if (!isOut) { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); } }}>{prod.name}</h3>
                                 <p className="product-desc">{prod.desc || ''}</p>
                                 <div className="product-price">{formatCurrency(prod.price)}</div>
                                 <div className="product-actions">
-                                    <button className="btn-add-to-cart" onClick={() => { (getDeviceSelectionType(prod) !== 'none' || getColorSelectionType(prod) !== 'none') ? setSelectedProduct(prod) : addToCart(prod); trackProductClick(prod.id); }}>
+                                    <button className="btn-add-to-cart" disabled={isOut} onClick={() => { if (!isOut) { (getDeviceSelectionType(prod) !== 'none' || getColorSelectionType(prod) !== 'none') ? (setSelectedProduct(prod), setModalImageIndex(0)) : addToCart(prod); trackProductClick(prod.id); } }} style={{ opacity: isOut ? 0.5 : 1, cursor: isOut ? 'not-allowed' : 'pointer' }}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                                         Carrinho
                                     </button>
-                                    <button className="btn-buy-now" onClick={() => handleBuyNowClick(prod)}>
+                                    <button className="btn-buy-now" disabled={isOut} onClick={() => !isOut && handleBuyNowClick(prod)} style={{ opacity: isOut ? 0.5 : 1, cursor: isOut ? 'not-allowed' : 'pointer' }}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                                        Pedir Agora
+                                        {isOut ? 'Esgotado' : 'Pedir Agora'}
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </section>
 
@@ -1074,7 +1199,32 @@ export default function Store() {
                         <button className="close-modal" onClick={() => setSelectedProduct(null)}>&times;</button>
                         <div className="product-modal-content">
                             <div className="pm-image">
-                                <img src={activeSelectedProduct.image} alt={activeSelectedProduct.name} />
+                                {/* Image Gallery Carousel */}
+                                {(() => {
+                                    const extraImgs = getExtraImages(activeSelectedProduct);
+                                    const allImgs = [activeSelectedProduct.image, ...extraImgs].filter(Boolean);
+                                    return (
+                                        <div className="gallery-wrap">
+                                            <img src={allImgs[modalImageIndex] || activeSelectedProduct.image} alt={activeSelectedProduct.name} className="gallery-main-img" />
+                                            {allImgs.length > 1 && (
+                                                <>
+                                                    <button className="gallery-arrow gallery-prev" onClick={() => setModalImageIndex(i => (i - 1 + allImgs.length) % allImgs.length)}>‹</button>
+                                                    <button className="gallery-arrow gallery-next" onClick={() => setModalImageIndex(i => (i + 1) % allImgs.length)}>›</button>
+                                                    <div className="gallery-dots">
+                                                        {allImgs.map((_, idx) => (
+                                                            <span key={idx} className={`gallery-dot ${idx === modalImageIndex ? 'active' : ''}`} onClick={() => setModalImageIndex(idx)} />
+                                                        ))}
+                                                    </div>
+                                                    <div className="gallery-thumbs">
+                                                        {allImgs.map((img, idx) => (
+                                                            <img key={idx} src={img} alt={`${idx+1}`} className={`gallery-thumb ${idx === modalImageIndex ? 'active' : ''}`} onClick={() => setModalImageIndex(idx)} />
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                             <div className="pm-info">
                                 <div className="product-category-tag" style={{ marginBottom: '1rem' }}>
@@ -1797,7 +1947,7 @@ export default function Store() {
                         <div className="tracking-timer">
                             <p>Tempo estimado para entrega:</p>
                             <div className="timer-display" style={{ color: trackingStatus === 'Cancelado' ? '#ef4444' : trackingStatus === 'Entregue' ? '#10b981' : trackingStatus === 'Pendente' ? '#f59e0b' : 'var(--primary)' }}>
-                                {trackingStatus === 'Cancelado' ? '❌ CANCELADO' : trackingStatus === 'Entregue' ? '✅ ENTREGUE!' : trackingStatus === 'Pendente' ? '⏳ PENDENTE' : formatTimeLeft(trackingTimeLeft)}
+                                {trackingStatus === 'Cancelado' ? '❌ CANCELADO' : trackingStatus === 'Entregue' ? '✅ ENTREGUE!' : trackingStatus === 'Pendente' ? `⏳ ${formatTimeLeft(trackingTimeLeft)} (Pausado)` : formatTimeLeft(trackingTimeLeft)}
                             </div>
                         </div>
 

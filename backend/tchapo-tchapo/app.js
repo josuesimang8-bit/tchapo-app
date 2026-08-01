@@ -33,6 +33,77 @@ function getColorSelectionType(product) {
     return 'show';
 }
 
+function getStockStatus(product) {
+    if (!product || !product.features) return 'Em Stock';
+    const flag = (product.features || []).find(f => f.startsWith('_stock:'));
+    return flag ? flag.split(':')[1] : 'Em Stock';
+}
+
+function isFeatured(product) {
+    if (!product || !product.features) return false;
+    return (product.features || []).some(f => f === '_featured:true');
+}
+
+function getExtraImages(product) {
+    if (!product || !product.features) return [];
+    return (product.features || [])
+        .filter(f => f.startsWith('_img2:') || f.startsWith('_img3:') || f.startsWith('_img4:'))
+        .map(f => f.split(':').slice(1).join(':'));
+}
+
+function selectGalleryImage(idx) {
+    if (!window.currentGalleryImgs || !window.currentGalleryImgs[idx]) return;
+    window.currentGalleryIdx = idx;
+    const mainImg = document.getElementById('pm-main-img');
+    if (mainImg) mainImg.src = window.currentGalleryImgs[idx];
+    document.querySelectorAll('.gallery-thumb').forEach((t, i) => {
+        t.classList.toggle('active', i === idx);
+    });
+}
+
+function changeGalleryImage(step) {
+    if (!window.currentGalleryImgs || window.currentGalleryImgs.length === 0) return;
+    const total = window.currentGalleryImgs.length;
+    const newIdx = (window.currentGalleryIdx + step + total) % total;
+    selectGalleryImage(newIdx);
+}
+
+let priceMinVal = 0;
+let priceMaxVal = 0;
+
+function toggleFilterPanel() {
+    const panel = document.getElementById('filters-panel');
+    const btn = document.getElementById('filter-toggle-btn');
+    if (!panel) return;
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'flex' : 'none';
+    if (btn) btn.classList.toggle('active', isHidden);
+}
+
+function onPriceFilterChange() {
+    const minInput = document.getElementById('price-min');
+    const maxInput = document.getElementById('price-max');
+    priceMinVal = minInput ? Number(minInput.value) || 0 : 0;
+    priceMaxVal = maxInput ? Number(maxInput.value) || 0 : 0;
+    
+    const dot = document.getElementById('filter-active-dot');
+    if (dot) dot.style.display = (priceMinVal > 0 || priceMaxVal > 0) ? 'inline' : 'none';
+    
+    const clearBtn = document.getElementById('filter-clear-btn');
+    if (clearBtn) clearBtn.style.display = (priceMinVal > 0 || priceMaxVal > 0) ? 'inline-block' : 'none';
+    
+    renderProducts();
+}
+
+function clearPriceFilters() {
+    priceMinVal = 0; priceMaxVal = 0;
+    const minInput = document.getElementById('price-min');
+    const maxInput = document.getElementById('price-max');
+    if (minInput) minInput.value = '';
+    if (maxInput) maxInput.value = '';
+    onPriceFilterChange();
+}
+
 function togglePmCustomDeviceInput(val, devSelType) {
     const container = document.getElementById('pm-custom-device-container');
     if (container) {
@@ -281,41 +352,96 @@ function renderProducts() {
             p.name.toLowerCase().includes(q) ||
             (p.desc && p.desc.toLowerCase().includes(q)) ||
             (p.category && p.category.toLowerCase().includes(q));
-        return matchesCategory && matchesSearch;
+        const matchesPriceMin = priceMinVal <= 0 || p.price >= priceMinVal;
+        const matchesPriceMax = priceMaxVal <= 0 || p.price <= priceMaxVal;
+        return matchesCategory && matchesSearch && matchesPriceMin && matchesPriceMax;
     });
+
+    // Render Featured Section
+    const featuredList = products.filter(p => isFeatured(p) && p.active !== false);
+    const featContainer = document.getElementById('featured-section-container');
+    if (featContainer) {
+        if (featuredList.length > 0 && activeCategory === 'Todos' && !searchQuery && priceMinVal <= 0 && priceMaxVal <= 0) {
+            featContainer.innerHTML = `
+                <div class="featured-section">
+                    <div class="featured-header">
+                        <span class="featured-title">⭐ Em Destaque</span>
+                        <span class="featured-subtitle">Os nossos produtos mais populares</span>
+                    </div>
+                    <div class="featured-scroll">
+                        ${featuredList.map(prod => {
+                            const stock = getStockStatus(prod);
+                            const isOut = stock === 'Esgotado';
+                            return `
+                                <div class="featured-card ${isOut ? 'out-of-stock' : ''}">
+                                    <div class="featured-badge">⭐ Destaque</div>
+                                    ${stock === 'Últimas Unidades' ? '<div class="stock-badge stock-low">🔥 Últimas Unidades</div>' : ''}
+                                    ${isOut ? '<div class="stock-badge stock-out">❌ Esgotado</div>' : ''}
+                                    <div class="featured-img-wrap" onclick="${!isOut ? `openProductModal(${prod.id})` : ''}">
+                                        <img src="${prod.image}" alt="${prod.name}" class="featured-img">
+                                    </div>
+                                    <div class="featured-info">
+                                        <h4 class="featured-name">${prod.name}</h4>
+                                        <div class="featured-price">${formatCurrency(prod.price)}</div>
+                                        <button class="btn-buy-now" ${isOut ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="openQuickOrder(${prod.id})"`} style="font-size:0.8rem;padding:0.4rem 0.8rem;">
+                                            ${isOut ? '❌ Esgotado' : '⚡ Pedir Agora'}
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        } else {
+            featContainer.innerHTML = '';
+        }
+    }
 
     if (filtered.length === 0) {
         productsGrid.innerHTML = `
             <div class="search-no-results">
                 <span style="font-size: 2.5rem;">🔍</span>
-                <p>Nenhum produto encontrado para <strong>"${searchQuery}"</strong></p>
-                <button class="btn-primary" style="margin-top: 0.75rem; padding: 0.5rem 1.5rem; font-size: 0.9rem;" onclick="clearSearch()">Limpar pesquisa</button>
+                <p>Nenhum produto encontrado</p>
+                <button class="btn-primary" style="margin-top: 0.75rem; padding: 0.5rem 1.5rem; font-size: 0.9rem;" onclick="clearSearch(); clearPriceFilters();">Limpar pesquisa</button>
             </div>
         `;
         return;
     }
 
-    productsGrid.innerHTML = filtered.map(product => `
-        <div class="product-card">
-            <div class="product-image-container" onclick="openProductModal(${product.id})">
-                <img src="${product.image}" alt="${product.name}" class="product-img">
+    productsGrid.innerHTML = filtered.map(product => {
+        const stock = getStockStatus(product);
+        const isOut = stock === 'Esgotado';
+        const isLow = stock === 'Últimas Unidades';
+        const featStar = isFeatured(product) ? '<div class="card-featured-badge">⭐</div>' : '';
+        const stockBadgeHtml = isOut
+            ? '<div class="card-stock-badge stock-out">❌ Esgotado</div>'
+            : (isLow ? '<div class="card-stock-badge stock-low">🔥 Últimas Unidades</div>' : '<div class="card-stock-badge stock-ok">✅ Em Stock</div>');
+
+        return `
+            <div class="product-card ${isOut ? 'out-of-stock' : ''}">
+                ${featStar}
+                ${stockBadgeHtml}
+                <div class="product-image-container" onclick="${!isOut ? `openProductModal(${product.id})` : ''}">
+                    <img src="${product.image}" alt="${product.name}" class="product-img" style="${isOut ? 'opacity:0.5' : ''}">
+                </div>
+                <div class="product-category-tag">${getCategoryIcon(product.category)} ${product.category}</div>
+                <h3 class="product-title" onclick="${!isOut ? `openProductModal(${product.id})` : ''}">${product.name}</h3>
+                <p class="product-desc">${product.desc || ''}</p>
+                <div class="product-price">${formatCurrency(product.price)}</div>
+                <div class="product-actions">
+                    <button class="btn-add-to-cart" ${isOut ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="${(getDeviceSelectionType(product) !== 'none' || getColorSelectionType(product) !== 'none') ? `openProductModal(${product.id})` : `addToCart(${product.id}); showToast()`}"`}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                        Carrinho
+                    </button>
+                    <button class="btn-buy-now" ${isOut ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="openQuickOrder(${product.id})"`}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        ${isOut ? 'Esgotado' : 'Pedir Agora'}
+                    </button>
+                </div>
             </div>
-            <div class="product-category-tag">${getCategoryIcon(product.category)} ${product.category}</div>
-            <h3 class="product-title" onclick="openProductModal(${product.id})">${product.name}</h3>
-            <p class="product-desc">${product.desc || ''}</p>
-            <div class="product-price">${formatCurrency(product.price)}</div>
-            <div class="product-actions">
-                <button class="btn-add-to-cart" onclick="${(getDeviceSelectionType(product) !== 'none' || getColorSelectionType(product) !== 'none') ? `openProductModal(${product.id})` : `addToCart(${product.id}); showToast()`}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                    Carrinho
-                </button>
-                <button class="btn-buy-now" onclick="openQuickOrder(${product.id})">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    Pedir Agora
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // ─── PRODUCT DETAIL MODAL ────────────────────────────────────────────
@@ -424,9 +550,27 @@ function openProductModal(id) {
         `;
     }
 
+    const extraImgs = getExtraImages(product);
+    const allImgs = [product.image, ...extraImgs].filter(Boolean);
+    let imageGalleryHtml = `<img src="${product.image}" alt="${product.name}" id="pm-main-img" class="gallery-main-img">`;
+    if (allImgs.length > 1) {
+        imageGalleryHtml = `
+            <div class="gallery-wrap">
+                <img src="${allImgs[0]}" alt="${product.name}" id="pm-main-img" class="gallery-main-img">
+                <button class="gallery-arrow gallery-prev" onclick="changeGalleryImage(-1)">‹</button>
+                <button class="gallery-arrow gallery-next" onclick="changeGalleryImage(1)">›</button>
+                <div class="gallery-thumbs">
+                    ${allImgs.map((img, idx) => `<img src="${img}" class="gallery-thumb ${idx===0?'active':''}" onclick="selectGalleryImage(${idx})">`).join('')}
+                </div>
+            </div>
+        `;
+        window.currentGalleryImgs = allImgs;
+        window.currentGalleryIdx = 0;
+    }
+
     productModalContent.innerHTML = `
         <div class="pm-image">
-            <img src="${product.image}" alt="${product.name}">
+            ${imageGalleryHtml}
         </div>
         <div class="pm-info">
             <div class="product-category-tag" style="margin-bottom:1rem">${getCategoryIcon(product.category)} ${product.category}</div>
@@ -735,6 +879,10 @@ function handleQuickOrder(e) {
         closeQuickOrderModal();
         appliedCoupon = null; // Clear applied coupon
         startTracking(order ? order.id : null, name, order ? order.created_at : null, order ? order.status : 'Pendente');
+
+        // WhatsApp automatic message
+        const waMsg = `🛍️ *Novo Pedido Tchapo Tchapo*%0A%0A👤 *Cliente:* ${name}%0A📞 *Telefone:* ${phone}%0A🏠 *Bairro:* ${bairro}%0A📍 *Morada:* ${address}%0A%0A📦 *Produto:* ${qoQty}x ${productItem.name}%0A%0A💰 *Total:* ${Number(total).toLocaleString('pt-MZ')} MT%0A💳 *Pagamento:* ${payment}%0A🕐 *Entrega:* ${time}%0A%0A✅ *Pedido Nº ${order ? order.id : 'N/A'} confirmado!*`;
+        setTimeout(() => window.open(`https://wa.me/258850741435?text=${waMsg}`, '_blank'), 500);
     })
     .catch(() => {
         closeQuickOrderModal();
@@ -1125,13 +1273,13 @@ async function pollOrderStatus(orderId) {
         const res = await fetch(`/api/orders/${orderId}`);
         if (!res.ok) return;
         const order = await res.json();
-        applyRealStatus(order.status, order.drivers, order.created_at);
+        applyRealStatus(order.status, order.drivers, order.created_at, order.timer_end_at, order.timer_remaining_secs);
     } catch (e) {
         // backend down — keep timer going silently
     }
 }
 
-function applyRealStatus(status, driver, createdAt = null) {
+function applyRealStatus(status, driver, createdAt = null, timerEndAt = null, timerRemainingSecs = null) {
     trackingStatus = status;
     const step = STATUS_STEPS[status] || 1;
     
@@ -1149,13 +1297,13 @@ function applyRealStatus(status, driver, createdAt = null) {
         step1Label.textContent = status === 'Pendente' ? 'Pendente' : 'Processando';
     }
 
-    // Update timer based on status and transition created_at
-    const ORDER_DURATION = 4 * 3600;
-    if (status === 'Pendente') {
-        totalSeconds = ORDER_DURATION;
-    } else if (createdAt) {
-        const elapsedSeconds = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
-        totalSeconds = Math.max(0, ORDER_DURATION - elapsedSeconds);
+    // Update timer based on timerEndAt / timerRemainingSecs from server
+    if (timerEndAt) {
+        totalSeconds = Math.max(0, Math.floor((new Date(timerEndAt).getTime() - Date.now()) / 1000));
+    } else if (timerRemainingSecs != null) {
+        totalSeconds = timerRemainingSecs;
+    } else {
+        totalSeconds = 14400;
     }
 
     // Step 3: Com Motorista — show driver profile

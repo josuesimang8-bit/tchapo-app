@@ -414,6 +414,22 @@
                             <label>Foto do Produto</label>
                             <input class="form-input" id="p-photo" type="file" accept="image/*" style="padding:0.4rem 0;">
                         </div>
+                        <div class="form-grid-2">
+                            <div class="form-field">
+                                <label>🏷️ Estado do Stock</label>
+                                <select class="form-select" id="p-stock-status">
+                                    <option value="Em Stock">✅ Em Stock</option>
+                                    <option value="Últimas Unidades">🔥 Últimas Unidades</option>
+                                    <option value="Esgotado">❌ Esgotado</option>
+                                </select>
+                            </div>
+                            <div class="form-field" style="justify-content:flex-end;padding-bottom:0.4rem;">
+                                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:600;color:#374151;">
+                                    <input type="checkbox" id="p-featured" style="width:18px;height:18px;accent-color:#f59e0b;">
+                                    ⭐ Produto em Destaque
+                                </label>
+                            </div>
+                        </div>
                         <button type="submit" class="btn-yellow" id="btn-add-product">Adicionar Produto</button>
                     </form>
                 </div>
@@ -542,12 +558,21 @@
                     <option value="outro">Digitação Livre</option>
                 </select>
             </div>
-            <div class="form-field">
-                <label>Seleção de Cor na Loja</label>
-                <select class="form-select" id="ep-color-sel">
-                    <option value="show">Sim (Exibir seleção de cor)</option>
-                    <option value="none">Não (Ocultar seleção de cor)</option>
-                </select>
+            <div class="form-grid-2">
+                <div class="form-field">
+                    <label>🏷️ Estado do Stock</label>
+                    <select class="form-select" id="ep-stock-status">
+                        <option value="Em Stock">✅ Em Stock</option>
+                        <option value="Últimas Unidades">🔥 Últimas Unidades</option>
+                        <option value="Esgotado">❌ Esgotado</option>
+                    </select>
+                </div>
+                <div class="form-field" style="justify-content:flex-end;padding-bottom:0.4rem;">
+                    <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:600;color:#374151;">
+                        <input type="checkbox" id="ep-featured" style="width:18px;height:18px;accent-color:#f59e0b;">
+                        ⭐ Produto em Destaque
+                    </label>
+                </div>
             </div>
             <div class="form-field">
                 <label>Descrição do Produto</label>
@@ -586,10 +611,17 @@ setInterval(() => {
 
 function tickTimers() {
     document.querySelectorAll('[data-timer]').forEach(el => {
-        const created = +el.dataset.timer;
-        const status  = el.dataset.status;
+        const endAt = el.dataset.timerEnd;
+        const status = el.dataset.status;
         if (['Pendente','Entregue','Cancelado','Perdido'].includes(status)) return;
-        const rem = 4 * 3600 - (nowMs - created) / 1000;
+        
+        let rem = 0;
+        if (endAt) {
+            rem = Math.max(0, Math.floor((new Date(endAt).getTime() - nowMs) / 1000));
+        } else {
+            rem = +el.dataset.timerRem || 0;
+        }
+
         if (rem <= 0) {
             el.className = 'timer-lost';
             el.innerHTML = '🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Estafeta/Cliente</div>';
@@ -744,22 +776,32 @@ function renderOrders() {
     }
     tbody.innerHTML = allOrders.map((o, idx) => {
         const sc = STATUS_COLORS[o.status] || STATUS_COLORS['Pendente'];
-        const createdMs = new Date(o.created_at || Date.now()).getTime();
-        const elapsedSecs = (nowMs - createdMs) / 1000;
-        const remSecs = 4 * 3600 - elapsedSecs;
+        let remSecs;
+        if (o.timer_end_at) {
+            remSecs = Math.max(0, Math.floor((new Date(o.timer_end_at).getTime() - nowMs) / 1000));
+        } else {
+            remSecs = o.timer_remaining_secs != null ? o.timer_remaining_secs : 14400;
+        }
 
         // Timer HTML
         let timerHtml = '';
-        if (o.status === 'Pendente') {
-            timerHtml = `<div class="timer-pend">⏳ Pendente (Timer Pausado)</div>`;
+        if (o.status === 'Pendente' || !o.status) {
+            const ph = Math.floor(remSecs / 3600);
+            const pm = Math.floor((remSecs % 3600) / 60);
+            const ps = Math.floor(remSecs % 60);
+            const pausedStr = `${pad(ph)}:${pad(pm)}:${pad(ps)}`;
+            timerHtml = `<div class="timer-pend">⏳ ${pausedStr} (Pausado)</div>`;
         } else if (o.status === 'Entregue') {
             timerHtml = `<div class="timer-done">✅ Entregue a Tempo</div>`;
         } else if (o.status === 'Cancelado') {
             timerHtml = `<div class="timer-lost">❌ Cancelado</div>`;
         } else if (o.status === 'Perdido' || remSecs <= 0) {
-            timerHtml = `<div class="timer-lost" data-timer="${createdMs}" data-status="${o.status}">🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Estafeta/Cliente</div></div>`;
+            timerHtml = `<div class="timer-lost">🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Estafeta/Cliente</div></div>`;
         } else {
-            timerHtml = `<span class="timer-ok" data-timer="${createdMs}" data-status="${o.status}">⏱️ calculando...</span>`;
+            const h = Math.floor(remSecs / 3600), m = Math.floor((remSecs % 3600)/60), s = Math.floor(remSecs % 60);
+            const fmt = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            const isWarn = remSecs < 1800;
+            timerHtml = `<span class="${isWarn?'timer-warn':'timer-ok'}" data-timer="true" data-timer-end="${o.timer_end_at || ''}" data-timer-rem="${remSecs}" data-status="${o.status}">⏱️ ${fmt} restantes</span>`;
         }
 
         // Items
@@ -970,6 +1012,9 @@ document.getElementById('form-add-product').addEventListener('submit', async (e)
     const feats = (document.getElementById('p-features').value || '').split(',').map(f => f.trim()).filter(Boolean);
     feats.push(`_device_selection:${document.getElementById('p-device-sel').value}`);
     feats.push(`_color_selection:${document.getElementById('p-color-sel').value}`);
+    const stockVal = document.getElementById('p-stock-status').value;
+    if (stockVal) feats.push(`_stock:${stockVal}`);
+    if (document.getElementById('p-featured').checked) feats.push('_featured:true');
     await fetch('/api/products', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
@@ -1001,7 +1046,10 @@ function openEditProduct(id) {
     document.getElementById('ep-device-sel').value = devFlag ? devFlag.split(':')[1] : 'none';
     const colFlag = Array.isArray(p.features) ? p.features.find(f=>f.startsWith('_color_selection:')) : null;
     document.getElementById('ep-color-sel').value = colFlag ? colFlag.split(':')[1] : 'show';
-    const userFeats = Array.isArray(p.features) ? p.features.filter(f=>!f.startsWith('_device_selection:')&&!f.startsWith('_color_selection:')) : [];
+    const stockFlag = Array.isArray(p.features) ? p.features.find(f=>f.startsWith('_stock:')) : null;
+    document.getElementById('ep-stock-status').value = stockFlag ? stockFlag.split(':')[1] : 'Em Stock';
+    document.getElementById('ep-featured').checked = Array.isArray(p.features) && p.features.includes('_featured:true');
+    const userFeats = Array.isArray(p.features) ? p.features.filter(f=>!f.startsWith('_device_selection:')&&!f.startsWith('_color_selection:')&&!f.startsWith('_stock:')&&!f.startsWith('_clicks:')&&f!=='_featured:true') : [];
     document.getElementById('ep-features').value = userFeats.join(', ');
     document.getElementById('ep-desc').value = p.desc || '';
     document.getElementById('ep-photo').value = '';
@@ -1031,6 +1079,15 @@ document.getElementById('form-edit-product').addEventListener('submit', async (e
     const feats = (document.getElementById('ep-features').value || '').split(',').map(f => f.trim()).filter(Boolean);
     feats.push(`_device_selection:${document.getElementById('ep-device-sel').value}`);
     feats.push(`_color_selection:${document.getElementById('ep-color-sel').value}`);
+    const epStockVal = document.getElementById('ep-stock-status').value;
+    if (epStockVal) feats.push(`_stock:${epStockVal}`);
+    if (document.getElementById('ep-featured').checked) feats.push('_featured:true');
+    // Preserve clicks if existing
+    const existingP = allProducts.find(x => x.id == id);
+    if (existingP && Array.isArray(existingP.features)) {
+        const clicksFlag = existingP.features.find(f => f.startsWith('_clicks:'));
+        if (clicksFlag) feats.push(clicksFlag);
+    }
     await fetch(`/api/products/${id}`, {
         method:'PUT', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({

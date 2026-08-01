@@ -72,7 +72,7 @@
 
         <!-- Products Section -->
         <section id="produtos" class="products">
-            <!-- Search Bar -->
+            <!-- Search Bar + Filters -->
             <div class="search-bar-wrapper">
                 <div class="search-bar-inner">
                     <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -90,11 +90,28 @@
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>
+                <button className="filter-toggle-btn" id="filter-toggle-btn" onclick="toggleFilterPanel()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    Filtros <span id="filter-active-dot" style="display:none;">●</span>
+                </button>
+            </div>
+            <div class="filters-panel" id="filters-panel" style="display: none;">
+                <div class="filter-group">
+                    <label class="filter-label">💰 Preço Mínimo (MT)</label>
+                    <input type="number" min="0" step="500" class="filter-input" id="price-min" placeholder="0" oninput="onPriceFilterChange()">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">💰 Preço Máximo (MT)</label>
+                    <input type="number" min="0" step="500" class="filter-input" id="price-max" placeholder="Sem limite" oninput="onPriceFilterChange()">
+                </div>
+                <button class="filter-clear-btn" id="filter-clear-btn" style="display:none;" onclick="clearPriceFilters()">🗑️ Limpar Filtros</button>
             </div>
             <!-- Category filter tabs -->
             <div class="category-tabs" id="category-tabs">
                 <!-- Injected via JS -->
             </div>
+            <!-- Featured Section Container -->
+            <div id="featured-section-container"></div>
             <!-- Products Grid -->
             <div class="products-grid" id="products-grid">
                 <!-- Injected via JS -->

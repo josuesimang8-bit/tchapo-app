@@ -75,6 +75,8 @@ export default function Admin() {
     const [uploadingProd, setUploadingProd]   = useState(false);
     const [newProdDeviceSel, setNewProdDeviceSel] = useState('none');
     const [newProdColorSel, setNewProdColorSel]   = useState('show');
+    const [newProdStockStatus, setNewProdStockStatus] = useState('Em Stock');
+    const [newProdFeatured, setNewProdFeatured]   = useState(false);
 
     // Edit Product modal state
     const [editingProduct, setEditingProduct] = useState(null);
@@ -89,6 +91,8 @@ export default function Admin() {
     const [savingProd, setSavingProd]         = useState(false);
     const [editProdDeviceSel, setEditProdDeviceSel] = useState('none');
     const [editProdColorSel, setEditProdColorSel]   = useState('show');
+    const [editProdStockStatus, setEditProdStockStatus] = useState('Em Stock');
+    const [editProdFeatured, setEditProdFeatured]   = useState(false);
 
     const [deleteProdToConfirm, setDeleteProdToConfirm] = useState(null);
 
@@ -444,6 +448,8 @@ export default function Admin() {
         
         featuresArray.push(`_device_selection:${newProdDeviceSel}`);
         featuresArray.push(`_color_selection:${newProdColorSel}`);
+        if (newProdStockStatus) featuresArray.push(`_stock:${newProdStockStatus}`);
+        if (newProdFeatured) featuresArray.push('_featured:true');
             
         try {
             const res = await fetch(import.meta.env.VITE_API_URL + '/api/products', {
@@ -468,6 +474,8 @@ export default function Admin() {
                 setNewProdFeatures('');
                 setNewProdPhoto(null);
                 setNewProdDeviceSel('none');
+                setNewProdStockStatus('Em Stock');
+                setNewProdFeatured(false);
                 
                 const fileInput = document.getElementById('product-photo-input');
                 if (fileInput) fileInput.value = '';
@@ -509,9 +517,16 @@ export default function Admin() {
         const colorSelValue = colorSelFlag ? colorSelFlag.split(':')[1] : 'show';
         setEditProdColorSel(colorSelValue);
         
+        // Extract stock status from features
+        const stockFlag = Array.isArray(product.features) ? product.features.find(f => f.startsWith('_stock:')) : null;
+        setEditProdStockStatus(stockFlag ? stockFlag.split(':')[1] : 'Em Stock');
+        
+        // Extract featured flag
+        setEditProdFeatured(Array.isArray(product.features) && product.features.includes('_featured:true'));
+        
         // Clean features shown to user
         const userFeatures = Array.isArray(product.features) 
-            ? product.features.filter(f => !f.startsWith('_device_selection:') && !f.startsWith('_color_selection:'))
+            ? product.features.filter(f => !f.startsWith('_device_selection:') && !f.startsWith('_color_selection:') && !f.startsWith('_stock:') && !f.startsWith('_clicks:') && f !== '_featured:true')
             : [];
         setEditProdFeatures(userFeatures.join(', '));
         
@@ -550,6 +565,13 @@ export default function Admin() {
             
         featuresArray.push(`_device_selection:${editProdDeviceSel}`);
         featuresArray.push(`_color_selection:${editProdColorSel}`);
+        if (editProdStockStatus) featuresArray.push(`_stock:${editProdStockStatus}`);
+        if (editProdFeatured) featuresArray.push('_featured:true');
+        // Preserve existing _clicks from original product if present
+        if (editingProduct && Array.isArray(editingProduct.features)) {
+            const clicksFlag = editingProduct.features.find(f => f.startsWith('_clicks:'));
+            if (clicksFlag) featuresArray.push(clicksFlag);
+        }
             
         try {
             const res = await fetch(import.meta.env.VITE_API_URL + `/api/products/${editingProduct.id}`, {
@@ -575,6 +597,8 @@ export default function Admin() {
                 setEditProdImageUrl('');
                 setEditProdPhoto(null);
                 setEditProdDeviceSel('none');
+                setEditProdStockStatus('Em Stock');
+                setEditProdFeatured(false);
                 
                 fetchProducts();
                 setToast('Produto atualizado com sucesso!');
@@ -895,28 +919,33 @@ export default function Admin() {
                                                         if (order.status === 'Cancelado') {
                                                             return <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', fontSize: '0.78rem', fontWeight: 700 }}>❌ Cancelado</div>;
                                                         }
+
+                                                        // Use server timer data
+                                                        let remSecs;
+                                                        if (order.timer_end_at) {
+                                                            // Timer is running: compute from absolute deadline
+                                                            remSecs = Math.max(0, Math.floor((new Date(order.timer_end_at).getTime() - now) / 1000));
+                                                        } else {
+                                                            // Timer is paused or not started
+                                                            remSecs = order.timer_remaining_secs != null ? order.timer_remaining_secs : 14400;
+                                                        }
+
                                                         if (order.status === 'Pendente' || !order.status) {
+                                                            const ph = Math.floor(remSecs / 3600);
+                                                            const pm = Math.floor((remSecs % 3600) / 60);
+                                                            const ps = Math.floor(remSecs % 60);
+                                                            const pausedStr = `${ph.toString().padStart(2, '0')}:${pm.toString().padStart(2, '0')}:${ps.toString().padStart(2, '0')}`;
                                                             return (
                                                                 <div style={{
-                                                                    padding: '5px 10px',
-                                                                    borderRadius: '8px',
-                                                                    background: '#fef3c7',
-                                                                    border: '1px solid #fde68a',
-                                                                    color: '#92400e',
-                                                                    fontSize: '0.82rem',
-                                                                    fontWeight: 800,
-                                                                    display: 'inline-flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '4px'
+                                                                    padding: '5px 10px', borderRadius: '8px',
+                                                                    background: '#fef3c7', border: '1px solid #fde68a',
+                                                                    color: '#92400e', fontSize: '0.82rem', fontWeight: 800,
+                                                                    display: 'inline-flex', alignItems: 'center', gap: '4px'
                                                                 }}>
-                                                                    ⏳ 04:00:00 (Pausado)
+                                                                    ⏳ {pausedStr} (Pausado)
                                                                 </div>
                                                             );
                                                         }
-
-                                                        const createdMs = new Date(order.created_at || Date.now()).getTime();
-                                                        const elapsedSecs = Math.floor((now - createdMs) / 1000);
-                                                        const remSecs = (4 * 3600) - elapsedSecs;
 
                                                         if (order.status === 'Perdido' || remSecs <= 0) {
                                                             return (
@@ -935,16 +964,12 @@ export default function Admin() {
                                                         const isWarning = remSecs < 1800;
                                                         return (
                                                             <div style={{
-                                                                padding: '5px 10px',
-                                                                borderRadius: '8px',
+                                                                padding: '5px 10px', borderRadius: '8px',
                                                                 background: isWarning ? '#fff7ed' : '#eff6ff',
                                                                 border: isWarning ? '1px solid #ffedd5' : '1px solid #dbeafe',
                                                                 color: isWarning ? '#c2410c' : '#1d4ed8',
-                                                                fontSize: '0.82rem',
-                                                                fontWeight: 800,
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                gap: '4px'
+                                                                fontSize: '0.82rem', fontWeight: 800,
+                                                                display: 'inline-flex', alignItems: 'center', gap: '4px'
                                                             }}>
                                                                 ⏱️ {timeStr} restantes
                                                             </div>
@@ -1265,6 +1290,34 @@ export default function Admin() {
                                         onChange={(e) => setNewProdPhoto(e.target.files[0])}
                                         style={{ width: '100%', padding: '0.5rem 0' }}
                                     />
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
+                                            🏷️ Estado do Stock
+                                        </label>
+                                        <select
+                                            value={newProdStockStatus}
+                                            onChange={(e) => setNewProdStockStatus(e.target.value)}
+                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none', background: '#fff' }}
+                                        >
+                                            <option value="Em Stock">✅ Em Stock</option>
+                                            <option value="Últimas Unidades">🔥 Últimas Unidades</option>
+                                            <option value="Esgotado">❌ Esgotado</option>
+                                        </select>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '0.75rem' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={newProdFeatured}
+                                                onChange={(e) => setNewProdFeatured(e.target.checked)}
+                                                style={{ width: '18px', height: '18px', accentColor: '#f59e0b', cursor: 'pointer' }}
+                                            />
+                                            ⭐ Produto em Destaque
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <button type="submit" disabled={uploadingProd} style={{
@@ -1680,6 +1733,34 @@ export default function Admin() {
                                         <img src={editProdImageUrl} alt="Atual" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
                                     </div>
                                 )}
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
+                                        🏷️ Estado do Stock
+                                    </label>
+                                    <select
+                                        value={editProdStockStatus}
+                                        onChange={(e) => setEditProdStockStatus(e.target.value)}
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none', background: '#fff' }}
+                                    >
+                                        <option value="Em Stock">✅ Em Stock</option>
+                                        <option value="Últimas Unidades">🔥 Últimas Unidades</option>
+                                        <option value="Esgotado">❌ Esgotado</option>
+                                    </select>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '0.75rem' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={editProdFeatured}
+                                            onChange={(e) => setEditProdFeatured(e.target.checked)}
+                                            style={{ width: '18px', height: '18px', accentColor: '#f59e0b', cursor: 'pointer' }}
+                                        />
+                                        ⭐ Produto em Destaque
+                                    </label>
+                                </div>
                             </div>
 
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>

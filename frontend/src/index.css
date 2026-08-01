@@ -2017,9 +2017,79 @@ body {
 }
 
 /* Product card position: relative for absolute badges */
-.product-card {
-    position: relative;
+/* Modal stock badge */
+.modal-stock-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
-.product-image-container {
-    position: relative;
+
+/* Responsive Product Modal Image Fix */
+.pm-image {
+    flex: 1 1 300px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    box-sizing: border-box;
+    width: 100%;
+}
+.gallery-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.gallery-main-img,
+.pm-image img {
+    max-width: 100% !important;
+    width: auto !important;
+    max-height: 320px !important;
+    height: auto !important;
+    object-fit: contain !important;
+    border-radius: 12px;
+    box-sizing: border-box;
+    display: block;
+    margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+    .product-modal {
+        width: 94% !important;
+        max-height: 90vh !important;
+        border-radius: 16px !important;
+    }
+    .pm-image {
+        padding: 0.75rem !important;
+        max-height: none !important;
+        min-height: auto !important;
+    }
+    .gallery-main-img,
+    .pm-image img {
+        max-height: 220px !important;
+        width: 100% !important;
+        object-fit: contain !important;
+    }
+    .pm-info {
+        padding: 1.25rem !important;
+    }
+    .pm-title {
+        font-size: 1.35rem !important;
+    }
+    .pm-price {
+        font-size: 1.25rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .gallery-thumbs {
+        gap: 0.3rem !important;
+    }
+    .gallery-thumb {
+        width: 40px !important;
+        height: 40px !important;
+    }
 }

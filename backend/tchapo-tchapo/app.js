@@ -316,14 +316,18 @@ function renderCategoryTabs() {
 }
 
 function getCategoryIcon(cat) {
-    const icons = {
-        'Todos':       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
-        'Smartphones': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
-        'Áudio':       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
-        'Wearables':   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83"/></svg>',
-        'Acessórios':  '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-    };
-    return icons[cat] || '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>';
+    const c = (cat || '').toLowerCase();
+    if (c === 'todos') return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
+    if (c.includes('smart') || c.includes('telem') || c.includes('celular') || c.includes('phone')) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>';
+    if (c.includes('áudio') || c.includes('audio') || c.includes('som') || c.includes('fone')) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>';
+    if (c.includes('wear') || c.includes('reló') || c.includes('watch')) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83"/></svg>';
+    if (c.includes('jogo') || c.includes('game') || c.includes('gaming') || c.includes('consola')) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="13" r="1"/><circle cx="18" cy="11" r="1"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>';
+    if (c.includes('carro') || c.includes('auto') || c.includes('veícu') || c.includes('moto')) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 3.1C1.4 11.5 1 12.2 1 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>';
+    if (c.includes('casa') || c.includes('eletro') || c.includes('lar')) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+    if (c.includes('moda') || c.includes('roupa') || c.includes('vestu')) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>';
+    if (c.includes('livro') || c.includes('papel') || c.includes('book')) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+    if (c.includes('acessó') || c.includes('gadget')) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>';
 }
 
 function filterCategory(cat) {
@@ -375,9 +379,7 @@ function renderProducts() {
                             return `
                                 <div class="featured-card ${isOut ? 'out-of-stock' : ''}">
                                     <div class="featured-badge">⭐ Destaque</div>
-                                    ${stock === 'Últimas Unidades' ? '<div class="stock-badge stock-low">🔥 Últimas Unidades</div>' : ''}
-                                    ${isOut ? '<div class="stock-badge stock-out">❌ Esgotado</div>' : ''}
-                                    <div class="featured-img-wrap" onclick="${!isOut ? `openProductModal(${prod.id})` : ''}">
+                                    <div class="featured-img-wrap" onclick="openProductModal(${prod.id})">
                                         <img src="${prod.image}" alt="${prod.name}" class="featured-img">
                                     </div>
                                     <div class="featured-info">
@@ -412,21 +414,16 @@ function renderProducts() {
     productsGrid.innerHTML = filtered.map(product => {
         const stock = getStockStatus(product);
         const isOut = stock === 'Esgotado';
-        const isLow = stock === 'Últimas Unidades';
         const featStar = isFeatured(product) ? '<div class="card-featured-badge">⭐</div>' : '';
-        const stockBadgeHtml = isOut
-            ? '<div class="card-stock-badge stock-out">❌ Esgotado</div>'
-            : (isLow ? '<div class="card-stock-badge stock-low">🔥 Últimas Unidades</div>' : '<div class="card-stock-badge stock-ok">✅ Em Stock</div>');
 
         return `
             <div class="product-card ${isOut ? 'out-of-stock' : ''}">
                 ${featStar}
-                ${stockBadgeHtml}
-                <div class="product-image-container" onclick="${!isOut ? `openProductModal(${product.id})` : ''}">
+                <div class="product-image-container" onclick="openProductModal(${product.id})">
                     <img src="${product.image}" alt="${product.name}" class="product-img" style="${isOut ? 'opacity:0.5' : ''}">
                 </div>
                 <div class="product-category-tag">${getCategoryIcon(product.category)} ${product.category}</div>
-                <h3 class="product-title" onclick="${!isOut ? `openProductModal(${product.id})` : ''}">${product.name}</h3>
+                <h3 class="product-title" onclick="openProductModal(${product.id})">${product.name}</h3>
                 <p class="product-desc">${product.desc || ''}</p>
                 <div class="product-price">${formatCurrency(product.price)}</div>
                 <div class="product-actions">
@@ -568,12 +565,20 @@ function openProductModal(id) {
         window.currentGalleryIdx = 0;
     }
 
+    const stock = getStockStatus(product);
+    let modalStockBadgeHtml = '<div class="modal-stock-badge stock-ok">✅ Em Stock</div>';
+    if (stock === 'Últimas Unidades') modalStockBadgeHtml = '<div class="modal-stock-badge stock-low">🔥 Últimas Unidades</div>';
+    if (stock === 'Esgotado') modalStockBadgeHtml = '<div class="modal-stock-badge stock-out">❌ Esgotado</div>';
+
     productModalContent.innerHTML = `
         <div class="pm-image">
             ${imageGalleryHtml}
         </div>
         <div class="pm-info">
-            <div class="product-category-tag" style="margin-bottom:1rem">${getCategoryIcon(product.category)} ${product.category}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+                <div class="product-category-tag" style="margin-bottom:0">${getCategoryIcon(product.category)} ${product.category}</div>
+                ${modalStockBadgeHtml}
+            </div>
             <h2 class="pm-title">${product.name}</h2>
             <div class="pm-price">${formatCurrency(product.price)}</div>
             <p class="pm-desc">${product.desc}</p>

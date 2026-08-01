@@ -162,19 +162,35 @@ const STATUS_STEPS = {
 };
 
 function getCategoryIcon(cat) {
-    if (cat === 'Todos') return (
+    const c = (cat || '').toLowerCase();
+    if (c === 'todos') return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
     );
-    if (cat === 'Smartphones') return (
+    if (c.includes('smart') || c.includes('telem') || c.includes('celular') || c.includes('phone')) return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
     );
-    if (cat === 'Áudio') return (
+    if (c.includes('áudio') || c.includes('audio') || c.includes('som') || c.includes('fone')) return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
     );
-    if (cat === 'Wearables') return (
+    if (c.includes('wear') || c.includes('reló') || c.includes('watch')) return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83"/></svg>
     );
-    if (cat === 'Acessórios') return (
+    if (c.includes('jogo') || c.includes('game') || c.includes('gaming') || c.includes('consola')) return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="13" r="1"/><circle cx="18" cy="11" r="1"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>
+    );
+    if (c.includes('carro') || c.includes('auto') || c.includes('veícu') || c.includes('moto')) return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 3.1C1.4 11.5 1 12.2 1 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+    );
+    if (c.includes('casa') || c.includes('eletro') || c.includes('lar')) return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    );
+    if (c.includes('moda') || c.includes('roupa') || c.includes('vestu')) return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+    );
+    if (c.includes('livro') || c.includes('papel') || c.includes('book')) return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    );
+    if (c.includes('acessó') || c.includes('gadget')) return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
     );
     return (
@@ -1095,9 +1111,7 @@ export default function Store() {
                                     return (
                                         <div key={prod.id} className={`featured-card ${isOut ? 'out-of-stock' : ''}`}>
                                             <div className="featured-badge">⭐ Destaque</div>
-                                            {stock === 'Últimas Unidades' && <div className="stock-badge stock-low">🔥 Últimas Unidades</div>}
-                                            {isOut && <div className="stock-badge stock-out">❌ Esgotado</div>}
-                                            <div className="featured-img-wrap" onClick={() => !isOut && (setSelectedProduct(prod), setModalImageIndex(0), trackProductClick(prod.id))}>
+                                            <div className="featured-img-wrap" onClick={() => (setSelectedProduct(prod), setModalImageIndex(0), trackProductClick(prod.id))}>
                                                 <img src={prod.image} alt={prod.name} className="featured-img" />
                                             </div>
                                             <div className="featured-info">
@@ -1131,18 +1145,14 @@ export default function Store() {
                         {filteredProducts.map(prod => {
                             const stock = getStockStatus(prod);
                             const isOut = stock === 'Esgotado';
-                            const isLow = stock === 'Últimas Unidades';
                             return (
                             <div key={prod.id} className={`product-card ${isOut ? 'out-of-stock' : ''}`}>
                                 {isFeatured(prod) && <div className="card-featured-badge">⭐</div>}
-                                {isLow && <div className="card-stock-badge stock-low">🔥 Últimas Unidades</div>}
-                                {isOut && <div className="card-stock-badge stock-out">❌ Esgotado</div>}
-                                {!isOut && !isLow && <div className="card-stock-badge stock-ok">✅ Em Stock</div>}
-                                <div className="product-image-container" onClick={() => { if (!isOut) { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); } }}>
+                                <div className="product-image-container" onClick={() => { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); }}>
                                     <img src={prod.image} alt={prod.name} className="product-img" style={{ opacity: isOut ? 0.5 : 1 }} />
                                 </div>
                                 <div className="product-category-tag">{getCategoryIcon(prod.category)} {prod.category}</div>
-                                <h3 className="product-title" onClick={() => { if (!isOut) { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); } }}>{prod.name}</h3>
+                                <h3 className="product-title" onClick={() => { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); }}>{prod.name}</h3>
                                 <p className="product-desc">{prod.desc || ''}</p>
                                 <div className="product-price">{formatCurrency(prod.price)}</div>
                                 <div className="product-actions">
@@ -1227,8 +1237,16 @@ export default function Store() {
                                 })()}
                             </div>
                             <div className="pm-info">
-                                <div className="product-category-tag" style={{ marginBottom: '1rem' }}>
-                                    {getCategoryIcon(activeSelectedProduct.category)} {activeSelectedProduct.category}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                                    <div className="product-category-tag" style={{ marginBottom: 0 }}>
+                                        {getCategoryIcon(activeSelectedProduct.category)} {activeSelectedProduct.category}
+                                    </div>
+                                    {(() => {
+                                        const stock = getStockStatus(activeSelectedProduct);
+                                        if (stock === 'Últimas Unidades') return <div className="modal-stock-badge stock-low">🔥 Últimas Unidades</div>;
+                                        if (stock === 'Esgotado') return <div className="modal-stock-badge stock-out">❌ Esgotado</div>;
+                                        return <div className="modal-stock-badge stock-ok">✅ Em Stock</div>;
+                                    })()}
                                 </div>
                                 <h2 className="pm-title">{activeSelectedProduct.name}</h2>
                                 <div className="pm-price">{formatCurrency(activeSelectedProduct.price)}</div>

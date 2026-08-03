@@ -17,6 +17,46 @@ const COLOR_OPTIONS = [
 const PENDRIVE_OPTIONS = ['1 GB', '2 GB', '4 GB', '8 GB', '16 GB'];
 const CARD_OPTIONS = ['1 GB', '2 GB', '4 GB', '8 GB', '16 GB', '32 GB', '64 GB'];
 
+const PENDRIVE_PRICES = {
+    '1 GB': 229,
+    '2 GB': 269,
+    '4 GB': 299,
+    '8 GB': 379,
+    '16 GB': 429
+};
+
+const CARD_PRICES = {
+    '1 GB': 159,
+    '2 GB': 199,
+    '4 GB': 269,
+    '8 GB': 279,
+    '16 GB': 349,
+    '32 GB': 389,
+    '64 GB': 449
+};
+
+function getEffectivePrice(product, option) {
+    if (!product) return 0;
+    const devType = getDeviceSelectionType(product);
+    if (devType === 'pendrive' && option && PENDRIVE_PRICES[option]) {
+        return PENDRIVE_PRICES[option];
+    }
+    if (devType === 'card' && option && CARD_PRICES[option]) {
+        return CARD_PRICES[option];
+    }
+    return product.price;
+}
+
+function updatePmPrice(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    const devEl = document.getElementById('pm-device');
+    const opt = devEl ? devEl.value : null;
+    const price = getEffectivePrice(product, opt);
+    const priceEl = document.getElementById('pm-price');
+    if (priceEl) priceEl.textContent = formatCurrency(price);
+}
+
 function getDeviceSelectionType(product) {
     if (!product) return 'none';
     if (product.features && Array.isArray(product.features)) {
@@ -602,7 +642,8 @@ function addCaseToCartFromModal(id) {
         if (colorEl) color = colorEl.value;
     }
     
-    addToCart(id, device, color);
+    const unitPrice = getEffectivePrice(product, device);
+    addToCart(id, device, color, unitPrice);
     closeModals();
     showToast();
 }
@@ -636,8 +677,8 @@ function openProductModal(id) {
                 deviceSelectHtml = `
                     <div style="display: flex; flex-direction: column; gap: 0.35rem;">
                         <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Capacidade (GB):</label>
-                        <select id="pm-device" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
-                            ${PENDRIVE_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        <select id="pm-device" onchange="updatePmPrice(${product.id})" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
+                            ${PENDRIVE_OPTIONS.map(d => `<option value="${d}">${d} — ${PENDRIVE_PRICES[d]} MT</option>`).join('')}
                         </select>
                     </div>
                 `;
@@ -645,8 +686,8 @@ function openProductModal(id) {
                 deviceSelectHtml = `
                     <div style="display: flex; flex-direction: column; gap: 0.35rem;">
                         <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Capacidade (GB):</label>
-                        <select id="pm-device" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
-                            ${CARD_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        <select id="pm-device" onchange="updatePmPrice(${product.id})" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
+                            ${CARD_OPTIONS.map(d => `<option value="${d}">${d} — ${CARD_PRICES[d]} MT</option>`).join('')}
                         </select>
                     </div>
                 `;
@@ -717,7 +758,7 @@ function openProductModal(id) {
                 ${modalStockBadgeHtml}
             </div>
             <h2 class="pm-title">${product.name}</h2>
-            <div class="pm-price">${formatCurrency(product.price)}</div>
+            <div class="pm-price" id="pm-price">${formatCurrency(getEffectivePrice(product, devSelType === 'pendrive' ? PENDRIVE_OPTIONS[0] : devSelType === 'card' ? CARD_OPTIONS[0] : null))}</div>
             <p class="pm-desc">${product.desc}</p>
             <ul class="pm-features">
                 ${(product.features || []).filter(f => !f.startsWith('_')).map(f => `<li>${f}</li>`).join('')}
@@ -794,8 +835,8 @@ function startQuickOrderModal(id, fromModal = false) {
                 deviceSelectHtml = `
                     <div style="display: flex; flex-direction: column; gap: 0.2rem; width: 100%;">
                         <label style="font-weight: 600; font-size: 0.8rem; color: #4b5563; text-align: left;">Capacidade (GB):</label>
-                        <select id="qo-device" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff;">
-                            ${PENDRIVE_OPTIONS.map(d => `<option value="${d}" ${d === selectedDevVal ? 'selected' : ''}>${d}</option>`).join('')}
+                        <select id="qo-device" onchange="updateQuickOrderPrice()" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff;">
+                            ${PENDRIVE_OPTIONS.map(d => `<option value="${d}" ${d === selectedDevVal ? 'selected' : ''}>${d} — ${PENDRIVE_PRICES[d]} MT</option>`).join('')}
                         </select>
                     </div>
                 `;
@@ -803,8 +844,8 @@ function startQuickOrderModal(id, fromModal = false) {
                 deviceSelectHtml = `
                     <div style="display: flex; flex-direction: column; gap: 0.2rem; width: 100%;">
                         <label style="font-weight: 600; font-size: 0.8rem; color: #4b5563; text-align: left;">Capacidade (GB):</label>
-                        <select id="qo-device" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff;">
-                            ${CARD_OPTIONS.map(d => `<option value="${d}" ${d === selectedDevVal ? 'selected' : ''}>${d}</option>`).join('')}
+                        <select id="qo-device" onchange="updateQuickOrderPrice()" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff;">
+                            ${CARD_OPTIONS.map(d => `<option value="${d}" ${d === selectedDevVal ? 'selected' : ''}>${d} — ${CARD_PRICES[d]} MT</option>`).join('')}
                         </select>
                     </div>
                 `;
@@ -919,7 +960,14 @@ function startQuickOrderModal(id, fromModal = false) {
 let qoQty = 1;
 function updateQuickOrderPrice() {
     if (!quickOrderProduct) return;
-    let subtotal = quickOrderProduct.price * qoQty;
+    let unitPrice = quickOrderProduct.price;
+    const devSelType = getDeviceSelectionType(quickOrderProduct);
+    if (devSelType === 'pendrive' || devSelType === 'card') {
+        const devEl = document.getElementById('qo-device');
+        const opt = devEl ? devEl.value : null;
+        unitPrice = getEffectivePrice(quickOrderProduct, opt);
+    }
+    let subtotal = unitPrice * qoQty;
     let discount = appliedCoupon ? Math.round(subtotal * 0.1) : 0;
     let total = subtotal - discount;
     const timeSelect = document.getElementById('qo-time');
@@ -997,6 +1045,7 @@ function handleQuickOrder(e) {
         
         if (devSelType !== 'none') {
             productItem.name = hasColorSel ? `${quickOrderProduct.name} (${dev} - ${col})` : `${quickOrderProduct.name} (${dev})`;
+            productItem.price = getEffectivePrice(quickOrderProduct, dev);
         } else {
             productItem.name = hasColorSel ? `${quickOrderProduct.name} (${col})` : quickOrderProduct.name;
         }
@@ -1115,7 +1164,7 @@ function toggleCart() {
     updateScrollLock();
 }
 
-function addToCart(productId, device = null, color = null) {
+function addToCart(productId, device = null, color = null, customPrice = null) {
     if (!device && !color) {
         trackProductClick(productId);
     }
@@ -1127,6 +1176,7 @@ function addToCart(productId, device = null, color = null) {
     
     const finalDevice = hasDeviceSel ? device : null;
     const finalColor = hasColorSel ? color : null;
+    const unitPrice = customPrice !== null ? customPrice : getEffectivePrice(product, finalDevice);
     
     const cartItemId = hasDeviceSel 
         ? (hasColorSel ? `${productId}-${finalDevice}-${finalColor}` : `${productId}-${finalDevice}`)
@@ -1139,7 +1189,7 @@ function addToCart(productId, device = null, color = null) {
     if (existing) { 
         existing.quantity += 1; 
     } else { 
-        cart.push({ ...product, id: cartItemId, name: cartItemName, quantity: 1 }); 
+        cart.push({ ...product, id: cartItemId, name: cartItemName, price: unitPrice, quantity: 1 }); 
     }
     saveCart();
     updateCartUI();

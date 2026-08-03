@@ -226,6 +226,36 @@ const DEVICE_OPTIONS = [
 const PENDRIVE_OPTIONS = ['1 GB', '2 GB', '4 GB', '8 GB', '16 GB'];
 const CARD_OPTIONS = ['1 GB', '2 GB', '4 GB', '8 GB', '16 GB', '32 GB', '64 GB'];
 
+const PENDRIVE_PRICES = {
+    '1 GB': 229,
+    '2 GB': 269,
+    '4 GB': 299,
+    '8 GB': 379,
+    '16 GB': 429
+};
+
+const CARD_PRICES = {
+    '1 GB': 159,
+    '2 GB': 199,
+    '4 GB': 269,
+    '8 GB': 279,
+    '16 GB': 349,
+    '32 GB': 389,
+    '64 GB': 449
+};
+
+const getEffectivePrice = (product, option) => {
+    if (!product) return 0;
+    const devType = getDeviceSelectionType(product);
+    if (devType === 'pendrive' && option && PENDRIVE_PRICES[option]) {
+        return PENDRIVE_PRICES[option];
+    }
+    if (devType === 'card' && option && CARD_PRICES[option]) {
+        return CARD_PRICES[option];
+    }
+    return product.price;
+};
+
 const COLOR_OPTIONS = [
     'Preto', 'Branco', 'Azul', 'Rosa', 'Vermelho', 'Verde', 'Amarelo', 'Roxo', 'Cinzento', 'Castanho'
 ];
@@ -732,6 +762,8 @@ export default function Store() {
         
         const finalColor = hasColorSel ? (color || selectedColor) : null;
         
+        const unitPrice = getEffectivePrice(product, finalDevice);
+        
         const cartItemId = hasDeviceSel 
             ? (hasColorSel ? `${product.id}-${finalDevice}-${finalColor}` : `${product.id}-${finalDevice}`)
             : (hasColorSel ? `${product.id}-${finalColor}` : product.id);
@@ -747,6 +779,7 @@ export default function Store() {
                 ...product, 
                 id: cartItemId, 
                 name: cartItemName, 
+                price: unitPrice,
                 quantity: 1 
             }]);
         }
@@ -847,16 +880,6 @@ export default function Store() {
     const handleQuickOrderSubmit = async (e) => {
         e.preventDefault();
 
-        const itemsTotal = quickOrderProduct.price * quickOrderQty;
-        const referralDiscount = appliedReferralCode ? (itemsTotal * 0.1) : 0;
-        const shippingFee = quickOrderForm.time.startsWith('Imediato') ? 200 : 0;
-        const total = itemsTotal - referralDiscount + shippingFee;
-
-        const devSelType = getDeviceSelectionType(quickOrderProduct);
-        const hasDeviceSel = devSelType !== 'none';
-        const colorSelType = getColorSelectionType(quickOrderProduct);
-        const hasColorSel = colorSelType !== 'none';
-        
         let finalDevice = '';
         if (hasDeviceSel) {
             if (devSelType === 'outro' || (devSelType === 'iphone_outro' && selectedDevice === 'outro')) {
@@ -865,6 +888,12 @@ export default function Store() {
                 finalDevice = selectedDevice;
             }
         }
+        
+        const unitPrice = getEffectivePrice(quickOrderProduct, finalDevice);
+        const itemsTotal = unitPrice * quickOrderQty;
+        const referralDiscount = appliedReferralCode ? (itemsTotal * 0.1) : 0;
+        const shippingFee = quickOrderForm.time.startsWith('Imediato') ? 200 : 0;
+        const total = itemsTotal - referralDiscount + shippingFee;
         
         const finalName = hasDeviceSel 
             ? (hasColorSel ? `${quickOrderProduct.name} (${finalDevice} - ${selectedColor})` : `${quickOrderProduct.name} (${finalDevice})`)
@@ -1377,7 +1406,7 @@ export default function Store() {
                                     })()}
                                 </div>
                                 <h2 className="pm-title">{activeSelectedProduct.name}</h2>
-                                <div className="pm-price">{formatCurrency(activeSelectedProduct.price)}</div>
+                                <div className="pm-price">{formatCurrency(getEffectivePrice(activeSelectedProduct, selectedDevice))}</div>
                                 <p className="pm-desc">{activeSelectedProduct.desc}</p>
                                 <ul className="pm-features" style={{ paddingLeft: '1rem', listStyleType: 'disc' }}>
                                     {activeSelectedProduct.features && activeSelectedProduct.features
@@ -1419,8 +1448,8 @@ export default function Store() {
                                                                     backgroundColor: '#fff'
                                                                 }}
                                                             >
-                                                                {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>) :
-                                                                 devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>) :
+                                                                {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {PENDRIVE_PRICES[opt]} MT</option>) :
+                                                                 devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {CARD_PRICES[opt]} MT</option>) :
                                                                  DEVICE_OPTIONS.map(dev => <option key={dev} value={dev}>{dev}</option>)}
                                                                 {devSelType === 'iphone_outro' && (
                                                                     <option value="outro">Outro (Digitar...)</option>
@@ -1695,8 +1724,8 @@ export default function Store() {
                                                             backgroundColor: '#fff'
                                                         }}
                                                     >
-                                                        {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>) :
-                                                         devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>) :
+                                                        {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {PENDRIVE_PRICES[opt]} MT</option>) :
+                                                         devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {CARD_PRICES[opt]} MT</option>) :
                                                          DEVICE_OPTIONS.map(dev => <option key={dev} value={dev}>{dev}</option>)}
                                                         {devSelType === 'iphone_outro' && (
                                                             <option value="outro">Outro (Digitar...)</option>

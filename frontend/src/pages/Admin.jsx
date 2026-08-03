@@ -1249,6 +1249,8 @@ export default function Admin() {
                                         style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none', background: '#fff' }}
                                     >
                                         <option value="none">Nenhum (Venda Normal)</option>
+                                        <option value="pendrive">💾 Capacidade de Pendrive (1 GB a 16 GB)</option>
+                                        <option value="card">💾 Capacidade de Cartão de Memória (1 GB a 64 GB)</option>
                                         <option value="iphone">Modelos de iPhone (Fixed List)</option>
                                         <option value="iphone_outro">Modelos de iPhone + Opção "Outro"</option>
                                         <option value="outro">Digitação Livre (Apenas "Outro")</option>
@@ -1687,6 +1689,8 @@ export default function Admin() {
                                     style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none', background: '#fff' }}
                                 >
                                     <option value="none">Nenhum (Venda Normal)</option>
+                                    <option value="pendrive">💾 Capacidade de Pendrive (1 GB a 16 GB)</option>
+                                    <option value="card">💾 Capacidade de Cartão de Memória (1 GB a 64 GB)</option>
                                     <option value="iphone">Modelos de iPhone (Fixed List)</option>
                                     <option value="iphone_outro">Modelos de iPhone + Opção "Outro"</option>
                                     <option value="outro">Digitação Livre (Apenas "Outro")</option>

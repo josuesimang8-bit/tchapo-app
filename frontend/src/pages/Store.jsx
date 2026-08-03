@@ -93,6 +93,121 @@ const fallbackProducts = [
         image: 'assets/iphone_silicone_case.png',
         desc: 'Proteção premium em silicone para o teu iPhone. Interior em microfibra macia e exterior suave ao toque.',
         features: ['🛡️ Proteção Contra Quedas', '🎨 Toque Suave de Silicone', '📱 Encaixe Perfeito', '🧼 Fácil de Limpar']
+    },
+    // 🎮 Jogos
+    {
+        id: 14, category: 'Jogos',
+        name: 'Joystick de PS4 (Comando Sem Fios)',
+        price: 2500,
+        image: 'assets/default_product.png',
+        desc: 'Comando sem fios vibratório de alta precisão compatível com PlayStation 4 e PC.',
+        features: ['🎮 DualShock 4 Sem Fios', '🔋 Bateria Recarregável', '🎧 Entrada de Áudio 3.5mm']
+    },
+    {
+        id: 15, category: 'Jogos',
+        name: 'Joystick de PS5 (Comando DualSense)',
+        price: 4500,
+        image: 'assets/default_product.png',
+        desc: 'Comando sem fios DualSense com feedback háptico e gatilhos adaptáveis para PlayStation 5.',
+        features: ['🎮 Feedback Háptico Imersivo', '⚡ Gatilhos Adaptáveis', '🎙️ Microfone Integrado']
+    },
+    // ⌚ Wearables & Eletrodomésticos
+    {
+        id: 16, category: 'Wearables',
+        name: 'Smartwatch HD Inteligente',
+        price: 3200,
+        image: 'assets/smartwatch_1777774341144.png',
+        desc: 'Relógio inteligente com monitor de ritmo cardíaco, modos desportivos e notificações.',
+        features: ['❤️ Monitor Cardíaco', '📱 Notificações de Chamadas', '🏃 Modos Desportivos']
+    },
+    {
+        id: 17, category: 'Eletrodomésticos',
+        name: 'Liquidificador Multifunções',
+        price: 2800,
+        image: 'assets/default_product.png',
+        desc: 'Liquidificador de alta potência ideal para batidos, sumos naturais e triturar gelo.',
+        features: ['⚡ Motor de Alta Potência', '🍹 Lâminas em Aço Inox', '🧼 Fácil de Limpar']
+    },
+    // 💾 Armazenamento & Acessórios
+    {
+        id: 18, category: 'Acessórios',
+        name: 'Pendrive USB de Alta Velocidade',
+        price: 450,
+        image: 'assets/default_product.png',
+        desc: 'Pen Drive USB metálica e resistente para transporte rápido de documentos, fotos e vídeos.',
+        features: ['_device_selection:pendrive', '_color_selection:none', '💾 Capacidade: 1GB a 16GB']
+    },
+    {
+        id: 19, category: 'Acessórios',
+        name: 'Cartão de Memória MicroSD + Adaptador',
+        price: 350,
+        image: 'assets/default_product.png',
+        desc: 'Cartão de memória MicroSD de alta velocidade Classe 10 para telemóveis e câmaras.',
+        features: ['_device_selection:card', '_color_selection:none', '💾 Capacidade: 1GB a 64GB']
+    },
+    {
+        id: 20, category: 'Acessórios',
+        name: 'Pau de Selfie Bluetooth com Tripé',
+        price: 850,
+        image: 'assets/default_product.png',
+        desc: 'Pau de selfie extensível 3 em 1 com comando Bluetooth sem fios e tripé incorporado.',
+        features: ['📶 Conexão Bluetooth', '📸 Tripé Estável Integrado', '📐 Rotação 360°']
+    },
+    {
+        id: 21, category: 'Acessórios',
+        name: 'Baterias para Android',
+        price: 1200,
+        image: 'assets/default_product.png',
+        desc: 'Baterias de substituição de alta autonomia compatíveis com vários modelos Android.',
+        features: ['_device_selection:outro', '_color_selection:none', '🔋 Longa Durabilidade']
+    },
+    {
+        id: 22, category: 'Acessórios',
+        name: 'Tampas e Capas para iPhone',
+        price: 450,
+        image: 'assets/default_product.png',
+        desc: 'Tampas traseiras e capas de proteção com acabamento premium para iPhone.',
+        features: ['_device_selection:iphone_outro', '_color_selection:show', '🛡️ Proteção Anti-Queda']
+    },
+    {
+        id: 23, category: 'Acessórios',
+        name: 'Ring Light 10" com Tripé',
+        price: 1850,
+        image: 'assets/default_product.png',
+        desc: 'Luz anelar de 10 polegadas com suporte flexível para telemóvel e 3 modos de luz.',
+        features: ['💡 3 Tons de Luz (Fria, Quente, Neutra)', '📱 Suporte para Telemóvel', '🔌 Alimentação USB']
+    },
+    {
+        id: 24, category: 'Acessórios',
+        name: 'Cabo USB para Type-C',
+        price: 350,
+        image: 'assets/default_product.png',
+        desc: 'Cabo reforçado USB para Type-C de carregamento rápido e sincronização de dados.',
+        features: ['⚡ Carregamento Rápido 3A', '🔌 Conector Reversível Type-C']
+    },
+    {
+        id: 25, category: 'Acessórios',
+        name: 'Cabo Micro-USB Standard',
+        price: 250,
+        image: 'assets/default_product.png',
+        desc: 'Cabo Micro-USB universal para carregamento de telemóveis, colunas e pequenos eletrónicos.',
+        features: ['🔌 Conexão Micro-USB Universal', '⚡ Carregamento Seguro']
+    },
+    {
+        id: 26, category: 'Acessórios',
+        name: 'Cabo Type-C para Type-C (iPhone / Android)',
+        price: 550,
+        image: 'assets/default_product.png',
+        desc: 'Cabo de alta velocidade Type-C para Type-C compatível com iPhone 15/16 e Android.',
+        features: ['⚡ Carregamento Ultra-Rápido 60W', '💻 Transmissão de Dados']
+    },
+    {
+        id: 27, category: 'Acessórios',
+        name: 'Carregador Completo (Adaptador + Cabo)',
+        price: 850,
+        image: 'assets/default_product.png',
+        desc: 'Kit completo de carregador de parede com tomada de alta eficiência e cabo reforçado.',
+        features: ['⚡ Carregador Rápido de Parede', '🔌 Adaptador + Cabo Incluído']
     }
 ];
 
@@ -108,6 +223,9 @@ const DEVICE_OPTIONS = [
     'iPhone 8 Plus', 'iPhone 8', 'iPhone 7 Plus'
 ];
 
+const PENDRIVE_OPTIONS = ['1 GB', '2 GB', '4 GB', '8 GB', '16 GB'];
+const CARD_OPTIONS = ['1 GB', '2 GB', '4 GB', '8 GB', '16 GB', '32 GB', '64 GB'];
+
 const COLOR_OPTIONS = [
     'Preto', 'Branco', 'Azul', 'Rosa', 'Vermelho', 'Verde', 'Amarelo', 'Roxo', 'Cinzento', 'Castanho'
 ];
@@ -117,10 +235,9 @@ const getDeviceSelectionType = (product) => {
     const flag = product.features.find(f => f.startsWith('_device_selection:'));
     if (flag) return flag.split(':')[1];
     
-    // Fallback support for the silicone case product (ID 13) if the flag isn't set yet
-    if (product.id === 13 || product.name?.includes("Capas de Silicone")) {
-        return 'iphone'; // default to iphone selection
-    }
+    if (product.name && product.name.includes("Pendrive")) return 'pendrive';
+    if (product.name && product.name.includes("Cartão de Memória")) return 'card';
+    if (product.id === 13 || (product.name && product.name.includes("Capas de Silicone"))) return 'iphone';
     return 'none';
 };
 

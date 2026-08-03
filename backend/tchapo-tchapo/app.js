@@ -14,15 +14,19 @@ const COLOR_OPTIONS = [
     'Preto', 'Branco', 'Azul', 'Rosa', 'Vermelho', 'Verde', 'Amarelo', 'Roxo', 'Cinzento', 'Castanho'
 ];
 
+const PENDRIVE_OPTIONS = ['1 GB', '2 GB', '4 GB', '8 GB', '16 GB'];
+const CARD_OPTIONS = ['1 GB', '2 GB', '4 GB', '8 GB', '16 GB', '32 GB', '64 GB'];
+
 function getDeviceSelectionType(product) {
-    if (!product || !product.features) return 'none';
-    const flag = product.features.find(f => f.startsWith('_device_selection:'));
-    if (flag) return flag.split(':')[1];
-    
-    // Fallback support for the silicone case product (ID 13) if the flag isn't set yet
-    if (product.id === 13 || (product.name && product.name.includes("Capas de Silicone"))) {
-        return 'iphone';
+    if (!product) return 'none';
+    if (product.features && Array.isArray(product.features)) {
+        const flag = product.features.find(f => f.startsWith('_device_selection:'));
+        if (flag) return flag.split(':')[1];
     }
+    
+    if (product.name && product.name.toLowerCase().includes("pendrive")) return 'pendrive';
+    if (product.name && (product.name.toLowerCase().includes("cartão de memória") || product.name.toLowerCase().includes("cartao de memoria"))) return 'card';
+    if (product.id === 13 || (product.name && product.name.includes("Capas de Silicone"))) return 'iphone';
     return 'none';
 }
 

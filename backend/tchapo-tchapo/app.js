@@ -233,16 +233,16 @@ let products = [
         name: 'Joystick de PS4 (Comando Sem Fios)',
         price: 2500,
         image: 'assets/default_product.png',
-        desc: 'Comando sem fios vibratório de alta precisão compatível com PlayStation 4 e PC.',
-        features: ['🎮 DualShock 4 Sem Fios', '🔋 Bateria Recarregável', '🎧 Entrada de Áudio 3.5mm']
+        desc: 'Joystick de PS4 (Comando Sem Fios) de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     },
     {
         id: 15, category: 'Jogos',
         name: 'Joystick de PS5 (Comando DualSense)',
         price: 4500,
         image: 'assets/default_product.png',
-        desc: 'Comando sem fios DualSense com feedback háptico e gatilhos adaptáveis para PlayStation 5.',
-        features: ['🎮 Feedback Háptico Imersivo', '⚡ Gatilhos Adaptáveis', '🎙️ Microfone Integrado']
+        desc: 'Joystick de PS5 (Comando DualSense) de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     },
     // ⌚ Wearables & Eletrodomésticos
     {
@@ -250,16 +250,16 @@ let products = [
         name: 'Smartwatch HD Inteligente',
         price: 3200,
         image: 'assets/smartwatch_1777774341144.png',
-        desc: 'Relógio inteligente com monitor de ritmo cardíaco, modos desportivos e notificações.',
-        features: ['❤️ Monitor Cardíaco', '📱 Notificações de Chamadas', '🏃 Modos Desportivos']
+        desc: 'Smartwatch HD Inteligente de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     },
     {
         id: 17, category: 'Eletrodomésticos',
         name: 'Liquidificador Multifunções',
         price: 2800,
         image: 'assets/default_product.png',
-        desc: 'Liquidificador de alta potência ideal para batidos, sumos naturais e triturar gelo.',
-        features: ['⚡ Motor de Alta Potência', '🍹 Lâminas em Aço Inox', '🧼 Fácil de Limpar']
+        desc: 'Liquidificador Multifunções de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     },
     // 💾 Armazenamento & Acessórios
     {
@@ -267,80 +267,80 @@ let products = [
         name: 'Pendrive USB de Alta Velocidade',
         price: 450,
         image: 'assets/default_product.png',
-        desc: 'Pen Drive USB metálica e resistente para transporte rápido de documentos, fotos e vídeos.',
-        features: ['_device_selection:pendrive', '_color_selection:none', '💾 Capacidade: 1GB a 16GB']
+        desc: 'Pendrive USB de Alta Velocidade de alta qualidade',
+        features: ['_device_selection:pendrive', '_color_selection:none', '✨ Alta Qualidade Garantida']
     },
     {
         id: 19, category: 'Acessórios',
         name: 'Cartão de Memória MicroSD + Adaptador',
         price: 350,
         image: 'assets/default_product.png',
-        desc: 'Cartão de memória MicroSD de alta velocidade Classe 10 para telemóveis e câmaras.',
-        features: ['_device_selection:card', '_color_selection:none', '💾 Capacidade: 1GB a 64GB']
+        desc: 'Cartão de Memória MicroSD + Adaptador de alta qualidade',
+        features: ['_device_selection:card', '_color_selection:none', '✨ Alta Qualidade Garantida']
     },
     {
         id: 20, category: 'Acessórios',
         name: 'Pau de Selfie Bluetooth com Tripé',
         price: 850,
         image: 'assets/default_product.png',
-        desc: 'Pau de selfie extensível 3 em 1 com comando Bluetooth sem fios e tripé incorporado.',
-        features: ['📶 Conexão Bluetooth', '📸 Tripé Estável Integrado', '📐 Rotação 360°']
+        desc: 'Pau de Selfie Bluetooth com Tripé de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     },
     {
         id: 21, category: 'Acessórios',
         name: 'Baterias para Android',
         price: 1200,
         image: 'assets/default_product.png',
-        desc: 'Baterias de substituição de alta autonomia compatíveis com vários modelos Android.',
-        features: ['_device_selection:outro', '_color_selection:none', '🔋 Longa Durabilidade']
+        desc: 'Baterias para Android de alta qualidade',
+        features: ['_device_selection:outro', '_color_selection:none', '✨ Alta Qualidade Garantida']
     },
     {
         id: 22, category: 'Acessórios',
         name: 'Tampas e Capas para iPhone',
         price: 450,
         image: 'assets/default_product.png',
-        desc: 'Tampas traseiras e capas de proteção com acabamento premium para iPhone.',
-        features: ['_device_selection:iphone_outro', '_color_selection:show', '🛡️ Proteção Anti-Queda']
+        desc: 'Tampas e Capas para iPhone de alta qualidade',
+        features: ['_device_selection:iphone_outro', '_color_selection:show', '✨ Alta Qualidade Garantida']
     },
     {
         id: 23, category: 'Acessórios',
         name: 'Ring Light 10" com Tripé',
         price: 1850,
         image: 'assets/default_product.png',
-        desc: 'Luz anelar de 10 polegadas com suporte flexível para telemóvel e 3 modos de luz.',
-        features: ['💡 3 Tons de Luz (Fria, Quente, Neutra)', '📱 Suporte para Telemóvel', '🔌 Alimentação USB']
+        desc: 'Ring Light 10" com Tripé de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     },
     {
         id: 24, category: 'Acessórios',
         name: 'Cabo USB para Type-C',
         price: 350,
         image: 'assets/default_product.png',
-        desc: 'Cabo reforçado USB para Type-C de carregamento rápido e sincronização de dados.',
-        features: ['⚡ Carregamento Rápido 3A', '🔌 Conector Reversível Type-C']
+        desc: 'Cabo USB para Type-C de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     },
     {
         id: 25, category: 'Acessórios',
         name: 'Cabo Micro-USB Standard',
         price: 250,
         image: 'assets/default_product.png',
-        desc: 'Cabo Micro-USB universal para carregamento de telemóveis, colunas e pequenos eletrónicos.',
-        features: ['🔌 Conexão Micro-USB Universal', '⚡ Carregamento Seguro']
+        desc: 'Cabo Micro-USB Standard de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     },
     {
         id: 26, category: 'Acessórios',
         name: 'Cabo Type-C para Type-C (iPhone / Android)',
         price: 550,
         image: 'assets/default_product.png',
-        desc: 'Cabo de alta velocidade Type-C para Type-C compatível com iPhone 15/16 e Android.',
-        features: ['⚡ Carregamento Ultra-Rápido 60W', '💻 Transmissão de Dados']
+        desc: 'Cabo Type-C para Type-C (iPhone / Android) de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     },
     {
         id: 27, category: 'Acessórios',
         name: 'Carregador Completo (Adaptador + Cabo)',
         price: 850,
         image: 'assets/default_product.png',
-        desc: 'Kit completo de carregador de parede com tomada de alta eficiência e cabo reforçado.',
-        features: ['⚡ Carregador Rápido de Parede', '🔌 Adaptador + Cabo Incluído']
+        desc: 'Carregador Completo (Adaptador + Cabo) de alta qualidade',
+        features: ['✨ Alta Qualidade Garantida']
     }
 ];
 

@@ -786,6 +786,24 @@ function startQuickOrderModal(id, fromModal = false) {
                         </select>
                     </div>
                 `;
+            } else if (devSelType === 'pendrive') {
+                deviceSelectHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 0.2rem; width: 100%;">
+                        <label style="font-weight: 600; font-size: 0.8rem; color: #4b5563; text-align: left;">Capacidade (GB):</label>
+                        <select id="qo-device" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff;">
+                            ${PENDRIVE_OPTIONS.map(d => `<option value="${d}" ${d === selectedDevVal ? 'selected' : ''}>${d}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            } else if (devSelType === 'card') {
+                deviceSelectHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 0.2rem; width: 100%;">
+                        <label style="font-weight: 600; font-size: 0.8rem; color: #4b5563; text-align: left;">Capacidade (GB):</label>
+                        <select id="qo-device" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff;">
+                            ${CARD_OPTIONS.map(d => `<option value="${d}" ${d === selectedDevVal ? 'selected' : ''}>${d}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
             }
         }
         

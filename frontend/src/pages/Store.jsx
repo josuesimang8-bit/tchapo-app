@@ -600,7 +600,10 @@ export default function Store() {
 
     useEffect(() => {
         if (selectedProduct) {
-            setSelectedDevice('iPhone 15 Pro Max');
+            const devType = getDeviceSelectionType(selectedProduct);
+            if (devType === 'pendrive') setSelectedDevice(PENDRIVE_OPTIONS[0]);
+            else if (devType === 'card') setSelectedDevice(CARD_OPTIONS[0]);
+            else setSelectedDevice('iPhone 15 Pro Max');
             setSelectedColor('Preto');
             setCustomDevice('');
         }
@@ -608,7 +611,10 @@ export default function Store() {
 
     useEffect(() => {
         if (quickOrderProduct) {
-            setSelectedDevice('iPhone 15 Pro Max');
+            const devType = getDeviceSelectionType(quickOrderProduct);
+            if (devType === 'pendrive') setSelectedDevice(PENDRIVE_OPTIONS[0]);
+            else if (devType === 'card') setSelectedDevice(CARD_OPTIONS[0]);
+            else setSelectedDevice('iPhone 15 Pro Max');
             setSelectedColor('Preto');
             setCustomDevice('');
         }
@@ -706,7 +712,12 @@ export default function Store() {
         
         let finalDevice = null;
         if (hasDeviceSel) {
-            const rawDevice = device || selectedDevice;
+            let rawDevice = device || selectedDevice;
+            if (devSelType === 'pendrive' && (!rawDevice || !PENDRIVE_OPTIONS.includes(rawDevice))) {
+                rawDevice = PENDRIVE_OPTIONS[0];
+            } else if (devSelType === 'card' && (!rawDevice || !CARD_OPTIONS.includes(rawDevice))) {
+                rawDevice = CARD_OPTIONS[0];
+            }
             if (devSelType === 'outro' || (devSelType === 'iphone_outro' && rawDevice === 'outro')) {
                 const deviceName = customDevice.trim();
                 if (!deviceName) {
@@ -1385,11 +1396,17 @@ export default function Store() {
                                         <div className="product-options" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
                                             {devSelType !== 'none' && (
                                                 <>
-                                                    {(devSelType === 'iphone' || devSelType === 'iphone_outro') && (
+                                                    {(devSelType === 'iphone' || devSelType === 'iphone_outro' || devSelType === 'pendrive' || devSelType === 'card') && (
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
-                                                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Selecione o Dispositivo:</label>
+                                                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>
+                                                                {devSelType === 'pendrive' || devSelType === 'card' ? 'Selecione a Capacidade:' : 'Selecione o Dispositivo:'}
+                                                            </label>
                                                             <select 
-                                                                value={selectedDevice}
+                                                                value={
+                                                                    devSelType === 'pendrive' ? (PENDRIVE_OPTIONS.includes(selectedDevice) ? selectedDevice : PENDRIVE_OPTIONS[0]) :
+                                                                    devSelType === 'card' ? (CARD_OPTIONS.includes(selectedDevice) ? selectedDevice : CARD_OPTIONS[0]) :
+                                                                    selectedDevice
+                                                                }
                                                                 onChange={(e) => setSelectedDevice(e.target.value)}
                                                                 style={{
                                                                     width: '100%',
@@ -1402,9 +1419,9 @@ export default function Store() {
                                                                     backgroundColor: '#fff'
                                                                 }}
                                                             >
-                                                                {DEVICE_OPTIONS.map(dev => (
-                                                                    <option key={dev} value={dev}>{dev}</option>
-                                                                ))}
+                                                                {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>) :
+                                                                 devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>) :
+                                                                 DEVICE_OPTIONS.map(dev => <option key={dev} value={dev}>{dev}</option>)}
                                                                 {devSelType === 'iphone_outro' && (
                                                                     <option value="outro">Outro (Digitar...)</option>
                                                                 )}
@@ -1656,11 +1673,17 @@ export default function Store() {
                                     if (devSelType === 'none' && colorSelType === 'none') return null;
                                     return (
                                         <div className="product-options" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                            {(devSelType === 'iphone' || devSelType === 'iphone_outro') && (
+                                            {(devSelType === 'iphone' || devSelType === 'iphone_outro' || devSelType === 'pendrive' || devSelType === 'card') && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%' }}>
-                                                    <label style={{ fontWeight: 600, fontSize: '0.8rem', color: '#4b5563', textAlign: 'left' }}>Dispositivo:</label>
+                                                    <label style={{ fontWeight: 600, fontSize: '0.8rem', color: '#4b5563', textAlign: 'left' }}>
+                                                        {devSelType === 'pendrive' || devSelType === 'card' ? 'Capacidade (GB):' : 'Dispositivo:'}
+                                                    </label>
                                                     <select 
-                                                        value={selectedDevice}
+                                                        value={
+                                                            devSelType === 'pendrive' ? (PENDRIVE_OPTIONS.includes(selectedDevice) ? selectedDevice : PENDRIVE_OPTIONS[0]) :
+                                                            devSelType === 'card' ? (CARD_OPTIONS.includes(selectedDevice) ? selectedDevice : CARD_OPTIONS[0]) :
+                                                            selectedDevice
+                                                        }
                                                         onChange={(e) => setSelectedDevice(e.target.value)}
                                                         style={{
                                                             width: '100%',
@@ -1672,9 +1695,9 @@ export default function Store() {
                                                             backgroundColor: '#fff'
                                                         }}
                                                     >
-                                                        {DEVICE_OPTIONS.map(dev => (
-                                                            <option key={dev} value={dev}>{dev}</option>
-                                                        ))}
+                                                        {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>) :
+                                                         devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>) :
+                                                         DEVICE_OPTIONS.map(dev => <option key={dev} value={dev}>{dev}</option>)}
                                                         {devSelType === 'iphone_outro' && (
                                                             <option value="outro">Outro (Digitar...)</option>
                                                         )}

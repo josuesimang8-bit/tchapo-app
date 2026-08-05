@@ -6,6 +6,7 @@
     <title>Admin — Tchapo Tchapo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #111827; min-height: 100vh; }
@@ -275,6 +276,7 @@
             </div>
         </div>
         <div class="header-right">
+            <button class="btn-yellow" id="btn-enable-notif" onclick="requestMobileNotifications()" style="background:#f59e0b;color:#fff;font-weight:700;">🔔 Ativar Notificações no Telemóvel</button>
             <span class="notif-badge" id="notif-badge" style="display:none;" onclick="clearNotif()">🔔 0 novos</span>
             <button class="btn-yellow" onclick="refreshAll()">↻ Atualizar Dados</button>
             <a class="back-link" href="/">← Loja</a>
@@ -1250,6 +1252,70 @@ function playBeep() {
         });
     } catch(e) {}
 }
+
+// ── SERVICE WORKER & MOBILE NOTIFICATIONS ──────────────────────────────
+let swRegistration = null;
+
+async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        swRegistration = reg;
+        console.log('[Admin] Service Worker registrado:', reg);
+        updateNotifBtnState();
+    } catch (err) {
+        console.error('[Admin] Erro ao registrar SW:', err);
+    }
+}
+
+async function requestMobileNotifications() {
+    if (!('Notification' in window)) {
+        alert('O seu navegador não suporta notificações de sistema.');
+        return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+        await registerServiceWorker();
+        updateNotifBtnState();
+        toast('🔔 Notificações no telemóvel ativadas com sucesso!');
+        
+        if (swRegistration) {
+            swRegistration.showNotification('🛍️ Tchapo Tchapo Admin', {
+                body: '✅ Notificações ativas! Receberá alertas de novos pedidos mesmo com a aplicação fechada no telemóvel.',
+                icon: '/favicon.ico',
+                vibrate: [200, 100, 200]
+            });
+        }
+        
+        if (navigator.serviceWorker.controller && allOrders.length > 0) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'INIT_ORDERS',
+                orderIds: allOrders.map(o => o.id)
+            });
+        }
+    } else {
+        alert('Permissão de notificações negada. Ative as notificações nas definições do telemóvel/navegador.');
+    }
+}
+
+function updateNotifBtnState() {
+    const btn = document.getElementById('btn-enable-notif');
+    if (!btn) return;
+    if ('Notification' in window && Notification.permission === 'granted') {
+        btn.innerHTML = '🔔 Notificações Ativas no Telemóvel';
+        btn.style.background = '#10b981';
+        btn.style.color = '#ffffff';
+    } else {
+        btn.innerHTML = '🔔 Ativar Notificações no Telemóvel';
+        btn.style.background = '#f59e0b';
+        btn.style.color = '#ffffff';
+    }
+}
+
+window.addEventListener('load', () => {
+    registerServiceWorker();
+    updateNotifBtnState();
+});
 </script>
 </body>
 </html>

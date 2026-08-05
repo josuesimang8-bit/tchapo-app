@@ -96,11 +96,34 @@ export default function Admin() {
 
     const [deleteProdToConfirm, setDeleteProdToConfirm] = useState(null);
 
-    // --- Notifications permission ---
+    // --- Notifications permission & Service Worker ---
     const requestNotifPermission = useCallback(async () => {
-        if (!('Notification' in window)) return;
+        if (!('Notification' in window)) {
+            alert('O seu navegador não suporta notificações de sistema.');
+            return;
+        }
         const perm = await Notification.requestPermission();
-        setNotifAllowed(perm === 'granted');
+        if (perm === 'granted') {
+            setNotifAllowed(true);
+            if ('serviceWorker' in navigator) {
+                try {
+                    const reg = await navigator.serviceWorker.register('/sw.js');
+                    if (reg) {
+                        reg.showNotification('🛍️ Tchapo Tchapo Admin', {
+                            body: '✅ Notificações ativas! Receberá alertas de novos pedidos mesmo com a aplicação fechada no telemóvel.',
+                            icon: '/favicon.ico',
+                            vibrate: [200, 100, 200]
+                        });
+                    }
+                } catch (e) {
+                    console.error('SW register error:', e);
+                }
+            }
+            setToast('🔔 Notificações no telemóvel ativadas com sucesso!');
+            setTimeout(() => setToast(null), 4000);
+        } else {
+            alert('Permissão de notificações negada. Ative as notificações nas definições do telemóvel.');
+        }
     }, []);
 
     // --- Send desktop notification ---
@@ -725,8 +748,15 @@ export default function Admin() {
                             🔔 {newCount} novo{newCount > 1 ? 's' : ''}
                         </span>
                     )}
+                    <button onClick={requestMobileNotifications} style={{
+                        background: notifAllowed ? '#10b981' : '#f59e0b', color: '#fff', border: 'none',
+                        padding: '0.6rem 1.25rem', borderRadius: '10px',
+                        fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem'
+                    }}>
+                        {notifAllowed ? '🔔 Notificações Ativas' : '🔔 Ativar Notificações no Telemóvel'}
+                    </button>
                     <button onClick={fetchOrders} style={{
-                        background: '#f59e0b', color: '#fff', border: 'none',
+                        background: '#374151', color: '#fff', border: 'none',
                         padding: '0.6rem 1.25rem', borderRadius: '10px',
                         fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem'
                     }}>

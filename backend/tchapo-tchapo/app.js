@@ -1124,6 +1124,36 @@ function setupEventListeners() {
     document.getElementById('meus-pedidos-overlay').addEventListener('click', closeMeusPedidos);
     document.getElementById('customer-time').addEventListener('change', updateCartUI);
 
+    const checkoutModal = document.getElementById('checkout-modal');
+    const checkoutOverlay = document.getElementById('checkout-overlay');
+    const closeCheckoutBtn = document.getElementById('close-checkout-modal');
+    const btnOpenCheckoutModal = document.getElementById('btn-open-checkout-modal');
+
+    if (btnOpenCheckoutModal) {
+        btnOpenCheckoutModal.addEventListener('click', () => {
+            if (cart.length === 0) return;
+            toggleCart();
+            if (checkoutModal) checkoutModal.classList.add('active');
+            if (checkoutOverlay) checkoutOverlay.classList.add('active');
+            updateScrollLock();
+        });
+    }
+
+    if (closeCheckoutBtn) {
+        closeCheckoutBtn.addEventListener('click', () => {
+            if (checkoutModal) checkoutModal.classList.remove('active');
+            if (checkoutOverlay) checkoutOverlay.classList.remove('active');
+            updateScrollLock();
+        });
+    }
+    if (checkoutOverlay) {
+        checkoutOverlay.addEventListener('click', () => {
+            if (checkoutModal) checkoutModal.classList.remove('active');
+            if (checkoutOverlay) checkoutOverlay.classList.remove('active');
+            updateScrollLock();
+        });
+    }
+
     // Referrals modal event listeners
     const btnReferrals = document.getElementById('btn-referrals');
     if (btnReferrals) btnReferrals.addEventListener('click', openReferrals);
@@ -1215,9 +1245,11 @@ function updateCartUI() {
     const cartDiscountRow = document.getElementById('cart-discount-row');
     const cartDiscountEl = document.getElementById('cart-discount');
 
+    const cartCheckoutAction = document.getElementById('cart-checkout-action');
+
     if (cart.length === 0) {
         emptyCartMsg.style.display = 'block';
-        checkoutForm.style.display = 'none';
+        if (cartCheckoutAction) cartCheckoutAction.style.display = 'none';
         cartItemsContainer.innerHTML = '';
         cartItemsContainer.appendChild(emptyCartMsg);
         totalAmountEl.textContent = '0 MT';
@@ -1225,7 +1257,7 @@ function updateCartUI() {
         if (cartDiscountRow) cartDiscountRow.style.display = 'none';
     } else {
         emptyCartMsg.style.display = 'none';
-        checkoutForm.style.display = 'flex';
+        if (cartCheckoutAction) cartCheckoutAction.style.display = 'block';
         cartItemsContainer.innerHTML = cart.map(item => {
             const baseId = typeof item.id === 'string' && item.id.includes('-') ? Number(item.id.split('-')[0]) : item.id;
             const liveItem = products.find(p => p.id === baseId);

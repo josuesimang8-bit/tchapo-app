@@ -371,6 +371,7 @@ export default function Store() {
 
     // Form inputs
     const [checkoutForm, setCheckoutForm] = useState({ name: '', phone: '', bairro: '', address: '', time: '', payment: '' });
+    const [isCartCheckoutModalOpen, setIsCartCheckoutModalOpen] = useState(false);
     const [quickOrderQty, setQuickOrderQty] = useState(1);
     const [quickOrderForm, setQuickOrderForm] = useState({ name: '', phone: '', bairro: '', address: '', time: '', payment: '' });
     
@@ -1575,105 +1576,127 @@ export default function Store() {
                             )}
                         </div>
 
-                        <form className="checkout-form" onSubmit={handleCheckoutSubmit} style={{ display: 'flex' }}>
-                            <h3>Detalhes de Entrega (Beira)</h3>
-                            <input
-                                type="text"
-                                placeholder="Seu Nome Completo"
-                                value={checkoutForm.name}
-                                required
-                                onChange={e => setCheckoutForm({ ...checkoutForm, name: e.target.value })}
-                            />
-                            <input
-                                type="tel"
-                                placeholder="Número de Telefone"
-                                value={checkoutForm.phone}
-                                required
-                                pattern="[0-9\s+\-()]{8,15}"
-                                onChange={e => setCheckoutForm({ ...checkoutForm, phone: e.target.value })}
-                            />
-                            <select
-                                value={checkoutForm.bairro}
-                                required
-                                onChange={e => setCheckoutForm({ ...checkoutForm, bairro: e.target.value })}
-                            >
-                                <option value="" disabled>Selecione o Bairro...</option>
-                                {['Macuti', 'Ponta Gêa', 'Maquinino', 'Pioneiros', 'Chota', 'Estoril', 'Palmeiras', 'Munhava', 'Manga', 'Inhamizua', 'Matacuane', 'Macurungo'].map(b => (
-                                    <option key={b} value={b}>{b}</option>
-                                ))}
-                            </select>
-                            <input
-                                type="text"
-                                placeholder="Morada e Referência detalhado"
-                                value={checkoutForm.address}
-                                required
-                                onChange={e => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
-                            />
-                            <select
-                                value={checkoutForm.time}
-                                required
-                                onChange={e => setCheckoutForm({ ...checkoutForm, time: e.target.value })}
-                            >
-                                <option value="" disabled>Horário de Entrega...</option>
-                                <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
-                                <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
-                                <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
-                                <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
-                            </select>
-                            <select
-                                value={checkoutForm.payment}
-                                required
-                                onChange={e => setCheckoutForm({ ...checkoutForm, payment: e.target.value })}
-                            >
-                                <option value="" disabled>Método de Pagamento...</option>
-                                <option value="M-Pesa">M-Pesa</option>
-                                <option value="eMola">eMola</option>
-                                <option value="Dinheiro Físico">Dinheiro Físico</option>
-                            </select>
-
-                            <div className="referral-input-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '0.5rem', marginTop: '0.5rem' }}>
-                                <input
-                                    type="text"
-                                    placeholder="Código de Indicação"
-                                    value={referralInput}
-                                    onChange={e => setReferralInput(e.target.value)}
-                                    disabled={!!appliedReferralCode}
-                                    style={{ flex: 1, textTransform: 'uppercase', padding: '0.5rem', background: '#374151', border: '1px solid #4b5563', borderRadius: '6px', color: '#fff' }}
-                                />
-                                {appliedReferralCode ? (
-                                    <button
-                                        type="button"
-                                        onClick={handleRemoveReferral}
-                                        style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer' }}
-                                    >
-                                        Remover
-                                    </button>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={handleValidateReferral}
-                                        disabled={validatingReferral || !referralInput.trim()}
-                                        style={{ backgroundColor: '#eab308', color: '#000', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                    >
-                                        {validatingReferral ? '...' : 'Aplicar'}
-                                    </button>
-                                )}
-                            </div>
-                            {referralError && (
-                                <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', width: '100%' }}>{referralError}</span>
-                            )}
-                            {appliedReferralCode && (
-                                <span style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', fontWeight: 'bold', width: '100%' }}>
-                                    ✓ Código '{appliedReferralCode}' aplicado!
-                                </span>
-                            )}
-
-                            <button type="submit" className="btn-checkout" id="btn-checkout">
-                                Finalizar Pedido
-                            </button>
-                        </form>
+                        <button
+                            type="button"
+                            className="btn-checkout"
+                            onClick={() => {
+                                setIsCartOpen(false);
+                                setIsCartCheckoutModalOpen(true);
+                            }}
+                            style={{ marginTop: '1rem', width: '100%' }}
+                        >
+                            🛍️ Continuar para Entrega
+                        </button>
                     </div>
                 )}
+            </div>
+
+            {/* Cart Checkout Delivery Modal */}
+            {isCartCheckoutModalOpen && (
+                <>
+                    <div className="modal-overlay active" onClick={() => setIsCartCheckoutModalOpen(false)}></div>
+                    <div className="product-modal active" style={{ maxWidth: '500px' }}>
+                        <button className="close-modal" onClick={() => setIsCartCheckoutModalOpen(false)}>&times;</button>
+                        <div style={{ padding: '2rem' }}>
+                            <h2 style={{ marginBottom: '0.25rem' }}>🚚 Dados para Entrega</h2>
+                            <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '1.25rem' }}>Preencha o seu endereço em Beira para enviarmos o seu pedido.</p>
+                            <form className="checkout-form" onSubmit={(e) => {
+                                handleCheckoutSubmit(e);
+                                setIsCartCheckoutModalOpen(false);
+                            }} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Seu Nome Completo"
+                                    value={checkoutForm.name}
+                                    required
+                                    onChange={e => setCheckoutForm({ ...checkoutForm, name: e.target.value })}
+                                />
+                                <input
+                                    type="tel"
+                                    placeholder="Número de Telefone (ex: 84 123 4567)"
+                                    value={checkoutForm.phone}
+                                    required
+                                    pattern="[0-9\s+\-()]{8,15}"
+                                    onChange={e => setCheckoutForm({ ...checkoutForm, phone: e.target.value })}
+                                />
+                                <select
+                                    value={checkoutForm.bairro}
+                                    required
+                                    onChange={e => setCheckoutForm({ ...checkoutForm, bairro: e.target.value })}
+                                >
+                                    <option value="" disabled>Selecione o Bairro...</option>
+                                    {['Macuti', 'Ponta Gêa', 'Maquinino', 'Pioneiros', 'Chota', 'Estoril', 'Palmeiras', 'Munhava', 'Manga', 'Inhamizua', 'Matacuane', 'Macurungo'].map(b => (
+                                        <option key={b} value={b}>{b}</option>
+                                    ))}
+                                </select>
+                                <input
+                                    type="text"
+                                    placeholder="Morada e Referência detalhado"
+                                    value={checkoutForm.address}
+                                    required
+                                    onChange={e => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
+                                />
+                                <select
+                                    value={checkoutForm.time}
+                                    required
+                                    onChange={e => setCheckoutForm({ ...checkoutForm, time: e.target.value })}
+                                >
+                                    <option value="" disabled>Horário de Entrega...</option>
+                                    <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
+                                    <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
+                                    <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
+                                    <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
+                                </select>
+                                <select
+                                    value={checkoutForm.payment}
+                                    required
+                                    onChange={e => setCheckoutForm({ ...checkoutForm, payment: e.target.value })}
+                                >
+                                    <option value="" disabled>Método de Pagamento...</option>
+                                    <option value="M-Pesa">M-Pesa</option>
+                                    <option value="eMola">eMola</option>
+                                    <option value="Dinheiro Físico">Dinheiro Físico</option>
+                                </select>
+
+                                <div className="referral-input-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '0.5rem', marginTop: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Código de Indicação"
+                                        value={referralInput}
+                                        onChange={e => setReferralInput(e.target.value)}
+                                        disabled={!!appliedReferralCode}
+                                        style={{ flex: 1, textTransform: 'uppercase', padding: '0.5rem', background: '#374151', border: '1px solid #4b5563', borderRadius: '6px', color: '#fff' }}
+                                    />
+                                    {appliedReferralCode ? (
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveReferral}
+                                            style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer' }}
+                                        >
+                                            Remover
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={handleValidateReferral}
+                                            disabled={validatingReferral || !referralInput.trim()}
+                                            style={{ backgroundColor: '#eab308', color: '#000', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                        >
+                                            {validatingReferral ? '...' : 'Aplicar'}
+                                        </button>
+                                    )}
+                                </div>
+                                {referralError && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginBottom: '0.5rem', width: '100%' }}>{referralError}</div>}
+                                {appliedReferralCode && <div style={{ color: '#10b981', fontSize: '0.8rem', marginBottom: '0.5rem', width: '100%' }}>✅ 10% de desconto aplicado!</div>}
+
+                                <button type="submit" id="btn-checkout" className="btn-checkout" style={{ marginTop: '0.5rem' }}>
+                                    Confirmar e Enviar Pedido
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </>
+            )}
             </div>
 
             {/* Quick Order Modal */}

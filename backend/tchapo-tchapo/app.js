@@ -1088,10 +1088,6 @@ function handleQuickOrder(e) {
         closeQuickOrderModal();
         appliedCoupon = null; // Clear applied coupon
         startTracking(order ? order.id : null, name, order ? order.created_at : null, order ? order.status : 'Pendente');
-
-        // WhatsApp automatic message
-        const waMsg = `🛍️ *Novo Pedido Tchapo Tchapo*%0A%0A👤 *Cliente:* ${name}%0A📞 *Telefone:* ${phone}%0A🏠 *Bairro:* ${bairro}%0A📍 *Morada:* ${address}%0A%0A📦 *Produto:* ${qoQty}x ${productItem.name}%0A%0A💰 *Total:* ${Number(total).toLocaleString('pt-MZ')} MT%0A💳 *Pagamento:* ${payment}%0A🕐 *Entrega:* ${time}%0A%0A✅ *Pedido Nº ${order ? order.id : 'N/A'} confirmado!*`;
-        setTimeout(() => window.open(`https://wa.me/258850741435?text=${waMsg}`, '_blank'), 500);
     })
     .catch(() => {
         closeQuickOrderModal();

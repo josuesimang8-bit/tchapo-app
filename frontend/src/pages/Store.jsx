@@ -853,10 +853,6 @@ export default function Store() {
             if (res.ok) {
                 const order = await res.json();
                 saveOrderToHistory(order, checkoutForm.name, cart);
-                // WhatsApp confirmation
-                const itemsList = cart.map(i => `• ${i.quantity}x ${i.name}`).join('%0A');
-                const waMsg = `🛍️ *Novo Pedido Tchapo Tchapo*%0A%0A👤 *Cliente:* ${checkoutForm.name}%0A📞 *Telefone:* ${checkoutForm.phone}%0A🏠 *Bairro:* ${checkoutForm.bairro}%0A📍 *Morada:* ${checkoutForm.address}%0A%0A📦 *Produtos:*%0A${itemsList}%0A%0A💰 *Total:* ${Number(order.total).toLocaleString('pt-MZ')} MT%0A💳 *Pagamento:* ${checkoutForm.payment}%0A🕐 *Entrega:* ${checkoutForm.time}%0A%0A✅ *Pedido Nº ${order.id || 'N/A'} confirmado!*`;
-                setTimeout(() => window.open(`https://wa.me/258850741435?text=${waMsg}`, '_blank'), 500);
                 setCart([]);
                 setAppliedReferralCode('');
                 setReferralInput('');
@@ -927,9 +923,6 @@ export default function Store() {
             if (res.ok) {
                 const order = await res.json();
                 saveOrderToHistory(order, quickOrderForm.name, [{ ...quickOrderProduct, quantity: quickOrderQty }]);
-                // WhatsApp confirmation
-                const waMsg = `🛍️ *Novo Pedido Tchapo Tchapo*%0A%0A👤 *Cliente:* ${quickOrderForm.name}%0A📞 *Telefone:* ${quickOrderForm.phone}%0A🏠 *Bairro:* ${quickOrderForm.bairro}%0A📍 *Morada:* ${quickOrderForm.address}%0A%0A📦 *Produto:* ${quickOrderQty}x ${finalName}%0A%0A💰 *Total:* ${Number(order.total).toLocaleString('pt-MZ')} MT%0A💳 *Pagamento:* ${quickOrderForm.payment}%0A🕐 *Entrega:* ${quickOrderForm.time}%0A%0A✅ *Pedido Nº ${order.id || 'N/A'} confirmado!*`;
-                setTimeout(() => window.open(`https://wa.me/258850741435?text=${waMsg}`, '_blank'), 500);
                 setQuickOrderProduct(null);
                 setAppliedReferralCode('');
                 setReferralInput('');

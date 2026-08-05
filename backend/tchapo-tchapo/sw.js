@@ -10,7 +10,40 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(self.clients.claim());
 });
 
-// Listen for messages from admin panel (e.g. initial order IDs list or start polling command)
+// Listen for Web Push events (iOS & Android background push notifications)
+self.addEventListener('push', (event) => {
+    let data = {
+        title: '🛍️ NOVO PEDIDO — Tchapo Tchapo!',
+        body: 'Novo pedido recebido na loja!',
+        icon: '/favicon.ico',
+        url: '/admin.html'
+    };
+
+    if (event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            data.body = event.data.text();
+        }
+    }
+
+    const options = {
+        body: data.body,
+        icon: data.icon || '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: data.tag || 'new-order',
+        renotify: true,
+        requireInteraction: true,
+        vibrate: [300, 100, 300, 100, 300, 100, 400],
+        data: {
+            url: data.url || '/admin.html'
+        }
+    };
+
+    event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+// Listen for messages from admin panel (e.g. initial order IDs list)
 self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'INIT_ORDERS') {
         if (Array.isArray(event.data.orderIds)) {
@@ -20,7 +53,7 @@ self.addEventListener('message', (event) => {
     }
 });
 
-// Periodic background check / polling
+// Periodic background check / polling fallback
 async function checkNewOrders() {
     try {
         const res = await fetch('/api/orders');

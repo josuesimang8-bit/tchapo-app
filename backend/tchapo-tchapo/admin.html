@@ -283,6 +283,11 @@
         </div>
     </header>
 
+    <!-- iOS Setup Helper Banner -->
+    <div id="ios-push-tip" style="display:none;background:#fffbe0;border:1.5px solid #f59e0b;color:#78350f;padding:0.85rem 1.25rem;border-radius:14px;margin:1rem 2rem 0;font-size:0.85rem;line-height:1.45;box-shadow:0 4px 12px rgba(245,158,11,0.15);">
+        📱 <strong>Atenção iPhone (iOS):</strong> Para receber notificações com a aplicação fechada ou o ecrã bloqueado, abra esta página no <strong>Safari</strong>, toque no ícone <strong>Compartilhar (Share)</strong> ➔ selecione <strong>"Adicionar à Tela de Início"</strong>. Depois abra o app pelo ícone criado na tela do seu iPhone!
+    </div>
+
     <!-- Nav Tabs -->
     <nav class="admin-nav">
         <button class="nav-tab active" id="nav-orders"   onclick="showTab('orders')">📦 Encomendas</button>
@@ -1256,6 +1261,46 @@ function playBeep() {
 // ── SERVICE WORKER & MOBILE NOTIFICATIONS ──────────────────────────────
 let swRegistration = null;
 
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function subscribeToPushNotifications() {
+    if (!swRegistration || !('pushManager' in swRegistration)) return;
+    try {
+        const res = await fetch('/api/admin/vapid-public-key');
+        if (!res.ok) return;
+        const { publicKey } = await res.json();
+        const convertedKey = urlBase64ToUint8Array(publicKey);
+        
+        let sub = await swRegistration.pushManager.getSubscription();
+        if (!sub) {
+            sub = await swRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: convertedKey
+            });
+        }
+        
+        await fetch('/api/admin/subscribe-push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sub)
+        });
+        console.log('[Admin] Web Push registrado com sucesso!');
+    } catch (err) {
+        console.error('[Admin] Erro na subscrição Web Push:', err);
+    }
+}
+
 async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     try {
@@ -1263,6 +1308,7 @@ async function registerServiceWorker() {
         swRegistration = reg;
         console.log('[Admin] Service Worker registrado:', reg);
         updateNotifBtnState();
+        subscribeToPushNotifications();
     } catch (err) {
         console.error('[Admin] Erro ao registrar SW:', err);
     }
@@ -1276,6 +1322,7 @@ async function requestMobileNotifications() {
     const perm = await Notification.requestPermission();
     if (perm === 'granted') {
         await registerServiceWorker();
+        await subscribeToPushNotifications();
         updateNotifBtnState();
         toast('🔔 Notificações no telemóvel ativadas com sucesso!');
         
@@ -1315,6 +1362,14 @@ function updateNotifBtnState() {
 window.addEventListener('load', () => {
     registerServiceWorker();
     updateNotifBtnState();
+    
+    // Check if user is on iPhone / iOS to display iOS helper tip
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    const tipEl = document.getElementById('ios-push-tip');
+    if (tipEl && isIOS && !isStandalone) {
+        tipEl.style.display = 'block';
+    }
 });
 </script>
 </body>

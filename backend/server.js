@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import fs from 'fs';
+import webpush from 'web-push';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +17,62 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BAxlp2zq_g-ExdDWsJUsC6z1FWpSg6L-ysw64w_ouuJtselkPdEvPbo3yH9BBddaRzPbvTQGqyE7MS36Ns1ygvM';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'CbknALrndzXKpMaXfYOeO32QAyh9CG-I6F53pjX9Pmw';
+
+webpush.setVapidDetails(
+    'mailto:admin@tchapotchapo.store',
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
+);
+
+let pushSubscriptions = [];
+
+app.get('/api/admin/vapid-public-key', (req, res) => {
+    res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+app.post('/api/admin/subscribe-push', (req, res) => {
+    const subscription = req.body;
+    if (subscription && subscription.endpoint) {
+        if (!pushSubscriptions.find(s => s.endpoint === subscription.endpoint)) {
+            pushSubscriptions.push(subscription);
+            console.log('[WebPush] New admin subscription added:', subscription.endpoint.slice(0, 30));
+        }
+    }
+    res.status(201).json({ status: 'subscribed' });
+});
+
+async function sendWebPushNotification(order) {
+    if (pushSubscriptions.length === 0) return;
+    
+    const itemsSummary = Array.isArray(order.items) && order.items.length > 0
+        ? order.items.map(i => `${i.quantity || 1}x ${i.product_name || i.name}`).join(', ')
+        : 'Produtos no pedido';
+
+    const payload = JSON.stringify({
+        title: '🛍️ NOVO PEDIDO — Tchapo Tchapo!',
+        body: `👤 ${order.customer_name || 'Cliente'} (${order.bairro || 'Maputo'})\n📦 ${itemsSummary}\n💰 Total: ${Number(order.total || 0).toLocaleString('pt-MZ')} MT`,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: `order-${order.id}`,
+        url: '/admin.html'
+    });
+
+    for (let i = pushSubscriptions.length - 1; i >= 0; i--) {
+        const sub = pushSubscriptions[i];
+        try {
+            await webpush.sendNotification(sub, payload);
+            console.log('[WebPush] Notification sent to endpoint:', sub.endpoint.slice(0, 30));
+        } catch (err) {
+            console.error('[WebPush] Failed to send push:', err.statusCode || err.message);
+            if (err.statusCode === 410 || err.statusCode === 404) {
+                pushSubscriptions.splice(i, 1);
+            }
+        }
+    }
+}
 
 // Servir o frontend estático do Tchapo Tchapo
 app.use(express.static(path.join(__dirname, 'tchapo-tchapo')));
@@ -237,7 +294,9 @@ app.post('/api/orders', async (req, res) => {
             order = dataWithItems;
         }
 
-        res.status(201).json(formatOrderResponse(order));
+        const formattedOrder = formatOrderResponse(order);
+        sendWebPushNotification(formattedOrder).catch(err => console.error('[WebPush] Send error:', err));
+        res.status(201).json(formattedOrder);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

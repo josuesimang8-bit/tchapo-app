@@ -97,6 +97,39 @@ export default function Admin() {
     const [deleteProdToConfirm, setDeleteProdToConfirm] = useState(null);
 
     // --- Notifications permission & Service Worker ---
+    const subscribeToPushNotifications = async (reg) => {
+        if (!reg || !('pushManager' in reg)) return;
+        try {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/api/admin/vapid-public-key');
+            if (!res.ok) return;
+            const { publicKey } = await res.json();
+            
+            const padding = '='.repeat((4 - publicKey.length % 4) % 4);
+            const base64 = (publicKey + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const convertedKey = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                convertedKey[i] = rawData.charCodeAt(i);
+            }
+            
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+                sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: convertedKey
+                });
+            }
+            
+            await fetch(import.meta.env.VITE_API_URL + '/api/admin/subscribe-push', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sub)
+            });
+        } catch (err) {
+            console.error('Push sub error:', err);
+        }
+    };
+
     const requestNotifPermission = useCallback(async () => {
         if (!('Notification' in window)) {
             alert('O seu navegador não suporta notificações de sistema.');
@@ -109,6 +142,7 @@ export default function Admin() {
                 try {
                     const reg = await navigator.serviceWorker.register('/sw.js');
                     if (reg) {
+                        await subscribeToPushNotifications(reg);
                         reg.showNotification('🛍️ Tchapo Tchapo Admin', {
                             body: '✅ Notificações ativas! Receberá alertas de novos pedidos mesmo com a aplicação fechada no telemóvel.',
                             icon: '/favicon.ico',

@@ -1543,10 +1543,10 @@ export default function Store() {
                                         <div className="cart-item-title">{name}</div>
                                         <div className="cart-item-price">{formatCurrency(price)}</div>
                                         <div className="qty-controls">
-                                            <button className="qty-btn" onClick={() => updateQuantity(item.id, -1)}>-</button>
-                                            <span>{item.quantity}</span>
-                                            <button className="qty-btn" onClick={() => updateQuantity(item.id, 1)}>+</button>
-                                            <button className="remove-btn" onClick={() => removeFromCart(item.id)}>Remover</button>
+                                            <button type="button" className="qty-btn" onClick={(e) => { e.stopPropagation(); updateQuantity(item.id, -1); }} onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); updateQuantity(item.id, -1); }}>-</button>
+                                            <span style={{ fontWeight: 700, padding: '0 0.25rem' }}>{item.quantity}</span>
+                                            <button type="button" className="qty-btn" onClick={(e) => { e.stopPropagation(); updateQuantity(item.id, 1); }} onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); updateQuantity(item.id, 1); }}>+</button>
+                                            <button type="button" className="remove-btn" onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }} onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); removeFromCart(item.id); }}>🗑️ Remover</button>
                                         </div>
                                     </div>
                                 </div>

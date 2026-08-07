@@ -1263,6 +1263,7 @@ function updateCartUI() {
             const liveItem = products.find(p => p.id === baseId);
             const image = liveItem ? liveItem.image : item.image;
             const price = liveItem ? liveItem.price : item.price;
+            const safeId = String(item.id).replace(/'/g, "\\'");
             return `
                 <div class="cart-item">
                     <img src="${image}" alt="${item.name}">
@@ -1270,10 +1271,10 @@ function updateCartUI() {
                         <div class="cart-item-title">${item.name}</div>
                         <div class="cart-item-price">${formatCurrency(price)}</div>
                         <div class="qty-controls">
-                            <button class="qty-btn" onclick="updateQuantity('${item.id}', -1)">-</button>
-                            <span>${item.quantity}</span>
-                            <button class="qty-btn" onclick="updateQuantity('${item.id}', 1)">+</button>
-                            <button class="remove-btn" onclick="removeFromCart('${item.id}')">Remover</button>
+                            <button type="button" class="qty-btn" onclick="updateQuantity('${safeId}', -1)">-</button>
+                            <span style="font-weight: 700; padding: 0 0.25rem;">${item.quantity}</span>
+                            <button type="button" class="qty-btn" onclick="updateQuantity('${safeId}', 1)">+</button>
+                            <button type="button" class="remove-btn" onclick="removeFromCart('${safeId}')">🗑️ Remover</button>
                         </div>
                     </div>
                 </div>

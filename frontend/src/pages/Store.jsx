@@ -1697,7 +1697,6 @@ export default function Store() {
                     </div>
                 </>
             )}
-            </div>
 
             {/* Quick Order Modal */}
             {activeQuickOrderProduct && (

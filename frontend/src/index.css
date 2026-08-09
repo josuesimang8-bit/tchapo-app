@@ -2124,3 +2124,231 @@ body {
         height: 40px !important;
     }
 }
+
+/* ==================== DARK MODE DESIGN SYSTEM ==================== */
+body.dark-theme {
+    --light: #0f172a;
+    --dark: #f8fafc;
+    --gray-light: #334155;
+    --gray: #94a3b8;
+    --white: #1e293b;
+    background-color: #0f172a;
+    color: #f8fafc;
+}
+
+body.dark-theme .navbar {
+    background-color: #1e293b;
+    border-bottom: 1px solid #334155;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-theme .logo {
+    color: #f8fafc;
+}
+
+body.dark-theme .hero {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    border: 1px solid #334155;
+}
+
+body.dark-theme .hero h1 {
+    color: #f8fafc;
+}
+
+body.dark-theme .hero p {
+    color: #94a3b8;
+}
+
+body.dark-theme .product-card {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-theme .product-card:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.15);
+}
+
+body.dark-theme .product-title {
+    color: #f8fafc;
+}
+
+body.dark-theme .product-description {
+    color: #94a3b8;
+}
+
+body.dark-theme .product-price {
+    color: #fbbf24;
+}
+
+body.dark-theme .search-bar-inner {
+    background-color: #1e293b;
+    border: 1.5px solid #334155;
+}
+
+body.dark-theme .search-input {
+    background-color: transparent;
+    color: #f8fafc;
+}
+
+body.dark-theme .search-input::placeholder {
+    color: #64748b;
+}
+
+body.dark-theme .filter-toggle-btn {
+    background-color: #1e293b;
+    color: #f8fafc;
+    border-color: #334155;
+}
+
+body.dark-theme .filters-panel {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-theme .filter-label {
+    color: #cbd5e1;
+}
+
+body.dark-theme .filter-input {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-color: #334155;
+}
+
+body.dark-theme .cat-tab {
+    background-color: #1e293b;
+    color: #94a3b8;
+    border-color: #334155;
+}
+
+body.dark-theme .cat-tab.active,
+body.dark-theme .cat-tab:hover {
+    background-color: #f59e0b;
+    color: #000;
+    border-color: #f59e0b;
+}
+
+body.dark-theme .cart-sidebar {
+    background-color: #1e293b;
+    border-left: 1px solid #334155;
+    color: #f8fafc;
+}
+
+body.dark-theme .cart-header {
+    border-bottom: 1px solid #334155;
+}
+
+body.dark-theme .cart-header h2 {
+    color: #f8fafc;
+}
+
+body.dark-theme .cart-footer {
+    border-top: 1px solid #334155;
+}
+
+body.dark-theme .cart-item {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+}
+
+body.dark-theme .cart-item-title {
+    color: #f8fafc;
+}
+
+body.dark-theme .qty-btn {
+    background-color: #334155;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-theme .remove-btn {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+    color: #fca5a5 !important;
+}
+
+body.dark-theme .product-modal,
+body.dark-theme .tracking-modal,
+body.dark-theme .auth-modal,
+body.dark-theme .promo-modal {
+    background-color: #1e293b;
+    color: #f8fafc;
+    border: 1px solid #334155;
+}
+
+body.dark-theme .pm-title,
+body.dark-theme .pm-info h2,
+body.dark-theme .pm-info h3,
+body.dark-theme .tracking-header h2,
+body.dark-theme .auth-form h3 {
+    color: #f8fafc;
+}
+
+body.dark-theme .pm-desc,
+body.dark-theme .pm-features li {
+    color: #cbd5e1 !important;
+}
+
+body.dark-theme select,
+body.dark-theme input[type="text"],
+body.dark-theme input[type="tel"],
+body.dark-theme input[type="password"],
+body.dark-theme input[type="number"],
+body.dark-theme input[type="email"] {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+body.dark-theme .close-modal,
+body.dark-theme .close-cart {
+    color: #94a3b8;
+}
+
+body.dark-theme .close-modal:hover,
+body.dark-theme .close-cart:hover {
+    color: #f8fafc;
+}
+
+body.dark-theme .mp-card {
+    background-color: #0f172a;
+    border-color: #334155;
+}
+
+body.dark-theme .mp-order-id {
+    color: #fbbf24;
+}
+
+body.dark-theme .mp-customer {
+    color: #cbd5e1;
+}
+
+body.dark-theme .theme-toggle-btn {
+    background: #334155;
+    color: #fbbf24;
+    border: 1px solid #475569;
+}
+
+body.dark-theme .theme-toggle-btn:hover {
+    background: #475569;
+    transform: scale(1.05);
+}
+
+.theme-toggle-btn {
+    background: #f3f4f6;
+    color: #1e293b;
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 0.6rem;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+    background: #e5e7eb;
+    transform: scale(1.05);
+}

@@ -208,6 +208,207 @@ const fallbackProducts = [
         image: 'assets/default_product.png',
         desc: 'Carregador Completo (Adaptador + Cabo) de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
+    },
+    // 🏋️ Suplementos Kratos Empire
+    {
+        id: 104, category: 'Suplementos',
+        name: 'USN Hyperbolic Mass gH 2kg',
+        price: 1000,
+        image: 'https://files.catbox.moe/s8myuw.webp',
+        desc: 'USN Hyperbolic Mass gH 2kg de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 105, category: 'Suplementos',
+        name: 'USN Super Grow Beast Mass Gainer',
+        price: 800,
+        image: 'https://files.catbox.moe/s6cpi4.webp',
+        desc: 'USN Super Grow Beast Mass Gainer de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 106, category: 'Suplementos',
+        name: 'SSA Anabolic Muscle',
+        price: 800,
+        image: 'https://files.catbox.moe/ul04wy.webp',
+        desc: 'SSA Anabolic Muscle de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 107, category: 'Suplementos',
+        name: 'Biogen Bulk 45/150 Mass Gainer',
+        price: 1100,
+        image: 'https://files.catbox.moe/46wla6.webp',
+        desc: 'Biogen Bulk 45/150 Mass Gainer de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 108, category: 'Suplementos',
+        name: 'Optimum Nutrition 100% Gold Standard Whey 2.27kg',
+        price: 3800,
+        image: 'https://files.catbox.moe/z41p4q.webp',
+        desc: 'Optimum Nutrition 100% Gold Standard Whey 2.27kg de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 109, category: 'Suplementos',
+        name: 'NPL Hyper Gain Mass Gainer 4kg',
+        price: 1650,
+        image: 'https://files.catbox.moe/t4y9k0.webp',
+        desc: 'NPL Hyper Gain Mass Gainer 4kg de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 110, category: 'Suplementos',
+        name: 'BioTechUSA Iso Whey Zero 2.27kg',
+        price: 4200,
+        image: 'https://files.catbox.moe/4g0s7k.webp',
+        desc: 'BioTechUSA Iso Whey Zero 2.27kg de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 111, category: 'Suplementos',
+        name: 'Muscletech Mass Tech Extreme 2000 3.18kg',
+        price: 3500,
+        image: 'https://files.catbox.moe/a28y3x.webp',
+        desc: 'Muscletech Mass Tech Extreme 2000 3.18kg de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 112, category: 'Suplementos',
+        name: 'NPL Platinum Whey Protein 2kg',
+        price: 2800,
+        image: 'https://files.catbox.moe/k9m06p.webp',
+        desc: 'NPL Platinum Whey Protein 2kg de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 113, category: 'Suplementos',
+        name: 'USN Hardcore Whey gH 2kg',
+        price: 2900,
+        image: 'https://files.catbox.moe/m7v38q.webp',
+        desc: 'USN Hardcore Whey gH 2kg de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 114, category: 'Suplementos',
+        name: 'NPL Plant Protein 1kg',
+        price: 1950,
+        image: 'https://files.catbox.moe/v7c9x2.webp',
+        desc: 'NPL Plant Protein 1kg de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 115, category: 'Suplementos',
+        name: 'Optimum Nutrition Micronized Creatine 300g',
+        price: 1950,
+        image: 'https://files.catbox.moe/m4x7r8.webp',
+        desc: 'Optimum Nutrition Micronized Creatine 300g de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 116, category: 'Suplementos',
+        name: 'NPL Pure Monohydrate Creatine 500g',
+        price: 1450,
+        image: 'https://files.catbox.moe/r5p9y1.webp',
+        desc: 'NPL Pure Monohydrate Creatine 500g de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 117, category: 'Suplementos',
+        name: 'USN Pure Creatine Monohydrate 500g',
+        price: 1500,
+        image: 'https://files.catbox.moe/u8x3k9.webp',
+        desc: 'USN Pure Creatine Monohydrate 500g de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 118, category: 'Suplementos',
+        name: 'Biogen Pure Creatine Monohydrate 300g',
+        price: 1100,
+        image: 'https://files.catbox.moe/c3v9t7.webp',
+        desc: 'Biogen Pure Creatine Monohydrate 300g de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 119, category: 'Suplementos',
+        name: 'Cellucor C4 Original Pre-Workout 30 Doses',
+        price: 1950,
+        image: 'https://files.catbox.moe/x9t2v4.webp',
+        desc: 'Cellucor C4 Original Pre-Workout 30 Doses de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 120, category: 'Suplementos',
+        name: 'USN Xtend BCAA 30 Doses',
+        price: 1650,
+        image: 'https://files.catbox.moe/p8k4m2.webp',
+        desc: 'USN Xtend BCAA 30 Doses de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 121, category: 'Suplementos',
+        name: 'NPL Vaso Charge Pre-Workout 300g',
+        price: 1400,
+        image: 'https://files.catbox.moe/k3x7y9.webp',
+        desc: 'NPL Vaso Charge Pre-Workout 300g de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 122, category: 'Suplementos',
+        name: 'Nutrex Lipo-6 Black Ultra Concentrate 60 Caps',
+        price: 1850,
+        image: 'https://files.catbox.moe/t7m2v9.webp',
+        desc: 'Nutrex Lipo-6 Black Ultra Concentrate 60 Caps de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 123, category: 'Suplementos',
+        name: 'Biogen L-Carnitine 3000mg',
+        price: 1350,
+        image: 'https://files.catbox.moe/w4v9z1.webp',
+        desc: 'Biogen L-Carnitine 3000mg de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 124, category: 'Suplementos',
+        name: 'Animal Pak Multivitamínico Universal (44 Packs)',
+        price: 3200,
+        image: 'https://files.catbox.moe/y8x2k7.webp',
+        desc: 'Animal Pak Multivitamínico Universal (44 Packs) de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 125, category: 'Suplementos',
+        name: 'USN Super Immune Hydrator 300g',
+        price: 700,
+        image: 'https://files.catbox.moe/q3t7m9.webp',
+        desc: 'USN Super Immune Hydrator 300g de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 126, category: 'Suplementos',
+        name: 'NOW Foods Omega-3 1000mg 100 Softgels',
+        price: 1200,
+        image: 'https://files.catbox.moe/u4m9v2.webp',
+        desc: 'NOW Foods Omega-3 1000mg 100 Softgels de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 127, category: 'Suplementos',
+        name: 'EVOX Shaker Bottle 700ml',
+        price: 500,
+        image: 'https://files.catbox.moe/m8x2t4.webp',
+        desc: 'EVOX Shaker Bottle 700ml de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
+    },
+    {
+        id: 128, category: 'Suplementos',
+        name: 'Barebells Protein Bar 55g',
+        price: 250,
+        image: 'https://files.catbox.moe/k4v9m7.webp',
+        desc: 'Barebells Protein Bar 55g de alta qualidade',
+        features: ['_device_selection:none', '_color_selection:none', '_stock:Em Stock', '✨ Alta Qualidade Garantida']
     }
 ];
 
@@ -336,6 +537,9 @@ function getCategoryIcon(cat) {
     );
     if (c.includes('livro') || c.includes('papel') || c.includes('book')) return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    );
+    if (c.includes('suplemento') || c.includes('massa') || c.includes('proteí') || c.includes('whey') || c.includes('creatin') || c.includes('fitness')) return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
     );
     if (c.includes('acessó') || c.includes('gadget')) return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>

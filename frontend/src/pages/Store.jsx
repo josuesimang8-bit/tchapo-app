@@ -538,8 +538,11 @@ function getCategoryIcon(cat) {
     if (c.includes('livro') || c.includes('papel') || c.includes('book')) return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     );
+    if (c.includes('beleza') || c.includes('beauty') || c.includes('cosméti') || c.includes('estéti')) return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.4 4.8 5.3.8-3.8 3.7.9 5.3-4.8-2.5-4.8 2.5.9-5.3-3.8-3.7 5.3-.8z"/><path d="M12 17v5"/></svg>
+    );
     if (c.includes('suplemento') || c.includes('massa') || c.includes('proteí') || c.includes('whey') || c.includes('creatin') || c.includes('fitness')) return (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6.5 6.5h11M6.5 17.5h11"/><rect x="2" y="8.5" width="4" height="7" rx="1"/><rect x="18" y="8.5" width="4" height="7" rx="1"/><line x1="6" y1="12" x2="18" y2="12"/></svg>
     );
     if (c.includes('acessó') || c.includes('gadget')) return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>

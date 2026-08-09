@@ -1130,14 +1130,19 @@ export default function Store() {
             <header className="navbar">
                 <div className="nav-container">
                     <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span className="logo-icon">⚡</span>
+                        <span className="logo-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        </span>
                         <span>Tchapo Tchapo</span>
                         <span className="delivery-badge" style={{ marginLeft: '0.5rem' }}>4 Horas Beira</span>
                     </div>
                     <div className="nav-right">
                         <div className="auth-menu">
                             {!currentUser ? (
-                                <button className="btn-auth" onClick={() => { setAuthTab('login'); setIsAuthOpen(true); }}>👤 Entrar</button>
+                                <button className="btn-auth" onClick={() => { setAuthTab('login'); setIsAuthOpen(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <span>Entrar</span>
+                                </button>
                             ) : (
                                 <div className="auth-user-dropdown" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span id="auth-user-name"><span className="welcome-text">Olá, </span>{currentUser.user_metadata?.full_name?.split(' ')[0] || currentUser.email.split('@')[0]}</span>
@@ -1148,8 +1153,9 @@ export default function Store() {
                             )}
                         </div>
                         {currentUser && (
-                            <button className="btn-referrals" onClick={handleOpenReferrals} style={{ backgroundColor: '#f97316', color: '#fff', marginRight: '0.5rem' }}>
-                                🎁 <span className="nav-btn-text">Indique e Ganha</span>
+                            <button className="btn-referrals" onClick={handleOpenReferrals} style={{ backgroundColor: '#f97316', color: '#fff', marginRight: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                                <span className="nav-btn-text">Indique e Ganha</span>
                             </button>
                         )}
                         <button className="btn-meus-pedidos" onClick={fetchMyOrders}>
@@ -1209,7 +1215,7 @@ export default function Store() {
                     {showFilters && (
                         <div className="filters-panel">
                             <div className="filter-group">
-                                <label className="filter-label">💰 Preço Mínimo (MT)</label>
+                                <label className="filter-label">Preço Mínimo (MT)</label>
                                 <input
                                     type="number" min="0" step="500"
                                     className="filter-input"
@@ -1219,7 +1225,7 @@ export default function Store() {
                                 />
                             </div>
                             <div className="filter-group">
-                                <label className="filter-label">💰 Preço Máximo (MT)</label>
+                                <label className="filter-label">Preço Máximo (MT)</label>
                                 <input
                                     type="number" min="0" step="500"
                                     className="filter-input"
@@ -1229,8 +1235,9 @@ export default function Store() {
                                 />
                             </div>
                             {(priceMin > 0 || priceMax > 0) && (
-                                <button className="filter-clear-btn" onClick={() => { setPriceMin(0); setPriceMax(0); }}>
-                                    🗑️ Limpar Filtros
+                                <button className="filter-clear-btn" onClick={() => { setPriceMin(0); setPriceMax(0); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    Limpar Filtros
                                 </button>
                             )}
                         </div>
@@ -1394,9 +1401,9 @@ export default function Store() {
                                     </div>
                                     {(() => {
                                         const stock = getStockStatus(activeSelectedProduct);
-                                        if (stock === 'Últimas Unidades') return <div className="modal-stock-badge stock-low">🔥 Últimas Unidades</div>;
-                                        if (stock === 'Esgotado') return <div className="modal-stock-badge stock-out">❌ Esgotado</div>;
-                                        return <div className="modal-stock-badge stock-ok">✅ Em Stock</div>;
+                                        if (stock === 'Últimas Unidades') return <div className="modal-stock-badge stock-low">Últimas Unidades</div>;
+                                        if (stock === 'Esgotado') return <div className="modal-stock-badge stock-out">Esgotado</div>;
+                                        return <div className="modal-stock-badge stock-ok">Em Stock</div>;
                                     })()}
                                 </div>
                                 <h2 className="pm-title">{activeSelectedProduct.name}</h2>
@@ -1546,7 +1553,10 @@ export default function Store() {
                                             <button type="button" className="qty-btn" onClick={(e) => { e.stopPropagation(); updateQuantity(item.id, -1); }} onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); updateQuantity(item.id, -1); }}>-</button>
                                             <span style={{ fontWeight: 700, padding: '0 0.25rem' }}>{item.quantity}</span>
                                             <button type="button" className="qty-btn" onClick={(e) => { e.stopPropagation(); updateQuantity(item.id, 1); }} onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); updateQuantity(item.id, 1); }}>+</button>
-                                            <button type="button" className="remove-btn" onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }} onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); removeFromCart(item.id); }}>🗑️ Remover</button>
+                                            <button type="button" className="remove-btn" onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }} onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); removeFromCart(item.id); }}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                                Remover
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -1583,9 +1593,10 @@ export default function Store() {
                                 setIsCartOpen(false);
                                 setIsCartCheckoutModalOpen(true);
                             }}
-                            style={{ marginTop: '1rem', width: '100%' }}
+                            style={{ marginTop: '1rem', width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                         >
-                            🛍️ Continuar para Entrega
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                            Continuar para Entrega
                         </button>
                     </div>
                 )}
@@ -1598,7 +1609,10 @@ export default function Store() {
                     <div className="product-modal active" style={{ maxWidth: '500px' }}>
                         <button className="close-modal" onClick={() => setIsCartCheckoutModalOpen(false)}>&times;</button>
                         <div style={{ padding: '2rem' }}>
-                            <h2 style={{ marginBottom: '0.25rem' }}>🚚 Dados para Entrega</h2>
+                            <h2 style={{ marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                                Dados para Entrega
+                            </h2>
                             <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '1.25rem' }}>Preencha o seu endereço em Beira para enviarmos o seu pedido.</p>
                             <form className="checkout-form" onSubmit={(e) => {
                                 handleCheckoutSubmit(e);
@@ -1642,7 +1656,7 @@ export default function Store() {
                                     onChange={e => setCheckoutForm({ ...checkoutForm, time: e.target.value })}
                                 >
                                     <option value="" disabled>Horário de Entrega...</option>
-                                    <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
+                                    <option value="Imediato (Até 2h) (+200 MT)">Imediato (Até 2h) (+200 MT)</option>
                                     <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
                                     <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
                                     <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
@@ -1687,7 +1701,7 @@ export default function Store() {
                                     )}
                                 </div>
                                 {referralError && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginBottom: '0.5rem', width: '100%' }}>{referralError}</div>}
-                                {appliedReferralCode && <div style={{ color: '#10b981', fontSize: '0.8rem', marginBottom: '0.5rem', width: '100%' }}>✅ 10% de desconto aplicado!</div>}
+                                {appliedReferralCode && <div style={{ color: '#10b981', fontSize: '0.8rem', marginBottom: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 10% de desconto aplicado!</div>}
 
                                 <button type="submit" id="btn-checkout" className="btn-checkout" style={{ marginTop: '0.5rem' }}>
                                     Confirmar e Enviar Pedido
@@ -1818,7 +1832,10 @@ export default function Store() {
                                 </div>
                             </div>
                             <div className="pm-info" style={{ flex: '1 1 300px', padding: '1.5rem 2.5rem' }}>
-                                <h3>📋 Detalhes de Entrega</h3>
+                                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                    Detalhes de Entrega
+                                </h3>
                                 <form onSubmit={handleQuickOrderSubmit} className="checkout-form" style={{ display: 'flex', marginTop: '1rem' }}>
                                     <input
                                         type="text"
@@ -1928,7 +1945,10 @@ export default function Store() {
                     <div className="product-modal active" style={{ maxWidth: '700px' }}>
                         <button className="close-modal" onClick={() => setIsMeusPedidosOpen(false)}>&times;</button>
                         <div style={{ padding: '2rem' }}>
-                            <h2 style={{ marginBottom: '0.25rem' }}>📦 Os Meus Pedidos</h2>
+                            <h2 style={{ marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                                Os Meus Pedidos
+                            </h2>
                             <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '1.5rem' }}>O estado é actualizado automaticamente a partir do servidor.</p>
                             
                             <div className="meus-pedidos-content">
@@ -1936,7 +1956,9 @@ export default function Store() {
                                     <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>A carregar...</div>
                                 ) : myOrders.length === 0 ? (
                                     <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>
-                                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+                                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                                        </div>
                                         <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Ainda não tens pedidos.</p>
                                         <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Faz o teu primeiro pedido e acompanha aqui!</p>
                                     </div>
@@ -2148,8 +2170,13 @@ export default function Store() {
 
                         <div className="tracking-timer">
                             <p>Tempo estimado para entrega:</p>
-                            <div className="timer-display" style={{ color: trackingStatus === 'Cancelado' ? '#ef4444' : trackingStatus === 'Entregue' ? '#10b981' : trackingStatus === 'Pendente' ? '#f59e0b' : 'var(--primary)' }}>
-                                {trackingStatus === 'Cancelado' ? '❌ CANCELADO' : trackingStatus === 'Entregue' ? '✅ ENTREGUE!' : trackingStatus === 'Pendente' ? `⏳ ${formatTimeLeft(trackingTimeLeft)} (Pausado)` : formatTimeLeft(trackingTimeLeft)}
+                            <div className="timer-display" style={{ color: trackingStatus === 'Cancelado' ? '#ef4444' : trackingStatus === 'Entregue' ? '#10b981' : trackingStatus === 'Pendente' ? '#f59e0b' : 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                {trackingStatus === 'Cancelado' ? 'CANCELADO' : trackingStatus === 'Entregue' ? 'ENTREGUE!' : (
+                                    <>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        {formatTimeLeft(trackingTimeLeft)} {trackingStatus === 'Pendente' ? '(Pausado)' : ''}
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -2179,7 +2206,10 @@ export default function Store() {
                                 <img src={trackingDriver.photo_url || 'assets/driver_avatar_1777767776730.png'} alt="Motorista" className="driver-img" />
                                 <div className="driver-info" style={{ textAlign: 'left' }}>
                                     <h4>{trackingDriver.name}</h4>
-                                    <p className="driver-rating">⭐ Motorista Associado</p>
+                                    <p className="driver-rating" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                        Motorista Credenciado
+                                    </p>
                                     <p className="driver-vehicle">Telefone: {trackingDriver.phone}</p>
                                 </div>
                                 <button className="btn-whatsapp-driver" onClick={contactDriver}>WhatsApp</button>
@@ -2248,10 +2278,15 @@ export default function Store() {
                                     fontWeight: 700,
                                     fontSize: '0.9rem',
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s'
+                                    transition: 'all 0.2s',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
                                 }}
                             >
-                                ⏩ Continuar sem Conta
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                                Continuar sem Conta
                             </button>
                             <div style={{
                                 marginTop: '0.75rem',
@@ -2262,9 +2297,14 @@ export default function Store() {
                                 color: '#b45309',
                                 fontSize: '0.78rem',
                                 textAlign: 'center',
-                                lineHeight: '1.4'
+                                lineHeight: '1.4',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.4rem'
                             }}>
-                                ⚠️ <strong>Aviso Importante:</strong> Ao continuar sem criar conta, os dados do seu pedido e histórico podem ser perdidos caso limpe a cache ou feche a sessão do navegador.
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <span><strong>Aviso Importante:</strong> Ao continuar sem criar conta, os dados do seu pedido e histórico podem ser perdidos caso limpe a cache ou feche a sessão do navegador.</span>
                             </div>
                         </div>
                     </div>

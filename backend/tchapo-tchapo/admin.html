@@ -269,16 +269,22 @@
     <!-- Header -->
     <header class="admin-header">
         <div class="header-left">
-            <span style="font-size:1.5rem;">🛍️</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             <div>
                 <h1>Painel de Gestão — Tchapo Tchapo</h1>
                 <p>Actualizado automaticamente a cada 10 segundos</p>
             </div>
         </div>
         <div class="header-right">
-            <button class="btn-yellow" id="btn-enable-notif" onclick="requestMobileNotifications()" style="background:#f59e0b;color:#fff;font-weight:700;">🔔 Ativar Notificações no Telemóvel</button>
-            <span class="notif-badge" id="notif-badge" style="display:none;" onclick="clearNotif()">🔔 0 novos</span>
-            <button class="btn-yellow" onclick="refreshAll()">↻ Atualizar Dados</button>
+            <button class="btn-yellow" id="btn-enable-notif" onclick="requestMobileNotifications()" style="background:#f59e0b;color:#fff;font-weight:700;display:inline-flex;align-items:center;gap:0.4rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span>Ativar Notificações no Telemóvel</span>
+            </button>
+            <span class="notif-badge" id="notif-badge" style="display:none;" onclick="clearNotif()">0 novos</span>
+            <button class="btn-yellow" onclick="refreshAll()" style="display:inline-flex;align-items:center;gap:0.4rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                <span>Atualizar Dados</span>
+            </button>
             <a class="back-link" href="/">← Loja</a>
         </div>
     </header>
@@ -290,11 +296,26 @@
 
     <!-- Nav Tabs -->
     <nav class="admin-nav">
-        <button class="nav-tab active" id="nav-orders"   onclick="showTab('orders')">📦 Encomendas</button>
-        <button class="nav-tab"        id="nav-drivers"  onclick="showTab('drivers')">🛵 Motoristas</button>
-        <button class="nav-tab"        id="nav-products" onclick="showTab('products')">🏷️ Produtos</button>
-        <button class="nav-tab"        id="nav-referrals" onclick="showTab('referrals')">🎁 Saques <span class="tab-badge" id="badge-referrals" style="display:none;">0</span></button>
-        <button class="nav-tab"        id="nav-users"    onclick="showTab('users')">👥 Contas / Utilizadores</button>
+        <button class="nav-tab active" id="nav-orders"   onclick="showTab('orders')" style="display:inline-flex;align-items:center;gap:0.4rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span>Encomendas</span>
+        </button>
+        <button class="nav-tab"        id="nav-drivers"  onclick="showTab('drivers')" style="display:inline-flex;align-items:center;gap:0.4rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-5a1 1 0 0 0-1 1v5h8V7a1 1 0 0 0-1-1z"/><path d="M9 17h6"/><path d="M12 12v5"/></svg>
+            <span>Motoristas</span>
+        </button>
+        <button class="nav-tab"        id="nav-products" onclick="showTab('products')" style="display:inline-flex;align-items:center;gap:0.4rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            <span>Produtos</span>
+        </button>
+        <button class="nav-tab"        id="nav-referrals" onclick="showTab('referrals')" style="display:inline-flex;align-items:center;gap:0.4rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            <span>Saques</span> <span class="tab-badge" id="badge-referrals" style="display:none;">0</span>
+        </button>
+        <button class="nav-tab"        id="nav-users"    onclick="showTab('users')" style="display:inline-flex;align-items:center;gap:0.4rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Utilizadores</span>
+        </button>
     </nav>
 
     <!-- Main -->

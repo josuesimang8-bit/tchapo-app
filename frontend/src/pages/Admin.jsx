@@ -764,7 +764,7 @@ export default function Admin() {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontSize: '1.5rem' }}>🛍️</span>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                     <div>
                         <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>Painel de Gestão — Tchapo Tchapo</h1>
                         <p style={{ margin: 0, color: '#9ca3af', fontSize: '0.8rem' }}>
@@ -777,24 +777,29 @@ export default function Admin() {
                         <span style={{
                             background: '#ef4444', color: '#fff', borderRadius: '999px',
                             padding: '0.25rem 0.75rem', fontSize: '0.85rem', fontWeight: 700,
-                            cursor: 'pointer'
+                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.35rem'
                         }} onClick={() => setNewCount(0)}>
-                            🔔 {newCount} novo{newCount > 1 ? 's' : ''}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            {newCount} novo{newCount > 1 ? 's' : ''}
                         </span>
                     )}
-                    <button onClick={requestMobileNotifications} style={{
+                    <button onClick={requestNotifPermission} style={{
                         background: notifAllowed ? '#10b981' : '#f59e0b', color: '#fff', border: 'none',
                         padding: '0.6rem 1.25rem', borderRadius: '10px',
-                        fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem'
+                        fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem',
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
                     }}>
-                        {notifAllowed ? '🔔 Notificações Ativas' : '🔔 Ativar Notificações no Telemóvel'}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        {notifAllowed ? 'Notificações Ativas' : 'Ativar Notificações no Telemóvel'}
                     </button>
                     <button onClick={fetchOrders} style={{
                         background: '#374151', color: '#fff', border: 'none',
                         padding: '0.6rem 1.25rem', borderRadius: '10px',
-                        fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem'
+                        fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem',
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
                     }}>
-                        ↻ Atualizar Dados
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        Atualizar Dados
                     </button>
                 </div>
             </div>
@@ -802,52 +807,59 @@ export default function Admin() {
             {/* Navigation Tabs */}
             <div style={{
                 background: '#1f2937', padding: '0.5rem 2rem',
-                display: 'flex', gap: '1rem', borderBottom: '1px solid #374151'
+                display: 'flex', gap: '1rem', borderBottom: '1px solid #374151', overflowX: 'auto'
             }}>
                 <button
                     onClick={() => setActiveTab('orders')}
                     style={{
                         background: activeTab === 'orders' ? '#374151' : 'transparent',
                         color: activeTab === 'orders' ? '#fff' : '#9ca3af',
-                        border: 'none', padding: '0.5rem 1rem', borderRadius: '6px',
-                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem'
+                        border: 'none', padding: '0.55rem 1rem', borderRadius: '6px',
+                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
                     }}
                 >
-                    📦 Encomendas
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    Encomendas
                 </button>
                 <button
                     onClick={() => setActiveTab('drivers')}
                     style={{
                         background: activeTab === 'drivers' ? '#374151' : 'transparent',
                         color: activeTab === 'drivers' ? '#fff' : '#9ca3af',
-                        border: 'none', padding: '0.5rem 1rem', borderRadius: '6px',
-                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem'
+                        border: 'none', padding: '0.55rem 1rem', borderRadius: '6px',
+                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
                     }}
                 >
-                    🛵 Motoristas
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-5a1 1 0 0 0-1 1v5h8V7a1 1 0 0 0-1-1z"/><path d="M9 17h6"/><path d="M12 12v5"/></svg>
+                    Motoristas
                 </button>
                 <button
                     onClick={() => setActiveTab('products')}
                     style={{
                         background: activeTab === 'products' ? '#374151' : 'transparent',
                         color: activeTab === 'products' ? '#fff' : '#9ca3af',
-                        border: 'none', padding: '0.5rem 1rem', borderRadius: '6px',
-                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem'
+                        border: 'none', padding: '0.55rem 1rem', borderRadius: '6px',
+                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
                     }}
                 >
-                    🏷️ Produtos
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    Produtos
                 </button>
                 <button
                     onClick={() => setActiveTab('referrals')}
                     style={{
                         background: activeTab === 'referrals' ? '#374151' : 'transparent',
                         color: activeTab === 'referrals' ? '#fff' : '#9ca3af',
-                        border: 'none', padding: '0.5rem 1rem', borderRadius: '6px',
+                        border: 'none', padding: '0.55rem 1rem', borderRadius: '6px',
                         cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
-                        display: 'flex', alignItems: 'center', gap: '0.35rem'
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
                     }}
                 >
-                    🎁 Saques
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                    Indicação e Saldo
                     {pendingWithdrawalsCount > 0 && (
                         <span style={{ backgroundColor: '#ef4444', color: '#fff', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '10px', fontWeight: 'bold' }}>
                             {pendingWithdrawalsCount}
@@ -859,12 +871,13 @@ export default function Admin() {
                     style={{
                         background: activeTab === 'users' ? '#374151' : 'transparent',
                         color: activeTab === 'users' ? '#fff' : '#9ca3af',
-                        border: 'none', padding: '0.5rem 1rem', borderRadius: '6px',
+                        border: 'none', padding: '0.55rem 1rem', borderRadius: '6px',
                         cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
-                        display: 'flex', alignItems: 'center', gap: '0.35rem'
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
                     }}
                 >
-                    👥 Contas / Utilizadores
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Utilizadores
                 </button>
             </div>
 

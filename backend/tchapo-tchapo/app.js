@@ -88,10 +88,41 @@ function isFeatured(product) {
     return (product.features || []).some(f => f === '_featured:true');
 }
 
+function getProductGalleryDetails(product) {
+    if (!product) return { items: [] };
+    const items = [];
+    const features = product.features || [];
+    
+    // Image 1 (main)
+    const img1PriceFeature = features.find(f => f.startsWith('_img1_price:'));
+    const img1TitleFeature = features.find(f => f.startsWith('_img1_title:'));
+    const img1Price = img1PriceFeature ? parseInt(img1PriceFeature.split(':')[1]) : product.price;
+    const img1Title = img1TitleFeature ? img1TitleFeature.split(':').slice(1).join(':') : '';
+    items.push({
+        src: product.image,
+        price: img1Price,
+        title: img1Title
+    });
+
+    // Extra images (_img2, _img3, _img4, _img5, _img6, etc.)
+    for (let i = 2; i <= 8; i++) {
+        const imgFeature = features.find(f => f.startsWith(`_img${i}:`));
+        if (imgFeature) {
+            const src = imgFeature.split(':').slice(1).join(':');
+            const priceFeature = features.find(f => f.startsWith(`_img${i}_price:`));
+            const titleFeature = features.find(f => f.startsWith(`_img${i}_title:`));
+            const price = priceFeature ? parseInt(priceFeature.split(':')[1]) : product.price;
+            const title = titleFeature ? titleFeature.split(':').slice(1).join(':') : '';
+            items.push({ src, price, title });
+        }
+    }
+    return { items };
+}
+
 function getExtraImages(product) {
     if (!product || !product.features) return [];
     return (product.features || [])
-        .filter(f => f.startsWith('_img2:') || f.startsWith('_img3:') || f.startsWith('_img4:'))
+        .filter(f => f.startsWith('_img2:') || f.startsWith('_img3:') || f.startsWith('_img4:') || f.startsWith('_img5:') || f.startsWith('_img6:'))
         .map(f => f.split(':').slice(1).join(':'));
 }
 
@@ -106,6 +137,26 @@ function selectGalleryImage(idx) {
     document.querySelectorAll('.gallery-dot').forEach((d, i) => {
         d.classList.toggle('active', i === idx);
     });
+
+    // Atualizar preço dinamicamente de acordo com a variante/imagem selecionada
+    if (window.currentGalleryPrices && window.currentGalleryPrices[idx] !== undefined) {
+        const priceEl = document.getElementById('pm-price');
+        if (priceEl) {
+            priceEl.textContent = formatCurrency(window.currentGalleryPrices[idx]);
+        }
+    }
+
+    // Atualizar badge de variante/sabor se existir
+    const variantTag = document.getElementById('pm-variant-tag');
+    if (variantTag) {
+        const title = window.currentGalleryTitles ? window.currentGalleryTitles[idx] : '';
+        if (title) {
+            variantTag.textContent = `⚡ Opção: ${title}`;
+            variantTag.style.display = 'inline-block';
+        } else {
+            variantTag.style.display = 'none';
+        }
+    }
 }
 
 function changeGalleryImage(step) {
@@ -647,11 +698,23 @@ function addCaseToCartFromModal(id) {
         if (colorEl) color = colorEl.value;
     }
     
-    const unitPrice = getEffectivePrice(product, device);
-    const selectedImg = (window.currentGalleryImgs && window.currentGalleryImgs[window.currentGalleryIdx])
-        ? window.currentGalleryImgs[window.currentGalleryIdx]
+    const selectedIdx = window.currentGalleryIdx || 0;
+    const selectedImg = (window.currentGalleryImgs && window.currentGalleryImgs[selectedIdx])
+        ? window.currentGalleryImgs[selectedIdx]
         : product.image;
-    addToCart(id, device, color, unitPrice, selectedImg);
+    
+    const selectedPrice = (window.currentGalleryPrices && window.currentGalleryPrices[selectedIdx] !== undefined)
+        ? window.currentGalleryPrices[selectedIdx]
+        : null;
+
+    const selectedTitle = (window.currentGalleryTitles && window.currentGalleryTitles[selectedIdx])
+        ? window.currentGalleryTitles[selectedIdx]
+        : '';
+    
+    const unitPrice = selectedPrice !== null ? selectedPrice : getEffectivePrice(product, device);
+    const customName = selectedTitle ? `${product.name} (${selectedTitle})` : null;
+
+    addToCart(id, device, color, unitPrice, selectedImg, customName);
     closeModals();
     showToast();
 }
@@ -733,8 +796,11 @@ function openProductModal(id) {
         `;
     }
 
-    const extraImgs = getExtraImages(product);
-    const allImgs = [product.image, ...extraImgs].filter(Boolean);
+    const gallery = getProductGalleryDetails(product);
+    const allImgs = gallery.items.map(it => it.src);
+    const galleryPrices = gallery.items.map(it => it.price);
+    const galleryTitles = gallery.items.map(it => it.title);
+    
     let imageGalleryHtml = `<div class="gallery-wrap"><div class="gallery-main-container"><img src="${product.image}" alt="${product.name}" id="pm-main-img" class="gallery-main-img"></div></div>`;
     if (allImgs.length > 1) {
         imageGalleryHtml = `
@@ -753,6 +819,13 @@ function openProductModal(id) {
             </div>
         `;
         window.currentGalleryImgs = allImgs;
+        window.currentGalleryPrices = galleryPrices;
+        window.currentGalleryTitles = galleryTitles;
+        window.currentGalleryIdx = 0;
+    } else {
+        window.currentGalleryImgs = [product.image];
+        window.currentGalleryPrices = [galleryPrices[0] || product.price];
+        window.currentGalleryTitles = [galleryTitles[0] || ''];
         window.currentGalleryIdx = 0;
     }
 
@@ -760,6 +833,9 @@ function openProductModal(id) {
     let modalStockBadgeHtml = '<div class="modal-stock-badge stock-ok">✅ Em Stock</div>';
     if (stock === 'Últimas Unidades') modalStockBadgeHtml = '<div class="modal-stock-badge stock-low">🔥 Últimas Unidades</div>';
     if (stock === 'Esgotado') modalStockBadgeHtml = '<div class="modal-stock-badge stock-out">❌ Esgotado</div>';
+
+    const initialPrice = galleryPrices[0] || getEffectivePrice(product, devSelType === 'pendrive' ? PENDRIVE_OPTIONS[0] : devSelType === 'card' ? CARD_OPTIONS[0] : null);
+    const initialTitle = galleryTitles[0] || '';
 
     productModalContent.innerHTML = `
         <div class="pm-image">
@@ -771,7 +847,8 @@ function openProductModal(id) {
                 ${modalStockBadgeHtml}
             </div>
             <h2 class="pm-title">${product.name}</h2>
-            <div class="pm-price" id="pm-price">${formatCurrency(getEffectivePrice(product, devSelType === 'pendrive' ? PENDRIVE_OPTIONS[0] : devSelType === 'card' ? CARD_OPTIONS[0] : null))}</div>
+            <div id="pm-variant-tag" style="display:${initialTitle ? 'inline-block' : 'none'}; font-size:0.85rem; font-weight:600; color:#4b5563; background:#f3f4f6; padding:0.25rem 0.6rem; border-radius:6px; margin-bottom:0.5rem;">⚡ Opção: ${initialTitle}</div>
+            <div class="pm-price" id="pm-price">${formatCurrency(initialPrice)}</div>
             <p class="pm-desc">${product.desc}</p>
             <ul class="pm-features">
                 ${(product.features || []).filter(f => !f.startsWith('_')).map(f => `<li>${f}</li>`).join('')}
@@ -796,19 +873,29 @@ function openProductModal(id) {
 
 function buyNowFromModal(id) {
     const product = products.find(p => p.id === id);
-    const selectedImg = (window.currentGalleryImgs && window.currentGalleryImgs[window.currentGalleryIdx])
-        ? window.currentGalleryImgs[window.currentGalleryIdx]
-        : (product ? product.image : null);
+    if (!product) return;
+    const selectedIdx = window.currentGalleryIdx || 0;
+    const selectedImg = (window.currentGalleryImgs && window.currentGalleryImgs[selectedIdx])
+        ? window.currentGalleryImgs[selectedIdx]
+        : product.image;
+    const selectedPrice = (window.currentGalleryPrices && window.currentGalleryPrices[selectedIdx] !== undefined)
+        ? window.currentGalleryPrices[selectedIdx]
+        : product.price;
+    const selectedTitle = (window.currentGalleryTitles && window.currentGalleryTitles[selectedIdx])
+        ? window.currentGalleryTitles[selectedIdx]
+        : '';
     closeModals();
-    openQuickOrder(id, true, selectedImg);
+    openQuickOrder(id, true, selectedImg, selectedPrice, selectedTitle);
 }
 
 // ─── QUICK ORDER MODAL ───────────────────────────────────────────────
 let pendingGuestProductId = null;
 let pendingGuestFromModal = false;
 let pendingGuestCustomImg = null;
+let pendingGuestCustomPrice = null;
+let pendingGuestCustomTitle = null;
 
-function openQuickOrder(id, fromModal = false, customImg = null) {
+function openQuickOrder(id, fromModal = false, customImg = null, customPrice = null, customTitle = null) {
     if (!fromModal) {
         trackProductClick(id);
     }
@@ -816,18 +903,22 @@ function openQuickOrder(id, fromModal = false, customImg = null) {
         pendingGuestProductId = id;
         pendingGuestFromModal = fromModal;
         pendingGuestCustomImg = customImg;
+        pendingGuestCustomPrice = customPrice;
+        pendingGuestCustomTitle = customTitle;
         openAuthModal();
         return;
     }
 
-    startQuickOrderModal(id, fromModal, customImg);
+    startQuickOrderModal(id, fromModal, customImg, customPrice, customTitle);
 }
 
-function startQuickOrderModal(id, fromModal = false, customImg = null) {
+function startQuickOrderModal(id, fromModal = false, customImg = null, customPrice = null, customTitle = null) {
     const rawProd = products.find(p => p.id === id);
     if (!rawProd) return;
     const finalImg = customImg || rawProd.image;
-    quickOrderProduct = { ...rawProd, image: finalImg };
+    const finalPrice = customPrice !== null ? customPrice : rawProd.price;
+    const finalName = customTitle ? `${rawProd.name} (${customTitle})` : rawProd.name;
+    quickOrderProduct = { ...rawProd, name: finalName, image: finalImg, price: finalPrice };
     const devSelType = getDeviceSelectionType(quickOrderProduct);
     
     // Get values from product modal if transfer is requested
@@ -1217,11 +1308,12 @@ function toggleCart() {
     updateScrollLock();
 }
 
-function addToCart(productId, device = null, color = null, customPrice = null, customImage = null) {
+function addToCart(productId, device = null, color = null, customPrice = null, customImage = null, customName = null) {
     if (!device && !color) {
         trackProductClick(productId);
     }
     const product = products.find(p => p.id === productId);
+    if (!product) return;
     const devSelType = getDeviceSelectionType(product);
     const hasDeviceSel = devSelType !== 'none';
     const colorSelType = getColorSelectionType(product);
@@ -1232,17 +1324,21 @@ function addToCart(productId, device = null, color = null, customPrice = null, c
     const unitPrice = customPrice !== null ? customPrice : getEffectivePrice(product, finalDevice);
     const itemImage = customImage || product.image;
     
-    const cartItemId = hasDeviceSel 
-        ? (hasColorSel ? `${productId}-${finalDevice}-${finalColor}` : `${productId}-${finalDevice}`)
-        : (hasColorSel ? `${productId}-${finalColor}` : productId);
-    const cartItemName = hasDeviceSel 
+    const cartItemId = customName 
+        ? `${productId}-${customName}`
+        : (hasDeviceSel 
+            ? (hasColorSel ? `${productId}-${finalDevice}-${finalColor}` : `${productId}-${finalDevice}`)
+            : (hasColorSel ? `${productId}-${finalColor}` : productId));
+
+    const cartItemName = customName || (hasDeviceSel 
         ? (hasColorSel ? `${product.name} (${finalDevice} - ${finalColor})` : `${product.name} (${finalDevice})`)
-        : (hasColorSel ? `${product.name} (${finalColor})` : product.name);
+        : (hasColorSel ? `${product.name} (${finalColor})` : product.name));
     
     const existing = cart.find(item => item.id === cartItemId);
     if (existing) { 
         existing.quantity += 1; 
         existing.image = itemImage;
+        existing.price = unitPrice;
     } else { 
         cart.push({ ...product, id: cartItemId, name: cartItemName, price: unitPrice, image: itemImage, quantity: 1 }); 
     }
@@ -1349,10 +1445,12 @@ function updateCartUI() {
 window.handleContinueAsGuest = function() {
     closeAuthModal();
     if (pendingGuestProductId) {
-        startQuickOrderModal(pendingGuestProductId, pendingGuestFromModal, pendingGuestCustomImg);
+        startQuickOrderModal(pendingGuestProductId, pendingGuestFromModal, pendingGuestCustomImg, pendingGuestCustomPrice, pendingGuestCustomTitle);
         pendingGuestProductId = null;
         pendingGuestFromModal = false;
         pendingGuestCustomImg = null;
+        pendingGuestCustomPrice = null;
+        pendingGuestCustomTitle = null;
         return;
     }
     if (selectedProduct) {

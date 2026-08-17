@@ -492,11 +492,42 @@ const isFeatured = (product) => {
     return (product.features || []).some(f => f === '_featured:true');
 };
 
+const getProductGalleryDetails = (product) => {
+    if (!product) return { items: [] };
+    const items = [];
+    const features = product.features || [];
+    
+    // Image 1 (main)
+    const img1PriceFeature = features.find(f => f.startsWith('_img1_price:'));
+    const img1TitleFeature = features.find(f => f.startsWith('_img1_title:'));
+    const img1Price = img1PriceFeature ? parseInt(img1PriceFeature.split(':')[1]) : product.price;
+    const img1Title = img1TitleFeature ? img1TitleFeature.split(':').slice(1).join(':') : '';
+    items.push({
+        src: product.image,
+        price: img1Price,
+        title: img1Title
+    });
+
+    // Extra images
+    for (let i = 2; i <= 8; i++) {
+        const imgFeature = features.find(f => f.startsWith(`_img${i}:`));
+        if (imgFeature) {
+            const src = imgFeature.split(':').slice(1).join(':');
+            const priceFeature = features.find(f => f.startsWith(`_img${i}_price:`));
+            const titleFeature = features.find(f => f.startsWith(`_img${i}_title:`));
+            const price = priceFeature ? parseInt(priceFeature.split(':')[1]) : product.price;
+            const title = titleFeature ? titleFeature.split(':').slice(1).join(':') : '';
+            items.push({ src, price, title });
+        }
+    }
+    return { items };
+};
+
 // --- Extra images helper ---
 const getExtraImages = (product) => {
     if (!product || !product.features) return [];
     return (product.features || [])
-        .filter(f => f.startsWith('_img2:') || f.startsWith('_img3:') || f.startsWith('_img4:'))
+        .filter(f => f.startsWith('_img2:') || f.startsWith('_img3:') || f.startsWith('_img4:') || f.startsWith('_img5:') || f.startsWith('_img6:'))
         .map(f => f.split(':').slice(1).join(':'));
 };
 
@@ -1584,8 +1615,8 @@ export default function Store() {
                             <div className="pm-image">
                                 {/* Image Gallery Carousel */}
                                 {(() => {
-                                    const extraImgs = getExtraImages(activeSelectedProduct);
-                                    const allImgs = [activeSelectedProduct.image, ...extraImgs].filter(Boolean);
+                                    const gallery = getProductGalleryDetails(activeSelectedProduct);
+                                    const allImgs = gallery.items.map(it => it.src);
                                     const currentIdx = (modalImageIndex >= 0 && modalImageIndex < allImgs.length) ? modalImageIndex : 0;
                                     return (
                                         <div className="gallery-wrap">
@@ -1629,7 +1660,22 @@ export default function Store() {
                                     })()}
                                 </div>
                                 <h2 className="pm-title">{activeSelectedProduct.name}</h2>
-                                <div className="pm-price">{formatCurrency(getEffectivePrice(activeSelectedProduct, selectedDevice))}</div>
+                                {(() => {
+                                    const gallery = getProductGalleryDetails(activeSelectedProduct);
+                                    const currentIdx = (modalImageIndex >= 0 && modalImageIndex < gallery.items.length) ? modalImageIndex : 0;
+                                    const currentItem = gallery.items[currentIdx] || { price: activeSelectedProduct.price, title: '' };
+                                    const currentPrice = currentItem.price || getEffectivePrice(activeSelectedProduct, selectedDevice);
+                                    return (
+                                        <>
+                                            {currentItem.title && (
+                                                <div style={{ display: 'inline-block', fontSize: '0.85rem', fontWeight: 600, color: '#4b5563', background: '#f3f4f6', padding: '0.25rem 0.6rem', borderRadius: '6px', marginBottom: '0.5rem' }}>
+                                                    ⚡ Opção: {currentItem.title}
+                                                </div>
+                                            )}
+                                            <div className="pm-price">{formatCurrency(currentPrice)}</div>
+                                        </>
+                                    );
+                                })()}
                                 <p className="pm-desc">{activeSelectedProduct.desc}</p>
                                 <ul className="pm-features" style={{ paddingLeft: '1rem', listStyleType: 'disc' }}>
                                     {activeSelectedProduct.features && activeSelectedProduct.features
@@ -1683,13 +1729,12 @@ export default function Store() {
 
                                                     {(devSelType === 'outro' || (devSelType === 'iphone_outro' && selectedDevice === 'outro')) && (
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
-                                                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Escreva o Dispositivo:</label>
+                                                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Qual é o seu dispositivo?</label>
                                                             <input 
-                                                                type="text"
+                                                                type="text" 
+                                                                placeholder="Ex: Samsung S23 Ultra, Redmi Note 12..."
                                                                 value={customDevice}
                                                                 onChange={(e) => setCustomDevice(e.target.value)}
-                                                                placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc."
-                                                                required
                                                                 style={{
                                                                     width: '100%',
                                                                     padding: '0.75rem',
@@ -1698,8 +1743,7 @@ export default function Store() {
                                                                     fontFamily: 'inherit',
                                                                     fontSize: '0.95rem',
                                                                     outline: 'none',
-                                                                    backgroundColor: '#fff',
-                                                                    boxSizing: 'border-box'
+                                                                    backgroundColor: '#fff'
                                                                 }}
                                                             />
                                                         </div>
@@ -1736,20 +1780,21 @@ export default function Store() {
 
                                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
                                     <button className="btn-add-cart" style={{ flex: 1 }} onClick={() => { 
-                                        const extraImgs = getExtraImages(activeSelectedProduct);
-                                        const allImgs = [activeSelectedProduct.image, ...extraImgs].filter(Boolean);
-                                        const selectedImg = allImgs[modalImageIndex] || activeSelectedProduct.image;
-                                        if (addToCart(activeSelectedProduct, null, null, selectedImg)) setSelectedProduct(null); 
+                                        const gallery = getProductGalleryDetails(activeSelectedProduct);
+                                        const currentIdx = (modalImageIndex >= 0 && modalImageIndex < gallery.items.length) ? modalImageIndex : 0;
+                                        const itemObj = gallery.items[currentIdx] || { src: activeSelectedProduct.image, price: activeSelectedProduct.price, title: '' };
+                                        const prodToCart = { ...activeSelectedProduct, price: itemObj.price || activeSelectedProduct.price, name: itemObj.title ? `${activeSelectedProduct.name} (${itemObj.title})` : activeSelectedProduct.name };
+                                        if (addToCart(prodToCart, null, null, itemObj.src)) setSelectedProduct(null); 
                                     }}>
                                         Adicionar ao Carrinho
                                     </button>
                                     <button className="btn-buy-now-modal" style={{ flex: 1 }} onClick={() => { 
-                                        const extraImgs = getExtraImages(activeSelectedProduct);
-                                        const allImgs = [activeSelectedProduct.image, ...extraImgs].filter(Boolean);
-                                        const selectedImg = allImgs[modalImageIndex] || activeSelectedProduct.image;
-                                        const p = activeSelectedProduct; 
+                                        const gallery = getProductGalleryDetails(activeSelectedProduct);
+                                        const currentIdx = (modalImageIndex >= 0 && modalImageIndex < gallery.items.length) ? modalImageIndex : 0;
+                                        const itemObj = gallery.items[currentIdx] || { src: activeSelectedProduct.image, price: activeSelectedProduct.price, title: '' };
+                                        const prodToBuy = { ...activeSelectedProduct, price: itemObj.price || activeSelectedProduct.price, name: itemObj.title ? `${activeSelectedProduct.name} (${itemObj.title})` : activeSelectedProduct.name };
                                         setSelectedProduct(null); 
-                                        handleBuyNowClick(p, selectedImg); 
+                                        handleBuyNowClick(prodToBuy, itemObj.src); 
                                     }}>
                                         Pedir Agora
                                     </button>

@@ -919,26 +919,43 @@ app.get('/api/orders/:id/pdf', async (req, res) => {
                 const item = order.order_items[index];
                 const startY = doc.y;
 
-                // Try downloading and embedding product image
-                let hasImg = false;
-                if (item.image) {
+                // Resolve image URL: use stored image, or fall back to products table by name
+                let imageUrl = item.image || null;
+                if (!imageUrl) {
                     try {
-                        const imgRes = await fetch(item.image);
+                        const baseName = (item.product_name || '').split('(')[0].trim();
+                        const { data: prodRows } = await supabase
+                            .from('products')
+                            .select('image')
+                            .ilike('name', `%${baseName}%`)
+                            .limit(1);
+                        if (prodRows && prodRows.length > 0) imageUrl = prodRows[0].image;
+                    } catch (_) {}
+                }
+
+                // Download and embed image (120x120)
+                let hasImg = false;
+                if (imageUrl) {
+                    try {
+                        const imgRes = await fetch(imageUrl);
                         if (imgRes.ok) {
                             const imgBuf = Buffer.from(await imgRes.arrayBuffer());
-                            doc.image(imgBuf, 40, startY, { fit: [55, 55] });
+                            doc.image(imgBuf, 40, startY, { fit: [120, 120] });
                             hasImg = true;
+                        } else {
+                            console.warn(`PDF image HTTP ${imgRes.status} for: ${imageUrl}`);
                         }
                     } catch (imgErr) {
-                        console.warn(`Failed to embed PDF image for item ${item.product_name}:`, imgErr.message);
+                        console.warn(`Failed to embed PDF image for "${item.product_name}":`, imgErr.message);
                     }
                 }
 
-                const textX = hasImg ? 105 : 40;
-                doc.fontSize(11).fillColor('#111827').text(`${index + 1}. ${item.product_name}`, textX, startY + 4);
-                doc.fontSize(9).fillColor('#6b7280').text(`Quantidade: ${item.quantity}  |  Preço: ${Number(item.price).toLocaleString('pt-MZ')} MT`, textX, doc.y + 3);
+                const textX = hasImg ? 172 : 40;
+                const textTopY = hasImg ? startY + 10 : startY;
+                doc.fontSize(12).fillColor('#111827').text(`${index + 1}. ${item.product_name}`, textX, textTopY);
+                doc.fontSize(10).fillColor('#6b7280').text(`Quantidade: ${item.quantity}  |  Preço: ${Number(item.price).toLocaleString('pt-MZ')} MT`, textX, doc.y + 4);
 
-                const itemBoxHeight = hasImg ? 65 : 40;
+                const itemBoxHeight = hasImg ? 135 : 50;
                 doc.y = startY + itemBoxHeight;
                 doc.x = 40;
             }

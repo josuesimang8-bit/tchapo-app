@@ -539,10 +539,10 @@ function getCategoryIcon(cat) {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     );
     if (c.includes('beleza') || c.includes('beauty') || c.includes('cosméti') || c.includes('estéti') || c.includes('higiene')) return (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-3.5-6.5l-2 2m-7 7l-2 2m11 0l-2-2m-7-7l-2-2"/><circle cx="12" cy="12" r="4"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11V6l6-3v8"/><rect x="7" y="11" width="10" height="3" rx="0.5"/><path d="M7 14h10v7a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-7z"/></svg>
     );
     if (c.includes('suplemento') || c.includes('massa') || c.includes('proteí') || c.includes('whey') || c.includes('creatin') || c.includes('fitness')) return (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6.5 6.5h11M6.5 17.5h11"/><rect x="2" y="8.5" width="4" height="7" rx="1"/><rect x="18" y="8.5" width="4" height="7" rx="1"/><line x1="6" y1="12" x2="18" y2="12"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M7 5h10l-1.2 14.4a2 2 0 0 1-2 1.6H10.2a2 2 0 0 1-2-1.6L7 5z"/><line x1="7" y1="9" x2="17" y2="9"/><path d="M10 14h4"/></svg>
     );
     if (c.includes('acessó') || c.includes('gadget')) return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>

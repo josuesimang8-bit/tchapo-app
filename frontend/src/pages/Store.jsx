@@ -948,7 +948,7 @@ export default function Store() {
         setTimeout(() => setToastMessage(null), 4000);
     };
 
-    const addToCart = (product, device, color) => {
+    const addToCart = (product, device, color, customImage) => {
         const devSelType = getDeviceSelectionType(product);
         const hasDeviceSel = devSelType !== 'none';
         const colorSelType = getColorSelectionType(product);
@@ -975,8 +975,8 @@ export default function Store() {
         }
         
         const finalColor = hasColorSel ? (color || selectedColor) : null;
-        
         const unitPrice = getEffectivePrice(product, finalDevice);
+        const itemImage = customImage || product.image;
         
         const cartItemId = hasDeviceSel 
             ? (hasColorSel ? `${product.id}-${finalDevice}-${finalColor}` : `${product.id}-${finalDevice}`)
@@ -987,13 +987,14 @@ export default function Store() {
         
         const existing = cart.find(item => item.id === cartItemId);
         if (existing) {
-            setCart(cart.map(item => item.id === cartItemId ? { ...item, quantity: item.quantity + 1 } : item));
+            setCart(cart.map(item => item.id === cartItemId ? { ...item, image: itemImage, quantity: item.quantity + 1 } : item));
         } else {
             setCart([...cart, { 
                 ...product, 
                 id: cartItemId, 
                 name: cartItemName, 
                 price: unitPrice,
+                image: itemImage,
                 quantity: 1 
             }]);
         }
@@ -1258,18 +1259,21 @@ export default function Store() {
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     };
 
-    const openQuickOrder = (prod) => {
-        setQuickOrderProduct(prod);
+    const openQuickOrder = (prod, customImage) => {
+        const itemImg = customImage || prod.image;
+        setQuickOrderProduct({ ...prod, image: itemImg });
         setQuickOrderQty(1);
     };
 
-    const handleBuyNowClick = (prod) => {
+    const handleBuyNowClick = (prod, customImage) => {
         trackProductClick(prod.id);
+        const itemImg = customImage || prod.image;
+        const prodWithImg = { ...prod, image: itemImg };
         if (!currentUser) {
-            setPendingGuestProduct(prod);
+            setPendingGuestProduct(prodWithImg);
             setIsAuthOpen(true);
         } else {
-            openQuickOrder(prod);
+            openQuickOrder(prodWithImg, itemImg);
         }
     };
 
@@ -1733,10 +1737,22 @@ export default function Store() {
                                 })()}
 
                                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-                                    <button className="btn-add-cart" style={{ flex: 1 }} onClick={() => { if (addToCart(activeSelectedProduct)) setSelectedProduct(null); }}>
+                                    <button className="btn-add-cart" style={{ flex: 1 }} onClick={() => { 
+                                        const extraImgs = getExtraImages(activeSelectedProduct);
+                                        const allImgs = [activeSelectedProduct.image, ...extraImgs].filter(Boolean);
+                                        const selectedImg = allImgs[modalImageIndex] || activeSelectedProduct.image;
+                                        if (addToCart(activeSelectedProduct, null, null, selectedImg)) setSelectedProduct(null); 
+                                    }}>
                                         Adicionar ao Carrinho
                                     </button>
-                                    <button className="btn-buy-now-modal" style={{ flex: 1 }} onClick={() => { const p = activeSelectedProduct; setSelectedProduct(null); handleBuyNowClick(p); }}>
+                                    <button className="btn-buy-now-modal" style={{ flex: 1 }} onClick={() => { 
+                                        const extraImgs = getExtraImages(activeSelectedProduct);
+                                        const allImgs = [activeSelectedProduct.image, ...extraImgs].filter(Boolean);
+                                        const selectedImg = allImgs[modalImageIndex] || activeSelectedProduct.image;
+                                        const p = activeSelectedProduct; 
+                                        setSelectedProduct(null); 
+                                        handleBuyNowClick(p, selectedImg); 
+                                    }}>
                                         Pedir Agora
                                     </button>
                                 </div>

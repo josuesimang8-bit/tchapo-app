@@ -648,7 +648,10 @@ function addCaseToCartFromModal(id) {
     }
     
     const unitPrice = getEffectivePrice(product, device);
-    addToCart(id, device, color, unitPrice);
+    const selectedImg = (window.currentGalleryImgs && window.currentGalleryImgs[window.currentGalleryIdx])
+        ? window.currentGalleryImgs[window.currentGalleryIdx]
+        : product.image;
+    addToCart(id, device, color, unitPrice, selectedImg);
     closeModals();
     showToast();
 }
@@ -1200,7 +1203,7 @@ function toggleCart() {
     updateScrollLock();
 }
 
-function addToCart(productId, device = null, color = null, customPrice = null) {
+function addToCart(productId, device = null, color = null, customPrice = null, customImage = null) {
     if (!device && !color) {
         trackProductClick(productId);
     }
@@ -1213,6 +1216,7 @@ function addToCart(productId, device = null, color = null, customPrice = null) {
     const finalDevice = hasDeviceSel ? device : null;
     const finalColor = hasColorSel ? color : null;
     const unitPrice = customPrice !== null ? customPrice : getEffectivePrice(product, finalDevice);
+    const itemImage = customImage || product.image;
     
     const cartItemId = hasDeviceSel 
         ? (hasColorSel ? `${productId}-${finalDevice}-${finalColor}` : `${productId}-${finalDevice}`)
@@ -1224,8 +1228,9 @@ function addToCart(productId, device = null, color = null, customPrice = null) {
     const existing = cart.find(item => item.id === cartItemId);
     if (existing) { 
         existing.quantity += 1; 
+        existing.image = itemImage;
     } else { 
-        cart.push({ ...product, id: cartItemId, name: cartItemName, price: unitPrice, quantity: 1 }); 
+        cart.push({ ...product, id: cartItemId, name: cartItemName, price: unitPrice, image: itemImage, quantity: 1 }); 
     }
     saveCart();
     updateCartUI();

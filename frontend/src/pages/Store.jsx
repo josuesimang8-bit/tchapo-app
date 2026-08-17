@@ -2502,24 +2502,9 @@ export default function Store() {
                             <button 
                                 type="button" 
                                 onClick={handleContinueAsGuest}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    background: '#f3f4f6',
-                                    color: '#374151',
-                                    border: '1.5px solid #d1d5db',
-                                    borderRadius: '12px',
-                                    fontWeight: 700,
-                                    fontSize: '0.9rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.5rem'
-                                }}
+                                className="btn-primary"
+                                style={{ width: '100%', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                             >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
                                 Continuar sem Conta
                             </button>
                             <div style={{

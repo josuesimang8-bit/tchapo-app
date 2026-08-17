@@ -716,18 +716,29 @@ body {
 
 .close-modal {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: var(--gray-light);
-    border: none;
-    width: 36px;
-    height: 36px;
+    top: 0.85rem;
+    right: 0.85rem;
+    background: #ffffff;
+    color: #1f2937;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
+    line-height: 1;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 120;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    transition: var(--transition);
+}
+
+.close-modal:hover {
+    background: #f3f4f6;
+    color: #000000;
+    transform: scale(1.08);
 }
 
 .product-modal-content {
@@ -2347,35 +2358,96 @@ body {
 
 @media (max-width: 600px) {
     .product-modal {
-        width: 94% !important;
+        width: 95% !important;
+        max-width: 95% !important;
         max-height: 90vh !important;
-        border-radius: 16px !important;
+        border-radius: 18px !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+    }
+    .close-modal {
+        top: 0.65rem !important;
+        right: 0.65rem !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1.3rem !important;
+        background: #ffffff !important;
+        color: #111827 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+        z-index: 150 !important;
     }
     .pm-image {
-        padding: 0.75rem !important;
+        padding: 0.75rem 0.5rem !important;
         max-height: none !important;
         min-height: auto !important;
+        background: #f9fafb !important;
+    }
+    .gallery-main-container {
+        position: relative !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
     .gallery-main-img {
-        max-height: 220px !important;
+        max-height: 200px !important;
         width: 100% !important;
         object-fit: contain !important;
     }
+    .gallery-arrow {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 1.1rem !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    }
     .pm-info {
-        padding: 1.25rem !important;
+        padding: 1rem 1.15rem 1.5rem !important;
     }
     .pm-title {
-        font-size: 1.35rem !important;
+        font-size: 1.25rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 0.35rem !important;
     }
     .pm-price {
         font-size: 1.25rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    .pm-desc {
+        font-size: 0.85rem !important;
         margin-bottom: 1rem !important;
+        line-height: 1.4 !important;
+    }
+    .pm-features {
+        font-size: 0.82rem !important;
+        margin-bottom: 1rem !important;
+        gap: 0.35rem !important;
     }
     .gallery-thumbs {
-        gap: 0.3rem !important;
+        gap: 0.35rem !important;
+        padding: 0.25rem 0 !important;
     }
     .gallery-thumb {
-        width: 40px !important;
-        height: 40px !important;
+        width: 42px !important;
+        height: 42px !important;
+        border-radius: 8px !important;
+    }
+    /* Quick Order Modal Mobile */
+    .qo-left {
+        padding: 0.75rem !important;
+    }
+    .qo-img {
+        max-height: 120px !important;
+    }
+    .qo-right {
+        padding: 1rem !important;
+    }
+    .qo-right h3 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    /* Mobile inputs comfort */
+    input, select, textarea {
+        font-size: 16px !important; /* Prevents iOS auto-zoom */
     }
 }

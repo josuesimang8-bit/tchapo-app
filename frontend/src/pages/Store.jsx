@@ -1307,9 +1307,7 @@ export default function Store() {
         ? products.find(p => p.id === selectedProduct.id) || selectedProduct
         : null;
 
-    const activeQuickOrderProduct = quickOrderProduct
-        ? products.find(p => p.id === quickOrderProduct.id) || quickOrderProduct
-        : null;
+    const activeQuickOrderProduct = quickOrderProduct || null;
 
     const filteredProducts = products.filter(p => {
         const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;

@@ -861,6 +861,23 @@ app.delete('/api/products/:id', async (req, res) => {
     }
 });
 
+// DEBUG: raw items stored in Supabase for an order (remove after debugging)
+app.get('/api/orders/:id/debug-items', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { data, error } = await supabase.from('orders').select('id, items').eq('id', id).single();
+        if (error) throw error;
+        const raw = typeof data.items === 'string' ? JSON.parse(data.items) : data.items;
+        const summary = (raw || []).map(it => ({
+            name: it.name || it.product_name,
+            image: it.image || it.image_url || null
+        }));
+        res.json({ orderId: id, rawCount: (raw || []).length, summary });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // DELETE order
 app.delete('/api/orders/:id', async (req, res) => {
     try {
@@ -921,6 +938,7 @@ app.get('/api/orders/:id/pdf', async (req, res) => {
 
                 // Resolve image URL: use stored image, or fall back to products table by name
                 let imageUrl = item.image || null;
+                console.log(`[PDF] item "${item.product_name}" → stored image: ${imageUrl}`);
                 if (!imageUrl) {
                     try {
                         const baseName = (item.product_name || '').split('(')[0].trim();

@@ -2045,15 +2045,19 @@ body {
     padding: 0.25rem 0;
 }
 .gallery-thumb {
-    width: 48px;
-    height: 48px;
-    object-fit: cover;
+    width: 52px !important;
+    height: 52px !important;
+    max-width: 52px !important;
+    max-height: 52px !important;
+    object-fit: cover !important;
     border-radius: 8px;
     border: 2px solid transparent;
     cursor: pointer;
     opacity: 0.65;
     transition: all 0.2s ease;
     background: #f3f4f6;
+    display: inline-block !important;
+    margin: 0 !important;
 }
 .gallery-thumb.active,
 .gallery-thumb:hover {
@@ -2091,8 +2095,7 @@ body {
     flex-direction: column;
     align-items: center;
 }
-.gallery-main-img,
-.pm-image img {
+.gallery-main-img {
     max-width: 100% !important;
     width: auto !important;
     max-height: 320px !important;
@@ -2115,8 +2118,7 @@ body {
         max-height: none !important;
         min-height: auto !important;
     }
-    .gallery-main-img,
-    .pm-image img {
+    .gallery-main-img {
         max-height: 220px !important;
         width: 100% !important;
         object-fit: contain !important;

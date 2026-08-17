@@ -849,6 +849,7 @@ export default function Store() {
             else setSelectedDevice('iPhone 15 Pro Max');
             setSelectedColor('Preto');
             setCustomDevice('');
+            setModalImageIndex(0);
         }
     }, [selectedProduct]);
 
@@ -1583,21 +1584,28 @@ export default function Store() {
                                 {(() => {
                                     const extraImgs = getExtraImages(activeSelectedProduct);
                                     const allImgs = [activeSelectedProduct.image, ...extraImgs].filter(Boolean);
+                                    const currentIdx = (modalImageIndex >= 0 && modalImageIndex < allImgs.length) ? modalImageIndex : 0;
                                     return (
                                         <div className="gallery-wrap">
-                                            <img src={allImgs[modalImageIndex] || activeSelectedProduct.image} alt={activeSelectedProduct.name} className="gallery-main-img" />
+                                            <div className="gallery-main-container">
+                                                <img src={allImgs[currentIdx] || activeSelectedProduct.image} alt={activeSelectedProduct.name} className="gallery-main-img" />
+                                                {allImgs.length > 1 && (
+                                                    <>
+                                                        <button className="gallery-arrow gallery-prev" onClick={(e) => { e.stopPropagation(); setModalImageIndex((currentIdx - 1 + allImgs.length) % allImgs.length); }}>‹</button>
+                                                        <button className="gallery-arrow gallery-next" onClick={(e) => { e.stopPropagation(); setModalImageIndex((currentIdx + 1) % allImgs.length); }}>›</button>
+                                                    </>
+                                                )}
+                                            </div>
                                             {allImgs.length > 1 && (
                                                 <>
-                                                    <button className="gallery-arrow gallery-prev" onClick={() => setModalImageIndex(i => (i - 1 + allImgs.length) % allImgs.length)}>‹</button>
-                                                    <button className="gallery-arrow gallery-next" onClick={() => setModalImageIndex(i => (i + 1) % allImgs.length)}>›</button>
                                                     <div className="gallery-dots">
                                                         {allImgs.map((_, idx) => (
-                                                            <span key={idx} className={`gallery-dot ${idx === modalImageIndex ? 'active' : ''}`} onClick={() => setModalImageIndex(idx)} />
+                                                            <span key={idx} className={`gallery-dot ${idx === currentIdx ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setModalImageIndex(idx); }} />
                                                         ))}
                                                     </div>
                                                     <div className="gallery-thumbs">
                                                         {allImgs.map((img, idx) => (
-                                                            <img key={idx} src={img} alt={`${idx+1}`} className={`gallery-thumb ${idx === modalImageIndex ? 'active' : ''}`} onClick={() => setModalImageIndex(idx)} />
+                                                            <img key={idx} src={img} alt={`Thumbnail ${idx+1}`} className={`gallery-thumb ${idx === currentIdx ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setModalImageIndex(idx); }} />
                                                         ))}
                                                     </div>
                                                 </>

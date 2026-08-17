@@ -103,6 +103,9 @@ function selectGalleryImage(idx) {
     document.querySelectorAll('.gallery-thumb').forEach((t, i) => {
         t.classList.toggle('active', i === idx);
     });
+    document.querySelectorAll('.gallery-dot').forEach((d, i) => {
+        d.classList.toggle('active', i === idx);
+    });
 }
 
 function changeGalleryImage(step) {
@@ -729,13 +732,18 @@ function openProductModal(id) {
 
     const extraImgs = getExtraImages(product);
     const allImgs = [product.image, ...extraImgs].filter(Boolean);
-    let imageGalleryHtml = `<img src="${product.image}" alt="${product.name}" id="pm-main-img" class="gallery-main-img">`;
+    let imageGalleryHtml = `<div class="gallery-wrap"><div class="gallery-main-container"><img src="${product.image}" alt="${product.name}" id="pm-main-img" class="gallery-main-img"></div></div>`;
     if (allImgs.length > 1) {
         imageGalleryHtml = `
             <div class="gallery-wrap">
-                <img src="${allImgs[0]}" alt="${product.name}" id="pm-main-img" class="gallery-main-img">
-                <button class="gallery-arrow gallery-prev" onclick="changeGalleryImage(-1)">‹</button>
-                <button class="gallery-arrow gallery-next" onclick="changeGalleryImage(1)">›</button>
+                <div class="gallery-main-container">
+                    <img src="${allImgs[0]}" alt="${product.name}" id="pm-main-img" class="gallery-main-img">
+                    <button class="gallery-arrow gallery-prev" onclick="changeGalleryImage(-1); event.stopPropagation();">‹</button>
+                    <button class="gallery-arrow gallery-next" onclick="changeGalleryImage(1); event.stopPropagation();">›</button>
+                </div>
+                <div class="gallery-dots">
+                    ${allImgs.map((_, idx) => `<span class="gallery-dot ${idx===0?'active':''}" onclick="selectGalleryImage(${idx})"></span>`).join('')}
+                </div>
                 <div class="gallery-thumbs">
                     ${allImgs.map((img, idx) => `<img src="${img}" class="gallery-thumb ${idx===0?'active':''}" onclick="selectGalleryImage(${idx})">`).join('')}
                 </div>

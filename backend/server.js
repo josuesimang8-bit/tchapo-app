@@ -138,7 +138,8 @@ function formatOrderResponse(order) {
     const normalizedItems = Array.isArray(itemsArray) ? itemsArray.map(item => ({
         product_name: item.product_name || item.name || 'Produto',
         quantity: item.quantity || 1,
-        price: item.price || 0
+        price: item.price || 0,
+        image: item.image || item.image_url || item.photo_url || null
     })) : [];
 
     // Timer computation from created_at
@@ -885,41 +886,72 @@ app.get('/api/orders/:id/pdf', async (req, res) => {
         if (error) throw error;
         const order = formatOrderResponse(data);
 
-        const doc = new PDFDocument();
+        const doc = new PDFDocument({ margin: 40 });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Pedido_${id}.pdf`);
         doc.pipe(res);
 
-        doc.fontSize(24).text('Tchapo Tchapo', { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(16).text(`Fatura / Recibo - Pedido #${order.id}`);
-        doc.moveDown();
-        doc.fontSize(12).text(`Data: ${new Date(order.created_at).toLocaleString()}`);
+        // Header / Branding
+        doc.fontSize(22).fillColor('#f59e0b').text('TCHAPO TCHAPO', { align: 'center' });
+        doc.fontSize(10).fillColor('#6b7280').text('Entregas Rápidas na Cidade da Beira', { align: 'center' });
+        doc.moveDown(1.2);
+
+        // Receipt Details Box
+        doc.fontSize(14).fillColor('#111827').text(`Fatura / Recibo - Pedido #${order.id}`, { underline: true });
+        doc.moveDown(0.5);
+        doc.fontSize(10).fillColor('#374151');
+        doc.text(`Data: ${new Date(order.created_at).toLocaleString('pt-MZ')}`);
         doc.text(`Cliente: ${order.customer_name}`);
         doc.text(`Telefone: ${order.phone || '—'}`);
         doc.text(`Bairro: ${order.bairro}`);
         doc.text(`Endereço: ${order.address}`);
-        doc.text(`Horário: ${order.time}`);
-        doc.text(`Pagamento: ${order.payment}`);
-        doc.moveDown();
-        doc.text(`Status: ${order.status}`);
-        doc.moveDown();
+        doc.text(`Horário de Entrega: ${order.time}`);
+        doc.text(`Método de Pagamento: ${order.payment}`);
+        doc.text(`Estado do Pedido: ${order.status}`);
+        doc.moveDown(1.5);
 
-        doc.fontSize(14).text('Produtos:', { underline: true });
-        doc.moveDown(0.5);
+        // Products List
+        doc.fontSize(14).fillColor('#111827').text('Produtos Selecionados:', { underline: true });
+        doc.moveDown(0.75);
+
         if (order.order_items && order.order_items.length > 0) {
-            order.order_items.forEach((item, index) => {
-                doc.fontSize(12).text(`${index + 1}. ${item.product_name} - Qtd: ${item.quantity} - Preço: ${Number(item.price).toLocaleString('pt-MZ')} MT`);
-            });
-        } else {
-            doc.fontSize(12).text('Nenhum item encontrado para este pedido.');
-        }
-        doc.moveDown();
+            for (let index = 0; index < order.order_items.length; index++) {
+                const item = order.order_items[index];
+                const startY = doc.y;
 
-        doc.fontSize(16).text(`Total: ${Number(order.total).toLocaleString('pt-MZ')} MT`, { align: 'right' });
+                // Try downloading and embedding product image
+                let hasImg = false;
+                if (item.image) {
+                    try {
+                        const imgRes = await fetch(item.image);
+                        if (imgRes.ok) {
+                            const imgBuf = Buffer.from(await imgRes.arrayBuffer());
+                            doc.image(imgBuf, 40, startY, { fit: [55, 55] });
+                            hasImg = true;
+                        }
+                    } catch (imgErr) {
+                        console.warn(`Failed to embed PDF image for item ${item.product_name}:`, imgErr.message);
+                    }
+                }
+
+                const textX = hasImg ? 105 : 40;
+                doc.fontSize(11).fillColor('#111827').text(`${index + 1}. ${item.product_name}`, textX, startY + 4);
+                doc.fontSize(9).fillColor('#6b7280').text(`Quantidade: ${item.quantity}  |  Preço: ${Number(item.price).toLocaleString('pt-MZ')} MT`, textX, doc.y + 3);
+
+                const itemBoxHeight = hasImg ? 65 : 40;
+                doc.y = startY + itemBoxHeight;
+                doc.x = 40;
+            }
+        } else {
+            doc.fontSize(11).fillColor('#6b7280').text('Nenhum item encontrado para este pedido.');
+        }
+
+        doc.moveDown(1.5);
+        doc.fontSize(16).fillColor('#111827').text(`Total: ${Number(order.total).toLocaleString('pt-MZ')} MT`, { align: 'right' });
 
         doc.end();
     } catch (error) {
+        console.error('Error generating PDF:', error);
         res.status(500).json({ error: error.message });
     }
 });

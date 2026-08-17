@@ -531,6 +531,151 @@ const getExtraImages = (product) => {
         .map(f => f.split(':').slice(1).join(':'));
 };
 
+const normalizeSearchText = (text) => {
+    if (!text) return '';
+    return text.toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+const levenshteinDist = (s1, s2) => {
+    if (s1 === s2) return 0;
+    if (s1.length === 0) return s2.length;
+    if (s2.length === 0) return s1.length;
+
+    const row = [];
+    for (let i = 0; i <= s2.length; i++) row[i] = i;
+
+    for (let i = 1; i <= s1.length; i++) {
+        let prev = i;
+        for (let j = 1; j <= s2.length; j++) {
+            let val;
+            if (s1[i - 1] === s2[j - 1]) {
+                val = row[j - 1];
+            } else {
+                val = Math.min(row[j - 1] + 1, prev + 1, row[j] + 1);
+            }
+            row[j - 1] = prev;
+            prev = val;
+        }
+        row[s2.length] = prev;
+    }
+    return row[s2.length];
+};
+
+const SEARCH_SYNONYMS = {
+    'kreatina': 'creatina',
+    'cratina': 'creatina',
+    'creatine': 'creatina',
+    'creatin': 'creatina',
+    'wey': 'whey',
+    'whei': 'whey',
+    'uai': 'whey',
+    'prot': 'proteina',
+    'proteina': 'protein',
+    'aifone': 'iphone',
+    'ifone': 'iphone',
+    'ipone': 'iphone',
+    'relogio': 'smartwatch',
+    'relogios': 'smartwatch',
+    'smart': 'smartwatch',
+    'smarth': 'smartwatch',
+    'manete': 'joystick',
+    'comando': 'joystick',
+    'fone': 'auriculares',
+    'fones': 'auriculares',
+    'earbuds': 'auriculares',
+    'airpod': 'airpods',
+    'erpod': 'airpods',
+    'earpod': 'airpods',
+    'earpods': 'airpods',
+    'rato': 'mouse',
+    'mouze': 'mouse',
+    'caregador': 'carregador',
+    'pen': 'pendrive',
+    'pen drive': 'pendrive',
+    'pendraive': 'pendrive',
+    'vit': 'vitamina',
+    'vitamin': 'vitamina',
+    'cha': 'cha',
+    'fita': 'fita',
+    'fitas': 'fita'
+};
+
+const isFuzzyTokenMatch = (token, targetWord) => {
+    if (!token || !targetWord) return false;
+    if (targetWord === token) return true;
+    
+    const syn = SEARCH_SYNONYMS[token];
+    if (syn && (targetWord.includes(syn) || syn.includes(targetWord))) return true;
+
+    if (token.length <= 3) {
+        return targetWord.includes(token) && (targetWord.startsWith(token) || targetWord.endsWith(token));
+    }
+
+    if (targetWord.includes(token)) return true;
+
+    const maxDist = token.length <= 5 ? 1 : 2;
+    if (Math.abs(token.length - targetWord.length) <= maxDist) {
+        if (levenshteinDist(token, targetWord) <= maxDist) return true;
+    }
+    
+    if (targetWord.length > token.length + 1 && token.length >= 4) {
+        for (let i = 0; i <= targetWord.length - token.length; i++) {
+            const sub = targetWord.substring(i, i + token.length);
+            if (levenshteinDist(token, sub) <= 1) return true;
+        }
+    }
+
+    return false;
+};
+
+const calcProductSearchScore = (product, query) => {
+    const normQ = normalizeSearchText(query);
+    if (!normQ) return 1;
+
+    const qTokens = normQ.split(' ').filter(t => t.length > 0);
+    const prodName = normalizeSearchText(product.name || '');
+    const prodDesc = normalizeSearchText(product.desc || '');
+    const prodCat  = normalizeSearchText(product.category || '');
+    const prodWords = [...prodName.split(' '), ...prodCat.split(' ')].filter(w => w.length > 0);
+
+    let totalScore = 0;
+    let matchedTokens = 0;
+
+    for (const qTok of qTokens) {
+        let tokMatched = false;
+        
+        if (prodName.includes(normQ)) {
+            totalScore += 100;
+            tokMatched = true;
+        } else if (prodName.includes(qTok)) {
+            totalScore += 40;
+            tokMatched = true;
+        } else if (prodWords.some(w => isFuzzyTokenMatch(qTok, w))) {
+            totalScore += 25;
+            tokMatched = true;
+        } else if (prodDesc.includes(qTok) || isFuzzyTokenMatch(qTok, prodDesc)) {
+            totalScore += 10;
+            tokMatched = true;
+        }
+
+        if (tokMatched) matchedTokens++;
+    }
+
+    if (matchedTokens >= qTokens.length) {
+        return totalScore + (matchedTokens * 20);
+    }
+    if (matchedTokens > 0 && qTokens.length > 1) {
+        return totalScore * (matchedTokens / qTokens.length);
+    }
+    return totalScore > 0 ? totalScore : 0;
+};
+
 const STATUS_STEPS = {
     'Pendente':      1,
     'Processando':   1,
@@ -1340,17 +1485,31 @@ export default function Store() {
 
     const activeQuickOrderProduct = quickOrderProduct || null;
 
-    const filteredProducts = products.filter(p => {
-        const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;
-        const q = searchQuery.trim().toLowerCase();
-        const matchesSearch = !q ||
-            p.name.toLowerCase().includes(q) ||
-            (p.desc && p.desc.toLowerCase().includes(q)) ||
-            (p.category && p.category.toLowerCase().includes(q));
-        const matchesPriceMin = priceMin <= 0 || p.price >= priceMin;
-        const matchesPriceMax = priceMax <= 0 || p.price <= priceMax;
-        return matchesCategory && matchesSearch && matchesPriceMin && matchesPriceMax;
-    });
+    const filteredProducts = (() => {
+        const rawQ = searchQuery.trim();
+        if (rawQ) {
+            const list = products.map(p => {
+                const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;
+                const matchesPriceMin = priceMin <= 0 || p.price >= priceMin;
+                const matchesPriceMax = priceMax <= 0 || p.price <= priceMax;
+                if (!matchesCategory || !matchesPriceMin || !matchesPriceMax) return null;
+
+                const score = calcProductSearchScore(p, rawQ);
+                if (score <= 0) return null;
+                return { product: p, score };
+            }).filter(Boolean);
+
+            list.sort((a, b) => b.score - a.score);
+            return list.map(item => item.product);
+        } else {
+            return products.filter(p => {
+                const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;
+                const matchesPriceMin = priceMin <= 0 || p.price >= priceMin;
+                const matchesPriceMax = priceMax <= 0 || p.price <= priceMax;
+                return matchesCategory && matchesPriceMin && matchesPriceMax;
+            });
+        }
+    })();
 
     const featuredProducts = products.filter(p => isFeatured(p) && p.active !== false);
 

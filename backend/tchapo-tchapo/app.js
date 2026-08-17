@@ -778,11 +778,11 @@ function openProductModal(id) {
             </ul>
             ${optionsHtml}
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;">
-                <button class="btn-add-cart" style="flex:1" onclick="${(devSelType !== 'none' || colorSelType !== 'none') ? `addCaseToCartFromModal(${product.id})` : `addToCart(${product.id}); closeModals(); showToast()`}">
+                <button class="btn-add-cart" style="flex:1" onclick="addCaseToCartFromModal(${product.id})">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                     Adicionar ao Carrinho
                 </button>
-                <button class="btn-buy-now-modal" style="flex:1" onclick="${(devSelType !== 'none' || colorSelType !== 'none') ? `closeModals(); openQuickOrder(${product.id}, true)` : `closeModals(); openQuickOrder(${product.id})`}">
+                <button class="btn-buy-now-modal" style="flex:1" onclick="buyNowFromModal(${product.id})">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     Pedir Agora
                 </button>
@@ -794,26 +794,40 @@ function openProductModal(id) {
     updateScrollLock();
 }
 
+function buyNowFromModal(id) {
+    const product = products.find(p => p.id === id);
+    const selectedImg = (window.currentGalleryImgs && window.currentGalleryImgs[window.currentGalleryIdx])
+        ? window.currentGalleryImgs[window.currentGalleryIdx]
+        : (product ? product.image : null);
+    closeModals();
+    openQuickOrder(id, true, selectedImg);
+}
+
 // ─── QUICK ORDER MODAL ───────────────────────────────────────────────
 let pendingGuestProductId = null;
 let pendingGuestFromModal = false;
+let pendingGuestCustomImg = null;
 
-function openQuickOrder(id, fromModal = false) {
+function openQuickOrder(id, fromModal = false, customImg = null) {
     if (!fromModal) {
         trackProductClick(id);
     }
     if (!currentUser) {
         pendingGuestProductId = id;
         pendingGuestFromModal = fromModal;
+        pendingGuestCustomImg = customImg;
         openAuthModal();
         return;
     }
 
-    startQuickOrderModal(id, fromModal);
+    startQuickOrderModal(id, fromModal, customImg);
 }
 
-function startQuickOrderModal(id, fromModal = false) {
-    quickOrderProduct = products.find(p => p.id === id);
+function startQuickOrderModal(id, fromModal = false, customImg = null) {
+    const rawProd = products.find(p => p.id === id);
+    if (!rawProd) return;
+    const finalImg = customImg || rawProd.image;
+    quickOrderProduct = { ...rawProd, image: finalImg };
     const devSelType = getDeviceSelectionType(quickOrderProduct);
     
     // Get values from product modal if transfer is requested
@@ -1335,9 +1349,10 @@ function updateCartUI() {
 window.handleContinueAsGuest = function() {
     closeAuthModal();
     if (pendingGuestProductId) {
-        startQuickOrderModal(pendingGuestProductId, pendingGuestFromModal);
+        startQuickOrderModal(pendingGuestProductId, pendingGuestFromModal, pendingGuestCustomImg);
         pendingGuestProductId = null;
         pendingGuestFromModal = false;
+        pendingGuestCustomImg = null;
         return;
     }
     if (selectedProduct) {

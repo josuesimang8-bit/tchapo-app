@@ -148,7 +148,13 @@ app.get('/api/img', async (req, res) => {
     }
 
     try {
-        const upstream = await fetch(url, { signal: AbortSignal.timeout(12000) });
+        const upstream = await fetch(url, {
+            signal: AbortSignal.timeout(12000),
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+            }
+        });
         if (!upstream.ok) return res.status(upstream.status).send('Upstream error');
 
         const buf = Buffer.from(await upstream.arrayBuffer());

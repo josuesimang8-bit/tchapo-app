@@ -1254,63 +1254,66 @@ function startQuickOrderModal(id, fromModal = false, customImg = null, customPri
     }
 
     quickOrderContent.innerHTML = `
-        <div class="qo-left">
-            <img src="${quickOrderProduct.image}" alt="${quickOrderProduct.name}" class="qo-img">
-            <h3>${quickOrderProduct.name}</h3>
-            ${optionsHtml}
-            <div class="qo-price" id="qo-display-price">${formatCurrency(quickOrderProduct.price)}</div>
-            <div class="qo-qty-row">
-                <span>Quantidade:</span>
-                <div class="qo-qty">
-                    <button onclick="qoAdjust(-1)">−</button>
-                    <span id="qo-qty-val">1</span>
-                    <button onclick="qoAdjust(1)">+</button>
+        <div class="qo-scroll-body">
+            <div class="qo-left">
+                <img src="${quickOrderProduct.image}" alt="${quickOrderProduct.name}" class="qo-img">
+                <h3>${quickOrderProduct.name}</h3>
+                ${optionsHtml}
+                <div class="qo-price" id="qo-display-price">${formatCurrency(quickOrderProduct.price)}</div>
+                <div class="qo-qty-row">
+                    <span>Quantidade:</span>
+                    <div class="qo-qty">
+                        <button type="button" onclick="qoAdjust(-1)">−</button>
+                        <span id="qo-qty-val">1</span>
+                        <button type="button" onclick="qoAdjust(1)">+</button>
+                    </div>
                 </div>
             </div>
+            <div class="qo-right">
+                <h3>📋 Detalhes de Entrega</h3>
+                <form id="quick-order-form">
+                    <input type="text" id="qo-name" placeholder="Seu Nome Completo" required>
+                    <input type="tel" id="qo-phone" placeholder="Número de Telefone (ex: 84 123 4567)" required pattern="[0-9\\s+\\-()]{8,15}">
+                    <select id="qo-bairro" required>
+                        <option value="" disabled selected>Selecione o Bairro...</option>
+                        <option>Macuti</option><option>Ponta Gêa</option><option>Maquinino</option>
+                        <option>Pioneiros</option><option>Chota</option><option>Estoril</option>
+                        <option>Palmeiras</option><option>Munhava</option><option>Manga</option>
+                        <option>Inhamizua</option><option>Matacuane</option><option>Macurungo</option>
+                    </select>
+                    <input type="text" id="qo-address" placeholder="Morada e Ponto de Referência" required>
+                    <select id="qo-time" required>
+                        <option value="" disabled selected>Horário de Entrega...</option>
+                        <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
+                        <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
+                        <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
+                        <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
+                    </select>
+                    <select id="qo-payment" required>
+                        <option value="" disabled selected>Método de Pagamento...</option>
+                        <option value="M-Pesa">M-Pesa</option>
+                        <option value="eMola">eMola</option>
+                        <option value="Dinheiro Físico">Dinheiro Físico</option>
+                    </select>
+
+                    <div class="coupon-section" style="margin-top: 0.75rem; margin-bottom: 0.75rem; width: 100%;">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: #4b5563; margin-bottom: 0.25rem; display: block; text-align: left;">Código de Indicação (10% Desconto):</label>
+                        <div style="display: flex; gap: 0.5rem; width: 100%;">
+                            <input type="text" id="qo-coupon" placeholder="CÓDIGO" value="${appliedCoupon ? appliedCoupon.code : ''}" style="margin-bottom: 0; flex: 1; text-transform: uppercase; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff; box-sizing: border-box;">
+                            <button type="button" id="btn-apply-qo-coupon" style="background: var(--dark); color: var(--white); border: none; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Aplicar</button>
+                        </div>
+                        <div id="qo-coupon-message" style="font-size: 0.75rem; margin-top: 0.2rem; display: ${appliedCoupon ? 'block' : 'none'}; color: #10b981; text-align: left;">
+                            ${appliedCoupon ? '✅ Código de indicação aplicado! 10% de desconto.' : ''}
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="qo-right">
-            <h3>📋 Detalhes de Entrega</h3>
-            <form id="quick-order-form">
-                <input type="text" id="qo-name" placeholder="Seu Nome Completo" required>
-                <input type="tel" id="qo-phone" placeholder="Número de Telefone (ex: 84 123 4567)" required pattern="[0-9\\s+\\-()]{8,15}">
-                <select id="qo-bairro" required>
-                    <option value="" disabled selected>Selecione o Bairro...</option>
-                    <option>Macuti</option><option>Ponta Gêa</option><option>Maquinino</option>
-                    <option>Pioneiros</option><option>Chota</option><option>Estoril</option>
-                    <option>Palmeiras</option><option>Munhava</option><option>Manga</option>
-                    <option>Inhamizua</option><option>Matacuane</option><option>Macurungo</option>
-                </select>
-                <input type="text" id="qo-address" placeholder="Morada e Ponto de Referência" required>
-                <select id="qo-time" required>
-                    <option value="" disabled selected>Horário de Entrega...</option>
-                    <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
-                    <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
-                    <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
-                    <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
-                </select>
-                <select id="qo-payment" required>
-                    <option value="" disabled selected>Método de Pagamento...</option>
-                    <option value="M-Pesa">M-Pesa</option>
-                    <option value="eMola">eMola</option>
-                    <option value="Dinheiro Físico">Dinheiro Físico</option>
-                </select>
-
-                <div class="coupon-section" style="margin-top: 0.75rem; margin-bottom: 0.75rem; width: 100%;">
-                    <label style="font-size: 0.8rem; font-weight: 600; color: #4b5563; margin-bottom: 0.25rem; display: block; text-align: left;">Código de Indicação (10% Desconto):</label>
-                    <div style="display: flex; gap: 0.5rem; width: 100%;">
-                        <input type="text" id="qo-coupon" placeholder="CÓDIGO" value="${appliedCoupon ? appliedCoupon.code : ''}" style="margin-bottom: 0; flex: 1; text-transform: uppercase; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff; box-sizing: border-box;">
-                        <button type="button" id="btn-apply-qo-coupon" style="background: var(--dark); color: var(--white); border: none; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Aplicar</button>
-                    </div>
-                    <div id="qo-coupon-message" style="font-size: 0.75rem; margin-top: 0.2rem; display: ${appliedCoupon ? 'block' : 'none'}; color: #10b981; text-align: left;">
-                        ${appliedCoupon ? '✅ Código de indicação aplicado! 10% de desconto.' : ''}
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-checkout" style="margin-top:0.5rem">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    Confirmar Pedido
-                </button>
-            </form>
+        <div class="pm-sticky-bottom-bar">
+            <button type="button" id="btn-submit-quick-order" class="btn-buy-now-modal" style="width: 100%; flex: 1; font-size: 1.05rem; padding: 0.9rem;" onclick="submitQuickOrderForm()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Confirmar Pedido
+            </button>
         </div>
     `;
     document.getElementById('quick-order-form').addEventListener('submit', handleQuickOrder);
@@ -1365,8 +1368,18 @@ function qoAdjust(delta) {
     updateQuickOrderPrice();
 }
 
+function submitQuickOrderForm() {
+    const form = document.getElementById('quick-order-form');
+    if (!form) return;
+    if (form.requestSubmit) {
+        form.requestSubmit();
+    } else {
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+}
+
 function handleQuickOrder(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const name    = document.getElementById('qo-name').value;
     const phone   = document.getElementById('qo-phone').value;
     const bairro  = document.getElementById('qo-bairro').value;

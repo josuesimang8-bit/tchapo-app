@@ -2240,219 +2240,234 @@ export default function Store() {
                     <div className="product-modal active">
                         <button className="close-modal" onClick={() => setQuickOrderProduct(null)}>&times;</button>
                         <div className="product-modal-content">
-                            <div className="pm-image" style={{ flex: '1 1 250px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-                                <img src={activeQuickOrderProduct.image} alt={activeQuickOrderProduct.name} style={{ maxHeight: '180px' }} />
-                                <h3>{activeQuickOrderProduct.name}</h3>
-                                {(activeQuickOrderProduct.id === 13 || activeQuickOrderProduct.name?.includes("Capas de Silicone")) && (
-                                    <button type="button" onClick={() => {}} style={{ display: 'none' }}></button>
-                                )}
-                                {(() => {
-                                    const devSelType = getDeviceSelectionType(activeQuickOrderProduct);
-                                    const colorSelType = getColorSelectionType(activeQuickOrderProduct);
-                                    if (devSelType === 'none' && colorSelType === 'none') return null;
-                                    return (
-                                        <div className="product-options" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                            {(devSelType === 'iphone' || devSelType === 'iphone_outro' || devSelType === 'pendrive' || devSelType === 'card') && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%' }}>
-                                                    <label style={{ fontWeight: 600, fontSize: '0.8rem', color: '#4b5563', textAlign: 'left' }}>
-                                                        {devSelType === 'pendrive' || devSelType === 'card' ? 'Capacidade (GB):' : 'Dispositivo:'}
-                                                    </label>
-                                                    <select 
-                                                        value={
-                                                            devSelType === 'pendrive' ? (PENDRIVE_OPTIONS.includes(selectedDevice) ? selectedDevice : PENDRIVE_OPTIONS[0]) :
-                                                            devSelType === 'card' ? (CARD_OPTIONS.includes(selectedDevice) ? selectedDevice : CARD_OPTIONS[0]) :
-                                                            selectedDevice
-                                                        }
-                                                        onChange={(e) => setSelectedDevice(e.target.value)}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.5rem',
-                                                            border: '1.5px solid var(--gray-light)',
-                                                            borderRadius: '8px',
-                                                            fontSize: '0.85rem',
-                                                            outline: 'none',
-                                                            backgroundColor: '#fff'
-                                                        }}
-                                                    >
-                                                        {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {PENDRIVE_PRICES[opt]} MT</option>) :
-                                                         devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {CARD_PRICES[opt]} MT</option>) :
-                                                         DEVICE_OPTIONS.map(dev => <option key={dev} value={dev}>{dev}</option>)}
-                                                        {devSelType === 'iphone_outro' && (
-                                                            <option value="outro">Outro (Digitar...)</option>
-                                                        )}
-                                                    </select>
-                                                </div>
-                                            )}
-
-                                            {(devSelType === 'outro' || (devSelType === 'iphone_outro' && selectedDevice === 'outro')) && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%' }}>
-                                                    <label style={{ fontWeight: 600, fontSize: '0.8rem', color: '#4b5563', textAlign: 'left' }}>Escreva o Dispositivo:</label>
-                                                    <input 
-                                                        type="text"
-                                                        value={customDevice}
-                                                        onChange={(e) => setCustomDevice(e.target.value)}
-                                                        placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc."
-                                                        required
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.5rem',
-                                                            border: '1.5px solid var(--gray-light)',
-                                                            borderRadius: '8px',
-                                                            fontSize: '0.85rem',
-                                                            outline: 'none',
-                                                            backgroundColor: '#fff',
-                                                            boxSizing: 'border-box'
-                                                        }}
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {getColorSelectionType(activeQuickOrderProduct) !== 'none' && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%' }}>
-                                                    <label style={{ fontWeight: 600, fontSize: '0.8rem', color: '#4b5563', textAlign: 'left' }}>Cor:</label>
-                                                    <select 
-                                                        value={selectedColor}
-                                                        onChange={(e) => setSelectedColor(e.target.value)}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.5rem',
-                                                            border: '1.5px solid var(--gray-light)',
-                                                            borderRadius: '8px',
-                                                            fontSize: '0.85rem',
-                                                            outline: 'none',
-                                                            backgroundColor: '#fff'
-                                                        }}
-                                                    >
-                                                        {COLOR_OPTIONS.map(col => (
-                                                            <option key={col} value={col}>{col}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })()}
-                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    {appliedReferralCode && (
-                                        <span style={{ fontSize: '0.9rem', color: '#10b981', fontWeight: 'bold' }}>
-                                            Desconto: -{formatCurrency(quickOrderReferralDiscount)}
-                                        </span>
+                            <div className="qo-scroll-body">
+                                <div className="pm-image" style={{ flex: '1 1 250px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+                                    <img src={activeQuickOrderProduct.image} alt={activeQuickOrderProduct.name} style={{ maxHeight: '180px' }} />
+                                    <h3>{activeQuickOrderProduct.name}</h3>
+                                    {(activeQuickOrderProduct.id === 13 || activeQuickOrderProduct.name?.includes("Capas de Silicone")) && (
+                                        <button type="button" onClick={() => {}} style={{ display: 'none' }}></button>
                                     )}
-                                    <span>{formatCurrency(quickOrderTotal)}</span>
-                                    {quickOrderForm.time.startsWith('Imediato') && (
-                                        <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 'normal' }}>(inclui +200 MT taxa urgente)</span>
-                                    )}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
-                                    <span>Quantidade:</span>
-                                    <div style={{ display: 'flex', border: '1px solid #d1d5db', borderRadius: '8px', overflow: 'hidden' }}>
-                                        <button type="button" onClick={() => setQuickOrderQty(prev => Math.max(1, prev - 1))} style={{ padding: '0.3rem 0.6rem', border: 'none', background: '#e5e7eb', cursor: 'pointer' }}>-</button>
-                                        <span style={{ padding: '0.3rem 0.8rem', fontWeight: 600 }}>{quickOrderQty}</span>
-                                        <button type="button" onClick={() => setQuickOrderQty(prev => prev + 1)} style={{ padding: '0.3rem 0.6rem', border: 'none', background: '#e5e7eb', cursor: 'pointer' }}>+</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="pm-info" style={{ flex: '1 1 300px', padding: '1.5rem 2.5rem' }}>
-                                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                                    Detalhes de Entrega
-                                </h3>
-                                <form onSubmit={handleQuickOrderSubmit} className="checkout-form" style={{ display: 'flex', marginTop: '1rem' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="Seu Nome Completo"
-                                        value={quickOrderForm.name}
-                                        required
-                                        onChange={e => setQuickOrderForm({ ...quickOrderForm, name: e.target.value })}
-                                    />
-                                    <input
-                                        type="tel"
-                                        placeholder="Número de Telefone"
-                                        value={quickOrderForm.phone}
-                                        required
-                                        pattern="[0-9\s+\-()]{8,15}"
-                                        onChange={e => setQuickOrderForm({ ...quickOrderForm, phone: e.target.value })}
-                                    />
-                                    <select
-                                        value={quickOrderForm.bairro}
-                                        required
-                                        onChange={e => setQuickOrderForm({ ...quickOrderForm, bairro: e.target.value })}
-                                    >
-                                        <option value="" disabled>Selecione o Bairro...</option>
-                                        {['Macuti', 'Ponta Gêa', 'Maquinino', 'Pioneiros', 'Chota', 'Estoril', 'Palmeiras', 'Munhava', 'Manga', 'Inhamizua', 'Matacuane', 'Macurungo'].map(b => (
-                                            <option key={b} value={b}>{b}</option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        type="text"
-                                        placeholder="Morada e Referência"
-                                        value={quickOrderForm.address}
-                                        required
-                                        onChange={e => setQuickOrderForm({ ...quickOrderForm, address: e.target.value })}
-                                    />
-                                    <select
-                                        value={quickOrderForm.time}
-                                        required
-                                        onChange={e => setQuickOrderForm({ ...quickOrderForm, time: e.target.value })}
-                                    >
-                                        <option value="" disabled>Horário de Entrega...</option>
-                                        <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
-                                        <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
-                                        <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
-                                        <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
-                                    </select>
-                                    <select
-                                        value={quickOrderForm.payment}
-                                        required
-                                        onChange={e => setQuickOrderForm({ ...quickOrderForm, payment: e.target.value })}
-                                    >
-                                        <option value="" disabled>Método de Pagamento...</option>
-                                        <option value="M-Pesa">M-Pesa</option>
-                                        <option value="eMola">eMola</option>
-                                        <option value="Dinheiro Físico">Dinheiro Físico</option>
-                                    </select>
+                                    {(() => {
+                                        const devSelType = getDeviceSelectionType(activeQuickOrderProduct);
+                                        const colorSelType = getColorSelectionType(activeQuickOrderProduct);
+                                        if (devSelType === 'none' && colorSelType === 'none') return null;
+                                        return (
+                                            <div className="product-options" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                                {(devSelType === 'iphone' || devSelType === 'iphone_outro' || devSelType === 'pendrive' || devSelType === 'card') && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%' }}>
+                                                        <label style={{ fontWeight: 600, fontSize: '0.8rem', color: '#4b5563', textAlign: 'left' }}>
+                                                            {devSelType === 'pendrive' || devSelType === 'card' ? 'Capacidade (GB):' : 'Dispositivo:'}
+                                                        </label>
+                                                        <select 
+                                                            value={
+                                                                devSelType === 'pendrive' ? (PENDRIVE_OPTIONS.includes(selectedDevice) ? selectedDevice : PENDRIVE_OPTIONS[0]) :
+                                                                devSelType === 'card' ? (CARD_OPTIONS.includes(selectedDevice) ? selectedDevice : CARD_OPTIONS[0]) :
+                                                                selectedDevice
+                                                            }
+                                                            onChange={(e) => setSelectedDevice(e.target.value)}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.5rem',
+                                                                border: '1.5px solid var(--gray-light)',
+                                                                borderRadius: '8px',
+                                                                fontSize: '0.85rem',
+                                                                outline: 'none',
+                                                                backgroundColor: '#fff'
+                                                            }}
+                                                        >
+                                                            {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {PENDRIVE_PRICES[opt]} MT</option>) :
+                                                             devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {CARD_PRICES[opt]} MT</option>) :
+                                                             DEVICE_OPTIONS.map(dev => <option key={dev} value={dev}>{dev}</option>)}
+                                                            {devSelType === 'iphone_outro' && (
+                                                                <option value="outro">Outro (Digitar...)</option>
+                                                            )}
+                                                        </select>
+                                                    </div>
+                                                )}
 
-                                    <div className="referral-input-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '0.5rem', marginTop: '0.5rem' }}>
-                                        <input
-                                            type="text"
-                                            placeholder="Código de Indicação"
-                                            value={referralInput}
-                                            onChange={e => setReferralInput(e.target.value)}
-                                            disabled={!!appliedReferralCode}
-                                            style={{ flex: 1, textTransform: 'uppercase', padding: '0.5rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: '6px', color: '#000' }}
-                                        />
-                                        {appliedReferralCode ? (
-                                            <button
-                                                type="button"
-                                                onClick={handleRemoveReferral}
-                                                style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer' }}
-                                            >
-                                                Remover
-                                            </button>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={handleValidateReferral}
-                                                disabled={validatingReferral || !referralInput.trim()}
-                                                style={{ backgroundColor: '#eab308', color: '#000', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                            >
-                                                {validatingReferral ? '...' : 'Aplicar'}
-                                            </button>
+                                                {(devSelType === 'outro' || (devSelType === 'iphone_outro' && selectedDevice === 'outro')) && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%' }}>
+                                                        <label style={{ fontWeight: 600, fontSize: '0.8rem', color: '#4b5563', textAlign: 'left' }}>Escreva o Dispositivo:</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={customDevice}
+                                                            onChange={(e) => setCustomDevice(e.target.value)}
+                                                            placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc."
+                                                            required
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.5rem',
+                                                                border: '1.5px solid var(--gray-light)',
+                                                                borderRadius: '8px',
+                                                                fontSize: '0.85rem',
+                                                                outline: 'none',
+                                                                backgroundColor: '#fff',
+                                                                boxSizing: 'border-box'
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                {getColorSelectionType(activeQuickOrderProduct) !== 'none' && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%' }}>
+                                                        <label style={{ fontWeight: 600, fontSize: '0.8rem', color: '#4b5563', textAlign: 'left' }}>Cor:</label>
+                                                        <select 
+                                                            value={selectedColor}
+                                                            onChange={(e) => setSelectedColor(e.target.value)}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.5rem',
+                                                                border: '1.5px solid var(--gray-light)',
+                                                                borderRadius: '8px',
+                                                                fontSize: '0.85rem',
+                                                                outline: 'none',
+                                                                backgroundColor: '#fff'
+                                                            }}
+                                                        >
+                                                            {COLOR_OPTIONS.map(col => (
+                                                                <option key={col} value={col}>{col}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        {appliedReferralCode && (
+                                            <span style={{ fontSize: '0.9rem', color: '#10b981', fontWeight: 'bold' }}>
+                                                Desconto: -{formatCurrency(quickOrderReferralDiscount)}
+                                            </span>
+                                        )}
+                                        <span>{formatCurrency(quickOrderTotal)}</span>
+                                        {quickOrderForm.time.startsWith('Imediato') && (
+                                            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 'normal' }}>(inclui +200 MT taxa urgente)</span>
                                         )}
                                     </div>
-                                    {referralError && (
-                                        <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', width: '100%' }}>{referralError}</span>
-                                    )}
-                                    {appliedReferralCode && (
-                                        <span style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', fontWeight: 'bold', width: '100%' }}>
-                                            ✓ Código '{appliedReferralCode}' aplicado!
-                                        </span>
-                                    )}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                                        <span>Quantidade:</span>
+                                        <div style={{ display: 'flex', border: '1px solid #d1d5db', borderRadius: '8px', overflow: 'hidden' }}>
+                                            <button type="button" onClick={() => setQuickOrderQty(prev => Math.max(1, prev - 1))} style={{ padding: '0.3rem 0.6rem', border: 'none', background: '#e5e7eb', cursor: 'pointer' }}>-</button>
+                                            <span style={{ padding: '0.3rem 0.8rem', fontWeight: 600 }}>{quickOrderQty}</span>
+                                            <button type="button" onClick={() => setQuickOrderQty(prev => prev + 1)} style={{ padding: '0.3rem 0.6rem', border: 'none', background: '#e5e7eb', cursor: 'pointer' }}>+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="pm-info" style={{ flex: '1 1 300px', padding: '1.5rem 2.5rem' }}>
+                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                        Detalhes de Entrega
+                                    </h3>
+                                    <form id="quick-order-form-react" onSubmit={handleQuickOrderSubmit} className="checkout-form" style={{ display: 'flex', marginTop: '1rem' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Seu Nome Completo"
+                                            value={quickOrderForm.name}
+                                            required
+                                            onChange={e => setQuickOrderForm({ ...quickOrderForm, name: e.target.value })}
+                                        />
+                                        <input
+                                            type="tel"
+                                            placeholder="Número de Telefone"
+                                            value={quickOrderForm.phone}
+                                            required
+                                            pattern="[0-9\s+\-()]{8,15}"
+                                            onChange={e => setQuickOrderForm({ ...quickOrderForm, phone: e.target.value })}
+                                        />
+                                        <select
+                                            value={quickOrderForm.bairro}
+                                            required
+                                            onChange={e => setQuickOrderForm({ ...quickOrderForm, bairro: e.target.value })}
+                                        >
+                                            <option value="" disabled>Selecione o Bairro...</option>
+                                            {['Macuti', 'Ponta Gêa', 'Maquinino', 'Pioneiros', 'Chota', 'Estoril', 'Palmeiras', 'Munhava', 'Manga', 'Inhamizua', 'Matacuane', 'Macurungo'].map(b => (
+                                                <option key={b} value={b}>{b}</option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            type="text"
+                                            placeholder="Morada e Referência"
+                                            value={quickOrderForm.address}
+                                            required
+                                            onChange={e => setQuickOrderForm({ ...quickOrderForm, address: e.target.value })}
+                                        />
+                                        <select
+                                            value={quickOrderForm.time}
+                                            required
+                                            onChange={e => setQuickOrderForm({ ...quickOrderForm, time: e.target.value })}
+                                        >
+                                            <option value="" disabled>Horário de Entrega...</option>
+                                            <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
+                                            <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
+                                            <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
+                                            <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
+                                        </select>
+                                        <select
+                                            value={quickOrderForm.payment}
+                                            required
+                                            onChange={e => setQuickOrderForm({ ...quickOrderForm, payment: e.target.value })}
+                                        >
+                                            <option value="" disabled>Método de Pagamento...</option>
+                                            <option value="M-Pesa">M-Pesa</option>
+                                            <option value="eMola">eMola</option>
+                                            <option value="Dinheiro Físico">Dinheiro Físico</option>
+                                        </select>
 
-                                    <button type="submit" className="btn-checkout">
-                                        Confirmar Pedido
-                                    </button>
-                                </form>
+                                        <div className="referral-input-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '0.5rem', marginTop: '0.5rem' }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Código de Indicação"
+                                                value={referralInput}
+                                                onChange={e => setReferralInput(e.target.value)}
+                                                disabled={!!appliedReferralCode}
+                                                style={{ flex: 1, textTransform: 'uppercase', padding: '0.5rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: '6px', color: '#000' }}
+                                            />
+                                            {appliedReferralCode ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRemoveReferral}
+                                                    style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer' }}
+                                                >
+                                                    Remover
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleValidateReferral}
+                                                    disabled={validatingReferral || !referralInput.trim()}
+                                                    style={{ backgroundColor: '#eab308', color: '#000', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                                >
+                                                    {validatingReferral ? '...' : 'Aplicar'}
+                                                </button>
+                                            )}
+                                        </div>
+                                        {referralError && (
+                                            <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', width: '100%' }}>{referralError}</span>
+                                        )}
+                                        {appliedReferralCode && (
+                                            <span style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', fontWeight: 'bold', width: '100%' }}>
+                                                ✓ Código '{appliedReferralCode}' aplicado!
+                                            </span>
+                                        )}
+                                    </form>
+                                </div>
+                            </div>
+                            <div className="pm-sticky-bottom-bar">
+                                <button 
+                                    type="button" 
+                                    className="btn-buy-now-modal" 
+                                    style={{ width: '100%', flex: 1, fontSize: '1.05rem', padding: '0.9rem' }}
+                                    onClick={() => {
+                                        const form = document.getElementById('quick-order-form-react');
+                                        if (form) {
+                                            if (form.requestSubmit) form.requestSubmit();
+                                            else form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                                        }
+                                    }}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                    Confirmar Pedido
+                                </button>
                             </div>
                         </div>
                     </div>

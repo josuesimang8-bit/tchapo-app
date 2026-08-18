@@ -738,15 +738,22 @@ body {
     transform: scale(1.08);
 }
 
+.product-modal > div:not(.product-modal-content) {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: 90vh;
+}
+
 .product-modal-content {
     display: flex;
     flex-direction: column;
     flex: 1;
     overflow: hidden;
     max-height: 90vh;
+    height: 100%;
 }
 
-.pm-scroll-body {
+.pm-scroll-body, .qo-scroll-body {
     display: flex;
     flex-wrap: wrap;
     flex: 1;

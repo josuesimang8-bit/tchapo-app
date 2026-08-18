@@ -1078,37 +1078,39 @@ function openProductModal(id, pushUrl = true) {
         const initialTitle = galleryTitles[0] || '';
 
         productModalContent.innerHTML = `
-            <div class="pm-image">
-                ${imageGalleryHtml}
-            </div>
-            <div class="pm-info">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
-                    <div class="product-category-tag" style="margin-bottom:0">${getCategoryIcon(product.category)} ${product.category}</div>
-                    <div style="display:flex;align-items:center;gap:0.5rem;">
-                        <button class="btn-share-product" onclick="shareProduct('${product.id}', event)" title="Partilhar / Copiar Link">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                        </button>
-                        ${modalStockBadgeHtml}
+            <div class="pm-scroll-body">
+                <div class="pm-image">
+                    ${imageGalleryHtml}
+                </div>
+                <div class="pm-info">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+                        <div class="product-category-tag" style="margin-bottom:0">${getCategoryIcon(product.category)} ${product.category}</div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <button class="btn-share-product" onclick="shareProduct('${product.id}', event)" title="Partilhar / Copiar Link">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                            </button>
+                            ${modalStockBadgeHtml}
+                        </div>
                     </div>
+                    <h2 class="pm-title">${product.name}</h2>
+                    <div id="pm-variant-tag" style="display:${initialTitle ? 'inline-block' : 'none'}; font-size:0.85rem; font-weight:600; color:#4b5563; background:#f3f4f6; padding:0.25rem 0.6rem; border-radius:6px; margin-bottom:0.5rem;">⚡ Opção: ${initialTitle}</div>
+                    <div class="pm-price" id="pm-price">${formatCurrency(initialPrice)}</div>
+                    <p class="pm-desc">${product.desc}</p>
+                    <ul class="pm-features">
+                        ${(product.features || []).filter(f => !f.startsWith('_')).map(f => `<li>${f}</li>`).join('')}
+                    </ul>
+                    ${optionsHtml}
                 </div>
-                <h2 class="pm-title">${product.name}</h2>
-                <div id="pm-variant-tag" style="display:${initialTitle ? 'inline-block' : 'none'}; font-size:0.85rem; font-weight:600; color:#4b5563; background:#f3f4f6; padding:0.25rem 0.6rem; border-radius:6px; margin-bottom:0.5rem;">⚡ Opção: ${initialTitle}</div>
-                <div class="pm-price" id="pm-price">${formatCurrency(initialPrice)}</div>
-                <p class="pm-desc">${product.desc}</p>
-                <ul class="pm-features">
-                    ${(product.features || []).filter(f => !f.startsWith('_')).map(f => `<li>${f}</li>`).join('')}
-                </ul>
-                ${optionsHtml}
-                <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;">
-                    <button class="btn-add-cart" style="flex:1" onclick="addCaseToCartFromModal('${product.id}')">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                        Adicionar ao Carrinho
-                    </button>
-                    <button class="btn-buy-now-modal" style="flex:1" onclick="buyNowFromModal('${product.id}')">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                        Pedir Agora
-                    </button>
-                </div>
+            </div>
+            <div class="pm-sticky-bottom-bar">
+                <button class="btn-add-cart" onclick="addCaseToCartFromModal('${product.id}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    <span>Carrinho</span>
+                </button>
+                <button class="btn-buy-now-modal" onclick="buyNowFromModal('${product.id}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span>Pedir Agora</span>
+                </button>
             </div>
         `;
         productModal.classList.add('active');

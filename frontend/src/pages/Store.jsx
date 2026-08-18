@@ -1847,198 +1847,200 @@ export default function Store() {
                     <div className="product-modal active">
                         <button className="close-modal" onClick={() => setSelectedProduct(null)}>&times;</button>
                         <div className="product-modal-content">
-                            <div className="pm-image">
-                                {/* Image Gallery Carousel */}
-                                {(() => {
-                                    const gallery = getProductGalleryDetails(activeSelectedProduct);
-                                    const allImgs = gallery.items.map(it => it.src);
-                                    const currentIdx = (modalImageIndex >= 0 && modalImageIndex < allImgs.length) ? modalImageIndex : 0;
-                                    return (
-                                        <div className="gallery-wrap">
-                                            <div className="gallery-main-container">
-                                                <img src={allImgs[currentIdx] || activeSelectedProduct.image} alt={activeSelectedProduct.name} className="gallery-main-img" />
+                            <div className="pm-scroll-body">
+                                <div className="pm-image">
+                                    {/* Image Gallery Carousel */}
+                                    {(() => {
+                                        const gallery = getProductGalleryDetails(activeSelectedProduct);
+                                        const allImgs = gallery.items.map(it => it.src);
+                                        const currentIdx = (modalImageIndex >= 0 && modalImageIndex < allImgs.length) ? modalImageIndex : 0;
+                                        return (
+                                            <div className="gallery-wrap">
+                                                <div className="gallery-main-container">
+                                                    <img src={allImgs[currentIdx] || activeSelectedProduct.image} alt={activeSelectedProduct.name} className="gallery-main-img" />
+                                                    {allImgs.length > 1 && (
+                                                        <>
+                                                            <button className="gallery-arrow gallery-prev" onClick={(e) => { e.stopPropagation(); setModalImageIndex((currentIdx - 1 + allImgs.length) % allImgs.length); }}>‹</button>
+                                                            <button className="gallery-arrow gallery-next" onClick={(e) => { e.stopPropagation(); setModalImageIndex((currentIdx + 1) % allImgs.length); }}>›</button>
+                                                        </>
+                                                    )}
+                                                </div>
                                                 {allImgs.length > 1 && (
                                                     <>
-                                                        <button className="gallery-arrow gallery-prev" onClick={(e) => { e.stopPropagation(); setModalImageIndex((currentIdx - 1 + allImgs.length) % allImgs.length); }}>‹</button>
-                                                        <button className="gallery-arrow gallery-next" onClick={(e) => { e.stopPropagation(); setModalImageIndex((currentIdx + 1) % allImgs.length); }}>›</button>
+                                                        <div className="gallery-dots">
+                                                            {allImgs.map((_, idx) => (
+                                                                <span key={idx} className={`gallery-dot ${idx === currentIdx ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setModalImageIndex(idx); }} />
+                                                            ))}
+                                                        </div>
+                                                        <div className="gallery-thumbs">
+                                                            {allImgs.map((img, idx) => (
+                                                                <img key={idx} src={img} alt={`Thumbnail ${idx+1}`} className={`gallery-thumb ${idx === currentIdx ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setModalImageIndex(idx); }} />
+                                                            ))}
+                                                        </div>
                                                     </>
                                                 )}
                                             </div>
-                                            {allImgs.length > 1 && (
-                                                <>
-                                                    <div className="gallery-dots">
-                                                        {allImgs.map((_, idx) => (
-                                                            <span key={idx} className={`gallery-dot ${idx === currentIdx ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setModalImageIndex(idx); }} />
-                                                        ))}
-                                                    </div>
-                                                    <div className="gallery-thumbs">
-                                                        {allImgs.map((img, idx) => (
-                                                            <img key={idx} src={img} alt={`Thumbnail ${idx+1}`} className={`gallery-thumb ${idx === currentIdx ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setModalImageIndex(idx); }} />
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                            <div className="pm-info">
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                                    <div className="product-category-tag" style={{ marginBottom: 0 }}>
-                                        {getCategoryIcon(activeSelectedProduct.category)} {activeSelectedProduct.category}
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <button className="btn-share-product" onClick={(e) => handleShareProduct(activeSelectedProduct, e)} title="Partilhar / Copiar Link">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                                        </button>
-                                        {(() => {
-                                            const stock = getStockStatus(activeSelectedProduct);
-                                            if (stock === 'Últimas Unidades') return <div className="modal-stock-badge stock-low">Últimas Unidades</div>;
-                                            if (stock === 'Esgotado') return <div className="modal-stock-badge stock-out">Esgotado</div>;
-                                            return <div className="modal-stock-badge stock-ok">Em Stock</div>;
-                                        })()}
-                                    </div>
+                                        );
+                                    })()}
                                 </div>
-                                <h2 className="pm-title">{activeSelectedProduct.name}</h2>
-                                {(() => {
+                                <div className="pm-info">
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                                        <div className="product-category-tag" style={{ marginBottom: 0 }}>
+                                            {getCategoryIcon(activeSelectedProduct.category)} {activeSelectedProduct.category}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <button className="btn-share-product" onClick={(e) => handleShareProduct(activeSelectedProduct, e)} title="Partilhar / Copiar Link">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                            </button>
+                                            {(() => {
+                                                const stock = getStockStatus(activeSelectedProduct);
+                                                if (stock === 'Últimas Unidades') return <div className="modal-stock-badge stock-low">Últimas Unidades</div>;
+                                                if (stock === 'Esgotado') return <div className="modal-stock-badge stock-out">Esgotado</div>;
+                                                return <div className="modal-stock-badge stock-ok">Em Stock</div>;
+                                            })()}
+                                        </div>
+                                    </div>
+                                    <h2 className="pm-title">{activeSelectedProduct.name}</h2>
+                                    {(() => {
+                                        const gallery = getProductGalleryDetails(activeSelectedProduct);
+                                        const currentIdx = (modalImageIndex >= 0 && modalImageIndex < gallery.items.length) ? modalImageIndex : 0;
+                                        const currentItem = gallery.items[currentIdx] || { price: activeSelectedProduct.price, title: '' };
+                                        const currentPrice = currentItem.price || getEffectivePrice(activeSelectedProduct, selectedDevice);
+                                        return (
+                                            <>
+                                                {currentItem.title && (
+                                                    <div style={{ display: 'inline-block', fontSize: '0.85rem', fontWeight: 600, color: '#4b5563', background: '#f3f4f6', padding: '0.25rem 0.6rem', borderRadius: '6px', marginBottom: '0.5rem' }}>
+                                                        ⚡ Opção: {currentItem.title}
+                                                    </div>
+                                                )}
+                                                <div className="pm-price">{formatCurrency(currentPrice)}</div>
+                                            </>
+                                        );
+                                    })()}
+                                    <p className="pm-desc">{activeSelectedProduct.desc}</p>
+                                    <ul className="pm-features" style={{ paddingLeft: '1rem', listStyleType: 'disc' }}>
+                                        {activeSelectedProduct.features && activeSelectedProduct.features
+                                            .filter(feat => !feat.startsWith('_'))
+                                            .map((feat, index) => (
+                                                <li key={index} style={{ marginBottom: '0.5rem', color: '#374151' }}>{feat}</li>
+                                            ))
+                                        }
+                                    </ul>
+
+                                    {(() => {
+                                        const devSelType = getDeviceSelectionType(activeSelectedProduct);
+                                        const colorSelType = getColorSelectionType(activeSelectedProduct);
+                                        if (devSelType === 'none' && colorSelType === 'none') return null;
+                                        return (
+                                            <div className="product-options" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+                                                {devSelType !== 'none' && (
+                                                    <>
+                                                        {(devSelType === 'iphone' || devSelType === 'iphone_outro' || devSelType === 'pendrive' || devSelType === 'card') && (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
+                                                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>
+                                                                    {devSelType === 'pendrive' || devSelType === 'card' ? 'Selecione a Capacidade:' : 'Selecione o Dispositivo:'}
+                                                                </label>
+                                                                <select 
+                                                                    value={
+                                                                        devSelType === 'pendrive' ? (PENDRIVE_OPTIONS.includes(selectedDevice) ? selectedDevice : PENDRIVE_OPTIONS[0]) :
+                                                                        devSelType === 'card' ? (CARD_OPTIONS.includes(selectedDevice) ? selectedDevice : CARD_OPTIONS[0]) :
+                                                                        selectedDevice
+                                                                    }
+                                                                    onChange={(e) => setSelectedDevice(e.target.value)}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: '0.75rem',
+                                                                        border: '1.5px solid var(--gray-light)',
+                                                                        borderRadius: '10px',
+                                                                        fontFamily: 'inherit',
+                                                                        fontSize: '0.95rem',
+                                                                        outline: 'none',
+                                                                        backgroundColor: '#fff'
+                                                                    }}
+                                                                >
+                                                                    {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {PENDRIVE_PRICES[opt]} MT</option>) :
+                                                                     devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {CARD_PRICES[opt]} MT</option>) :
+                                                                     DEVICE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                                                    {devSelType === 'iphone_outro' && <option value="outro">Outro (Digitar...)</option>}
+                                                                </select>
+                                                            </div>
+                                                        )}
+
+                                                        {devSelType === 'outro' && (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
+                                                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Escreva o Dispositivo:</label>
+                                                                <input 
+                                                                    type="text" 
+                                                                    placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc."
+                                                                    value={customDevice}
+                                                                    onChange={(e) => setCustomDevice(e.target.value)}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: '0.75rem',
+                                                                        border: '1.5px solid var(--gray-light)',
+                                                                        borderRadius: '10px',
+                                                                        fontFamily: 'inherit',
+                                                                        fontSize: '0.95rem',
+                                                                        outline: 'none',
+                                                                        backgroundColor: '#fff'
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+
+                                                {colorSelType !== 'none' && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
+                                                        <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Cor:</label>
+                                                        <select 
+                                                            value={selectedColor}
+                                                            onChange={(e) => setSelectedColor(e.target.value)}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.75rem',
+                                                                border: '1.5px solid var(--gray-light)',
+                                                                borderRadius: '10px',
+                                                                fontFamily: 'inherit',
+                                                                fontSize: '0.95rem',
+                                                                outline: 'none',
+                                                                backgroundColor: '#fff'
+                                                            }}
+                                                        >
+                                                            {COLOR_OPTIONS.map(col => (
+                                                                <option key={col} value={col}>{col}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+
+                            <div className="pm-sticky-bottom-bar">
+                                <button className="btn-add-cart" onClick={() => { 
                                     const gallery = getProductGalleryDetails(activeSelectedProduct);
                                     const currentIdx = (modalImageIndex >= 0 && modalImageIndex < gallery.items.length) ? modalImageIndex : 0;
-                                    const currentItem = gallery.items[currentIdx] || { price: activeSelectedProduct.price, title: '' };
-                                    const currentPrice = currentItem.price || getEffectivePrice(activeSelectedProduct, selectedDevice);
-                                    return (
-                                        <>
-                                            {currentItem.title && (
-                                                <div style={{ display: 'inline-block', fontSize: '0.85rem', fontWeight: 600, color: '#4b5563', background: '#f3f4f6', padding: '0.25rem 0.6rem', borderRadius: '6px', marginBottom: '0.5rem' }}>
-                                                    ⚡ Opção: {currentItem.title}
-                                                </div>
-                                            )}
-                                            <div className="pm-price">{formatCurrency(currentPrice)}</div>
-                                        </>
-                                    );
-                                })()}
-                                <p className="pm-desc">{activeSelectedProduct.desc}</p>
-                                <ul className="pm-features" style={{ paddingLeft: '1rem', listStyleType: 'disc' }}>
-                                    {activeSelectedProduct.features && activeSelectedProduct.features
-                                        .filter(feat => !feat.startsWith('_'))
-                                        .map((feat, index) => (
-                                            <li key={index} style={{ marginBottom: '0.5rem', color: '#374151' }}>{feat}</li>
-                                        ))
-                                    }
-                                </ul>
-
-                                {(() => {
-                                    const devSelType = getDeviceSelectionType(activeSelectedProduct);
-                                    const colorSelType = getColorSelectionType(activeSelectedProduct);
-                                    if (devSelType === 'none' && colorSelType === 'none') return null;
-                                    return (
-                                        <div className="product-options" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
-                                            {devSelType !== 'none' && (
-                                                <>
-                                                    {(devSelType === 'iphone' || devSelType === 'iphone_outro' || devSelType === 'pendrive' || devSelType === 'card') && (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
-                                                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>
-                                                                {devSelType === 'pendrive' || devSelType === 'card' ? 'Selecione a Capacidade:' : 'Selecione o Dispositivo:'}
-                                                            </label>
-                                                            <select 
-                                                                value={
-                                                                    devSelType === 'pendrive' ? (PENDRIVE_OPTIONS.includes(selectedDevice) ? selectedDevice : PENDRIVE_OPTIONS[0]) :
-                                                                    devSelType === 'card' ? (CARD_OPTIONS.includes(selectedDevice) ? selectedDevice : CARD_OPTIONS[0]) :
-                                                                    selectedDevice
-                                                                }
-                                                                onChange={(e) => setSelectedDevice(e.target.value)}
-                                                                style={{
-                                                                    width: '100%',
-                                                                    padding: '0.75rem',
-                                                                    border: '1.5px solid var(--gray-light)',
-                                                                    borderRadius: '10px',
-                                                                    fontFamily: 'inherit',
-                                                                    fontSize: '0.95rem',
-                                                                    outline: 'none',
-                                                                    backgroundColor: '#fff'
-                                                                }}
-                                                            >
-                                                                {devSelType === 'pendrive' ? PENDRIVE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {PENDRIVE_PRICES[opt]} MT</option>) :
-                                                                 devSelType === 'card' ? CARD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} — {CARD_PRICES[opt]} MT</option>) :
-                                                                 DEVICE_OPTIONS.map(dev => <option key={dev} value={dev}>{dev}</option>)}
-                                                                {devSelType === 'iphone_outro' && (
-                                                                    <option value="outro">Outro (Digitar...)</option>
-                                                                )}
-                                                            </select>
-                                                        </div>
-                                                    )}
-
-                                                    {(devSelType === 'outro' || (devSelType === 'iphone_outro' && selectedDevice === 'outro')) && (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
-                                                            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Qual é o seu dispositivo?</label>
-                                                            <input 
-                                                                type="text" 
-                                                                placeholder="Ex: Samsung S23 Ultra, Redmi Note 12..."
-                                                                value={customDevice}
-                                                                onChange={(e) => setCustomDevice(e.target.value)}
-                                                                style={{
-                                                                    width: '100%',
-                                                                    padding: '0.75rem',
-                                                                    border: '1.5px solid var(--gray-light)',
-                                                                    borderRadius: '10px',
-                                                                    fontFamily: 'inherit',
-                                                                    fontSize: '0.95rem',
-                                                                    outline: 'none',
-                                                                    backgroundColor: '#fff'
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </>
-                                            )}
-
-                                            {colorSelType !== 'none' && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%' }}>
-                                                    <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4b5563' }}>Cor:</label>
-                                                    <select 
-                                                        value={selectedColor}
-                                                        onChange={(e) => setSelectedColor(e.target.value)}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.75rem',
-                                                            border: '1.5px solid var(--gray-light)',
-                                                            borderRadius: '10px',
-                                                            fontFamily: 'inherit',
-                                                            fontSize: '0.95rem',
-                                                            outline: 'none',
-                                                            backgroundColor: '#fff'
-                                                        }}
-                                                    >
-                                                        {COLOR_OPTIONS.map(col => (
-                                                            <option key={col} value={col}>{col}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })()}
-
-                                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-                                    <button className="btn-add-cart" style={{ flex: 1 }} onClick={() => { 
-                                        const gallery = getProductGalleryDetails(activeSelectedProduct);
-                                        const currentIdx = (modalImageIndex >= 0 && modalImageIndex < gallery.items.length) ? modalImageIndex : 0;
-                                        const itemObj = gallery.items[currentIdx] || { src: activeSelectedProduct.image, price: activeSelectedProduct.price, title: '' };
-                                        const prodToCart = { ...activeSelectedProduct, price: itemObj.price || activeSelectedProduct.price, name: itemObj.title ? `${activeSelectedProduct.name} (${itemObj.title})` : activeSelectedProduct.name };
-                                        if (addToCart(prodToCart, null, null, itemObj.src)) setSelectedProduct(null); 
-                                    }}>
-                                        Adicionar ao Carrinho
-                                    </button>
-                                    <button className="btn-buy-now-modal" style={{ flex: 1 }} onClick={() => { 
-                                        const gallery = getProductGalleryDetails(activeSelectedProduct);
-                                        const currentIdx = (modalImageIndex >= 0 && modalImageIndex < gallery.items.length) ? modalImageIndex : 0;
-                                        const itemObj = gallery.items[currentIdx] || { src: activeSelectedProduct.image, price: activeSelectedProduct.price, title: '' };
-                                        const prodToBuy = { ...activeSelectedProduct, price: itemObj.price || activeSelectedProduct.price, name: itemObj.title ? `${activeSelectedProduct.name} (${itemObj.title})` : activeSelectedProduct.name };
-                                        setSelectedProduct(null); 
-                                        handleBuyNowClick(prodToBuy, itemObj.src); 
-                                    }}>
-                                        Pedir Agora
-                                    </button>
-                                </div>
+                                    const itemObj = gallery.items[currentIdx] || { src: activeSelectedProduct.image, price: activeSelectedProduct.price, title: '' };
+                                    const prodToCart = { ...activeSelectedProduct, price: itemObj.price || activeSelectedProduct.price, name: itemObj.title ? `${activeSelectedProduct.name} (${itemObj.title})` : activeSelectedProduct.name };
+                                    if (addToCart(prodToCart, null, null, itemObj.src)) setSelectedProduct(null); 
+                                }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                                    <span>Carrinho</span>
+                                </button>
+                                <button className="btn-buy-now-modal" onClick={() => { 
+                                    const gallery = getProductGalleryDetails(activeSelectedProduct);
+                                    const currentIdx = (modalImageIndex >= 0 && modalImageIndex < gallery.items.length) ? modalImageIndex : 0;
+                                    const itemObj = gallery.items[currentIdx] || { src: activeSelectedProduct.image, price: activeSelectedProduct.price, title: '' };
+                                    const prodToBuy = { ...activeSelectedProduct, price: itemObj.price || activeSelectedProduct.price, name: itemObj.title ? `${activeSelectedProduct.name} (${itemObj.title})` : activeSelectedProduct.name };
+                                    setSelectedProduct(null); 
+                                    handleBuyNowClick(prodToBuy, itemObj.src); 
+                                }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                    <span>Pedir Agora</span>
+                                </button>
                             </div>
                         </div>
                     </div>

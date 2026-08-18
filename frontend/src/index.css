@@ -694,13 +694,15 @@ body {
     width: 90%;
     max-width: 800px;
     max-height: 90vh;
-    overflow-y: auto;
     border-radius: var(--radius);
     z-index: 101;
     opacity: 0;
     visibility: hidden;
     transition: var(--transition);
     box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .product-modal.active {
@@ -738,7 +740,78 @@ body {
 
 .product-modal-content {
     display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    max-height: 90vh;
+}
+
+.pm-scroll-body {
+    display: flex;
     flex-wrap: wrap;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.pm-sticky-bottom-bar {
+    position: relative;
+    background: #ffffff;
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid #f1f5f9;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 50;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.pm-sticky-bottom-bar .btn-add-cart {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: #111827;
+    color: #ffffff;
+    border: none;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pm-sticky-bottom-bar .btn-add-cart:hover {
+    background: #1f2937;
+    transform: translateY(-1px);
+}
+
+.pm-sticky-bottom-bar .btn-buy-now-modal {
+    flex: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: var(--primary);
+    color: var(--dark);
+    border: none;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+.pm-sticky-bottom-bar .btn-buy-now-modal:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
 }
 
 .pm-image {

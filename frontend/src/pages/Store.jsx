@@ -1789,7 +1789,7 @@ export default function Store() {
                                         <div key={prod.id} className={`featured-card ${isOut ? 'out-of-stock' : ''}`}>
                                             <div className="featured-badge">⭐ Destaque</div>
                                             <div className="featured-img-wrap" onClick={() => (setSelectedProduct(prod), setModalImageIndex(0), trackProductClick(prod.id))}>
-                                                <img src={prod.image} alt={prod.name} className="featured-img" />
+                                                <img src={prod.image} alt={prod.name} className="featured-img" onError={(e) => { e.target.onerror = null; e.target.src = '/assets/default_product.png'; }} />
                                             </div>
                                             <div className="featured-info">
                                                 <h4 className="featured-name">{prod.name}</h4>
@@ -1826,7 +1826,7 @@ export default function Store() {
                             <div key={prod.id} className={`product-card ${isOut ? 'out-of-stock' : ''}`}>
                                 {isFeatured(prod) && <div className="card-featured-badge">⭐</div>}
                                 <div className="product-image-container" onClick={() => { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); }}>
-                                    <img src={prod.image} alt={prod.name} className="product-img" style={{ opacity: isOut ? 0.5 : 1 }} />
+                                    <img src={prod.image} alt={prod.name} className="product-img" style={{ opacity: isOut ? 0.5 : 1 }} onError={(e) => { e.target.onerror = null; e.target.src = '/assets/default_product.png'; }} />
                                 </div>
                                 <div className="product-category-tag">{getCategoryIcon(prod.category)} {prod.category}</div>
                                 <h3 className="product-title" onClick={() => { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); }}>{prod.name}</h3>
@@ -1895,7 +1895,7 @@ export default function Store() {
                                         return (
                                             <div className="gallery-wrap">
                                                 <div className="gallery-main-container">
-                                                    <img src={allImgs[currentIdx] || activeSelectedProduct.image} alt={activeSelectedProduct.name} className="gallery-main-img" />
+                                                    <img src={allImgs[currentIdx] || activeSelectedProduct.image} alt={activeSelectedProduct.name} className="gallery-main-img" onError={(e) => { e.target.onerror = null; e.target.src = '/assets/default_product.png'; }} />
                                                     {allImgs.length > 1 && (
                                                         <>
                                                             <button className="gallery-arrow gallery-prev" onClick={(e) => { e.stopPropagation(); setModalImageIndex((currentIdx - 1 + allImgs.length) % allImgs.length); }}>‹</button>
@@ -1912,7 +1912,7 @@ export default function Store() {
                                                         </div>
                                                         <div className="gallery-thumbs">
                                                             {allImgs.map((img, idx) => (
-                                                                <img key={idx} src={img} alt={`Thumbnail ${idx+1}`} className={`gallery-thumb ${idx === currentIdx ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setModalImageIndex(idx); }} />
+                                                                <img key={idx} src={img} alt={`Thumbnail ${idx+1}`} className={`gallery-thumb ${idx === currentIdx ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setModalImageIndex(idx); }} onError={(e) => { e.target.onerror = null; e.target.src = '/assets/default_product.png'; }} />
                                                             ))}
                                                         </div>
                                                     </>
@@ -2280,7 +2280,7 @@ export default function Store() {
                         <form className="product-modal-content" onSubmit={handleQuickOrderSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                             <div className="qo-scroll-body">
                                 <div className="pm-image" style={{ flex: '1 1 250px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-                                    <img src={activeQuickOrderProduct.image} alt={activeQuickOrderProduct.name} style={{ maxHeight: '180px' }} />
+                                    <img src={activeQuickOrderProduct.image} alt={activeQuickOrderProduct.name} style={{ maxHeight: '180px' }} onError={(e) => { e.target.onerror = null; e.target.src = '/assets/default_product.png'; }} />
                                     <h3>{activeQuickOrderProduct.name}</h3>
                                     {(activeQuickOrderProduct.id === 13 || activeQuickOrderProduct.name?.includes("Capas de Silicone")) && (
                                         <button type="button" onClick={() => {}} style={{ display: 'none' }}></button>

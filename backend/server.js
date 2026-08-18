@@ -661,21 +661,26 @@ function fixImageUrls(req, products) {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
     const baseUrl = `${protocol}://${host}`;
-    
+    const PLACEHOLDER = `${baseUrl}/assets/default_product.png`;
+
     const arrayProducts = Array.isArray(products) ? products : [products];
     const resolved = arrayProducts.map(p => {
-        if (!p || !p.image) return p;
+        if (!p) return p;
         let img = p.image;
-        // If it starts with localhost or is a relative path, resolve it using the current request's baseUrl
+
+        // If image is missing or empty, use placeholder so products never show a broken image
+        if (!img || img.trim() === '') {
+            return { ...p, image: PLACEHOLDER };
+        }
+
+        // If it starts with localhost or is a relative path, resolve it to the current backend origin
         if (img.startsWith('http://localhost:3000') || img.startsWith('http://localhost:5173') || !img.startsWith('http')) {
             const cleanPath = img.replace(/^https?:\/\/localhost:\d+/, '');
             const relativePath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
             img = `${baseUrl}${relativePath}`;
         }
-        return {
-            ...p,
-            image: img
-        };
+
+        return { ...p, image: img };
     });
     return Array.isArray(products) ? resolved : resolved[0];
 }

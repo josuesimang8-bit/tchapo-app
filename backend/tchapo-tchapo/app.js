@@ -826,7 +826,7 @@ function renderProducts() {
                                 <div class="featured-card ${isOut ? 'out-of-stock' : ''}">
                                     <div class="featured-badge">⭐ Destaque</div>
                                     <div class="featured-img-wrap" onclick="openProductModal('${prod.id}')">
-                                        <img src="${prod.image}" alt="${prod.name}" class="featured-img">
+                                        <img src="${prod.image}" alt="${prod.name}" class="featured-img" onerror="this.onerror=null;this.src='assets/default_product.png'">
                                     </div>
                                     <div class="featured-info">
                                         <h4 class="featured-name">${prod.name}</h4>
@@ -866,7 +866,7 @@ function renderProducts() {
             <div class="product-card ${isOut ? 'out-of-stock' : ''}">
                 ${featStar}
                 <div class="product-image-container" onclick="openProductModal('${product.id}')">
-                    <img src="${product.image}" alt="${product.name}" class="product-img" style="${isOut ? 'opacity:0.5' : ''}">
+                    <img src="${product.image}" alt="${product.name}" class="product-img" style="${isOut ? 'opacity:0.5' : ''}" onerror="this.onerror=null;this.src='assets/default_product.png'">
                 </div>
                 <div class="product-category-tag">${getCategoryIcon(product.category)} ${product.category}</div>
                 <h3 class="product-title" onclick="openProductModal('${product.id}')">${product.name}</h3>
@@ -1041,12 +1041,12 @@ function openProductModal(id, pushUrl = true) {
         const galleryPrices = gallery.items.map(it => it.price);
         const galleryTitles = gallery.items.map(it => it.title);
         
-        let imageGalleryHtml = `<div class="gallery-wrap"><div class="gallery-main-container"><img src="${product.image}" alt="${product.name}" id="pm-main-img" class="gallery-main-img"></div></div>`;
+        let imageGalleryHtml = `<div class="gallery-wrap"><div class="gallery-main-container"><img src="${product.image}" alt="${product.name}" id="pm-main-img" class="gallery-main-img" onerror="this.onerror=null;this.src='assets/default_product.png'"></div></div>`;
         if (allImgs.length > 1) {
             imageGalleryHtml = `
                 <div class="gallery-wrap">
                     <div class="gallery-main-container">
-                        <img src="${allImgs[0]}" alt="${product.name}" id="pm-main-img" class="gallery-main-img">
+                        <img src="${allImgs[0]}" alt="${product.name}" id="pm-main-img" class="gallery-main-img" onerror="this.onerror=null;this.src='assets/default_product.png'">
                         <button class="gallery-arrow gallery-prev" onclick="changeGalleryImage(-1); event.stopPropagation();">‹</button>
                         <button class="gallery-arrow gallery-next" onclick="changeGalleryImage(1); event.stopPropagation();">›</button>
                     </div>
@@ -1257,7 +1257,7 @@ function startQuickOrderModal(id, fromModal = false, customImg = null, customPri
         <form id="quick-order-form" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; height: 100%; width: 100%;">
             <div class="qo-scroll-body">
                 <div class="qo-left">
-                    <img src="${quickOrderProduct.image}" alt="${quickOrderProduct.name}" class="qo-img">
+                    <img src="${quickOrderProduct.image}" alt="${quickOrderProduct.name}" class="qo-img" onerror="this.onerror=null;this.src='assets/default_product.png'">
                     <h3>${quickOrderProduct.name}</h3>
                     ${optionsHtml}
                     <div class="qo-price" id="qo-display-price">${formatCurrency(quickOrderProduct.price)}</div>
@@ -1700,7 +1700,7 @@ function updateCartUI() {
             const safeId = String(item.id).replace(/'/g, "\\'");
             return `
                 <div class="cart-item">
-                    <img src="${image}" alt="${item.name}">
+                    <img src="${image}" alt="${item.name}" onerror="this.onerror=null;this.src='assets/default_product.png'">
                     <div class="cart-item-info">
                         <div class="cart-item-title">${item.name}</div>
                         <div class="cart-item-price">${formatCurrency(price)}</div>

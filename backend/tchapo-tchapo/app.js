@@ -517,7 +517,84 @@ async function fetchActiveProducts() {
     CATEGORIES = ['Todos', ...new Set(products.map(p => p.category))];
     renderCategoryTabs();
     renderProducts();
+    checkUrlForDirectProduct();
 }
+
+function getProductShareUrl(productId) {
+    const url = new URL(window.location.origin + window.location.pathname);
+    url.searchParams.set('p', productId);
+    return url.toString();
+}
+
+async function shareProduct(productId, event) {
+    if (event) event.stopPropagation();
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    const shareUrl = getProductShareUrl(productId);
+    const shareTitle = `${product.name} — Tchapo Tchapo`;
+    const shareText = `Confira ${product.name} por apenas ${formatCurrency(product.price)} na Tchapo Tchapo! Entrega rápida em Maputo:`;
+
+    if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+        try {
+            await navigator.share({
+                title: shareTitle,
+                text: shareText,
+                url: shareUrl
+            });
+            return;
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+        }
+    }
+
+    // Fallback: Copy to clipboard
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(shareUrl);
+        } else {
+            const tempInput = document.createElement('input');
+            tempInput.value = shareUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+        }
+        showStatusToast('🔗 Link do produto copiado com sucesso!');
+    } catch (err) {
+        showStatusToast('🔗 Link: ' + shareUrl);
+    }
+}
+
+function checkUrlForDirectProduct() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const prodParam = urlParams.get('p') || urlParams.get('produto');
+        if (prodParam) {
+            const targetId = parseInt(prodParam) || prodParam;
+            const targetProd = products.find(p => p.id == targetId);
+            if (targetProd) {
+                setTimeout(() => {
+                    openProductModal(targetProd.id, false);
+                }, 150);
+            }
+        }
+    } catch (e) {}
+}
+
+window.addEventListener('popstate', () => {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const prodParam = urlParams.get('p') || urlParams.get('produto');
+        if (prodParam) {
+            const targetId = parseInt(prodParam) || prodParam;
+            const targetProd = products.find(p => p.id == targetId);
+            if (targetProd) openProductModal(targetProd.id, false);
+        } else {
+            closeModals();
+        }
+    } catch (e) {}
+});
 
 // ─── CATEGORY TABS ───────────────────────────────────────────────────
 function renderCategoryTabs() {
@@ -796,6 +873,9 @@ function renderProducts() {
         return `
             <div class="product-card ${isOut ? 'out-of-stock' : ''}">
                 ${featStar}
+                <button class="card-share-btn" onclick="shareProduct(${product.id}, event)" title="Copiar / Partilhar link deste produto">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                </button>
                 <div class="product-image-container" onclick="openProductModal(${product.id})">
                     <img src="${product.image}" alt="${product.name}" class="product-img" style="${isOut ? 'opacity:0.5' : ''}">
                 </div>
@@ -886,9 +966,17 @@ function trackProductClick(productId) {
         .catch(err => console.error('Error tracking click:', err));
 }
 
-function openProductModal(id) {
+function openProductModal(id, pushUrl = true) {
     trackProductClick(id);
+    if (pushUrl) {
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('p', id);
+            window.history.replaceState({ productId: id }, '', url.toString());
+        } catch (e) {}
+    }
     const product = products.find(p => p.id === id);
+    if (!product) return;
     const devSelType = getDeviceSelectionType(product);
     
     let optionsHtml = '';
@@ -1006,7 +1094,13 @@ function openProductModal(id) {
         <div class="pm-info">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
                 <div class="product-category-tag" style="margin-bottom:0">${getCategoryIcon(product.category)} ${product.category}</div>
-                ${modalStockBadgeHtml}
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <button class="btn-share-product" onclick="shareProduct(${product.id}, event)" title="Copiar / Partilhar Link do Produto">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                        Partilhar
+                    </button>
+                    ${modalStockBadgeHtml}
+                </div>
             </div>
             <h2 class="pm-title">${product.name}</h2>
             <div id="pm-variant-tag" style="display:${initialTitle ? 'inline-block' : 'none'}; font-size:0.85rem; font-weight:600; color:#4b5563; background:#f3f4f6; padding:0.25rem 0.6rem; border-radius:6px; margin-bottom:0.5rem;">⚡ Opção: ${initialTitle}</div>
@@ -1378,6 +1472,14 @@ function handleQuickOrder(e) {
 function closeModals() {
     productModal.classList.remove('active');
     productModalOverlay.classList.remove('active');
+    try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('p') || url.searchParams.has('produto')) {
+            url.searchParams.delete('p');
+            url.searchParams.delete('produto');
+            window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+        }
+    } catch (e) {}
     updateScrollLock();
 }
 

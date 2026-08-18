@@ -1017,8 +1017,71 @@ export default function Store() {
         return () => clearInterval(interval);
     }, []);
 
+    const handleShareProduct = async (prod, e) => {
+        if (e) e.stopPropagation();
+        if (!prod) return;
+
+        const url = new URL(window.location.origin + window.location.pathname);
+        url.searchParams.set('p', prod.id);
+        const shareUrl = url.toString();
+        const shareTitle = `${prod.name} — Tchapo Tchapo`;
+        const shareText = `Confira ${prod.name} por apenas ${formatCurrency(prod.price)} na Tchapo Tchapo!`;
+
+        if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+            try {
+                await navigator.share({
+                    title: shareTitle,
+                    text: shareText,
+                    url: shareUrl
+                });
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+        }
+
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(shareUrl);
+            } else {
+                const temp = document.createElement('input');
+                temp.value = shareUrl;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand('copy');
+                document.body.removeChild(temp);
+            }
+            setToastMessage('🔗 Link do produto copiado com sucesso!');
+        } catch (err) {
+            setToastMessage('🔗 Link: ' + shareUrl);
+        }
+    };
+
+    const [hasCheckedDirectLink, setHasCheckedDirectLink] = useState(false);
+    useEffect(() => {
+        if (products && products.length > 0 && !hasCheckedDirectLink) {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const prodParam = urlParams.get('p') || urlParams.get('produto');
+                if (prodParam) {
+                    const target = products.find(p => p.id == prodParam);
+                    if (target) {
+                        setSelectedProduct(target);
+                        setHasCheckedDirectLink(true);
+                    }
+                }
+            } catch (e) {}
+        }
+    }, [products, hasCheckedDirectLink]);
+
     useEffect(() => {
         if (selectedProduct) {
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('p', selectedProduct.id);
+                window.history.replaceState({ productId: selectedProduct.id }, '', url.toString());
+            } catch (e) {}
+
             const devType = getDeviceSelectionType(selectedProduct);
             if (devType === 'pendrive') setSelectedDevice(PENDRIVE_OPTIONS[0]);
             else if (devType === 'card') setSelectedDevice(CARD_OPTIONS[0]);
@@ -1026,6 +1089,15 @@ export default function Store() {
             setSelectedColor('Preto');
             setCustomDevice('');
             setModalImageIndex(0);
+        } else {
+            try {
+                const url = new URL(window.location.href);
+                if (url.searchParams.has('p') || url.searchParams.has('produto')) {
+                    url.searchParams.delete('p');
+                    url.searchParams.delete('produto');
+                    window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+                }
+            } catch (e) {}
         }
     }, [selectedProduct]);
 
@@ -1711,6 +1783,9 @@ export default function Store() {
                             return (
                             <div key={prod.id} className={`product-card ${isOut ? 'out-of-stock' : ''}`}>
                                 {isFeatured(prod) && <div className="card-featured-badge">⭐</div>}
+                                <button className="card-share-btn" onClick={(e) => handleShareProduct(prod, e)} title="Copiar / Partilhar link deste produto">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                </button>
                                 <div className="product-image-container" onClick={() => { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); }}>
                                     <img src={prod.image} alt={prod.name} className="product-img" style={{ opacity: isOut ? 0.5 : 1 }} />
                                 </div>
@@ -1811,12 +1886,18 @@ export default function Store() {
                                     <div className="product-category-tag" style={{ marginBottom: 0 }}>
                                         {getCategoryIcon(activeSelectedProduct.category)} {activeSelectedProduct.category}
                                     </div>
-                                    {(() => {
-                                        const stock = getStockStatus(activeSelectedProduct);
-                                        if (stock === 'Últimas Unidades') return <div className="modal-stock-badge stock-low">Últimas Unidades</div>;
-                                        if (stock === 'Esgotado') return <div className="modal-stock-badge stock-out">Esgotado</div>;
-                                        return <div className="modal-stock-badge stock-ok">Em Stock</div>;
-                                    })()}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <button className="btn-share-product" onClick={(e) => handleShareProduct(activeSelectedProduct, e)} title="Copiar / Partilhar Link do Produto">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                            Partilhar
+                                        </button>
+                                        {(() => {
+                                            const stock = getStockStatus(activeSelectedProduct);
+                                            if (stock === 'Últimas Unidades') return <div className="modal-stock-badge stock-low">Últimas Unidades</div>;
+                                            if (stock === 'Esgotado') return <div className="modal-stock-badge stock-out">Esgotado</div>;
+                                            return <div className="modal-stock-badge stock-ok">Em Stock</div>;
+                                        })()}
+                                    </div>
                                 </div>
                                 <h2 className="pm-title">{activeSelectedProduct.name}</h2>
                                 {(() => {

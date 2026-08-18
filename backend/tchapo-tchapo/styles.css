@@ -523,6 +523,7 @@ body {
 }
 
 .product-card {
+    position: relative;
     background-color: var(--white);
     border-radius: var(--radius);
     padding: 1.25rem;
@@ -531,6 +532,54 @@ body {
     transition: var(--transition);
     display: flex;
     flex-direction: column;
+}
+
+.card-share-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 5;
+    opacity: 0.85;
+}
+
+.card-share-btn:hover {
+    background: var(--primary);
+    color: var(--dark);
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.btn-share-product {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-share-product:hover {
+    background: #e5e7eb;
+    color: #111827;
+    border-color: #d1d5db;
 }
 
 .product-card:hover {

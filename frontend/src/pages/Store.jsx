@@ -995,7 +995,7 @@ export default function Store() {
         }
     };
 
-    // Load dynamic products (with real-time polling updates every 3 seconds)
+    // Load dynamic products
     useEffect(() => {
         const fetchProducts = async () => {
             try {
@@ -1012,9 +1012,6 @@ export default function Store() {
             }
         };
         fetchProducts();
-
-        const interval = setInterval(fetchProducts, 3000);
-        return () => clearInterval(interval);
     }, []);
 
     const handleShareProduct = async (prod, e) => {
@@ -1077,9 +1074,11 @@ export default function Store() {
     useEffect(() => {
         if (selectedProduct) {
             try {
-                const url = new URL(window.location.href);
-                url.searchParams.set('p', selectedProduct.id);
-                window.history.replaceState({ productId: selectedProduct.id }, '', url.toString());
+                const currentUrl = new URL(window.location.href);
+                if (currentUrl.searchParams.get('p') !== String(selectedProduct.id)) {
+                    currentUrl.searchParams.set('p', selectedProduct.id);
+                    window.history.replaceState({ productId: selectedProduct.id }, '', currentUrl.pathname + currentUrl.search);
+                }
             } catch (e) {}
 
             const devType = getDeviceSelectionType(selectedProduct);
@@ -1091,11 +1090,12 @@ export default function Store() {
             setModalImageIndex(0);
         } else {
             try {
-                const url = new URL(window.location.href);
-                if (url.searchParams.has('p') || url.searchParams.has('produto')) {
-                    url.searchParams.delete('p');
-                    url.searchParams.delete('produto');
-                    window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+                const currentUrl = new URL(window.location.href);
+                if (currentUrl.searchParams.has('p') || currentUrl.searchParams.has('produto')) {
+                    currentUrl.searchParams.delete('p');
+                    currentUrl.searchParams.delete('produto');
+                    const newSearch = currentUrl.search ? currentUrl.search : '';
+                    window.history.replaceState(null, '', currentUrl.pathname + newSearch);
                 }
             } catch (e) {}
         }

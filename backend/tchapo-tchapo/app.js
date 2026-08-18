@@ -576,25 +576,11 @@ function checkUrlForDirectProduct() {
             if (targetProd) {
                 setTimeout(() => {
                     openProductModal(targetProd.id, false);
-                }, 150);
+                }, 100);
             }
         }
     } catch (e) {}
 }
-
-window.addEventListener('popstate', () => {
-    try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const prodParam = urlParams.get('p') || urlParams.get('produto');
-        if (prodParam) {
-            const targetId = parseInt(prodParam) || prodParam;
-            const targetProd = products.find(p => p.id == targetId);
-            if (targetProd) openProductModal(targetProd.id, false);
-        } else {
-            closeModals();
-        }
-    } catch (e) {}
-});
 
 // ─── CATEGORY TABS ───────────────────────────────────────────────────
 function renderCategoryTabs() {
@@ -2738,84 +2724,76 @@ function updateScrollLock() {
             break;
         }
     }
-    if (!anyOpen) {
-        if (document.body.style.position === 'fixed') {
-            const scrollY = parseInt(document.body.getAttribute('data-scroll-y') || '0', 10);
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
-            document.body.removeAttribute('data-scroll-y');
-            window.scrollTo(0, scrollY);
-        }
+    if (anyOpen) {
+        document.body.style.overflow = 'hidden';
     } else {
-        if (document.body.style.position !== 'fixed') {
-            const scrollY = window.scrollY;
-            document.body.setAttribute('data-scroll-y', scrollY.toString());
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollY}px`;
-            document.body.style.width = '100%';
-            document.body.style.overflow = 'hidden';
-            document.documentElement.style.overflow = 'hidden';
-        }
+        document.body.style.overflow = '';
     }
 }
 
 function initPromoPopup() {
-    const deliveryPaymentOverlay = document.getElementById('delivery-payment-promo-overlay');
-    const deliveryPaymentModal = document.getElementById('delivery-payment-promo-modal');
-    const closeDeliveryPayment = document.getElementById('close-delivery-payment-promo');
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('p') || urlParams.has('produto')) return;
 
-    const deliveryOverlay = document.getElementById('delivery-promo-overlay');
-    const deliveryModal = document.getElementById('delivery-promo-modal');
-    const closeDelivery = document.getElementById('close-delivery-promo');
+        if (sessionStorage.getItem('tchapo_promo_seen')) return;
 
-    const referralOverlay = document.getElementById('referral-promo-overlay');
-    const referralModal = document.getElementById('referral-promo-modal');
-    const closeReferral = document.getElementById('close-referral-promo');
+        const deliveryPaymentOverlay = document.getElementById('delivery-payment-promo-overlay');
+        const deliveryPaymentModal = document.getElementById('delivery-payment-promo-modal');
+        const closeDeliveryPayment = document.getElementById('close-delivery-payment-promo');
 
-    if (!deliveryPaymentOverlay || !deliveryPaymentModal || !deliveryOverlay || !deliveryModal || !referralOverlay || !referralModal) return;
+        const deliveryOverlay = document.getElementById('delivery-promo-overlay');
+        const deliveryModal = document.getElementById('delivery-promo-modal');
+        const closeDelivery = document.getElementById('close-delivery-promo');
 
-    // Show Delivery Payment promo first
-    deliveryPaymentOverlay.classList.add('active');
-    deliveryPaymentModal.classList.add('active');
-    updateScrollLock();
+        const referralOverlay = document.getElementById('referral-promo-overlay');
+        const referralModal = document.getElementById('referral-promo-modal');
+        const closeReferral = document.getElementById('close-referral-promo');
 
-    const transitionToDelivery = () => {
-        deliveryPaymentOverlay.classList.remove('active');
-        deliveryPaymentModal.classList.remove('active');
-        
-        // Show Delivery promo second
-        deliveryOverlay.classList.add('active');
-        deliveryModal.classList.add('active');
+        if (!deliveryPaymentOverlay || !deliveryPaymentModal || !deliveryOverlay || !deliveryModal || !referralOverlay || !referralModal) return;
+
+        sessionStorage.setItem('tchapo_promo_seen', 'true');
+
+        // Show Delivery Payment promo first
+        deliveryPaymentOverlay.classList.add('active');
+        deliveryPaymentModal.classList.add('active');
         updateScrollLock();
-    };
 
-    const transitionToReferral = () => {
-        deliveryOverlay.classList.remove('active');
-        deliveryModal.classList.remove('active');
-        
-        // Show Referral promo third
-        referralOverlay.classList.add('active');
-        referralModal.classList.add('active');
-        updateScrollLock();
-    };
+        const transitionToDelivery = () => {
+            deliveryPaymentOverlay.classList.remove('active');
+            deliveryPaymentModal.classList.remove('active');
+            
+            // Show Delivery promo second
+            deliveryOverlay.classList.add('active');
+            deliveryModal.classList.add('active');
+            updateScrollLock();
+        };
 
-    const closeAllPromos = () => {
-        referralOverlay.classList.remove('active');
-        referralModal.classList.remove('active');
-        updateScrollLock();
-    };
+        const transitionToReferral = () => {
+            deliveryOverlay.classList.remove('active');
+            deliveryModal.classList.remove('active');
+            
+            // Show Referral promo third
+            referralOverlay.classList.add('active');
+            referralModal.classList.add('active');
+            updateScrollLock();
+        };
 
-    if (closeDeliveryPayment) closeDeliveryPayment.addEventListener('click', transitionToDelivery);
-    if (deliveryPaymentOverlay) deliveryPaymentOverlay.addEventListener('click', transitionToDelivery);
+        const closeAllPromos = () => {
+            referralOverlay.classList.remove('active');
+            referralModal.classList.remove('active');
+            updateScrollLock();
+        };
 
-    if (closeDelivery) closeDelivery.addEventListener('click', transitionToReferral);
-    if (deliveryOverlay) deliveryOverlay.addEventListener('click', transitionToReferral);
+        if (closeDeliveryPayment) closeDeliveryPayment.onclick = transitionToDelivery;
+        if (deliveryPaymentOverlay) deliveryPaymentOverlay.onclick = transitionToDelivery;
 
-    if (closeReferral) closeReferral.addEventListener('click', closeAllPromos);
-    if (referralOverlay) referralOverlay.addEventListener('click', closeAllPromos);
+        if (closeDelivery) closeDelivery.onclick = transitionToReferral;
+        if (deliveryOverlay) deliveryOverlay.onclick = transitionToReferral;
+
+        if (closeReferral) closeReferral.onclick = closeAllPromos;
+        if (referralOverlay) referralOverlay.onclick = closeAllPromos;
+    } catch (e) {}
 }
 
 // ─── INIT CALL ───────────────────────────────────────────────────────

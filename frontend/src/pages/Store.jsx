@@ -1343,37 +1343,75 @@ export default function Store() {
     const handleQuickOrderSubmit = async (e) => {
         e.preventDefault();
 
+        const currentQoProduct = activeQuickOrderProduct || quickOrderProduct;
+        if (!currentQoProduct) return;
+
+        const devSelType = getDeviceSelectionType(currentQoProduct);
+        const hasDeviceSel = devSelType !== 'none';
+        const colorSelType = getColorSelectionType(currentQoProduct);
+        const hasColorSel = colorSelType !== 'none';
+
+        if (!quickOrderForm.name?.trim()) {
+            setToastMessage('⚠️ Por favor, insira o seu nome completo.');
+            return;
+        }
+        if (!quickOrderForm.phone?.trim()) {
+            setToastMessage('⚠️ Por favor, insira o seu número de telefone.');
+            return;
+        }
+        if (!quickOrderForm.bairro) {
+            setToastMessage('⚠️ Por favor, selecione o seu bairro.');
+            return;
+        }
+        if (!quickOrderForm.address?.trim()) {
+            setToastMessage('⚠️ Por favor, insira a sua morada / referência.');
+            return;
+        }
+        if (!quickOrderForm.time) {
+            setToastMessage('⚠️ Por favor, escolha um horário de entrega.');
+            return;
+        }
+        if (!quickOrderForm.payment) {
+            setToastMessage('⚠️ Por favor, escolha a forma de pagamento.');
+            return;
+        }
+
         let finalDevice = '';
         if (hasDeviceSel) {
             if (devSelType === 'outro' || (devSelType === 'iphone_outro' && selectedDevice === 'outro')) {
-                finalDevice = customDevice.trim() || 'Outro';
+                if (!customDevice.trim()) {
+                    setToastMessage('⚠️ Por favor, escreva o modelo do seu dispositivo.');
+                    return;
+                }
+                finalDevice = customDevice.trim();
             } else {
                 finalDevice = selectedDevice;
             }
         }
         
-        const unitPrice = getEffectivePrice(quickOrderProduct, finalDevice);
+        const unitPrice = getEffectivePrice(currentQoProduct, finalDevice);
         const itemsTotal = unitPrice * quickOrderQty;
         const referralDiscount = appliedReferralCode ? (itemsTotal * 0.1) : 0;
         const shippingFee = quickOrderForm.time.startsWith('Imediato') ? 200 : 0;
         const total = itemsTotal - referralDiscount + shippingFee;
         
         const finalName = hasDeviceSel 
-            ? (hasColorSel ? `${quickOrderProduct.name} (${finalDevice} - ${selectedColor})` : `${quickOrderProduct.name} (${finalDevice})`)
-            : (hasColorSel ? `${quickOrderProduct.name} (${selectedColor})` : quickOrderProduct.name);
+            ? (hasColorSel ? `${currentQoProduct.name} (${finalDevice} - ${selectedColor})` : `${currentQoProduct.name} (${finalDevice})`)
+            : (hasColorSel ? `${currentQoProduct.name} (${selectedColor})` : currentQoProduct.name);
 
         const orderData = {
-            customer_name: quickOrderForm.name,
-            phone: quickOrderForm.phone,
+            customer_name: quickOrderForm.name.trim(),
+            phone: quickOrderForm.phone.trim(),
             bairro: quickOrderForm.bairro,
-            address: quickOrderForm.address,
+            address: quickOrderForm.address.trim(),
             time: quickOrderForm.time,
             payment: quickOrderForm.payment,
             total: total,
             user_id: currentUser ? currentUser.id : null,
             items: [{ 
-                ...quickOrderProduct, 
+                ...currentQoProduct, 
                 name: finalName, 
+                price: unitPrice,
                 quantity: quickOrderQty 
             }],
             status: 'Pendente',
@@ -1389,7 +1427,7 @@ export default function Store() {
             });
             if (res.ok) {
                 const order = await res.json();
-                saveOrderToHistory(order, quickOrderForm.name, [{ ...quickOrderProduct, quantity: quickOrderQty }]);
+                saveOrderToHistory(order, quickOrderForm.name, [{ ...currentQoProduct, name: finalName, quantity: quickOrderQty }]);
                 setQuickOrderProduct(null);
                 setAppliedReferralCode('');
                 setReferralInput('');
@@ -2239,7 +2277,7 @@ export default function Store() {
                     <div className="modal-overlay active" onClick={() => setQuickOrderProduct(null)}></div>
                     <div className="product-modal active">
                         <button className="close-modal" onClick={() => setQuickOrderProduct(null)}>&times;</button>
-                        <div className="product-modal-content">
+                        <form className="product-modal-content" onSubmit={handleQuickOrderSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                             <div className="qo-scroll-body">
                                 <div className="pm-image" style={{ flex: '1 1 250px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
                                     <img src={activeQuickOrderProduct.image} alt={activeQuickOrderProduct.name} style={{ maxHeight: '180px' }} />
@@ -2358,7 +2396,7 @@ export default function Store() {
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                                         Detalhes de Entrega
                                     </h3>
-                                    <form id="quick-order-form-react" onSubmit={handleQuickOrderSubmit} className="checkout-form" style={{ display: 'flex', marginTop: '1rem' }}>
+                                    <div className="checkout-form" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
                                         <input
                                             type="text"
                                             placeholder="Seu Nome Completo"
@@ -2371,7 +2409,6 @@ export default function Store() {
                                             placeholder="Número de Telefone"
                                             value={quickOrderForm.phone}
                                             required
-                                            pattern="[0-9\s+\-()]{8,15}"
                                             onChange={e => setQuickOrderForm({ ...quickOrderForm, phone: e.target.value })}
                                         />
                                         <select
@@ -2449,27 +2486,20 @@ export default function Store() {
                                                 ✓ Código '{appliedReferralCode}' aplicado!
                                             </span>
                                         )}
-                                    </form>
+                                    </div>
                                 </div>
                             </div>
                             <div className="pm-sticky-bottom-bar">
                                 <button 
-                                    type="button" 
+                                    type="submit" 
                                     className="btn-buy-now-modal" 
-                                    style={{ width: '100%', flex: 1, fontSize: '1.05rem', padding: '0.9rem' }}
-                                    onClick={() => {
-                                        const form = document.getElementById('quick-order-form-react');
-                                        if (form) {
-                                            if (form.requestSubmit) form.requestSubmit();
-                                            else form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                                        }
-                                    }}
+                                    style={{ width: '100%', flex: 1, fontSize: '1.05rem', padding: '0.9rem', cursor: 'pointer' }}
                                 >
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                                     Confirmar Pedido
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </>
             )}

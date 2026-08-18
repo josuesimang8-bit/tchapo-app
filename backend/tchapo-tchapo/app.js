@@ -1254,69 +1254,72 @@ function startQuickOrderModal(id, fromModal = false, customImg = null, customPri
     }
 
     quickOrderContent.innerHTML = `
-        <div class="qo-scroll-body">
-            <div class="qo-left">
-                <img src="${quickOrderProduct.image}" alt="${quickOrderProduct.name}" class="qo-img">
-                <h3>${quickOrderProduct.name}</h3>
-                ${optionsHtml}
-                <div class="qo-price" id="qo-display-price">${formatCurrency(quickOrderProduct.price)}</div>
-                <div class="qo-qty-row">
-                    <span>Quantidade:</span>
-                    <div class="qo-qty">
-                        <button type="button" onclick="qoAdjust(-1)">−</button>
-                        <span id="qo-qty-val">1</span>
-                        <button type="button" onclick="qoAdjust(1)">+</button>
+        <form id="quick-order-form" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; height: 100%; width: 100%;">
+            <div class="qo-scroll-body">
+                <div class="qo-left">
+                    <img src="${quickOrderProduct.image}" alt="${quickOrderProduct.name}" class="qo-img">
+                    <h3>${quickOrderProduct.name}</h3>
+                    ${optionsHtml}
+                    <div class="qo-price" id="qo-display-price">${formatCurrency(quickOrderProduct.price)}</div>
+                    <div class="qo-qty-row">
+                        <span>Quantidade:</span>
+                        <div class="qo-qty">
+                            <button type="button" onclick="qoAdjust(-1)">−</button>
+                            <span id="qo-qty-val">1</span>
+                            <button type="button" onclick="qoAdjust(1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="qo-right">
+                    <h3>📋 Detalhes de Entrega</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <input type="text" id="qo-name" placeholder="Seu Nome Completo" required>
+                        <input type="tel" id="qo-phone" placeholder="Número de Telefone (ex: 84 123 4567)" required>
+                        <select id="qo-bairro" required>
+                            <option value="" disabled selected>Selecione o Bairro...</option>
+                            <option>Macuti</option><option>Ponta Gêa</option><option>Maquinino</option>
+                            <option>Pioneiros</option><option>Chota</option><option>Estoril</option>
+                            <option>Palmeiras</option><option>Munhava</option><option>Manga</option>
+                            <option>Inhamizua</option><option>Matacuane</option><option>Macurungo</option>
+                        </select>
+                        <input type="text" id="qo-address" placeholder="Morada e Ponto de Referência" required>
+                        <select id="qo-time" required>
+                            <option value="" disabled selected>Horário de Entrega...</option>
+                            <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
+                            <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
+                            <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
+                            <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
+                        </select>
+                        <select id="qo-payment" required>
+                            <option value="" disabled selected>Método de Pagamento...</option>
+                            <option value="M-Pesa">M-Pesa</option>
+                            <option value="eMola">eMola</option>
+                            <option value="Dinheiro Físico">Dinheiro Físico</option>
+                        </select>
+
+                        <div class="coupon-section" style="margin-top: 0.25rem; margin-bottom: 0.25rem; width: 100%;">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: #4b5563; margin-bottom: 0.25rem; display: block; text-align: left;">Código de Indicação (10% Desconto):</label>
+                            <div style="display: flex; gap: 0.5rem; width: 100%;">
+                                <input type="text" id="qo-coupon" placeholder="CÓDIGO" value="${appliedCoupon ? appliedCoupon.code : ''}" style="margin-bottom: 0; flex: 1; text-transform: uppercase; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff; box-sizing: border-box;">
+                                <button type="button" id="btn-apply-qo-coupon" style="background: var(--dark); color: var(--white); border: none; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Aplicar</button>
+                            </div>
+                            <div id="qo-coupon-message" style="font-size: 0.75rem; margin-top: 0.2rem; display: ${appliedCoupon ? 'block' : 'none'}; color: #10b981; text-align: left;">
+                                ${appliedCoupon ? '✅ Código de indicação aplicado! 10% de desconto.' : ''}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="qo-right">
-                <h3>📋 Detalhes de Entrega</h3>
-                <form id="quick-order-form">
-                    <input type="text" id="qo-name" placeholder="Seu Nome Completo" required>
-                    <input type="tel" id="qo-phone" placeholder="Número de Telefone (ex: 84 123 4567)" required pattern="[0-9\\s+\\-()]{8,15}">
-                    <select id="qo-bairro" required>
-                        <option value="" disabled selected>Selecione o Bairro...</option>
-                        <option>Macuti</option><option>Ponta Gêa</option><option>Maquinino</option>
-                        <option>Pioneiros</option><option>Chota</option><option>Estoril</option>
-                        <option>Palmeiras</option><option>Munhava</option><option>Manga</option>
-                        <option>Inhamizua</option><option>Matacuane</option><option>Macurungo</option>
-                    </select>
-                    <input type="text" id="qo-address" placeholder="Morada e Ponto de Referência" required>
-                    <select id="qo-time" required>
-                        <option value="" disabled selected>Horário de Entrega...</option>
-                        <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
-                        <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
-                        <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
-                        <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
-                    </select>
-                    <select id="qo-payment" required>
-                        <option value="" disabled selected>Método de Pagamento...</option>
-                        <option value="M-Pesa">M-Pesa</option>
-                        <option value="eMola">eMola</option>
-                        <option value="Dinheiro Físico">Dinheiro Físico</option>
-                    </select>
-
-                    <div class="coupon-section" style="margin-top: 0.75rem; margin-bottom: 0.75rem; width: 100%;">
-                        <label style="font-size: 0.8rem; font-weight: 600; color: #4b5563; margin-bottom: 0.25rem; display: block; text-align: left;">Código de Indicação (10% Desconto):</label>
-                        <div style="display: flex; gap: 0.5rem; width: 100%;">
-                            <input type="text" id="qo-coupon" placeholder="CÓDIGO" value="${appliedCoupon ? appliedCoupon.code : ''}" style="margin-bottom: 0; flex: 1; text-transform: uppercase; padding: 0.5rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.85rem; outline: none; background-color: #fff; box-sizing: border-box;">
-                            <button type="button" id="btn-apply-qo-coupon" style="background: var(--dark); color: var(--white); border: none; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Aplicar</button>
-                        </div>
-                        <div id="qo-coupon-message" style="font-size: 0.75rem; margin-top: 0.2rem; display: ${appliedCoupon ? 'block' : 'none'}; color: #10b981; text-align: left;">
-                            ${appliedCoupon ? '✅ Código de indicação aplicado! 10% de desconto.' : ''}
-                        </div>
-                    </div>
-                </form>
+            <div class="pm-sticky-bottom-bar">
+                <button type="submit" id="btn-submit-quick-order" class="btn-buy-now-modal" style="width: 100%; flex: 1; font-size: 1.05rem; padding: 0.9rem; cursor: pointer;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    Confirmar Pedido
+                </button>
             </div>
-        </div>
-        <div class="pm-sticky-bottom-bar">
-            <button type="button" id="btn-submit-quick-order" class="btn-buy-now-modal" style="width: 100%; flex: 1; font-size: 1.05rem; padding: 0.9rem;" onclick="submitQuickOrderForm()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                Confirmar Pedido
-            </button>
-        </div>
+        </form>
     `;
-    document.getElementById('quick-order-form').addEventListener('submit', handleQuickOrder);
+    const qForm = document.getElementById('quick-order-form');
+    if (qForm) qForm.addEventListener('submit', handleQuickOrder);
     const applyQoCouponBtn = document.getElementById('btn-apply-qo-coupon');
     if (applyQoCouponBtn) applyQoCouponBtn.addEventListener('click', applyQuickOrderCoupon);
     const timeSelect = document.getElementById('qo-time');
@@ -1368,24 +1371,54 @@ function qoAdjust(delta) {
     updateQuickOrderPrice();
 }
 
-function submitQuickOrderForm() {
-    const form = document.getElementById('quick-order-form');
-    if (!form) return;
-    if (form.requestSubmit) {
-        form.requestSubmit();
-    } else {
-        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-    }
-}
-
 function handleQuickOrder(e) {
     if (e) e.preventDefault();
-    const name    = document.getElementById('qo-name').value;
-    const phone   = document.getElementById('qo-phone').value;
-    const bairro  = document.getElementById('qo-bairro').value;
-    const address = document.getElementById('qo-address').value;
-    const time    = document.getElementById('qo-time').value;
-    const payment = document.getElementById('qo-payment').value;
+    const nameEl    = document.getElementById('qo-name');
+    const phoneEl   = document.getElementById('qo-phone');
+    const bairroEl  = document.getElementById('qo-bairro');
+    const addressEl = document.getElementById('qo-address');
+    const timeEl    = document.getElementById('qo-time');
+    const paymentEl = document.getElementById('qo-payment');
+
+    if (!nameEl || !phoneEl || !bairroEl || !addressEl || !timeEl || !paymentEl) return;
+
+    const name    = nameEl.value.trim();
+    const phone   = phoneEl.value.trim();
+    const bairro  = bairroEl.value;
+    const address = addressEl.value.trim();
+    const time    = timeEl.value;
+    const payment = paymentEl.value;
+
+    if (!name) {
+        showStatusToast('⚠️ Por favor, insira o seu nome completo.');
+        nameEl.focus();
+        return;
+    }
+    if (!phone) {
+        showStatusToast('⚠️ Por favor, insira o seu número de telefone.');
+        phoneEl.focus();
+        return;
+    }
+    if (!bairro) {
+        showStatusToast('⚠️ Por favor, selecione o seu bairro.');
+        bairroEl.focus();
+        return;
+    }
+    if (!address) {
+        showStatusToast('⚠️ Por favor, insira a sua morada / ponto de referência.');
+        addressEl.focus();
+        return;
+    }
+    if (!time) {
+        showStatusToast('⚠️ Por favor, escolha um horário de entrega.');
+        timeEl.focus();
+        return;
+    }
+    if (!payment) {
+        showStatusToast('⚠️ Por favor, escolha o método de pagamento.');
+        paymentEl.focus();
+        return;
+    }
 
     const devSelType = getDeviceSelectionType(quickOrderProduct);
     const colorSelType = getColorSelectionType(quickOrderProduct);
@@ -1403,16 +1436,18 @@ function handleQuickOrder(e) {
                 const customVal = customInput ? customInput.value.trim() : '';
                 if (!customVal) {
                     showStatusToast('⚠️ Por favor, escreva o modelo do seu dispositivo.');
+                    if (customInput) customInput.focus();
                     return;
                 }
                 dev = customVal;
             } else if (devSelType === 'iphone_outro') {
-                const selectVal = document.getElementById('qo-device').value;
+                const selectVal = document.getElementById('qo-device') ? document.getElementById('qo-device').value : '';
                 if (selectVal === 'outro') {
                     const customInput = document.getElementById('qo-custom-device');
                     const customVal = customInput ? customInput.value.trim() : '';
                     if (!customVal) {
                         showStatusToast('⚠️ Por favor, escreva o modelo do seu dispositivo.');
+                        if (customInput) customInput.focus();
                         return;
                     }
                     dev = customVal;
@@ -1420,7 +1455,8 @@ function handleQuickOrder(e) {
                     dev = selectVal;
                 }
             } else {
-                dev = document.getElementById('qo-device').value;
+                const devEl = document.getElementById('qo-device');
+                dev = devEl ? devEl.value : '';
             }
         }
         
@@ -1454,9 +1490,11 @@ function handleQuickOrder(e) {
         referral_discount: discount
     };
 
-    const submitBtn = document.querySelector('#quick-order-form .btn-checkout');
-    submitBtn.textContent = '⏳ A enviar pedido...';
-    submitBtn.disabled = true;
+    const submitBtn = document.getElementById('btn-submit-quick-order') || document.querySelector('.btn-checkout');
+    if (submitBtn) {
+        submitBtn.textContent = '⏳ A enviar pedido...';
+        submitBtn.disabled = true;
+    }
 
     fetch('/api/orders', {
         method: 'POST',

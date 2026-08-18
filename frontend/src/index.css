@@ -506,52 +506,26 @@ body {
     flex-direction: column;
 }
 
-.card-share-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #f3f4f6;
-    color: #4b5563;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    z-index: 5;
-    opacity: 0.85;
-}
-
-.card-share-btn:hover {
-    background: var(--primary);
-    color: var(--dark);
-    transform: scale(1.1);
-    opacity: 1;
-}
-
 .btn-share-product {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
+    width: 36px;
+    height: 36px;
     background: #f3f4f6;
-    color: #374151;
+    color: #4b5563;
     border: 1px solid #e5e7eb;
-    padding: 0.45rem 0.85rem;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .btn-share-product:hover {
     background: #e5e7eb;
     color: #111827;
     border-color: #d1d5db;
+    transform: scale(1.08);
 }
 
 .product-card:hover {

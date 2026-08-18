@@ -527,15 +527,18 @@ function getProductShareUrl(productId) {
 }
 
 async function shareProduct(productId, event) {
-    if (event) event.stopPropagation();
-    const product = products.find(p => p.id === productId);
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const product = products.find(p => p.id == productId);
     if (!product) return;
 
-    const shareUrl = getProductShareUrl(productId);
+    const shareUrl = getProductShareUrl(product.id);
     const shareTitle = `${product.name} — Tchapo Tchapo`;
-    const shareText = `Confira ${product.name} por apenas ${formatCurrency(product.price)} na Tchapo Tchapo! Entrega rápida em Maputo:`;
+    const shareText = `Confira ${product.name} por apenas ${formatCurrency(product.price)} na Tchapo Tchapo!`;
 
-    if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+    if (navigator.share) {
         try {
             await navigator.share({
                 title: shareTitle,
@@ -553,9 +556,12 @@ async function shareProduct(productId, event) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(shareUrl);
         } else {
-            const tempInput = document.createElement('input');
+            const tempInput = document.createElement('textarea');
             tempInput.value = shareUrl;
+            tempInput.style.position = 'fixed';
+            tempInput.style.opacity = '0';
             document.body.appendChild(tempInput);
+            tempInput.focus();
             tempInput.select();
             document.execCommand('copy');
             document.body.removeChild(tempInput);
@@ -859,9 +865,6 @@ function renderProducts() {
         return `
             <div class="product-card ${isOut ? 'out-of-stock' : ''}">
                 ${featStar}
-                <button class="card-share-btn" onclick="shareProduct('${product.id}', event)" title="Copiar / Partilhar link deste produto">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                </button>
                 <div class="product-image-container" onclick="openProductModal('${product.id}')">
                     <img src="${product.image}" alt="${product.name}" class="product-img" style="${isOut ? 'opacity:0.5' : ''}">
                 </div>
@@ -1082,9 +1085,8 @@ function openProductModal(id, pushUrl = true) {
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
                     <div class="product-category-tag" style="margin-bottom:0">${getCategoryIcon(product.category)} ${product.category}</div>
                     <div style="display:flex;align-items:center;gap:0.5rem;">
-                        <button class="btn-share-product" onclick="shareProduct('${product.id}', event)" title="Copiar / Partilhar Link do Produto">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                            Partilhar
+                        <button class="btn-share-product" onclick="shareProduct('${product.id}', event)" title="Partilhar / Copiar Link">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                         </button>
                         ${modalStockBadgeHtml}
                     </div>

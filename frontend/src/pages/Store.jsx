@@ -1015,16 +1015,17 @@ export default function Store() {
     }, []);
 
     const handleShareProduct = async (prod, e) => {
-        if (e) e.stopPropagation();
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         if (!prod) return;
 
-        const url = new URL(window.location.origin + window.location.pathname);
-        url.searchParams.set('p', prod.id);
-        const shareUrl = url.toString();
+        const shareUrl = `${window.location.origin}${window.location.pathname}?p=${encodeURIComponent(prod.id)}`;
         const shareTitle = `${prod.name} — Tchapo Tchapo`;
         const shareText = `Confira ${prod.name} por apenas ${formatCurrency(prod.price)} na Tchapo Tchapo!`;
 
-        if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+        if (navigator.share) {
             try {
                 await navigator.share({
                     title: shareTitle,
@@ -1041,14 +1042,17 @@ export default function Store() {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(shareUrl);
             } else {
-                const temp = document.createElement('input');
+                const temp = document.createElement('textarea');
                 temp.value = shareUrl;
+                temp.style.position = 'fixed';
+                temp.style.opacity = '0';
                 document.body.appendChild(temp);
+                temp.focus();
                 temp.select();
                 document.execCommand('copy');
                 document.body.removeChild(temp);
             }
-            setToastMessage('🔗 Link do produto copiado com sucesso!');
+            setToastMessage('🔗 Link copiado com sucesso!');
         } catch (err) {
             setToastMessage('🔗 Link: ' + shareUrl);
         }
@@ -1783,9 +1787,6 @@ export default function Store() {
                             return (
                             <div key={prod.id} className={`product-card ${isOut ? 'out-of-stock' : ''}`}>
                                 {isFeatured(prod) && <div className="card-featured-badge">⭐</div>}
-                                <button className="card-share-btn" onClick={(e) => handleShareProduct(prod, e)} title="Copiar / Partilhar link deste produto">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                                </button>
                                 <div className="product-image-container" onClick={() => { setSelectedProduct(prod); setModalImageIndex(0); trackProductClick(prod.id); }}>
                                     <img src={prod.image} alt={prod.name} className="product-img" style={{ opacity: isOut ? 0.5 : 1 }} />
                                 </div>
@@ -1887,9 +1888,8 @@ export default function Store() {
                                         {getCategoryIcon(activeSelectedProduct.category)} {activeSelectedProduct.category}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <button className="btn-share-product" onClick={(e) => handleShareProduct(activeSelectedProduct, e)} title="Copiar / Partilhar Link do Produto">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                                            Partilhar
+                                        <button className="btn-share-product" onClick={(e) => handleShareProduct(activeSelectedProduct, e)} title="Partilhar / Copiar Link">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                                         </button>
                                         {(() => {
                                             const stock = getStockStatus(activeSelectedProduct);

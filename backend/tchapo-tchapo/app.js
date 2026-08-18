@@ -833,13 +833,13 @@ function renderProducts() {
                             return `
                                 <div class="featured-card ${isOut ? 'out-of-stock' : ''}">
                                     <div class="featured-badge">⭐ Destaque</div>
-                                    <div class="featured-img-wrap" onclick="openProductModal(${prod.id})">
+                                    <div class="featured-img-wrap" onclick="openProductModal('${prod.id}')">
                                         <img src="${prod.image}" alt="${prod.name}" class="featured-img">
                                     </div>
                                     <div class="featured-info">
                                         <h4 class="featured-name">${prod.name}</h4>
                                         <div class="featured-price">${formatCurrency(prod.price)}</div>
-                                        <button class="btn-buy-now" ${isOut ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="openQuickOrder(${prod.id})"`} style="font-size:0.8rem;padding:0.4rem 0.8rem;">
+                                        <button class="btn-buy-now" ${isOut ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="openQuickOrder('${prod.id}')"`} style="font-size:0.8rem;padding:0.4rem 0.8rem;">
                                             ${isOut ? '❌ Esgotado' : '⚡ Pedir Agora'}
                                         </button>
                                     </div>
@@ -873,22 +873,22 @@ function renderProducts() {
         return `
             <div class="product-card ${isOut ? 'out-of-stock' : ''}">
                 ${featStar}
-                <button class="card-share-btn" onclick="shareProduct(${product.id}, event)" title="Copiar / Partilhar link deste produto">
+                <button class="card-share-btn" onclick="shareProduct('${product.id}', event)" title="Copiar / Partilhar link deste produto">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                 </button>
-                <div class="product-image-container" onclick="openProductModal(${product.id})">
+                <div class="product-image-container" onclick="openProductModal('${product.id}')">
                     <img src="${product.image}" alt="${product.name}" class="product-img" style="${isOut ? 'opacity:0.5' : ''}">
                 </div>
                 <div class="product-category-tag">${getCategoryIcon(product.category)} ${product.category}</div>
-                <h3 class="product-title" onclick="openProductModal(${product.id})">${product.name}</h3>
+                <h3 class="product-title" onclick="openProductModal('${product.id}')">${product.name}</h3>
                 <p class="product-desc">${product.desc || ''}</p>
                 <div class="product-price">${formatCurrency(product.price)}</div>
                 <div class="product-actions">
-                    <button class="btn-add-to-cart" ${isOut ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="${(getDeviceSelectionType(product) !== 'none' || getColorSelectionType(product) !== 'none') ? `openProductModal(${product.id})` : `addToCart(${product.id}); showToast()`}"`}>
+                    <button class="btn-add-to-cart" ${isOut ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="${(getDeviceSelectionType(product) !== 'none' || getColorSelectionType(product) !== 'none') ? `openProductModal('${product.id}')` : `addToCart('${product.id}'); showToast()`}"`}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                         Carrinho
                     </button>
-                    <button class="btn-buy-now" ${isOut ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="openQuickOrder(${product.id})"`}>
+                    <button class="btn-buy-now" ${isOut ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="openQuickOrder('${product.id}')"`}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         ${isOut ? 'Esgotado' : 'Pedir Agora'}
                     </button>
@@ -900,7 +900,7 @@ function renderProducts() {
 
 // ─── PRODUCT DETAIL MODAL ────────────────────────────────────────────
 function addCaseToCartFromModal(id) {
-    const product = products.find(p => p.id === id);
+    const product = products.find(p => p.id == id);
     const devSelType = getDeviceSelectionType(product);
     const colorSelType = getColorSelectionType(product);
     
@@ -967,168 +967,172 @@ function trackProductClick(productId) {
 }
 
 function openProductModal(id, pushUrl = true) {
-    trackProductClick(id);
-    if (pushUrl) {
-        try {
-            const url = new URL(window.location.href);
-            url.searchParams.set('p', id);
-            window.history.replaceState({ productId: id }, '', url.toString());
-        } catch (e) {}
-    }
-    const product = products.find(p => p.id === id);
-    if (!product) return;
-    const devSelType = getDeviceSelectionType(product);
-    
-    let optionsHtml = '';
-    const colorSelType = getColorSelectionType(product);
-    if (devSelType !== 'none' || colorSelType !== 'none') {
-        let deviceSelectHtml = '';
-        if (devSelType !== 'none') {
-            if (devSelType === 'iphone' || devSelType === 'iphone_outro') {
-                deviceSelectHtml = `
-                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                        <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Selecione o Dispositivo:</label>
-                        <select id="pm-device" onchange="togglePmCustomDeviceInput(this.value, '${devSelType}')" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
-                            ${DEVICE_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
-                            ${devSelType === 'iphone_outro' ? `<option value="outro">Outro (Digitar...)</option>` : ''}
-                        </select>
+    try {
+        trackProductClick(id);
+        if (pushUrl) {
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('p', id);
+                window.history.replaceState({ productId: id }, '', url.pathname + url.search);
+            } catch (e) {}
+        }
+        const product = products.find(p => p.id == id);
+        if (!product) return;
+        const devSelType = getDeviceSelectionType(product);
+        
+        let optionsHtml = '';
+        const colorSelType = getColorSelectionType(product);
+        if (devSelType !== 'none' || colorSelType !== 'none') {
+            let deviceSelectHtml = '';
+            if (devSelType !== 'none') {
+                if (devSelType === 'iphone' || devSelType === 'iphone_outro') {
+                    deviceSelectHtml = `
+                        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                            <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Selecione o Dispositivo:</label>
+                            <select id="pm-device" onchange="togglePmCustomDeviceInput(this.value, '${devSelType}')" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
+                                ${DEVICE_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                                ${devSelType === 'iphone_outro' ? `<option value="outro">Outro (Digitar...)</option>` : ''}
+                            </select>
+                        </div>
+                    `;
+                } else if (devSelType === 'pendrive') {
+                    deviceSelectHtml = `
+                        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                            <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Capacidade (GB):</label>
+                            <select id="pm-device" onchange="updatePmPrice('${product.id}')" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
+                                ${PENDRIVE_OPTIONS.map(d => `<option value="${d}">${d} — ${PENDRIVE_PRICES[d]} MT</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                } else if (devSelType === 'card') {
+                    deviceSelectHtml = `
+                        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                            <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Capacidade (GB):</label>
+                            <select id="pm-device" onchange="updatePmPrice('${product.id}')" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
+                                ${CARD_OPTIONS.map(d => `<option value="${d}">${d} — ${CARD_PRICES[d]} MT</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                }
+            }
+            
+            let customDeviceInputHtml = '';
+            if (devSelType !== 'none') {
+                customDeviceInputHtml = `
+                    <div id="pm-custom-device-container" style="display: ${devSelType === 'outro' ? 'flex' : 'none'}; flex-direction: column; gap: 0.35rem;">
+                        <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Escreva o Dispositivo:</label>
+                        <input id="pm-custom-device" type="text" placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc." style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff; box-sizing: border-box;">
                     </div>
                 `;
-            } else if (devSelType === 'pendrive') {
-                deviceSelectHtml = `
+            }
+
+            let colorSelectHtml = '';
+            if (colorSelType !== 'none') {
+                colorSelectHtml = `
                     <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                        <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Capacidade (GB):</label>
-                        <select id="pm-device" onchange="updatePmPrice(${product.id})" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
-                            ${PENDRIVE_OPTIONS.map(d => `<option value="${d}">${d} — ${PENDRIVE_PRICES[d]} MT</option>`).join('')}
-                        </select>
-                    </div>
-                `;
-            } else if (devSelType === 'card') {
-                deviceSelectHtml = `
-                    <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                        <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Capacidade (GB):</label>
-                        <select id="pm-device" onchange="updatePmPrice(${product.id})" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
-                            ${CARD_OPTIONS.map(d => `<option value="${d}">${d} — ${CARD_PRICES[d]} MT</option>`).join('')}
+                        <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Cor:</label>
+                        <select id="pm-color" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
+                            ${COLOR_OPTIONS.map(c => `<option value="${c}">${c}</option>`).join('')}
                         </select>
                     </div>
                 `;
             }
+
+            optionsHtml = `
+                <div class="product-options" style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                    ${deviceSelectHtml}
+                    ${customDeviceInputHtml}
+                    ${colorSelectHtml}
+                </div>
+            `;
         }
+
+        const gallery = getProductGalleryDetails(product);
+        const allImgs = gallery.items.map(it => it.src);
+        const galleryPrices = gallery.items.map(it => it.price);
+        const galleryTitles = gallery.items.map(it => it.title);
         
-        let customDeviceInputHtml = '';
-        if (devSelType !== 'none') {
-            customDeviceInputHtml = `
-                <div id="pm-custom-device-container" style="display: ${devSelType === 'outro' ? 'flex' : 'none'}; flex-direction: column; gap: 0.35rem;">
-                    <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Escreva o Dispositivo:</label>
-                    <input id="pm-custom-device" type="text" placeholder="Ex: Xiaomi Poco X3, Galaxy S24, etc." style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff; box-sizing: border-box;">
+        let imageGalleryHtml = `<div class="gallery-wrap"><div class="gallery-main-container"><img src="${product.image}" alt="${product.name}" id="pm-main-img" class="gallery-main-img"></div></div>`;
+        if (allImgs.length > 1) {
+            imageGalleryHtml = `
+                <div class="gallery-wrap">
+                    <div class="gallery-main-container">
+                        <img src="${allImgs[0]}" alt="${product.name}" id="pm-main-img" class="gallery-main-img">
+                        <button class="gallery-arrow gallery-prev" onclick="changeGalleryImage(-1); event.stopPropagation();">‹</button>
+                        <button class="gallery-arrow gallery-next" onclick="changeGalleryImage(1); event.stopPropagation();">›</button>
+                    </div>
+                    <div class="gallery-dots">
+                        ${allImgs.map((_, idx) => `<span class="gallery-dot ${idx===0?'active':''}" onclick="selectGalleryImage(${idx})"></span>`).join('')}
+                    </div>
+                    <div class="gallery-thumbs">
+                        ${allImgs.map((img, idx) => `<img src="${img}" class="gallery-thumb ${idx===0?'active':''}" onclick="selectGalleryImage(${idx})">`).join('')}
+                    </div>
                 </div>
             `;
+            window.currentGalleryImgs = allImgs;
+            window.currentGalleryPrices = galleryPrices;
+            window.currentGalleryTitles = galleryTitles;
+            window.currentGalleryIdx = 0;
+        } else {
+            window.currentGalleryImgs = [product.image];
+            window.currentGalleryPrices = [galleryPrices[0] || product.price];
+            window.currentGalleryTitles = [galleryTitles[0] || ''];
+            window.currentGalleryIdx = 0;
         }
 
-        let colorSelectHtml = '';
-        if (colorSelType !== 'none') {
-            colorSelectHtml = `
-                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                    <label style="font-weight: 600; font-size: 0.9rem; color: #374151; text-align: left;">Cor:</label>
-                    <select id="pm-color" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--gray-light); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background-color: #fff;">
-                        ${COLOR_OPTIONS.map(c => `<option value="${c}">${c}</option>`).join('')}
-                    </select>
-                </div>
-            `;
-        }
+        const stock = getStockStatus(product);
+        let modalStockBadgeHtml = '<div class="modal-stock-badge stock-ok">✅ Em Stock</div>';
+        if (stock === 'Últimas Unidades') modalStockBadgeHtml = '<div class="modal-stock-badge stock-low">🔥 Últimas Unidades</div>';
+        if (stock === 'Esgotado') modalStockBadgeHtml = '<div class="modal-stock-badge stock-out">❌ Esgotado</div>';
 
-        optionsHtml = `
-            <div class="product-options" style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                ${deviceSelectHtml}
-                ${customDeviceInputHtml}
-                ${colorSelectHtml}
+        const initialPrice = galleryPrices[0] || getEffectivePrice(product, devSelType === 'pendrive' ? PENDRIVE_OPTIONS[0] : devSelType === 'card' ? CARD_OPTIONS[0] : null);
+        const initialTitle = galleryTitles[0] || '';
+
+        productModalContent.innerHTML = `
+            <div class="pm-image">
+                ${imageGalleryHtml}
             </div>
-        `;
-    }
-
-    const gallery = getProductGalleryDetails(product);
-    const allImgs = gallery.items.map(it => it.src);
-    const galleryPrices = gallery.items.map(it => it.price);
-    const galleryTitles = gallery.items.map(it => it.title);
-    
-    let imageGalleryHtml = `<div class="gallery-wrap"><div class="gallery-main-container"><img src="${product.image}" alt="${product.name}" id="pm-main-img" class="gallery-main-img"></div></div>`;
-    if (allImgs.length > 1) {
-        imageGalleryHtml = `
-            <div class="gallery-wrap">
-                <div class="gallery-main-container">
-                    <img src="${allImgs[0]}" alt="${product.name}" id="pm-main-img" class="gallery-main-img">
-                    <button class="gallery-arrow gallery-prev" onclick="changeGalleryImage(-1); event.stopPropagation();">‹</button>
-                    <button class="gallery-arrow gallery-next" onclick="changeGalleryImage(1); event.stopPropagation();">›</button>
+            <div class="pm-info">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+                    <div class="product-category-tag" style="margin-bottom:0">${getCategoryIcon(product.category)} ${product.category}</div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <button class="btn-share-product" onclick="shareProduct('${product.id}', event)" title="Copiar / Partilhar Link do Produto">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                            Partilhar
+                        </button>
+                        ${modalStockBadgeHtml}
+                    </div>
                 </div>
-                <div class="gallery-dots">
-                    ${allImgs.map((_, idx) => `<span class="gallery-dot ${idx===0?'active':''}" onclick="selectGalleryImage(${idx})"></span>`).join('')}
-                </div>
-                <div class="gallery-thumbs">
-                    ${allImgs.map((img, idx) => `<img src="${img}" class="gallery-thumb ${idx===0?'active':''}" onclick="selectGalleryImage(${idx})">`).join('')}
-                </div>
-            </div>
-        `;
-        window.currentGalleryImgs = allImgs;
-        window.currentGalleryPrices = galleryPrices;
-        window.currentGalleryTitles = galleryTitles;
-        window.currentGalleryIdx = 0;
-    } else {
-        window.currentGalleryImgs = [product.image];
-        window.currentGalleryPrices = [galleryPrices[0] || product.price];
-        window.currentGalleryTitles = [galleryTitles[0] || ''];
-        window.currentGalleryIdx = 0;
-    }
-
-    const stock = getStockStatus(product);
-    let modalStockBadgeHtml = '<div class="modal-stock-badge stock-ok">✅ Em Stock</div>';
-    if (stock === 'Últimas Unidades') modalStockBadgeHtml = '<div class="modal-stock-badge stock-low">🔥 Últimas Unidades</div>';
-    if (stock === 'Esgotado') modalStockBadgeHtml = '<div class="modal-stock-badge stock-out">❌ Esgotado</div>';
-
-    const initialPrice = galleryPrices[0] || getEffectivePrice(product, devSelType === 'pendrive' ? PENDRIVE_OPTIONS[0] : devSelType === 'card' ? CARD_OPTIONS[0] : null);
-    const initialTitle = galleryTitles[0] || '';
-
-    productModalContent.innerHTML = `
-        <div class="pm-image">
-            ${imageGalleryHtml}
-        </div>
-        <div class="pm-info">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
-                <div class="product-category-tag" style="margin-bottom:0">${getCategoryIcon(product.category)} ${product.category}</div>
-                <div style="display:flex;align-items:center;gap:0.5rem;">
-                    <button class="btn-share-product" onclick="shareProduct(${product.id}, event)" title="Copiar / Partilhar Link do Produto">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                        Partilhar
+                <h2 class="pm-title">${product.name}</h2>
+                <div id="pm-variant-tag" style="display:${initialTitle ? 'inline-block' : 'none'}; font-size:0.85rem; font-weight:600; color:#4b5563; background:#f3f4f6; padding:0.25rem 0.6rem; border-radius:6px; margin-bottom:0.5rem;">⚡ Opção: ${initialTitle}</div>
+                <div class="pm-price" id="pm-price">${formatCurrency(initialPrice)}</div>
+                <p class="pm-desc">${product.desc}</p>
+                <ul class="pm-features">
+                    ${(product.features || []).filter(f => !f.startsWith('_')).map(f => `<li>${f}</li>`).join('')}
+                </ul>
+                ${optionsHtml}
+                <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;">
+                    <button class="btn-add-cart" style="flex:1" onclick="addCaseToCartFromModal('${product.id}')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                        Adicionar ao Carrinho
                     </button>
-                    ${modalStockBadgeHtml}
+                    <button class="btn-buy-now-modal" style="flex:1" onclick="buyNowFromModal('${product.id}')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        Pedir Agora
+                    </button>
                 </div>
             </div>
-            <h2 class="pm-title">${product.name}</h2>
-            <div id="pm-variant-tag" style="display:${initialTitle ? 'inline-block' : 'none'}; font-size:0.85rem; font-weight:600; color:#4b5563; background:#f3f4f6; padding:0.25rem 0.6rem; border-radius:6px; margin-bottom:0.5rem;">⚡ Opção: ${initialTitle}</div>
-            <div class="pm-price" id="pm-price">${formatCurrency(initialPrice)}</div>
-            <p class="pm-desc">${product.desc}</p>
-            <ul class="pm-features">
-                ${(product.features || []).filter(f => !f.startsWith('_')).map(f => `<li>${f}</li>`).join('')}
-            </ul>
-            ${optionsHtml}
-            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;">
-                <button class="btn-add-cart" style="flex:1" onclick="addCaseToCartFromModal(${product.id})">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                    Adicionar ao Carrinho
-                </button>
-                <button class="btn-buy-now-modal" style="flex:1" onclick="buyNowFromModal(${product.id})">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    Pedir Agora
-                </button>
-            </div>
-        </div>
-    `;
-    productModal.classList.add('active');
-    productModalOverlay.classList.add('active');
-    updateScrollLock();
+        `;
+        productModal.classList.add('active');
+        productModalOverlay.classList.add('active');
+        updateScrollLock();
+    } catch (err) {
+        console.error('Erro ao abrir modal do produto:', err);
+    }
 }
 
 function buyNowFromModal(id) {
-    const product = products.find(p => p.id === id);
+    const product = products.find(p => p.id == id);
     if (!product) return;
     const selectedIdx = window.currentGalleryIdx || 0;
     const selectedImg = (window.currentGalleryImgs && window.currentGalleryImgs[selectedIdx])
@@ -1169,7 +1173,7 @@ function openQuickOrder(id, fromModal = false, customImg = null, customPrice = n
 }
 
 function startQuickOrderModal(id, fromModal = false, customImg = null, customPrice = null, customTitle = null) {
-    const rawProd = products.find(p => p.id === id);
+    const rawProd = products.find(p => p.id == id);
     if (!rawProd) return;
     const finalImg = customImg || rawProd.image;
     const finalPrice = customPrice !== null ? customPrice : rawProd.price;

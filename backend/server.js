@@ -121,6 +121,54 @@ const uploadProduct = multer({ storage: productStorage });
 // Servir ficheiros carregados de forma estática
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ─── IMAGE PROXY ──────────────────────────────────────────────────────────────
+// Serve external product images (Catbox etc.) through our server so they
+// load reliably on any network/region. Cache in memory for 24h.
+const _imgCache = new Map();
+
+app.get('/api/img', async (req, res) => {
+    const url = req.query.u;
+    if (!url) return res.status(400).send('Missing url');
+
+    // Only proxy known image hosts
+    const ALLOWED_HOSTS = ['files.catbox.moe', 'catbox.moe', 'i.imgur.com', 'imgur.com'];
+    let isAllowed = false;
+    try {
+        const parsed = new URL(url);
+        isAllowed = ALLOWED_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
+    } catch (_) {}
+    if (!isAllowed) return res.status(403).send('Forbidden');
+
+    // Serve from cache if fresh (24h)
+    const cached = _imgCache.get(url);
+    if (cached && (Date.now() - cached.t) < 86400000) {
+        res.set('Content-Type', cached.ct);
+        res.set('Cache-Control', 'public, max-age=86400');
+        return res.end(cached.d);
+    }
+
+    try {
+        const upstream = await fetch(url, { signal: AbortSignal.timeout(12000) });
+        if (!upstream.ok) return res.status(upstream.status).send('Upstream error');
+
+        const buf = Buffer.from(await upstream.arrayBuffer());
+        const ct = upstream.headers.get('content-type') || 'image/jpeg';
+
+        // Only cache if < 3MB to avoid OOM on free tier
+        if (buf.byteLength < 3145728) {
+            _imgCache.set(url, { d: buf, ct, t: Date.now() });
+        }
+
+        res.set('Content-Type', ct);
+        res.set('Cache-Control', 'public, max-age=86400');
+        res.end(buf);
+    } catch (err) {
+        console.error('[ImageProxy] Failed:', url.slice(0, 60), err.message);
+        res.status(502).send('Failed to fetch image');
+    }
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 const supabaseUrl = process.env.SUPABASE_URL || 'https://rkempjcqoefhdthvwewm.supabase.co';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -657,6 +705,27 @@ app.delete('/api/drivers/:id', async (req, res) => {
 
 // ─── PRODUCTS ENDPOINTS ────────────────────────────────────────────────
 // Helper to resolve product image URLs dynamically to the backend host origin
+function resolveSingleImg(img, baseUrl, PLACEHOLDER) {
+    if (!img || typeof img !== 'string' || img.trim() === '') {
+        return PLACEHOLDER;
+    }
+    const PROXY_HOSTS = ['files.catbox.moe', 'catbox.moe'];
+    try {
+        const parsed = new URL(img);
+        const needsProxy = PROXY_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
+        if (needsProxy) {
+            return `${baseUrl}/api/img?u=${encodeURIComponent(img)}`;
+        }
+    } catch (_) {}
+
+    if (img.startsWith('http://localhost:3000') || img.startsWith('http://localhost:5173') || !img.startsWith('http')) {
+        const cleanPath = img.replace(/^https?:\/\/localhost:\d+/, '');
+        const relativePath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+        return `${baseUrl}${relativePath}`;
+    }
+    return img;
+}
+
 function fixImageUrls(req, products) {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
@@ -666,21 +735,26 @@ function fixImageUrls(req, products) {
     const arrayProducts = Array.isArray(products) ? products : [products];
     const resolved = arrayProducts.map(p => {
         if (!p) return p;
-        let img = p.image;
-
-        // If image is missing or empty, use placeholder so products never show a broken image
-        if (!img || img.trim() === '') {
-            return { ...p, image: PLACEHOLDER };
+        const mainImg = resolveSingleImg(p.image, baseUrl, PLACEHOLDER);
+        let features = p.features;
+        if (Array.isArray(features)) {
+            features = features.map(f => {
+                if (typeof f === 'string' && f.match(/^_img\d+:/)) {
+                    const match = f.match(/^(_img\d+:)(.*)$/);
+                    if (match) {
+                        const prefix = match[1];
+                        const url = match[2];
+                        return prefix + resolveSingleImg(url, baseUrl, PLACEHOLDER);
+                    }
+                }
+                return f;
+            });
         }
-
-        // If it starts with localhost or is a relative path, resolve it to the current backend origin
-        if (img.startsWith('http://localhost:3000') || img.startsWith('http://localhost:5173') || !img.startsWith('http')) {
-            const cleanPath = img.replace(/^https?:\/\/localhost:\d+/, '');
-            const relativePath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
-            img = `${baseUrl}${relativePath}`;
-        }
-
-        return { ...p, image: img };
+        return {
+            ...p,
+            image: mainImg,
+            features
+        };
     });
     return Array.isArray(products) ? resolved : resolved[0];
 }
@@ -817,9 +891,20 @@ app.post('/api/products/upload', uploadProduct.single('photo'), async (req, res)
     }
     
     if (publicUrl) {
-        res.json({ photo_url: publicUrl });
+        // If Catbox was used as fallback, wrap in our image proxy for reliability
+        let finalUrl = publicUrl;
+        try {
+            const parsed = new URL(publicUrl);
+            const PROXY_HOSTS = ['files.catbox.moe', 'catbox.moe'];
+            if (PROXY_HOSTS.some(h => parsed.hostname === h)) {
+                const proto = req.headers['x-forwarded-proto'] || req.protocol;
+                const base = `${proto}://${req.get('host')}`;
+                finalUrl = `${base}/api/img?u=${encodeURIComponent(publicUrl)}`;
+            }
+        } catch (_) {}
+        res.json({ photo_url: finalUrl });
     } else {
-        // Fallback to local file
+        // Fallback to local file path (served by Express static middleware)
         const photoUrl = `/uploads/products/${req.file.filename}`;
         res.json({ photo_url: photoUrl });
     }

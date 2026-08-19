@@ -608,11 +608,16 @@ export default function Admin() {
             });
             if (res.ok) {
                 fetchDrivers();
-                setToast('Motorista removido com sucesso.');
+                fetchOrders();
+                setToast('🗑️ Motorista removido com sucesso.');
                 setTimeout(() => setToast(null), 3000);
+            } else {
+                const data = await res.json();
+                alert('Erro ao remover motorista: ' + (data.error || 'Falha na operação'));
             }
         } catch (err) {
             console.error('Erro ao remover motorista:', err);
+            alert('Erro ao remover motorista: ' + err.message);
         }
     };
 

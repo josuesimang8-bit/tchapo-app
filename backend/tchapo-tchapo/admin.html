@@ -1285,9 +1285,19 @@ async function toggleDriver(id, active) {
 }
 
 async function deleteDriver(id) {
-    if (!confirm('Remover este motorista?')) return;
-    await fetch(`/api/drivers/${id}`, { method:'DELETE' });
-    loadDrivers(); toast('Motorista removido.');
+    if (!confirm('Tem a certeza de que deseja remover este motorista?')) return;
+    try {
+        const res = await fetch(`/api/drivers/${id}`, { method:'DELETE' });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Erro ao remover motorista');
+        }
+        loadDrivers();
+        loadOrders();
+        toast('🗑️ Motorista removido com sucesso.');
+    } catch (err) {
+        alert('Erro ao apagar motorista: ' + err.message);
+    }
 }
 
 // ── PRODUCTS ─────────────────────────────────────────────────────────────

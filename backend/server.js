@@ -701,10 +701,14 @@ app.put('/api/drivers/:id', async (req, res) => {
 app.delete('/api/drivers/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        // Unassign driver from any assigned orders first to satisfy foreign key constraints
+        await supabase.from('orders').update({ driver_id: null }).eq('driver_id', id);
+        
         const { error } = await supabase.from('drivers').delete().eq('id', id);
         if (error) throw error;
         res.json({ success: true });
     } catch (error) {
+        console.error('Error deleting driver:', error);
         res.status(500).json({ error: error.message });
     }
 });

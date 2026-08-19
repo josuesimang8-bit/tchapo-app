@@ -1160,6 +1160,14 @@ export default function Store() {
         return () => clearInterval(timer);
     }, [trackingOrder, trackingStatus]);
 
+    // Keep-alive heartbeat to prevent backend idle sleep
+    useEffect(() => {
+        const pingInterval = setInterval(() => {
+            fetch(`${import.meta.env.VITE_API_URL}/api/ping`).catch(() => {});
+        }, 4 * 60 * 1000);
+        return () => clearInterval(pingInterval);
+    }, []);
+
     // Real-time tracking order status poll
     useEffect(() => {
         if (!trackingOrder) return;

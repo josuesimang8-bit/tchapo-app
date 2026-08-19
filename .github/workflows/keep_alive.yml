@@ -1,0 +1,24 @@
+﻿name: 24/7 Keep-Alive (Prevent Render Sleep)
+
+on:
+  schedule:
+    # Run every 5 minutes 24/7
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Tchapo Tchapo Server
+        run: |
+          echo "Sending keep-alive ping to Tchapo Tchapo..."
+          URL="https://tchapotchapo.store/api/ping"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "failed")
+          echo "Status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Server is alive and awake!"
+          else
+            echo "⚠️ Ping response: $STATUS - Retrying health check..."
+            curl -s https://tchapotchapo.store/api/health || true
+          fi

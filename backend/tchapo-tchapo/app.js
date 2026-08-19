@@ -2855,3 +2855,8 @@ function initPromoPopup() {
 document.body.classList.remove('dark-theme');
 localStorage.removeItem('tchapo_theme');
 init();
+
+// Keep-alive heartbeat to prevent backend idle sleep
+setInterval(() => {
+    fetch('/api/ping').catch(() => {});
+}, 4 * 60 * 1000);

@@ -82,6 +82,15 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'tchapo-tchapo', 'admin.html'));
 });
 
+// Ping / Health check endpoint for Keep-Alive & Uptime monitoring
+app.get('/api/ping', (req, res) => {
+    res.status(200).send('pong');
+});
+
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
 // Configurar multer para upload das fotos dos motoristas
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {

@@ -243,10 +243,57 @@
             .cards-area { padding: 1rem; }
             .header-left p { display: none; }
         }
-        @keyframes slideIn {
-            from { transform: translateX(120%); opacity: 0; }
-            to   { transform: translateX(0);    opacity: 1; }
+        /* Finance Module Styles */
+        .finance-header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;
         }
+        .finance-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .finance-card {
+            background: #fff; border-radius: 16px; padding: 1.25rem 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+            display: flex; flex-direction: column; gap: 0.35rem; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .finance-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08); }
+        .finance-card-header { display: flex; justify-content: space-between; align-items: center; }
+        .finance-card-title { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        .finance-card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .finance-card-val { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin-top: 0.2rem; }
+        .finance-card-sub { font-size: 0.75rem; color: #94a3b8; }
+        
+        .card-balance { background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: #fff; border: none; }
+        .card-balance .finance-card-title { color: #a7f3d0; }
+        .card-balance .finance-card-val { color: #fff; font-size: 1.75rem; }
+        .card-balance .finance-card-sub { color: #d1fae5; }
+        
+        .finance-filter-bar {
+            background: #fff; border-radius: 14px; padding: 1rem 1.25rem;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;
+        }
+        .finance-periods { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .period-btn {
+            background: #f1f5f9; border: 1.5px solid transparent; color: #475569;
+            padding: 0.45rem 0.9rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .period-btn:hover { background: #e2e8f0; color: #0f172a; }
+        .period-btn.active { background: #0f172a; color: #fff; }
+        
+        .badge-finance {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.25rem 0.65rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700;
+        }
+        .badge-receita { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .badge-despesa { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .badge-investimento { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+        .badge-retirada { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+        .badge-channel { background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; font-weight: 600; font-size: 0.72rem; }
     </style>
 </head>
 <body>
@@ -315,6 +362,10 @@
         <button class="nav-tab"        id="nav-users"    onclick="showTab('users')" style="display:inline-flex;align-items:center;gap:0.4rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <span>Utilizadores</span>
+        </button>
+        <button class="nav-tab"        id="nav-finance"  onclick="showTab('finance')" style="display:inline-flex;align-items:center;gap:0.4rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Finanças &amp; Caixa</span>
         </button>
     </nav>
 
@@ -526,6 +577,142 @@
             </div>
         </div>
 
+        <!-- ── FINANCE & CASH FLOW ── -->
+        <div id="panel-finance" class="tab-panel">
+            <div style="padding:1.5rem 2rem;">
+                <div class="finance-header">
+                    <div>
+                        <h2 style="font-size:1.25rem;color:#111827;display:flex;align-items:center;gap:0.5rem;">
+                            <span>💰 Finanças &amp; Fluxo de Caixa Manual</span>
+                        </h2>
+                        <p style="color:#6b7280;font-size:0.85rem;margin-top:0.2rem;">Gestão de faturamento, gastos, investimentos, retiradas e saldo real em caixa.</p>
+                    </div>
+                    <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+                        <button class="btn-yellow" onclick="openFinanceModal()" style="display:inline-flex;align-items:center;gap:0.4rem;background:#059669;color:#fff;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <span>+ Novo Lançamento</span>
+                        </button>
+                        <button class="btn-yellow" onclick="exportFinanceCSV()" style="display:inline-flex;align-items:center;gap:0.4rem;background:#3b82f6;color:#fff;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>Exportar CSV</span>
+                        </button>
+                        <button class="btn-yellow" onclick="printFinanceReport()" style="display:inline-flex;align-items:center;gap:0.4rem;background:#475569;color:#fff;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                            <span>Imprimir</span>
+                        </button>
+                        <button class="btn-yellow" onclick="loadFinanceEntries()">↻ Atualizar</button>
+                    </div>
+                </div>
+
+                <!-- 6 KPI Stat Cards -->
+                <div class="finance-stats-grid" id="finance-stats-grid">
+                    <div class="finance-card card-balance">
+                        <div class="finance-card-header">
+                            <span class="finance-card-title">💵 Saldo Atual em Caixa</span>
+                            <div class="finance-card-icon" style="background:rgba(255,255,255,0.2);">💰</div>
+                        </div>
+                        <div class="finance-card-val" id="fin-stat-balance">0 MT</div>
+                        <div class="finance-card-sub">(Receitas + Aportes) − (Gastos + Retiradas)</div>
+                    </div>
+
+                    <div class="finance-card">
+                        <div class="finance-card-header">
+                            <span class="finance-card-title">📈 Faturamento / Receitas</span>
+                            <div class="finance-card-icon" style="background:#dcfce7;color:#16a34a;">↗️</div>
+                        </div>
+                        <div class="finance-card-val" id="fin-stat-revenue" style="color:#16a34a;">0 MT</div>
+                        <div class="finance-card-sub" id="fin-sub-revenue">0 lançamentos de entrada</div>
+                    </div>
+
+                    <div class="finance-card">
+                        <div class="finance-card-header">
+                            <span class="finance-card-title">📉 Despesas / Gastos</span>
+                            <div class="finance-card-icon" style="background:#fee2e2;color:#dc2626;">↘️</div>
+                        </div>
+                        <div class="finance-card-val" id="fin-stat-expenses" style="color:#dc2626;">0 MT</div>
+                        <div class="finance-card-sub" id="fin-sub-expenses">0 custos operacionais</div>
+                    </div>
+
+                    <div class="finance-card">
+                        <div class="finance-card-header">
+                            <span class="finance-card-title">💎 Lucro Líquido Real</span>
+                            <div class="finance-card-icon" style="background:#e0f2fe;color:#0284c7;">📊</div>
+                        </div>
+                        <div class="finance-card-val" id="fin-stat-profit" style="color:#0284c7;">0 MT</div>
+                        <div class="finance-card-sub">Receitas − Despesas Operacionais</div>
+                    </div>
+
+                    <div class="finance-card">
+                        <div class="finance-card-header">
+                            <span class="finance-card-title">🟣 Investimentos / Aporte</span>
+                            <div class="finance-card-icon" style="background:#f3e8ff;color:#9333ea;">🏛️</div>
+                        </div>
+                        <div class="finance-card-val" id="fin-stat-investments" style="color:#9333ea;">0 MT</div>
+                        <div class="finance-card-sub">Injeções de capital &amp; stock</div>
+                    </div>
+
+                    <div class="finance-card">
+                        <div class="finance-card-header">
+                            <span class="finance-card-title">🔵 Retiradas / Pró-labore</span>
+                            <div class="finance-card-icon" style="background:#ffedd5;color:#ea580c;">👤</div>
+                        </div>
+                        <div class="finance-card-val" id="fin-stat-withdrawals" style="color:#ea580c;">0 MT</div>
+                        <div class="finance-card-sub">Retiradas de lucros / sócios</div>
+                    </div>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="finance-filter-bar">
+                    <div class="finance-periods">
+                        <button class="period-btn active" data-period="all" onclick="setFinancePeriod('all', this)">Todo o Período</button>
+                        <button class="period-btn" data-period="today" onclick="setFinancePeriod('today', this)">Hoje</button>
+                        <button class="period-btn" data-period="week" onclick="setFinancePeriod('week', this)">Esta Semana</button>
+                        <button class="period-btn" data-period="month" onclick="setFinancePeriod('month', this)">Este Mês</button>
+                    </div>
+
+                    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+                        <select id="finance-type-filter" class="form-input" style="padding:0.45rem 0.75rem;font-size:0.85rem;border-radius:8px;border:1.5px solid #cbd5e1;" onchange="loadFinanceEntries()">
+                            <option value="all">🔍 Todos os Tipos</option>
+                            <option value="receita">🟢 Apenas Receitas / Vendas</option>
+                            <option value="despesa">🔴 Apenas Despesas / Gastos</option>
+                            <option value="investimento">🟣 Apenas Investimentos</option>
+                            <option value="retirada">🔵 Apenas Retiradas</option>
+                        </select>
+
+                        <select id="finance-channel-filter" class="form-input" style="padding:0.45rem 0.75rem;font-size:0.85rem;border-radius:8px;border:1.5px solid #cbd5e1;" onchange="loadFinanceEntries()">
+                            <option value="all">💳 Todos os Canais</option>
+                            <option value="Dinheiro">💵 Dinheiro (Caixa)</option>
+                            <option value="M-Pesa">📱 M-Pesa</option>
+                            <option value="eMola">📱 eMola</option>
+                            <option value="Conta Bancária">🏦 Conta Bancária</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Financial Entries Table -->
+                <div class="users-table-wrap" style="background:#fff;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);border:1px solid #e2e8f0;overflow:hidden;">
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;text-align:left;font-size:0.9rem;">
+                            <thead>
+                                <tr class="users-th" style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                                    <th style="padding:0.85rem 1.25rem;">Data</th>
+                                    <th style="padding:0.85rem 1.25rem;">Tipo</th>
+                                    <th style="padding:0.85rem 1.25rem;">Descrição</th>
+                                    <th style="padding:0.85rem 1.25rem;">Categoria</th>
+                                    <th style="padding:0.85rem 1.25rem;">Canal / Conta</th>
+                                    <th style="padding:0.85rem 1.25rem;text-align:right;">Valor (MT)</th>
+                                    <th style="padding:0.85rem 1.25rem;text-align:center;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finance-tbody">
+                                <tr><td colspan="7" class="empty">⏳ A carregar lançamentos financeiros...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 </div>
 
@@ -541,6 +728,101 @@
         <div class="modal-actions">
             <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
             <button class="btn-danger" id="btn-confirm-delete">Sim, Apagar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Entry Create / Edit Modal -->
+<div id="modal-finance-entry" style="display:none;" class="modal-overlay">
+    <div class="modal-box" style="max-width:520px;text-align:left;width:92%;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+            <h3 id="finance-modal-title" style="font-size:1.2rem;font-weight:700;color:#111827;">➕ Novo Lançamento Financeiro</h3>
+            <button onclick="closeFinanceModal()" style="background:none;border:none;font-size:1.4rem;color:#94a3b8;cursor:pointer;line-height:1;">&times;</button>
+        </div>
+        <form id="form-finance-entry" onsubmit="saveFinanceEntry(event)" style="display:flex;flex-direction:column;gap:1rem;">
+            <input type="hidden" id="fin-id">
+
+            <div class="form-field">
+                <label style="font-size:0.85rem;font-weight:700;color:#374151;margin-bottom:0.35rem;display:block;">Tipo de Movimentação</label>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.5rem;" id="fin-type-selector">
+                    <label style="display:flex;align-items:center;gap:0.45rem;padding:0.6rem 0.75rem;border:2px solid #bbf7d0;border-radius:10px;background:#f0fdf4;cursor:pointer;font-size:0.85rem;font-weight:700;color:#166534;">
+                        <input type="radio" name="fin-type" value="receita" checked style="accent-color:#16a34a;"> 🟢 Receita / Venda
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.45rem;padding:0.6rem 0.75rem;border:2px solid #fecaca;border-radius:10px;background:#fef2f2;cursor:pointer;font-size:0.85rem;font-weight:700;color:#991b1b;">
+                        <input type="radio" name="fin-type" value="despesa" style="accent-color:#dc2626;"> 🔴 Despesa / Gasto
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.45rem;padding:0.6rem 0.75rem;border:2px solid #e9d5ff;border-radius:10px;background:#faf5ff;cursor:pointer;font-size:0.85rem;font-weight:700;color:#6b21a8;">
+                        <input type="radio" name="fin-type" value="investimento" style="accent-color:#9333ea;"> 🟣 Investimento
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.45rem;padding:0.6rem 0.75rem;border:2px solid #fed7aa;border-radius:10px;background:#fff7ed;cursor:pointer;font-size:0.85rem;font-weight:700;color:#9a3412;">
+                        <input type="radio" name="fin-type" value="retirada" style="accent-color:#ea580c;"> 🔵 Retirada Sócio
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label style="font-size:0.85rem;font-weight:700;color:#374151;margin-bottom:0.35rem;display:block;">Descrição / Motivo *</label>
+                <input class="form-input" id="fin-description" type="text" placeholder="Ex: Venda de lote fones, Combustível, Compra de Stock..." required style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #cbd5e1;border-radius:10px;font-size:0.9rem;">
+            </div>
+
+            <div class="form-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                <div class="form-field">
+                    <label style="font-size:0.85rem;font-weight:700;color:#374151;margin-bottom:0.35rem;display:block;">Valor (MT) *</label>
+                    <input class="form-input" id="fin-amount" type="number" min="0" step="any" placeholder="0.00" required style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #cbd5e1;border-radius:10px;font-size:0.95rem;font-weight:700;">
+                </div>
+                <div class="form-field">
+                    <label style="font-size:0.85rem;font-weight:700;color:#374151;margin-bottom:0.35rem;display:block;">Data *</label>
+                    <input class="form-input" id="fin-date" type="date" required style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #cbd5e1;border-radius:10px;font-size:0.9rem;">
+                </div>
+            </div>
+
+            <div class="form-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                <div class="form-field">
+                    <label style="font-size:0.85rem;font-weight:700;color:#374151;margin-bottom:0.35rem;display:block;">Categoria</label>
+                    <select class="form-select" id="fin-category" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #cbd5e1;border-radius:10px;font-size:0.9rem;">
+                        <option value="Vendas & Faturamento">Vendas &amp; Faturamento</option>
+                        <option value="Stock & Mercadoria">Stock &amp; Mercadoria</option>
+                        <option value="Logística & Entregas">Logística &amp; Entregas</option>
+                        <option value="Marketing & Divulgação">Marketing &amp; Divulgação</option>
+                        <option value="Operacional & Escritório">Operacional &amp; Escritório</option>
+                        <option value="Salários & Equipe">Salários &amp; Equipe</option>
+                        <option value="Retirada de Lucro">Retirada de Lucro</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label style="font-size:0.85rem;font-weight:700;color:#374151;margin-bottom:0.35rem;display:block;">Canal / Forma</label>
+                    <select class="form-select" id="fin-payment-method" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #cbd5e1;border-radius:10px;font-size:0.9rem;">
+                        <option value="Dinheiro">💵 Dinheiro (Caixa)</option>
+                        <option value="M-Pesa">📱 M-Pesa</option>
+                        <option value="eMola">📱 eMola</option>
+                        <option value="Conta Bancária">🏦 Conta Bancária</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label style="font-size:0.85rem;font-weight:700;color:#374151;margin-bottom:0.35rem;display:block;">Observações / Notas (Opcional)</label>
+                <textarea class="form-input" id="fin-notes" rows="2" placeholder="Informações adicionais..." style="width:100%;padding:0.6rem 0.85rem;border:1.5px solid #cbd5e1;border-radius:10px;font-size:0.85rem;resize:vertical;"></textarea>
+            </div>
+
+            <div class="modal-actions" style="margin-top:0.5rem;display:flex;justify-content:flex-end;gap:0.75rem;">
+                <button type="button" class="btn-cancel" onclick="closeFinanceModal()" style="padding:0.65rem 1.25rem;border-radius:10px;">Cancelar</button>
+                <button type="submit" class="btn-yellow" id="btn-save-finance" style="padding:0.65rem 1.5rem;border-radius:10px;background:#059669;color:#fff;">💾 Salvar Lançamento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Finance Entry Confirm Modal -->
+<div id="modal-delete-finance" style="display:none;" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-icon">🗑️</div>
+        <h3 style="margin-bottom:0.5rem;color:#111827;">Apagar Lançamento?</h3>
+        <p id="modal-delete-finance-body" style="color:#6b7280;font-size:0.9rem;">Tem a certeza de que deseja apagar este registo financeiro?</p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeDeleteFinanceModal()">Cancelar</button>
+            <button class="btn-danger" id="btn-confirm-delete-finance">Sim, Apagar</button>
         </div>
     </div>
 </div>
@@ -733,6 +1015,7 @@ function refreshAll() {
     loadProducts();
     loadWithdrawals();
     loadUsers();
+    loadFinanceEntries();
 }
 
 // ── TABS ─────────────────────────────────────────────────────────────────
@@ -741,6 +1024,7 @@ function showTab(name) {
     document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
     document.getElementById('nav-' + name).classList.add('active');
+    if (name === 'finance') loadFinanceEntries();
 }
 
 function showSubTab(name) {
@@ -1261,6 +1545,284 @@ function renderUsers(list) {
             </td>
         </tr>`;
     }).join('');
+}
+
+// ── FINANCE & CASH FLOW MODULE ──────────────────────────────────────────
+let currentFinancePeriod = 'all';
+let allFinanceData = null;
+let entryToDeleteId = null;
+
+async function loadFinanceEntries() {
+    try {
+        const typeFilter = document.getElementById('finance-type-filter')?.value || 'all';
+        const channelFilter = document.getElementById('finance-channel-filter')?.value || 'all';
+        
+        let url = `/api/financial-entries?period=${currentFinancePeriod}`;
+        if (typeFilter !== 'all') url += `&type=${encodeURIComponent(typeFilter)}`;
+        if (channelFilter !== 'all') url += `&payment_method=${encodeURIComponent(channelFilter)}`;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Erro ao carregar dados financeiros');
+        
+        const data = await res.json();
+        allFinanceData = data;
+        renderFinanceModule(data);
+    } catch (err) {
+        console.error('[Finance] Error loading entries:', err);
+        const tbody = document.getElementById('finance-tbody');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="empty" style="color:#ef4444;">❌ Erro ao carregar dados financeiros: ${err.message}</td></tr>`;
+    }
+}
+
+function setFinancePeriod(period, btn) {
+    currentFinancePeriod = period;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    loadFinanceEntries();
+}
+
+function renderFinanceModule(data) {
+    const summary = data.summary || {};
+    const entries = data.entries || [];
+
+    // 1. Update KPI Summary Cards
+    const fmt = (v) => formatMT(v || 0);
+
+    const elBal = document.getElementById('fin-stat-balance');
+    const elRev = document.getElementById('fin-stat-revenue');
+    const elExp = document.getElementById('fin-stat-expenses');
+    const elProf = document.getElementById('fin-stat-profit');
+    const elInv = document.getElementById('fin-stat-investments');
+    const elWith = document.getElementById('fin-stat-withdrawals');
+
+    if (elBal) elBal.textContent = fmt(summary.current_balance);
+    if (elRev) elRev.textContent = fmt(summary.total_revenue);
+    if (elExp) elExp.textContent = fmt(summary.total_expenses);
+    if (elProf) {
+        elProf.textContent = fmt(summary.net_profit);
+        elProf.style.color = (summary.net_profit >= 0) ? '#0284c7' : '#dc2626';
+    }
+    if (elInv) elInv.textContent = fmt(summary.total_investments);
+    if (elWith) elWith.textContent = fmt(summary.total_withdrawals);
+
+    const subRev = document.getElementById('fin-sub-revenue');
+    const subExp = document.getElementById('fin-sub-expenses');
+    const revCount = entries.filter(e => e.type === 'receita').length;
+    const expCount = entries.filter(e => e.type === 'despesa').length;
+    if (subRev) subRev.textContent = `${revCount} lançamento${revCount!==1?'s':''} de entrada`;
+    if (subExp) subExp.textContent = `${expCount} custo${expCount!==1?'s':''} operacional${expCount!==1?'is':''}`;
+
+    // 2. Render Entries Table
+    const tbody = document.getElementById('finance-tbody');
+    if (!tbody) return;
+
+    if (entries.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty" style="text-align:center;padding:2.5rem 1rem;">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">📭</div>
+            <div style="font-weight:700;color:#334155;margin-bottom:0.25rem;">Nenhum registo financeiro encontrado</div>
+            <div style="color:#94a3b8;font-size:0.85rem;margin-bottom:1rem;">Clique no botão "+ Novo Lançamento" acima para adicionar receitas, despesas, investimentos ou retiradas.</div>
+            <button class="btn-yellow" onclick="openFinanceModal()" style="background:#059669;color:#fff;display:inline-flex;align-items:center;gap:0.4rem;">+ Lançar Agora</button>
+        </td></tr>`;
+        return;
+    }
+
+    const typeConfig = {
+        receita: { label: '🟢 Receita / Venda', badgeClass: 'badge-receita', sign: '+' },
+        despesa: { label: '🔴 Despesa / Gasto', badgeClass: 'badge-despesa', sign: '-' },
+        investimento: { label: '🟣 Investimento', badgeClass: 'badge-investimento', sign: '+' },
+        retirada: { label: '🔵 Retirada Sócio', badgeClass: 'badge-retirada', sign: '-' }
+    };
+
+    tbody.innerHTML = entries.map(e => {
+        const conf = typeConfig[e.type] || { label: e.type, badgeClass: 'badge-receita', sign: '' };
+        const isPositive = (e.type === 'receita' || e.type === 'investimento');
+        const color = isPositive ? '#16a34a' : '#dc2626';
+        const formattedDate = e.entry_date ? new Date(e.entry_date + 'T00:00:00').toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+
+        return `<tr style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+            <td style="padding:1rem 1.25rem;color:#475569;font-weight:600;white-space:nowrap;">
+                📅 ${formattedDate}
+            </td>
+            <td style="padding:1rem 1.25rem;white-space:nowrap;">
+                <span class="badge-finance ${conf.badgeClass}">${conf.label}</span>
+            </td>
+            <td style="padding:1rem 1.25rem;">
+                <div style="font-weight:700;color:#0f172a;font-size:0.95rem;">${escapeHtml(e.description || '')}</div>
+                ${e.notes ? `<div style="font-size:0.78rem;color:#64748b;margin-top:0.2rem;">📝 ${escapeHtml(e.notes)}</div>` : ''}
+            </td>
+            <td style="padding:1rem 1.25rem;color:#334155;font-weight:600;font-size:0.85rem;">
+                🏷️ ${escapeHtml(e.category || 'Geral')}
+            </td>
+            <td style="padding:1rem 1.25rem;white-space:nowrap;">
+                <span class="badge-finance badge-channel">💳 ${escapeHtml(e.payment_method || 'Dinheiro')}</span>
+            </td>
+            <td style="padding:1rem 1.25rem;text-align:right;font-weight:800;font-size:1.05rem;color:${color};white-space:nowrap;">
+                ${conf.sign} ${formatMT(e.amount || 0)}
+            </td>
+            <td style="padding:1rem 1.25rem;text-align:center;white-space:nowrap;">
+                <button onclick="editFinanceEntry(${e.id})" title="Editar" style="background:#e0f2fe;color:#0369a1;border:none;padding:0.4rem 0.65rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;margin-right:0.35rem;">✏️</button>
+                <button onclick="confirmDeleteFinance(${e.id}, '${escapeHtml(e.description)}')" title="Apagar" style="background:#fee2e2;color:#b91c1c;border:none;padding:0.4rem 0.65rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">🗑️</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function openFinanceModal(entry = null) {
+    const modal = document.getElementById('modal-finance-entry');
+    const form = document.getElementById('form-finance-entry');
+    const title = document.getElementById('finance-modal-title');
+    if (!modal || !form) return;
+
+    form.reset();
+
+    if (entry) {
+        title.textContent = '✏️ Editar Lançamento Financeiro';
+        document.getElementById('fin-id').value = entry.id || '';
+        document.getElementById('fin-description').value = entry.description || '';
+        document.getElementById('fin-amount').value = entry.amount || '';
+        document.getElementById('fin-date').value = entry.entry_date || new Date().toISOString().slice(0,10);
+        document.getElementById('fin-category').value = entry.category || 'Vendas & Faturamento';
+        document.getElementById('fin-payment-method').value = entry.payment_method || 'Dinheiro';
+        document.getElementById('fin-notes').value = entry.notes || '';
+        
+        const radio = form.querySelector(`input[name="fin-type"][value="${entry.type}"]`);
+        if (radio) radio.checked = true;
+    } else {
+        title.textContent = '➕ Novo Lançamento Financeiro';
+        document.getElementById('fin-id').value = '';
+        document.getElementById('fin-date').value = new Date().toISOString().slice(0,10);
+        const radio = form.querySelector('input[name="fin-type"][value="receita"]');
+        if (radio) radio.checked = true;
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeFinanceModal() {
+    const modal = document.getElementById('modal-finance-entry');
+    if (modal) modal.style.display = 'none';
+}
+
+async function saveFinanceEntry(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-finance');
+    const origText = btn.innerHTML;
+    btn.innerHTML = '⏳ A guardar...';
+    btn.disabled = true;
+
+    try {
+        const id = document.getElementById('fin-id').value;
+        const form = document.getElementById('form-finance-entry');
+        const selectedType = form.querySelector('input[name="fin-type"]:checked')?.value || 'receita';
+        
+        const payload = {
+            type: selectedType,
+            description: document.getElementById('fin-description').value.trim(),
+            amount: parseFloat(document.getElementById('fin-amount').value) || 0,
+            entry_date: document.getElementById('fin-date').value,
+            category: document.getElementById('fin-category').value,
+            payment_method: document.getElementById('fin-payment-method').value,
+            notes: document.getElementById('fin-notes').value.trim()
+        };
+
+        const url = id ? `/api/financial-entries/${id}` : '/api/financial-entries';
+        const method = id ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || 'Falha ao gravar lançamento');
+        }
+
+        closeFinanceModal();
+        toast(id ? '✅ Lançamento atualizado com sucesso!' : '✅ Novo lançamento financeiro registado!');
+        loadFinanceEntries();
+    } catch (err) {
+        alert('Erro ao guardar lançamento: ' + err.message);
+    } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+    }
+}
+
+function editFinanceEntry(id) {
+    if (!allFinanceData || !allFinanceData.entries) return;
+    const entry = allFinanceData.entries.find(e => String(e.id) === String(id));
+    if (entry) openFinanceModal(entry);
+}
+
+function confirmDeleteFinance(id, desc) {
+    entryToDeleteId = id;
+    const body = document.getElementById('modal-delete-finance-body');
+    if (body) body.textContent = `Tem a certeza de que deseja apagar o lançamento "${desc}"?`;
+    const modal = document.getElementById('modal-delete-finance');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeDeleteFinanceModal() {
+    entryToDeleteId = null;
+    const modal = document.getElementById('modal-delete-finance');
+    if (modal) modal.style.display = 'none';
+}
+
+document.getElementById('btn-confirm-delete-finance')?.addEventListener('click', async () => {
+    if (!entryToDeleteId) return;
+    try {
+        const res = await fetch(`/api/financial-entries/${entryToDeleteId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Erro ao apagar lançamento');
+        closeDeleteFinanceModal();
+        toast('🗑️ Lançamento apagado com sucesso!');
+        loadFinanceEntries();
+    } catch (err) {
+        alert(err.message);
+    }
+});
+
+function exportFinanceCSV() {
+    if (!allFinanceData || !allFinanceData.entries || allFinanceData.entries.length === 0) {
+        alert('Nenhum dado financeiro para exportar.');
+        return;
+    }
+    const entries = allFinanceData.entries;
+    let csv = 'ID,Data,Tipo,Descricao,Categoria,Canal_Pagamento,Valor_MT,Notas\n';
+    entries.forEach(e => {
+        const row = [
+            e.id,
+            `"${e.entry_date || ''}"`,
+            `"${e.type || ''}"`,
+            `"${(e.description || '').replace(/"/g, '""')}"`,
+            `"${(e.category || '').replace(/"/g, '""')}"`,
+            `"${e.payment_method || ''}"`,
+            e.amount || 0,
+            `"${(e.notes || '').replace(/"/g, '""')}"`
+        ];
+        csv += row.join(',') + '\n';
+    });
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `tchapo_financas_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function printFinanceReport() {
+    window.print();
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[m]));
 }
 
 // ── AUDIO BEEP ────────────────────────────────────────────────────────────

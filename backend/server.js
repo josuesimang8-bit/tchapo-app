@@ -1486,6 +1486,240 @@ app.get('/api/users/admin', async (req, res) => {
     }
 });
 
+// ─── FINANCIAL ENTRIES & REVENUE MANAGEMENT ─────────────────────────────────
+const FINANCE_FILE = path.join(__dirname, 'data', 'financial_entries.json');
+
+function ensureFinanceDataDir() {
+    const dir = path.dirname(FINANCE_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(FINANCE_FILE)) fs.writeFileSync(FINANCE_FILE, '[]', 'utf8');
+}
+
+function readLocalFinanceEntries() {
+    ensureFinanceDataDir();
+    try {
+        const raw = fs.readFileSync(FINANCE_FILE, 'utf8');
+        return JSON.parse(raw) || [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function writeLocalFinanceEntries(entries) {
+    ensureFinanceDataDir();
+    fs.writeFileSync(FINANCE_FILE, JSON.stringify(entries, null, 2), 'utf8');
+}
+
+// GET all financial entries with optional filters & computed summary
+app.get('/api/financial-entries', async (req, res) => {
+    try {
+        let entries = [];
+        // Try Supabase first
+        const { data, error } = await supabase
+            .from('financial_entries')
+            .select('*')
+            .order('entry_date', { ascending: false });
+
+        if (!error && data) {
+            entries = data;
+        } else {
+            // Fallback to local storage
+            entries = readLocalFinanceEntries();
+        }
+
+        const { type, category, payment_method, period, startDate, endDate } = req.query;
+
+        let filtered = entries.map(e => ({
+            ...e,
+            id: Number(e.id),
+            amount: Number(e.amount) || 0,
+            created_at: e.created_at || new Date().toISOString()
+        }));
+
+        // Date / Period filter
+        const now = new Date();
+        if (period === 'today') {
+            const todayStr = now.toISOString().slice(0, 10);
+            filtered = filtered.filter(e => e.entry_date === todayStr);
+        } else if (period === 'week') {
+            const一周前 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            filtered = filtered.filter(e => new Date(e.entry_date) >= 一周前);
+        } else if (period === 'month') {
+            const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
+            filtered = filtered.filter(e => e.entry_date && e.entry_date.startsWith(currentMonth));
+        } else if (startDate || endDate) {
+            if (startDate) filtered = filtered.filter(e => e.entry_date >= startDate);
+            if (endDate) filtered = filtered.filter(e => e.entry_date <= endDate);
+        }
+
+        // Type filter (receita, despesa, investimento, retirada)
+        if (type && type !== 'all') {
+            filtered = filtered.filter(e => (e.type || '').toLowerCase() === type.toLowerCase());
+        }
+
+        // Category filter
+        if (category && category !== 'all') {
+            filtered = filtered.filter(e => (e.category || '').toLowerCase() === category.toLowerCase());
+        }
+
+        // Payment method filter
+        if (payment_method && payment_method !== 'all') {
+            filtered = filtered.filter(e => (e.payment_method || '').toLowerCase() === payment_method.toLowerCase());
+        }
+
+        // Sort descending by date
+        filtered.sort((a, b) => new Date(b.entry_date || b.created_at) - new Date(a.entry_date || a.created_at));
+
+        // Compute summary metrics
+        let total_revenue = 0;       // Receitas
+        let total_expenses = 0;      // Despesas
+        let total_investments = 0;   // Investimentos
+        let total_withdrawals = 0;   // Retiradas
+
+        filtered.forEach(e => {
+            const t = (e.type || '').toLowerCase();
+            const amt = Number(e.amount) || 0;
+            if (t === 'receita') total_revenue += amt;
+            else if (t === 'despesa') total_expenses += amt;
+            else if (t === 'investimento') total_investments += amt;
+            else if (t === 'retirada') total_withdrawals += amt;
+        });
+
+        const net_profit = total_revenue - total_expenses;
+        const current_balance = (total_revenue + total_investments) - (total_expenses + total_withdrawals);
+
+        res.json({
+            entries: filtered,
+            summary: {
+                total_revenue,
+                total_expenses,
+                total_investments,
+                total_withdrawals,
+                net_profit,
+                current_balance,
+                total_count: filtered.length
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching financial entries:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST new financial entry
+app.post('/api/financial-entries', async (req, res) => {
+    try {
+        const { type, description, amount, category, payment_method, entry_date, notes } = req.body;
+
+        if (!type || !description || amount === undefined) {
+            return res.status(400).json({ error: 'Tipo, descrição e valor são obrigatórios.' });
+        }
+
+        const newEntry = {
+            type: (type || 'receita').toLowerCase(),
+            description: String(description).trim(),
+            amount: Number(amount) || 0,
+            category: category || 'Geral',
+            payment_method: payment_method || 'Dinheiro',
+            entry_date: entry_date || new Date().toISOString().slice(0, 10),
+            notes: notes || '',
+            created_at: new Date().toISOString()
+        };
+
+        // Try Supabase insert
+        const { data, error } = await supabase
+            .from('financial_entries')
+            .insert([newEntry])
+            .select()
+            .single();
+
+        if (!error && data) {
+            return res.status(201).json(data);
+        }
+
+        // Local fallback
+        const localList = readLocalFinanceEntries();
+        const localEntry = {
+            id: Date.now(),
+            ...newEntry
+        };
+        localList.unshift(localEntry);
+        writeLocalFinanceEntries(localList);
+
+        res.status(201).json(localEntry);
+    } catch (err) {
+        console.error('Error creating financial entry:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT update financial entry
+app.put('/api/financial-entries/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { type, description, amount, category, payment_method, entry_date, notes } = req.body;
+
+        const updates = {};
+        if (type !== undefined) updates.type = String(type).toLowerCase();
+        if (description !== undefined) updates.description = String(description).trim();
+        if (amount !== undefined) updates.amount = Number(amount);
+        if (category !== undefined) updates.category = category;
+        if (payment_method !== undefined) updates.payment_method = payment_method;
+        if (entry_date !== undefined) updates.entry_date = entry_date;
+        if (notes !== undefined) updates.notes = notes;
+
+        // Try Supabase update
+        const { data, error } = await supabase
+            .from('financial_entries')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (!error && data) {
+            return res.json(data);
+        }
+
+        // Local fallback
+        const localList = readLocalFinanceEntries();
+        const idx = localList.findIndex(e => String(e.id) === String(id));
+        if (idx !== -1) {
+            localList[idx] = { ...localList[idx], ...updates };
+            writeLocalFinanceEntries(localList);
+            return res.json(localList[idx]);
+        }
+
+        res.status(404).json({ error: 'Lançamento não encontrado.' });
+    } catch (err) {
+        console.error('Error updating financial entry:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE financial entry
+app.delete('/api/financial-entries/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Try Supabase delete
+        const { error } = await supabase
+            .from('financial_entries')
+            .delete()
+            .eq('id', id);
+
+        // Also clean from local file
+        const localList = readLocalFinanceEntries();
+        const filtered = localList.filter(e => String(e.id) !== String(id));
+        writeLocalFinanceEntries(filtered);
+
+        res.json({ success: true, id });
+    } catch (err) {
+        console.error('Error deleting financial entry:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Backend server running on http://localhost:${PORT}`);

@@ -92,9 +92,33 @@ export default function Admin() {
     const [editProdDeviceSel, setEditProdDeviceSel] = useState('none');
     const [editProdColorSel, setEditProdColorSel]   = useState('show');
     const [editProdStockStatus, setEditProdStockStatus] = useState('Em Stock');
-    const [editProdFeatured, setEditProdFeatured]   = useState(false);
-
     const [deleteProdToConfirm, setDeleteProdToConfirm] = useState(null);
+
+    // --- Finance management state ---
+    const [financeEntries, setFinanceEntries] = useState([]);
+    const [financeSummary, setFinanceSummary] = useState({
+        total_revenue: 0,
+        total_expenses: 0,
+        total_investments: 0,
+        total_withdrawals: 0,
+        net_profit: 0,
+        current_balance: 0,
+        total_count: 0
+    });
+    const [financePeriod, setFinancePeriod] = useState('all');
+    const [financeTypeFilter, setFinanceTypeFilter] = useState('all');
+    const [financeChannelFilter, setFinanceChannelFilter] = useState('all');
+    const [isFinanceModalOpen, setIsFinanceModalOpen] = useState(false);
+    const [editingFinanceEntry, setEditingFinanceEntry] = useState(null);
+    const [finType, setFinType] = useState('receita');
+    const [finDesc, setFinDesc] = useState('');
+    const [finAmount, setFinAmount] = useState('');
+    const [finDate, setFinDate] = useState(new Date().toISOString().slice(0, 10));
+    const [finCategory, setFinCategory] = useState('Vendas & Faturamento');
+    const [finChannel, setFinChannel] = useState('Dinheiro');
+    const [finNotes, setFinNotes] = useState('');
+    const [savingFinance, setSavingFinance] = useState(false);
+    const [deleteFinanceToConfirm, setDeleteFinanceToConfirm] = useState(null);
 
     // --- Notifications permission & Service Worker ---
     const subscribeToPushNotifications = async (reg) => {
@@ -293,6 +317,141 @@ export default function Admin() {
         }
     }, []);
 
+    // --- Fetch finance entries ---
+    const fetchFinanceEntries = useCallback(async () => {
+        try {
+            let url = `${import.meta.env.VITE_API_URL}/api/financial-entries?period=${financePeriod}`;
+            if (financeTypeFilter !== 'all') url += `&type=${encodeURIComponent(financeTypeFilter)}`;
+            if (financeChannelFilter !== 'all') url += `&payment_method=${encodeURIComponent(financeChannelFilter)}`;
+
+            const res = await fetch(url);
+            if (!res.ok) return;
+            const data = await res.json();
+            setFinanceEntries(data.entries || []);
+            setFinanceSummary(data.summary || {
+                total_revenue: 0,
+                total_expenses: 0,
+                total_investments: 0,
+                total_withdrawals: 0,
+                net_profit: 0,
+                current_balance: 0,
+                total_count: 0
+            });
+        } catch (err) {
+            console.error('Erro ao buscar dados financeiros:', err);
+        }
+    }, [financePeriod, financeTypeFilter, financeChannelFilter]);
+
+    const openCreateFinanceModal = () => {
+        setEditingFinanceEntry(null);
+        setFinType('receita');
+        setFinDesc('');
+        setFinAmount('');
+        setFinDate(new Date().toISOString().slice(0, 10));
+        setFinCategory('Vendas & Faturamento');
+        setFinChannel('Dinheiro');
+        setFinNotes('');
+        setIsFinanceModalOpen(true);
+    };
+
+    const openEditFinanceModal = (entry) => {
+        setEditingFinanceEntry(entry);
+        setFinType(entry.type || 'receita');
+        setFinDesc(entry.description || '');
+        setFinAmount(entry.amount || '');
+        setFinDate(entry.entry_date || new Date().toISOString().slice(0, 10));
+        setFinCategory(entry.category || 'Vendas & Faturamento');
+        setFinChannel(entry.payment_method || 'Dinheiro');
+        setFinNotes(entry.notes || '');
+        setIsFinanceModalOpen(true);
+    };
+
+    const handleSaveFinanceEntry = async (e) => {
+        e.preventDefault();
+        setSavingFinance(true);
+        try {
+            const payload = {
+                type: finType,
+                description: finDesc.trim(),
+                amount: parseFloat(finAmount) || 0,
+                entry_date: finDate,
+                category: finCategory,
+                payment_method: finChannel,
+                notes: finNotes.trim()
+            };
+
+            const url = editingFinanceEntry
+                ? `${import.meta.env.VITE_API_URL}/api/financial-entries/${editingFinanceEntry.id}`
+                : `${import.meta.env.VITE_API_URL}/api/financial-entries`;
+            const method = editingFinanceEntry ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Falha ao guardar lançamento');
+            }
+
+            setIsFinanceModalOpen(false);
+            setToast(editingFinanceEntry ? '✅ Lançamento atualizado!' : '✅ Novo lançamento financeiro registado!');
+            setTimeout(() => setToast(null), 3000);
+            fetchFinanceEntries();
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setSavingFinance(false);
+        }
+    };
+
+    const handleDeleteFinanceEntry = async (id) => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial-entries/${id}`, {
+                method: 'DELETE'
+            });
+            if (!res.ok) throw new Error('Erro ao apagar lançamento');
+            setDeleteFinanceToConfirm(null);
+            setToast('🗑️ Lançamento apagado com sucesso!');
+            setTimeout(() => setToast(null), 3000);
+            fetchFinanceEntries();
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    const exportFinanceCSV = () => {
+        if (!financeEntries || financeEntries.length === 0) {
+            alert('Nenhum dado financeiro para exportar.');
+            return;
+        }
+        let csv = 'ID,Data,Tipo,Descricao,Categoria,Canal_Pagamento,Valor_MT,Notas\n';
+        financeEntries.forEach(e => {
+            const row = [
+                e.id,
+                `"${e.entry_date || ''}"`,
+                `"${e.type || ''}"`,
+                `"${(e.description || '').replace(/"/g, '""')}"`,
+                `"${(e.category || '').replace(/"/g, '""')}"`,
+                `"${e.payment_method || ''}"`,
+                e.amount || 0,
+                `"${(e.notes || '').replace(/"/g, '""')}"`
+            ];
+            csv += row.join(',') + '\n';
+        });
+
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `tchapo_financas_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // --- Live 1s clock ticker ---
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -308,16 +467,18 @@ export default function Admin() {
             fetchProducts();
             fetchWithdrawals();
             fetchUsers();
+            fetchFinanceEntries();
             intervalRef.current = setInterval(() => {
                 fetchOrders();
                 fetchDrivers();
                 fetchProducts();
                 fetchWithdrawals();
                 fetchUsers();
+                fetchFinanceEntries();
             }, 10000);
         }
         return () => clearInterval(intervalRef.current);
-    }, [isLoggedIn, fetchOrders, fetchDrivers, fetchProducts, fetchWithdrawals, fetchUsers, requestNotifPermission]);
+    }, [isLoggedIn, fetchOrders, fetchDrivers, fetchProducts, fetchWithdrawals, fetchUsers, fetchFinanceEntries, requestNotifPermission]);
 
     // --- Tab title badge ---
     useEffect(() => {
@@ -878,6 +1039,19 @@ export default function Admin() {
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     Utilizadores
+                </button>
+                <button
+                    onClick={() => setActiveTab('finance')}
+                    style={{
+                        background: activeTab === 'finance' ? '#374151' : 'transparent',
+                        color: activeTab === 'finance' ? '#fff' : '#9ca3af',
+                        border: 'none', padding: '0.55rem 1rem', borderRadius: '6px',
+                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Finanças &amp; Caixa
                 </button>
             </div>
 
@@ -1677,6 +1851,346 @@ export default function Admin() {
                 </div>
             )}
 
+            {activeTab === 'finance' && (
+                <div style={{ padding: '1.5rem 2rem' }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div>
+                            <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span>💰 Finanças &amp; Fluxo de Caixa Manual</span>
+                            </h2>
+                            <p style={{ margin: '0.2rem 0 0', color: '#6b7280', fontSize: '0.85rem' }}>
+                                Gestão de faturamento, gastos, investimentos, retiradas e saldo real em caixa.
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={openCreateFinanceModal}
+                                style={{
+                                    background: '#059669', color: '#fff', border: 'none',
+                                    padding: '0.55rem 1rem', borderRadius: '8px', fontWeight: 700,
+                                    cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
+                                }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                + Novo Lançamento
+                            </button>
+                            <button
+                                onClick={exportFinanceCSV}
+                                style={{
+                                    background: '#3b82f6', color: '#fff', border: 'none',
+                                    padding: '0.55rem 1rem', borderRadius: '8px', fontWeight: 600,
+                                    cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
+                                }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Exportar CSV
+                            </button>
+                            <button
+                                onClick={() => window.print()}
+                                style={{
+                                    background: '#475569', color: '#fff', border: 'none',
+                                    padding: '0.55rem 1rem', borderRadius: '8px', fontWeight: 600,
+                                    cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
+                                }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                                Imprimir
+                            </button>
+                            <button
+                                onClick={fetchFinanceEntries}
+                                style={{
+                                    background: '#f59e0b', color: '#fff', border: 'none',
+                                    padding: '0.55rem 1rem', borderRadius: '8px', fontWeight: 600,
+                                    cursor: 'pointer', fontSize: '0.85rem'
+                                }}
+                            >
+                                ↻ Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* KPI Stat Cards */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '1rem',
+                        marginBottom: '1.5rem'
+                    }}>
+                        <div style={{
+                            background: 'linear-gradient(135deg, #065f46 0%, #047857 100%)',
+                            borderRadius: '16px', padding: '1.25rem 1.5rem', color: '#fff',
+                            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                            display: 'flex', flexDirection: 'column', gap: '0.35rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#a7f3d0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    💵 Saldo Atual em Caixa
+                                </span>
+                                <span style={{ fontSize: '1.2rem', background: 'rgba(255,255,255,0.2)', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>💰</span>
+                            </div>
+                            <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>
+                                {financeSummary.current_balance.toLocaleString('pt-MZ')} MT
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#d1fae5' }}>
+                                (Receitas + Aportes) − (Gastos + Retiradas)
+                            </div>
+                        </div>
+
+                        <div style={{
+                            background: '#fff', borderRadius: '16px', padding: '1.25rem 1.5rem',
+                            border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                            display: 'flex', flexDirection: 'column', gap: '0.35rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    📈 Faturamento / Receitas
+                                </span>
+                                <span style={{ fontSize: '1.1rem', background: '#dcfce7', color: '#16a34a', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↗️</span>
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#16a34a' }}>
+                                {financeSummary.total_revenue.toLocaleString('pt-MZ')} MT
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                {financeEntries.filter(e => e.type === 'receita').length} lançamentos de entrada
+                            </div>
+                        </div>
+
+                        <div style={{
+                            background: '#fff', borderRadius: '16px', padding: '1.25rem 1.5rem',
+                            border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                            display: 'flex', flexDirection: 'column', gap: '0.35rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    📉 Despesas / Gastos
+                                </span>
+                                <span style={{ fontSize: '1.1rem', background: '#fee2e2', color: '#dc2626', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↘️</span>
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#dc2626' }}>
+                                {financeSummary.total_expenses.toLocaleString('pt-MZ')} MT
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                {financeEntries.filter(e => e.type === 'despesa').length} custos operacionais
+                            </div>
+                        </div>
+
+                        <div style={{
+                            background: '#fff', borderRadius: '16px', padding: '1.25rem 1.5rem',
+                            border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                            display: 'flex', flexDirection: 'column', gap: '0.35rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    💎 Lucro Líquido Real
+                                </span>
+                                <span style={{ fontSize: '1.1rem', background: '#e0f2fe', color: '#0284c7', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📊</span>
+                            </div>
+                            <div style={{
+                                fontSize: '1.5rem', fontWeight: 800,
+                                color: financeSummary.net_profit >= 0 ? '#0284c7' : '#dc2626'
+                            }}>
+                                {financeSummary.net_profit.toLocaleString('pt-MZ')} MT
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                Receitas − Despesas Operacionais
+                            </div>
+                        </div>
+
+                        <div style={{
+                            background: '#fff', borderRadius: '16px', padding: '1.25rem 1.5rem',
+                            border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                            display: 'flex', flexDirection: 'column', gap: '0.35rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    🟣 Investimentos / Aportes
+                                </span>
+                                <span style={{ fontSize: '1.1rem', background: '#f3e8ff', color: '#9333ea', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🏛️</span>
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#9333ea' }}>
+                                {financeSummary.total_investments.toLocaleString('pt-MZ')} MT
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                Injeções de capital &amp; stock
+                            </div>
+                        </div>
+
+                        <div style={{
+                            background: '#fff', borderRadius: '16px', padding: '1.25rem 1.5rem',
+                            border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                            display: 'flex', flexDirection: 'column', gap: '0.35rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    🔵 Retiradas / Pró-labore
+                                </span>
+                                <span style={{ fontSize: '1.1rem', background: '#ffedd5', color: '#ea580c', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>👤</span>
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ea580c' }}>
+                                {financeSummary.total_withdrawals.toLocaleString('pt-MZ')} MT
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                Retiradas de lucros / sócios
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Filter Bar */}
+                    <div style={{
+                        background: '#fff', borderRadius: '14px', padding: '1rem 1.25rem',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', border: '1px solid #e2e8f0'
+                    }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                            {[
+                                { key: 'all', label: 'Todo o Período' },
+                                { key: 'today', label: 'Hoje' },
+                                { key: 'week', label: 'Esta Semana' },
+                                { key: 'month', label: 'Este Mês' }
+                            ].map(p => (
+                                <button
+                                    key={p.key}
+                                    onClick={() => setFinancePeriod(p.key)}
+                                    style={{
+                                        background: financePeriod === p.key ? '#0f172a' : '#f1f5f9',
+                                        color: financePeriod === p.key ? '#fff' : '#475569',
+                                        border: 'none', padding: '0.45rem 0.9rem', borderRadius: '8px',
+                                        fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer'
+                                    }}
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <select
+                                value={financeTypeFilter}
+                                onChange={(e) => setFinanceTypeFilter(e.target.value)}
+                                style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', borderRadius: '8px', border: '1.5px solid #cbd5e1', background: '#fff' }}
+                            >
+                                <option value="all">🔍 Todos os Tipos</option>
+                                <option value="receita">🟢 Apenas Receitas / Vendas</option>
+                                <option value="despesa">🔴 Apenas Despesas / Gastos</option>
+                                <option value="investimento">🟣 Apenas Investimentos</option>
+                                <option value="retirada">🔵 Apenas Retiradas</option>
+                            </select>
+
+                            <select
+                                value={financeChannelFilter}
+                                onChange={(e) => setFinanceChannelFilter(e.target.value)}
+                                style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', borderRadius: '8px', border: '1.5px solid #cbd5e1', background: '#fff' }}
+                            >
+                                <option value="all">💳 Todos os Canais</option>
+                                <option value="Dinheiro">💵 Dinheiro (Caixa)</option>
+                                <option value="M-Pesa">📱 M-Pesa</option>
+                                <option value="eMola">📱 eMola</option>
+                                <option value="Conta Bancária">🏦 Conta Bancária</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Table */}
+                    <div style={{ background: '#fff', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                                <thead>
+                                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+                                        <th style={{ padding: '0.85rem 1.25rem' }}>Data</th>
+                                        <th style={{ padding: '0.85rem 1.25rem' }}>Tipo</th>
+                                        <th style={{ padding: '0.85rem 1.25rem' }}>Descrição</th>
+                                        <th style={{ padding: '0.85rem 1.25rem' }}>Categoria</th>
+                                        <th style={{ padding: '0.85rem 1.25rem' }}>Canal / Conta</th>
+                                        <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }}>Valor (MT)</th>
+                                        <th style={{ padding: '0.85rem 1.25rem', textAlign: 'center' }}>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {financeEntries.map((e) => {
+                                        const isPositive = (e.type === 'receita' || e.type === 'investimento');
+                                        const typeLabels = {
+                                            receita: { label: '🟢 Receita', bg: '#dcfce7', color: '#15803d', border: '#bbf7d0', sign: '+' },
+                                            despesa: { label: '🔴 Despesa', bg: '#fee2e2', color: '#b91c1c', border: '#fecaca', sign: '-' },
+                                            investimento: { label: '🟣 Investimento', bg: '#f3e8ff', color: '#7e22ce', border: '#e9d5ff', sign: '+' },
+                                            retirada: { label: '🔵 Retirada', bg: '#ffedd5', color: '#c2410c', border: '#fed7aa', sign: '-' }
+                                        };
+                                        const conf = typeLabels[e.type] || { label: e.type, bg: '#f1f5f9', color: '#334155', border: '#cbd5e1', sign: '' };
+
+                                        return (
+                                            <tr key={e.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: '1rem 1.25rem', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                    📅 {e.entry_date ? new Date(e.entry_date + 'T00:00:00').toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                                                </td>
+                                                <td style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>
+                                                    <span style={{
+                                                        background: conf.bg, color: conf.color, border: `1px solid ${conf.border}`,
+                                                        padding: '0.25rem 0.65rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700
+                                                    }}>
+                                                        {conf.label}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '1rem 1.25rem' }}>
+                                                    <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>{e.description}</div>
+                                                    {e.notes && <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.2rem' }}>📝 {e.notes}</div>}
+                                                </td>
+                                                <td style={{ padding: '1rem 1.25rem', color: '#334155', fontWeight: 600, fontSize: '0.85rem' }}>
+                                                    🏷️ {e.category || 'Geral'}
+                                                </td>
+                                                <td style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>
+                                                    <span style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '0.25rem 0.6rem', borderRadius: '99px', fontSize: '0.72rem', fontWeight: 600 }}>
+                                                        💳 {e.payment_method || 'Dinheiro'}
+                                                    </span>
+                                                </td>
+                                                <td style={{
+                                                    padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 800, fontSize: '1.05rem',
+                                                    color: isPositive ? '#16a34a' : '#dc2626', whiteSpace: 'nowrap'
+                                                }}>
+                                                    {conf.sign} {Number(e.amount || 0).toLocaleString('pt-MZ')} MT
+                                                </td>
+                                                <td style={{ padding: '1rem 1.25rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                                                    <button
+                                                        onClick={() => openEditFinanceModal(e)}
+                                                        title="Editar"
+                                                        style={{ background: '#e0f2fe', color: '#0369a1', border: 'none', padding: '0.4rem 0.65rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', marginRight: '0.35rem' }}
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setDeleteFinanceToConfirm(e)}
+                                                        title="Apagar"
+                                                        style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', padding: '0.4rem 0.65rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {financeEntries.length === 0 && (
+                                        <tr>
+                                            <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
+                                                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📭</div>
+                                                <div style={{ fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Nenhum registo financeiro encontrado</div>
+                                                <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                                                    Clique no botão "+ Novo Lançamento" acima para adicionar receitas, despesas, investimentos ou retiradas.
+                                                </div>
+                                                <button
+                                                    onClick={openCreateFinanceModal}
+                                                    style={{ background: '#059669', color: '#fff', border: 'none', padding: '0.55rem 1.2rem', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
+                                                >
+                                                    + Lançar Agora
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Edit Product Modal */}
             {editingProduct && (
                 <div style={{
@@ -1931,6 +2445,214 @@ export default function Admin() {
                                 border: 'none', background: '#ef4444', color: '#fff',
                                 fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem'
                             }}>Sim, Apagar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Finance Entry Modal (Create / Edit) */}
+            {isFinanceModalOpen && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: 9999, backdropFilter: 'blur(4px)'
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: '20px', padding: '2rem',
+                        maxWidth: '520px', width: '92%', maxHeight: '90vh', overflowY: 'auto',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#111827' }}>
+                                {editingFinanceEntry ? '✏️ Editar Lançamento Financeiro' : '➕ Novo Lançamento Financeiro'}
+                            </h3>
+                            <button
+                                onClick={() => setIsFinanceModalOpen(false)}
+                                style={{ background: 'none', border: 'none', fontSize: '1.4rem', color: '#94a3b8', cursor: 'pointer' }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveFinanceEntry} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151' }}>
+                                    Tipo de Movimentação
+                                </label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                                    {[
+                                        { val: 'receita', label: '🟢 Receita / Venda', border: '#bbf7d0', bg: '#f0fdf4', color: '#166534', accent: '#16a34a' },
+                                        { val: 'despesa', label: '🔴 Despesa / Gasto', border: '#fecaca', bg: '#fef2f2', color: '#991b1b', accent: '#dc2626' },
+                                        { val: 'investimento', label: '🟣 Investimento', border: '#e9d5ff', bg: '#faf5ff', color: '#6b21a8', accent: '#9333ea' },
+                                        { val: 'retirada', label: '🔵 Retirada Sócio', border: '#fed7aa', bg: '#fff7ed', color: '#9a3412', accent: '#ea580c' }
+                                    ].map(t => (
+                                        <label
+                                            key={t.val}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.6rem 0.75rem',
+                                                border: `2px solid ${finType === t.val ? t.accent : t.border}`, borderRadius: '10px',
+                                                background: t.bg, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: t.color
+                                            }}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="react-fin-type"
+                                                value={t.val}
+                                                checked={finType === t.val}
+                                                onChange={() => setFinType(t.val)}
+                                                style={{ accentColor: t.accent }}
+                                            />
+                                            {t.label}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151' }}>
+                                    Descrição / Motivo *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={finDesc}
+                                    onChange={(e) => setFinDesc(e.target.value)}
+                                    placeholder="Ex: Venda de lote fones, Combustível, Compra de Stock..."
+                                    required
+                                    style={{ width: '100%', padding: '0.65rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.9rem' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151' }}>
+                                        Valor (MT) *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        value={finAmount}
+                                        onChange={(e) => setFinAmount(e.target.value)}
+                                        placeholder="0.00"
+                                        required
+                                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 700 }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151' }}>
+                                        Data *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={finDate}
+                                        onChange={(e) => setFinDate(e.target.value)}
+                                        required
+                                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.9rem' }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151' }}>
+                                        Categoria
+                                    </label>
+                                    <select
+                                        value={finCategory}
+                                        onChange={(e) => setFinCategory(e.target.value)}
+                                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.9rem', background: '#fff' }}
+                                    >
+                                        <option value="Vendas & Faturamento">Vendas &amp; Faturamento</option>
+                                        <option value="Stock & Mercadoria">Stock &amp; Mercadoria</option>
+                                        <option value="Logística & Entregas">Logística &amp; Entregas</option>
+                                        <option value="Marketing & Divulgação">Marketing &amp; Divulgação</option>
+                                        <option value="Operacional & Escritório">Operacional &amp; Escritório</option>
+                                        <option value="Salários & Equipe">Salários &amp; Equipe</option>
+                                        <option value="Retirada de Lucro">Retirada de Lucro</option>
+                                        <option value="Outros">Outros</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151' }}>
+                                        Canal / Forma
+                                    </label>
+                                    <select
+                                        value={finChannel}
+                                        onChange={(e) => setFinChannel(e.target.value)}
+                                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.9rem', background: '#fff' }}
+                                    >
+                                        <option value="Dinheiro">💵 Dinheiro (Caixa)</option>
+                                        <option value="M-Pesa">📱 M-Pesa</option>
+                                        <option value="eMola">📱 eMola</option>
+                                        <option value="Conta Bancária">🏦 Conta Bancária</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#374151' }}>
+                                    Observações / Notas (Opcional)
+                                </label>
+                                <textarea
+                                    value={finNotes}
+                                    onChange={(e) => setFinNotes(e.target.value)}
+                                    rows="2"
+                                    placeholder="Informações adicionais..."
+                                    style={{ width: '100%', padding: '0.6rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.85rem', resize: 'vertical' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsFinanceModalOpen(false)}
+                                    style={{ padding: '0.65rem 1.25rem', borderRadius: '10px', border: '1.5px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontWeight: 600 }}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={savingFinance}
+                                    style={{ padding: '0.65rem 1.5rem', borderRadius: '10px', border: 'none', background: '#059669', color: '#fff', cursor: 'pointer', fontWeight: 700, opacity: savingFinance ? 0.7 : 1 }}
+                                >
+                                    {savingFinance ? 'A guardar...' : '💾 Salvar Lançamento'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Finance Confirmation Modal */}
+            {deleteFinanceToConfirm && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: 9999, backdropFilter: 'blur(4px)'
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: '20px', padding: '2.5rem',
+                        maxWidth: '420px', width: '90%', textAlign: 'center',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗑️</div>
+                        <h3 style={{ marginBottom: '0.5rem', color: '#111827' }}>Apagar Lançamento?</h3>
+                        <p style={{ color: '#6b7280', marginBottom: '2rem', fontSize: '0.9rem' }}>
+                            Tem a certeza de que deseja apagar o registo "<strong>{deleteFinanceToConfirm.description}</strong>" no valor de <strong>{Number(deleteFinanceToConfirm.amount || 0).toLocaleString('pt-MZ')} MT</strong>?
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button
+                                onClick={() => setDeleteFinanceToConfirm(null)}
+                                style={{ padding: '0.75rem 1.5rem', borderRadius: '10px', border: '2px solid #e5e7eb', background: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.95rem' }}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => handleDeleteFinanceEntry(deleteFinanceToConfirm.id)}
+                                style={{ padding: '0.75rem 1.5rem', borderRadius: '10px', border: 'none', background: '#ef4444', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}
+                            >
+                                Sim, Apagar
+                            </button>
                         </div>
                     </div>
                 </div>

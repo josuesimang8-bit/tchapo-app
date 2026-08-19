@@ -1694,7 +1694,7 @@ export default function Store() {
                 <section className="hero" style={{ margin: '1.5rem auto', maxWidth: '1200px', width: 'calc(100% - 3rem)' }}>
                     <div className="hero-content">
                         <h1>Tudo o que precisas, entregue em 4 horas.</h1>
-                        <p>Tecnologia, gadgets e acessórios com pagamento na entrega. Rápido, seguro e exclusivo para a cidade da Beira, Sofala.</p>
+                        <p>Tecnologia, gadgets, acessórios e muito mais com pagamento na entrega. Rápido, seguro e exclusivo para a cidade da Beira, Sofala.</p>
                         <a href="#catalog" className="btn-primary">Ver Produtos</a>
                     </div>
                 </section>

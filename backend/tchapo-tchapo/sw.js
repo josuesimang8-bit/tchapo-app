@@ -1,6 +1,5 @@
-const CACHE_NAME = 'tchapo-admin-v1';
-let knownOrderIds = new Set();
-let isPolling = false;
+const CACHE_NAME = 'tchapo-admin-v2';
+let shownOrderTags = new Set();
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -13,10 +12,11 @@ self.addEventListener('activate', (event) => {
 // Listen for Web Push events (iOS & Android background push notifications)
 self.addEventListener('push', (event) => {
     let data = {
-        title: '🛍️ NOVO PEDIDO — Tchapo Tchapo!',
+        title: '🚨 NOVO PEDIDO — Tchapo Tchapo!',
         body: 'Novo pedido recebido na loja!',
         icon: '/favicon.ico',
-        url: '/admin.html'
+        url: '/admin.html',
+        tag: 'new-order'
     };
 
     if (event.data) {
@@ -27,14 +27,26 @@ self.addEventListener('push', (event) => {
         }
     }
 
+    const notifTag = data.tag || 'order-general';
+
+    // Prevent displaying duplicate notifications within the same service worker session
+    if (shownOrderTags.has(notifTag)) {
+        return;
+    }
+    shownOrderTags.add(notifTag);
+    if (shownOrderTags.size > 100) {
+        const first = shownOrderTags.values().next().value;
+        shownOrderTags.delete(first);
+    }
+
     const options = {
         body: data.body,
         icon: data.icon || '/favicon.ico',
         badge: '/favicon.ico',
-        tag: data.tag || 'new-order',
-        renotify: true,
+        tag: notifTag,
+        renotify: false,
         requireInteraction: true,
-        vibrate: [300, 100, 300, 100, 300, 100, 400],
+        vibrate: [300, 100, 300, 100, 300],
         data: {
             url: data.url || '/admin.html'
         }
@@ -42,65 +54,6 @@ self.addEventListener('push', (event) => {
 
     event.waitUntil(self.registration.showNotification(data.title, options));
 });
-
-// Listen for messages from admin panel (e.g. initial order IDs list)
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'INIT_ORDERS') {
-        if (Array.isArray(event.data.orderIds)) {
-            event.data.orderIds.forEach(id => knownOrderIds.add(id));
-        }
-        startBackgroundPolling();
-    }
-});
-
-// Periodic background check / polling fallback
-async function checkNewOrders() {
-    try {
-        const res = await fetch('/api/orders');
-        if (!res.ok) return;
-        const orders = await res.json();
-        
-        let newOrdersFound = [];
-        orders.forEach(order => {
-            if (!knownOrderIds.has(order.id) && (!order.status || order.status === 'Pendente')) {
-                knownOrderIds.add(order.id);
-                newOrdersFound.push(order);
-            }
-        });
-
-        for (const order of newOrdersFound) {
-            const title = '🛍️ NOVO PEDIDO — Tchapo Tchapo!';
-            const itemsSummary = Array.isArray(order.order_items) && order.order_items.length > 0
-                ? order.order_items.map(i => `${i.quantity}x ${i.product_name}`).join(', ')
-                : 'Produtos no pedido';
-
-            const options = {
-                body: `👤 ${order.customer_name || 'Cliente'} (${order.bairro || 'Maputo'})\n📦 ${itemsSummary}\n💰 Total: ${Number(order.total || 0).toLocaleString('pt-MZ')} MT`,
-                icon: '/favicon.ico',
-                badge: '/favicon.ico',
-                tag: `order-${order.id}`,
-                renotify: true,
-                requireInteraction: true,
-                vibrate: [300, 100, 300, 100, 300, 100, 400],
-                data: {
-                    url: '/admin.html',
-                    orderId: order.id
-                }
-            };
-
-            await self.registration.showNotification(title, options);
-        }
-    } catch (err) {
-        console.error('[SW] Order check error:', err);
-    }
-}
-
-function startBackgroundPolling() {
-    if (isPolling) return;
-    isPolling = true;
-    checkNewOrders();
-    setInterval(checkNewOrders, 8000); // Check every 8 seconds in background
-}
 
 // Notification click event -> open admin panel
 self.addEventListener('notificationclick', (event) => {

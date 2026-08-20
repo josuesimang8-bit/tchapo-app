@@ -271,9 +271,24 @@ ${itemsList}
     }
 }
 
-// Web Push Notification Sender
+// Web Push Notification Sender (Deduplicated)
 async function sendWebPushNotification(order) {
     if (pushSubscriptions.length === 0) return;
+    
+    // Deduplicate subscribers by endpoint
+    const uniqueSubs = [];
+    const seenEndpoints = new Set();
+    for (const sub of pushSubscriptions) {
+        if (sub && sub.endpoint && !seenEndpoints.has(sub.endpoint)) {
+            seenEndpoints.add(sub.endpoint);
+            uniqueSubs.push(sub);
+        }
+    }
+
+    if (uniqueSubs.length !== pushSubscriptions.length) {
+        pushSubscriptions = uniqueSubs;
+        savePushSubscriptions(pushSubscriptions);
+    }
     
     const itemsSummary = Array.isArray(order.items) && order.items.length > 0
         ? order.items.map(i => `${i.quantity || 1}x ${i.product_name || i.name}`).join(', ')
@@ -284,7 +299,7 @@ async function sendWebPushNotification(order) {
         body: `👤 ${order.customer_name || 'Cliente'} (${order.bairro || 'Beira'})\n📦 ${itemsSummary}\n💰 Total: ${Number(order.total || 0).toLocaleString('pt-MZ')} MT`,
         icon: '/favicon.ico',
         badge: '/favicon.ico',
-        tag: `order-${order.id || Date.now()}`,
+        tag: `order-${order.id || 'general'}`,
         requireInteraction: true,
         vibrate: [300, 100, 300, 100, 300],
         url: '/admin.html'

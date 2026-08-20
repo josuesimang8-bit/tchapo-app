@@ -120,6 +120,69 @@ export default function Admin() {
     const [savingFinance, setSavingFinance] = useState(false);
     const [deleteFinanceToConfirm, setDeleteFinanceToConfirm] = useState(null);
 
+    // --- Notification & Telegram Settings ---
+    const [tgConfigured, setTgConfigured] = useState(false);
+    const [tgBotToken, setTgBotToken] = useState('');
+    const [tgChatId, setTgChatId] = useState('');
+    const [savingTg, setSavingTg] = useState(false);
+    const [testingNotif, setTestingNotif] = useState(false);
+
+    const fetchNotifSettings = async () => {
+        try {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/api/admin/settings');
+            if (res.ok) {
+                const data = await res.json();
+                setTgConfigured(data.telegram_configured);
+                if (data.telegram_chat_id) setTgChatId(data.telegram_chat_id);
+            }
+        } catch (_) {}
+    };
+
+    const handleSaveNotifSettings = async (e) => {
+        if (e) e.preventDefault();
+        setSavingTg(true);
+        try {
+            const body = { telegram_chat_id: tgChatId };
+            if (tgBotToken) body.telegram_bot_token = tgBotToken;
+            const res = await fetch(import.meta.env.VITE_API_URL + '/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (res.ok) {
+                setToast('✅ Configurações do Telegram salvas com sucesso!');
+                setTimeout(() => setToast(null), 3000);
+                fetchNotifSettings();
+                setTgBotToken('');
+            }
+        } catch (err) {
+            alert('Erro ao salvar: ' + err.message);
+        } finally {
+            setSavingTg(false);
+        }
+    };
+
+    const handleSendTestNotification = async () => {
+        setTestingNotif(true);
+        try {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/api/admin/test-notification', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                if (data.telegram_sent) {
+                    setToast('🚀 Notificação de teste enviada para o seu Telegram!');
+                } else {
+                    setToast('⚠️ Notificação disparada no navegador (Configure o Telegram para receber alertas sonoros no telemóvel)');
+                }
+                setTimeout(() => setToast(null), 4000);
+                playBeep();
+            }
+        } catch (err) {
+            alert('Erro no teste: ' + err.message);
+        } finally {
+            setTestingNotif(false);
+        }
+    };
+
     // --- Notifications permission & Service Worker ---
     const subscribeToPushNotifications = async (reg) => {
         if (!reg || !('pushManager' in reg)) return;
@@ -1057,6 +1120,19 @@ export default function Admin() {
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     Finanças &amp; Caixa
+                </button>
+                <button
+                    onClick={() => { setActiveTab('notif-settings'); fetchNotifSettings(); }}
+                    style={{
+                        background: activeTab === 'notif-settings' ? '#374151' : 'transparent',
+                        color: activeTab === 'notif-settings' ? '#fff' : '#9ca3af',
+                        border: 'none', padding: '0.55rem 1rem', borderRadius: '6px',
+                        cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem'
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    Alertas &amp; Telegram
                 </button>
             </div>
 
@@ -2191,6 +2267,101 @@ export default function Admin() {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Notification & Telegram Settings Tab Panel */}
+            {activeTab === 'notif-settings' && (
+                <div style={{ padding: '1.5rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                            🔔 Sistema de Notificações Infalíveis
+                        </h2>
+                        <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
+                            Receba alertas sonoros com detalhes de novos pedidos instantaneamente no seu telemóvel via Telegram e Web Push.
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                        {/* Telegram Settings Card */}
+                        <div style={{ background: '#fff', borderRadius: '16px', padding: '1.75rem', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                    <span style={{ fontSize: '1.8rem' }}>📱</span>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#1e293b' }}>Alertas no Telegram (100% Infalível)</h3>
+                                </div>
+                                <span style={{
+                                    background: tgConfigured ? '#dcfce7' : '#f1f5f9',
+                                    color: tgConfigured ? '#15803d' : '#64748b',
+                                    padding: '0.25rem 0.65rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700
+                                }}>
+                                    {tgConfigured ? '🟢 Ativo e Configurado' : '⚪ Não configurado'}
+                                </span>
+                            </div>
+
+                            <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                                O Telegram nunca adormece e nunca é bloqueado pelo sistema do telemóvel. Ao receber um novo pedido, você recebe o alerta sonoro e todos os dados do cliente e produtos instantaneamente!
+                            </p>
+
+                            <form onSubmit={handleSaveNotifSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                                        Telegram Bot Token
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={tgBotToken}
+                                        onChange={(e) => setTgBotToken(e.target.value)}
+                                        placeholder={tgConfigured ? '•••••••••••••••• (Configurado)' : 'Ex: 789123456:AAFl9_example...'}
+                                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.85rem' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                                        Seu Telegram Chat ID (ou ID do Canal)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={tgChatId}
+                                        onChange={(e) => setTgChatId(e.target.value)}
+                                        placeholder="Ex: 987654321"
+                                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.85rem' }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                    <button
+                                        type="submit"
+                                        disabled={savingTg}
+                                        style={{ flex: 1, background: '#2563eb', padding: '0.65rem', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: savingTg ? 0.7 : 1 }}
+                                    >
+                                        {savingTg ? 'A guardar...' : '💾 Salvar Configurações'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleSendTestNotification}
+                                        disabled={testingNotif}
+                                        style={{ padding: '0.65rem 1.25rem', background: '#10b981', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: testingNotif ? 0.7 : 1 }}
+                                    >
+                                        {testingNotif ? 'A enviar...' : '🚀 Testar Alerta'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* Step-by-Step Instructions Card */}
+                        <div style={{ background: '#f8fafc', borderRadius: '16px', padding: '1.75rem', border: '1.5px solid #e2e8f0' }}>
+                            <h3 style={{ margin: '0 0 1rem', fontSize: '1.05rem', color: '#1e293b' }}>📋 Como criar seu Bot do Telegram (Leva 1 Minuto)</h3>
+                            <ol style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.85rem', color: '#475569', lineHeight: 1.75 }}>
+                                <li>Abra o aplicativo <strong>Telegram</strong> no seu telemóvel.</li>
+                                <li>Pesquise por <code>@BotFather</code> e envie o comando: <code>/newbot</code>.</li>
+                                <li>Dê um nome ao bot (Ex: <em>Tchapo Notificações</em>) e um username (Ex: <em>tchapo_alert_bot</em>).</li>
+                                <li>Copie o <strong>Token HTTP API</strong> fornecido e cole no campo ao lado.</li>
+                                <li>Abra o seu bot recém-criado e clique em <strong>COMEÇAR (Start)</strong> nele.</li>
+                                <li>Pesquise por <code>@userinfobot</code> no Telegram, envie <code>/start</code> e copie o número do seu <strong>Id</strong>.</li>
+                                <li>Cole o <strong>Id</strong> no campo <em>Telegram Chat ID</em> e clique em <strong>Salvar Configurações</strong>!</li>
+                            </ol>
                         </div>
                     </div>
                 </div>

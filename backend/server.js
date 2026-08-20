@@ -27,7 +27,47 @@ webpush.setVapidDetails(
     VAPID_PRIVATE_KEY
 );
 
-let pushSubscriptions = [];
+// ─── ADMIN NOTIFICATION SYSTEM (TELEGRAM + PERSISTENT WEB PUSH) ─────────
+const PUSH_SUBS_FILE = path.join(__dirname, 'data', 'push_subscriptions.json');
+const ADMIN_SETTINGS_FILE = path.join(__dirname, 'data', 'admin_settings.json');
+
+function loadPushSubscriptions() {
+    try {
+        if (fs.existsSync(PUSH_SUBS_FILE)) {
+            const raw = fs.readFileSync(PUSH_SUBS_FILE, 'utf8');
+            return JSON.parse(raw) || [];
+        }
+    } catch (_) {}
+    return [];
+}
+
+function savePushSubscriptions(subs) {
+    try {
+        const dir = path.dirname(PUSH_SUBS_FILE);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(PUSH_SUBS_FILE, JSON.stringify(subs, null, 2), 'utf8');
+    } catch (_) {}
+}
+
+function loadAdminSettings() {
+    try {
+        if (fs.existsSync(ADMIN_SETTINGS_FILE)) {
+            const raw = fs.readFileSync(ADMIN_SETTINGS_FILE, 'utf8');
+            return JSON.parse(raw) || {};
+        }
+    } catch (_) {}
+    return {};
+}
+
+function saveAdminSettings(settings) {
+    try {
+        const dir = path.dirname(ADMIN_SETTINGS_FILE);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(ADMIN_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf8');
+    } catch (_) {}
+}
+
+let pushSubscriptions = loadPushSubscriptions();
 
 app.get('/api/admin/vapid-public-key', (req, res) => {
     res.json({ publicKey: VAPID_PUBLIC_KEY });
@@ -38,12 +78,96 @@ app.post('/api/admin/subscribe-push', (req, res) => {
     if (subscription && subscription.endpoint) {
         if (!pushSubscriptions.find(s => s.endpoint === subscription.endpoint)) {
             pushSubscriptions.push(subscription);
-            console.log('[WebPush] New admin subscription added:', subscription.endpoint.slice(0, 30));
+            savePushSubscriptions(pushSubscriptions);
+            console.log('[WebPush] New admin subscription persisted. Total subscribers:', pushSubscriptions.length);
         }
     }
-    res.status(201).json({ status: 'subscribed' });
+    res.status(201).json({ status: 'subscribed', total: pushSubscriptions.length });
 });
 
+// Admin Notification Settings endpoints
+app.get('/api/admin/settings', (req, res) => {
+    const settings = loadAdminSettings();
+    res.json({
+        telegram_configured: Boolean(process.env.TELEGRAM_BOT_TOKEN || settings.telegram_bot_token),
+        telegram_chat_id: process.env.TELEGRAM_CHAT_ID || settings.telegram_chat_id || '',
+        push_subscribers_count: pushSubscriptions.length
+    });
+});
+
+app.post('/api/admin/settings', (req, res) => {
+    try {
+        const { telegram_bot_token, telegram_chat_id } = req.body;
+        const current = loadAdminSettings();
+        if (telegram_bot_token !== undefined) current.telegram_bot_token = telegram_bot_token.trim();
+        if (telegram_chat_id !== undefined) current.telegram_chat_id = telegram_chat_id.trim();
+        saveAdminSettings(current);
+        res.json({ success: true, settings: current });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Telegram Notification Sender
+async function sendTelegramAlert(order) {
+    const settings = loadAdminSettings();
+    const botToken = process.env.TELEGRAM_BOT_TOKEN || settings.telegram_bot_token;
+    const chatId = process.env.TELEGRAM_CHAT_ID || settings.telegram_chat_id;
+
+    if (!botToken || !chatId) {
+        console.log('[TelegramAlert] ℹ️ Telegram bot token or chat ID not set. (Set them in Admin Panel for instant alerts)');
+        return false;
+    }
+
+    try {
+        const itemsList = Array.isArray(order.items) && order.items.length > 0
+            ? order.items.map(i => `▫️ <b>${i.quantity || 1}x</b> ${i.product_name || i.name} (${Number(i.price || 0).toLocaleString('pt-MZ')} MT)`).join('\n')
+            : '▫️ 1x Produto';
+
+        const message = 
+`🚨 <b>NOVO PEDIDO RECEBIDO! #${order.id}</b> 🛍️
+
+👤 <b>Cliente:</b> ${order.customer_name || 'Cliente'}
+📞 <b>Telefone:</b> <code>${order.customer_phone || 'Sem telefone'}</code>
+📍 <b>Bairro:</b> ${order.bairro || 'Beira'}
+🏠 <b>Endereço:</b> ${order.address || '—'}
+💳 <b>Pagamento:</b> ${order.payment_method || 'Dinheiro na Entrega'}
+
+📦 <b>PRODUTOS:</b>
+${itemsList}
+
+💰 <b>TOTAL:</b> <b>${Number(order.total || 0).toLocaleString('pt-MZ')} MT</b>
+⏱️ <b>Hora:</b> ${new Date().toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' })}
+
+👉 <a href="https://tchapotchapo.store/admin.html">Abrir Painel Admin</a>`;
+
+        const tgUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+        const res = await fetch(tgUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: message,
+                parse_mode: 'HTML',
+                disable_web_page_preview: true
+            })
+        });
+
+        const respData = await res.json();
+        if (respData.ok) {
+            console.log('[TelegramAlert] ✅ Alert delivered to Telegram chat:', chatId);
+            return true;
+        } else {
+            console.error('[TelegramAlert] ❌ Telegram API error:', respData.description);
+            return false;
+        }
+    } catch (err) {
+        console.error('[TelegramAlert] ❌ Failed to send Telegram alert:', err.message);
+        return false;
+    }
+}
+
+// Web Push Notification Sender
 async function sendWebPushNotification(order) {
     if (pushSubscriptions.length === 0) return;
     
@@ -52,27 +176,68 @@ async function sendWebPushNotification(order) {
         : 'Produtos no pedido';
 
     const payload = JSON.stringify({
-        title: '🛍️ NOVO PEDIDO — Tchapo Tchapo!',
-        body: `👤 ${order.customer_name || 'Cliente'} (${order.bairro || 'Maputo'})\n📦 ${itemsSummary}\n💰 Total: ${Number(order.total || 0).toLocaleString('pt-MZ')} MT`,
+        title: '🚨 NOVO PEDIDO — Tchapo Tchapo!',
+        body: `👤 ${order.customer_name || 'Cliente'} (${order.bairro || 'Beira'})\n📦 ${itemsSummary}\n💰 Total: ${Number(order.total || 0).toLocaleString('pt-MZ')} MT`,
         icon: '/favicon.ico',
         badge: '/favicon.ico',
-        tag: `order-${order.id}`,
+        tag: `order-${order.id || Date.now()}`,
+        requireInteraction: true,
+        vibrate: [300, 100, 300, 100, 300],
         url: '/admin.html'
     });
 
     for (let i = pushSubscriptions.length - 1; i >= 0; i--) {
         const sub = pushSubscriptions[i];
         try {
-            await webpush.sendNotification(sub, payload);
-            console.log('[WebPush] Notification sent to endpoint:', sub.endpoint.slice(0, 30));
+            await webpush.sendNotification(sub, payload, { urgency: 'high' });
+            console.log('[WebPush] Push delivered to device:', sub.endpoint.slice(0, 35));
         } catch (err) {
             console.error('[WebPush] Failed to send push:', err.statusCode || err.message);
             if (err.statusCode === 410 || err.statusCode === 404) {
                 pushSubscriptions.splice(i, 1);
+                savePushSubscriptions(pushSubscriptions);
             }
         }
     }
 }
+
+// Master Dispatcher (Never fails - Multi-channel fallback)
+async function notifyAdminNewOrder(order) {
+    console.log(`[NotificationEngine] 🔔 Dispatching notification for Order #${order.id}...`);
+    // 1. Instant Telegram push (100% phone notification)
+    sendTelegramAlert(order).catch(e => console.error('[NotificationEngine] Telegram dispatch err:', e));
+    // 2. Web Push Notification to all subscribed devices
+    sendWebPushNotification(order).catch(e => console.error('[NotificationEngine] WebPush dispatch err:', e));
+}
+
+// Test Notification Endpoint
+app.post('/api/admin/test-notification', async (req, res) => {
+    try {
+        const testOrder = {
+            id: 'TESTE-999',
+            customer_name: 'Teste Admin Tchapo',
+            customer_phone: '859272314',
+            bairro: 'Ponta Gêa, Beira',
+            address: 'Rua de Teste, Casa 12',
+            payment_method: 'M-Pesa',
+            total: 1500,
+            items: [
+                { product_name: 'Produto Exemplo de Teste', quantity: 2, price: 750 }
+            ]
+        };
+
+        const tgResult = await sendTelegramAlert(testOrder);
+        await sendWebPushNotification(testOrder);
+
+        res.json({
+            success: true,
+            telegram_sent: tgResult,
+            push_subscribers: pushSubscriptions.length
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // Servir o frontend estático do Tchapo Tchapo
 app.use(express.static(path.join(__dirname, 'tchapo-tchapo')));
@@ -359,7 +524,7 @@ app.post('/api/orders', async (req, res) => {
         }
 
         const formattedOrder = formatOrderResponse(order);
-        sendWebPushNotification(formattedOrder).catch(err => console.error('[WebPush] Send error:', err));
+        notifyAdminNewOrder(formattedOrder).catch(err => console.error('[NotificationEngine] Dispatch error:', err));
         res.status(201).json(formattedOrder);
     } catch (error) {
         res.status(500).json({ error: error.message });

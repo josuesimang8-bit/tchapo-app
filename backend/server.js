@@ -89,6 +89,9 @@ app.post('/api/admin/subscribe-push', (req, res) => {
 app.get('/api/admin/settings', (req, res) => {
     const settings = loadAdminSettings();
     res.json({
+        whatsapp_configured: Boolean(settings.whatsapp_phone && settings.whatsapp_apikey),
+        whatsapp_phone: settings.whatsapp_phone || '',
+        whatsapp_apikey_set: Boolean(settings.whatsapp_apikey),
         telegram_configured: Boolean(process.env.TELEGRAM_BOT_TOKEN || settings.telegram_bot_token),
         telegram_chat_id: process.env.TELEGRAM_CHAT_ID || settings.telegram_chat_id || '',
         push_subscribers_count: pushSubscriptions.length
@@ -97,8 +100,10 @@ app.get('/api/admin/settings', (req, res) => {
 
 app.post('/api/admin/settings', (req, res) => {
     try {
-        const { telegram_bot_token, telegram_chat_id } = req.body;
+        const { whatsapp_phone, whatsapp_apikey, telegram_bot_token, telegram_chat_id } = req.body;
         const current = loadAdminSettings();
+        if (whatsapp_phone !== undefined) current.whatsapp_phone = whatsapp_phone.trim();
+        if (whatsapp_apikey !== undefined) current.whatsapp_apikey = whatsapp_apikey.trim();
         if (telegram_bot_token !== undefined) current.telegram_bot_token = telegram_bot_token.trim();
         if (telegram_chat_id !== undefined) current.telegram_chat_id = telegram_chat_id.trim();
         saveAdminSettings(current);
@@ -108,6 +113,56 @@ app.post('/api/admin/settings', (req, res) => {
     }
 });
 
+// WhatsApp Notification Sender (via CallMeBot API - 100% Free & Direct to Phone)
+async function sendWhatsAppAlert(order) {
+    const settings = loadAdminSettings();
+    let phone = (settings.whatsapp_phone || process.env.WHATSAPP_PHONE || '').replace(/[^0-9+]/g, '');
+    const apiKey = settings.whatsapp_apikey || process.env.WHATSAPP_APIKEY;
+
+    if (!phone || !apiKey) {
+        console.log('[WhatsAppAlert] ℹ️ WhatsApp phone or API key not configured. (Configure in Admin Panel for WhatsApp alerts)');
+        return false;
+    }
+
+    if (!phone.startsWith('+')) phone = '+' + phone;
+
+    try {
+        const itemsList = Array.isArray(order.items) && order.items.length > 0
+            ? order.items.map(i => `* ${i.quantity || 1}x ${i.product_name || i.name} (${Number(i.price || 0).toLocaleString('pt-MZ')} MT)`).join('\n')
+            : '* 1x Produto';
+
+        const message = 
+`🚨 *NOVO PEDIDO RECEBIDO! #${order.id}* 🛍️
+
+👤 *Cliente:* ${order.customer_name || 'Cliente'}
+📞 *Telefone:* ${order.customer_phone || 'Sem telefone'}
+📍 *Bairro:* ${order.bairro || 'Beira'}
+🏠 *Endereço:* ${order.address || '—'}
+💳 *Pagamento:* ${order.payment_method || 'Dinheiro na Entrega'}
+
+📦 *PRODUTOS:*
+${itemsList}
+
+💰 *TOTAL:* *${Number(order.total || 0).toLocaleString('pt-MZ')} MT*
+⏱️ *Hora:* ${new Date().toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' })}
+
+👉 *Painel Admin:* https://tchapotchapo.store/admin.html`;
+
+        const waUrl = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(apiKey)}`;
+        const res = await fetch(waUrl, { signal: AbortSignal.timeout(10000) });
+        if (res.ok) {
+            console.log('[WhatsAppAlert] ✅ Alert delivered to WhatsApp phone:', phone);
+            return true;
+        } else {
+            console.error('[WhatsAppAlert] ❌ Failed to send WhatsApp message. HTTP status:', res.status);
+            return false;
+        }
+    } catch (err) {
+        console.error('[WhatsAppAlert] ❌ Network error sending WhatsApp alert:', err.message);
+        return false;
+    }
+}
+
 // Telegram Notification Sender
 async function sendTelegramAlert(order) {
     const settings = loadAdminSettings();
@@ -115,7 +170,6 @@ async function sendTelegramAlert(order) {
     const chatId = process.env.TELEGRAM_CHAT_ID || settings.telegram_chat_id;
 
     if (!botToken || !chatId) {
-        console.log('[TelegramAlert] ℹ️ Telegram bot token or chat ID not set. (Set them in Admin Panel for instant alerts)');
         return false;
     }
 
@@ -201,13 +255,15 @@ async function sendWebPushNotification(order) {
     }
 }
 
-// Master Dispatcher (Never fails - Multi-channel fallback)
+// Master Dispatcher (Never fails - Multi-channel fallback: WhatsApp + Web Push + Telegram)
 async function notifyAdminNewOrder(order) {
     console.log(`[NotificationEngine] 🔔 Dispatching notification for Order #${order.id}...`);
-    // 1. Instant Telegram push (100% phone notification)
-    sendTelegramAlert(order).catch(e => console.error('[NotificationEngine] Telegram dispatch err:', e));
+    // 1. Direct WhatsApp Message (100% Free, Phone Sound, No App Required)
+    sendWhatsAppAlert(order).catch(e => console.error('[NotificationEngine] WhatsApp dispatch err:', e));
     // 2. Web Push Notification to all subscribed devices
     sendWebPushNotification(order).catch(e => console.error('[NotificationEngine] WebPush dispatch err:', e));
+    // 3. Telegram push (optional fallback if configured)
+    sendTelegramAlert(order).catch(e => console.error('[NotificationEngine] Telegram dispatch err:', e));
 }
 
 // Test Notification Endpoint
@@ -226,11 +282,13 @@ app.post('/api/admin/test-notification', async (req, res) => {
             ]
         };
 
+        const waResult = await sendWhatsAppAlert(testOrder);
         const tgResult = await sendTelegramAlert(testOrder);
         await sendWebPushNotification(testOrder);
 
         res.json({
             success: true,
+            whatsapp_sent: waResult,
             telegram_sent: tgResult,
             push_subscribers: pushSubscriptions.length
         });

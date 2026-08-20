@@ -89,6 +89,7 @@ app.post('/api/admin/subscribe-push', (req, res) => {
 app.get('/api/admin/settings', (req, res) => {
     const settings = loadAdminSettings();
     res.json({
+        ntfy_topic: settings.ntfy_topic || 'tchapo_pedidos_beira',
         whatsapp_configured: Boolean(settings.whatsapp_phone && settings.whatsapp_apikey),
         whatsapp_phone: settings.whatsapp_phone || '',
         whatsapp_apikey_set: Boolean(settings.whatsapp_apikey),
@@ -100,8 +101,9 @@ app.get('/api/admin/settings', (req, res) => {
 
 app.post('/api/admin/settings', (req, res) => {
     try {
-        const { whatsapp_phone, whatsapp_apikey, telegram_bot_token, telegram_chat_id } = req.body;
+        const { ntfy_topic, whatsapp_phone, whatsapp_apikey, telegram_bot_token, telegram_chat_id } = req.body;
         const current = loadAdminSettings();
+        if (ntfy_topic !== undefined) current.ntfy_topic = ntfy_topic.trim();
         if (whatsapp_phone !== undefined) current.whatsapp_phone = whatsapp_phone.trim();
         if (whatsapp_apikey !== undefined) current.whatsapp_apikey = whatsapp_apikey.trim();
         if (telegram_bot_token !== undefined) current.telegram_bot_token = telegram_bot_token.trim();
@@ -112,6 +114,54 @@ app.post('/api/admin/settings', (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// NTFY Instant Mobile Notification (100% Free, Open-Source, Zero-Account, Rings Phone Loudly)
+async function sendNtfyAlert(order) {
+    const settings = loadAdminSettings();
+    const topic = (settings.ntfy_topic || process.env.NTFY_TOPIC || 'tchapo_pedidos_beira').trim();
+
+    if (!topic) return false;
+
+    try {
+        const itemsList = Array.isArray(order.items) && order.items.length > 0
+            ? order.items.map(i => `• ${i.quantity || 1}x ${i.product_name || i.name} (${Number(i.price || 0).toLocaleString('pt-MZ')} MT)`).join('\n')
+            : '• 1x Produto';
+
+        const bodyText = 
+`👤 Cliente: ${order.customer_name || 'Cliente'} (${order.customer_phone || 'Sem telefone'})
+📍 Bairro: ${order.bairro || 'Beira'} | ${order.address || '—'}
+💳 Pagamento: ${order.payment_method || 'Dinheiro na Entrega'}
+
+📦 PRODUTOS:
+${itemsList}
+
+💰 TOTAL: ${Number(order.total || 0).toLocaleString('pt-MZ')} MT`;
+
+        const res = await fetch('https://ntfy.sh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                topic: topic,
+                title: `🚨 NOVO PEDIDO #${order.id} — ${Number(order.total || 0).toLocaleString('pt-MZ')} MT`,
+                message: bodyText,
+                priority: 5, // Maximum urgent priority: vibrates & plays loud notification
+                tags: ['shopping_cart', 'rotating_light', 'loudspeaker'],
+                click: 'https://tchapotchapo.store/admin.html'
+            })
+        });
+
+        if (res.ok) {
+            console.log('[NtfyAlert] ✅ Alert delivered via Ntfy to topic:', topic);
+            return true;
+        } else {
+            console.error('[NtfyAlert] ❌ Failed to send Ntfy notification. Status:', res.status);
+            return false;
+        }
+    } catch (err) {
+        console.error('[NtfyAlert] ❌ Network error sending Ntfy alert:', err.message);
+        return false;
+    }
+}
 
 // WhatsApp Notification Sender (via CallMeBot API - 100% Free & Direct to Phone)
 async function sendWhatsAppAlert(order) {
@@ -255,14 +305,16 @@ async function sendWebPushNotification(order) {
     }
 }
 
-// Master Dispatcher (Never fails - Multi-channel fallback: WhatsApp + Web Push + Telegram)
+// Master Dispatcher (Never fails - Multi-channel fallback: Ntfy + WhatsApp + Web Push + Telegram)
 async function notifyAdminNewOrder(order) {
     console.log(`[NotificationEngine] 🔔 Dispatching notification for Order #${order.id}...`);
-    // 1. Direct WhatsApp Message (100% Free, Phone Sound, No App Required)
+    // 1. Instant Mobile Siren Push via Ntfy (100% Free, Guaranteed Sound & Vibration, Zero-Setup)
+    sendNtfyAlert(order).catch(e => console.error('[NotificationEngine] Ntfy dispatch err:', e));
+    // 2. Direct WhatsApp Message (if configured)
     sendWhatsAppAlert(order).catch(e => console.error('[NotificationEngine] WhatsApp dispatch err:', e));
-    // 2. Web Push Notification to all subscribed devices
+    // 3. Web Push Notification to all subscribed devices
     sendWebPushNotification(order).catch(e => console.error('[NotificationEngine] WebPush dispatch err:', e));
-    // 3. Telegram push (optional fallback if configured)
+    // 4. Telegram push (optional fallback if configured)
     sendTelegramAlert(order).catch(e => console.error('[NotificationEngine] Telegram dispatch err:', e));
 }
 
@@ -282,12 +334,14 @@ app.post('/api/admin/test-notification', async (req, res) => {
             ]
         };
 
+        const ntfyResult = await sendNtfyAlert(testOrder);
         const waResult = await sendWhatsAppAlert(testOrder);
         const tgResult = await sendTelegramAlert(testOrder);
         await sendWebPushNotification(testOrder);
 
         res.json({
             success: true,
+            ntfy_sent: ntfyResult,
             whatsapp_sent: waResult,
             telegram_sent: tgResult,
             push_subscribers: pushSubscriptions.length

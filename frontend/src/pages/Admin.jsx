@@ -120,7 +120,8 @@ export default function Admin() {
     const [savingFinance, setSavingFinance] = useState(false);
     const [deleteFinanceToConfirm, setDeleteFinanceToConfirm] = useState(null);
 
-    // --- Notification & WhatsApp Settings ---
+    // --- Notification & WhatsApp/Ntfy Settings ---
+    const [ntfyTopic, setNtfyTopic] = useState('tchapo_pedidos_beira');
     const [waConfigured, setWaConfigured] = useState(false);
     const [waPhone, setWaPhone] = useState('');
     const [waApiKey, setWaApiKey] = useState('');
@@ -132,6 +133,7 @@ export default function Admin() {
             const res = await fetch(import.meta.env.VITE_API_URL + '/api/admin/settings');
             if (res.ok) {
                 const data = await res.json();
+                if (data.ntfy_topic) setNtfyTopic(data.ntfy_topic);
                 setWaConfigured(data.whatsapp_configured);
                 if (data.whatsapp_phone) setWaPhone(data.whatsapp_phone);
             }
@@ -142,7 +144,7 @@ export default function Admin() {
         if (e) e.preventDefault();
         setSavingNotif(true);
         try {
-            const body = { whatsapp_phone: waPhone };
+            const body = { ntfy_topic: ntfyTopic, whatsapp_phone: waPhone };
             if (waApiKey) body.whatsapp_apikey = waApiKey;
             const res = await fetch(import.meta.env.VITE_API_URL + '/api/admin/settings', {
                 method: 'POST',
@@ -150,7 +152,7 @@ export default function Admin() {
                 body: JSON.stringify(body)
             });
             if (res.ok) {
-                setToast('✅ Configurações do WhatsApp salvas com sucesso!');
+                setToast('✅ Configurações de alerta salvas com sucesso!');
                 setTimeout(() => setToast(null), 3000);
                 fetchNotifSettings();
                 setWaApiKey('');
@@ -168,10 +170,12 @@ export default function Admin() {
             const res = await fetch(import.meta.env.VITE_API_URL + '/api/admin/test-notification', { method: 'POST' });
             const data = await res.json();
             if (data.success) {
-                if (data.whatsapp_sent) {
+                if (data.ntfy_sent) {
+                    setToast('🚨 Alerta enviado para o app ntfy no seu telemóvel!');
+                } else if (data.whatsapp_sent) {
                     setToast('🚀 Notificação enviada para o seu WhatsApp!');
                 } else {
-                    setToast('⚠️ Notificação disparada no navegador (Configure o seu WhatsApp para receber alertas directos)');
+                    setToast('🔔 Alerta sonoro disparado!');
                 }
                 setTimeout(() => setToast(null), 4000);
                 playBeep();
@@ -2272,43 +2276,106 @@ export default function Admin() {
                 </div>
             )}
 
-            {/* Notification & WhatsApp Settings Tab Panel */}
+            {/* Notification & Ntfy / WhatsApp Settings Tab Panel */}
             {activeTab === 'notif-settings' && (
                 <div style={{ padding: '1.5rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ marginBottom: '1.5rem' }}>
                         <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', margin: 0 }}>
-                            🔔 Sistema de Notificações de Novos Pedidos
+                            🔔 Sistema de Notificações de Novos Pedidos (100% Infalível)
                         </h2>
                         <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0.35rem 0 0' }}>
-                            Receba alertas sonoros com todos os detalhes de novos pedidos instantaneamente no seu WhatsApp e Telemóvel.
+                            Receba alertas sonoros com som de sirene alto e todos os detalhes de novos pedidos instantaneamente no seu Telemóvel.
                         </p>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                        {/* WhatsApp Settings Card */}
+                        
+                        {/* Ntfy Siren App Card (Top Recommended) */}
+                        <div style={{ background: '#fff', borderRadius: '16px', padding: '1.75rem', border: '2px solid #0284c7', boxShadow: '0 4px 15px rgba(2,132,199,0.1)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                    <span style={{ fontSize: '1.8rem' }}>🚨</span>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0f172a' }}>Alertas no Telemóvel (Ntfy App)</h3>
+                                </div>
+                                <span style={{
+                                    background: '#e0f2fe', color: '#0369a1',
+                                    padding: '0.25rem 0.65rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700
+                                }}>
+                                    ⭐ Recomendado (Sem Bots / Sem Cadastro)
+                                </span>
+                            </div>
+
+                            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                                O aplicativo <strong>ntfy</strong> toca um som alto de alarme no seu telemóvel (Android ou iPhone) mesmo com a tela bloqueada ou no bolso!
+                            </p>
+
+                            <div style={{ background: '#f0f9ff', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem', border: '1px solid #bae6fd' }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0369a1', marginBottom: '0.4rem' }}>📲 Ativação em 10 Segundos:</div>
+                                <ol style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.82rem', color: '#0c4a6e', lineHeight: 1.6 }}>
+                                    <li>Instale o app gratuito <strong>ntfy</strong> (<a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener noreferrer" style={{ color: '#0284c7', fontWeight: 700, textDecoration: 'underline' }}>Android</a> ou <a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" rel="noopener noreferrer" style={{ color: '#0284c7', fontWeight: 700, textDecoration: 'underline' }}>iPhone</a>).</li>
+                                    <li>Abra o app e clique no <strong>+ (Subscrever)</strong>.</li>
+                                    <li>Digite o canal: <code style={{ background: '#e0f2fe', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, color: '#0369a1' }}>{ntfyTopic}</code></li>
+                                    <li>Clique em <strong>Subscrever</strong>. Pronto!</li>
+                                </ol>
+                            </div>
+
+                            <form onSubmit={handleSaveNotifSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                                        Nome do seu Canal de Alertas
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={ntfyTopic}
+                                        onChange={(e) => setNtfyTopic(e.target.value)}
+                                        placeholder="Ex: tchapo_pedidos_beira"
+                                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.85rem' }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
+                                    <button
+                                        type="submit"
+                                        disabled={savingNotif}
+                                        style={{ flex: 1, background: '#0284c7', padding: '0.65rem', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: savingNotif ? 0.7 : 1 }}
+                                    >
+                                        {savingNotif ? 'A guardar...' : '💾 Salvar Canal'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleSendTestNotification}
+                                        disabled={testingNotif}
+                                        style={{ padding: '0.65rem 1.25rem', background: '#10b981', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: testingNotif ? 0.7 : 1 }}
+                                    >
+                                        {testingNotif ? 'A enviar...' : '🚀 Testar Alerta'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* WhatsApp Settings Card (Optional) */}
                         <div style={{ background: '#fff', borderRadius: '16px', padding: '1.75rem', border: '1.5px solid #22c55e', boxShadow: '0 4px 15px rgba(34,197,94,0.08)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                     <span style={{ fontSize: '1.8rem' }}>💬</span>
-                                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#1e293b' }}>Notificação no WhatsApp (100% Gratuito)</h3>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#1e293b' }}>WhatsApp (Opcional)</h3>
                                 </div>
                                 <span style={{
                                     background: waConfigured ? '#dcfce7' : '#f1f5f9',
                                     color: waConfigured ? '#15803d' : '#64748b',
                                     padding: '0.25rem 0.65rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700
                                 }}>
-                                    {waConfigured ? '🟢 WhatsApp Ativo' : '⚪ Não configurado'}
+                                    {waConfigured ? '🟢 Ativo' : '⚪ Opcional'}
                                 </span>
                             </div>
 
                             <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                                Receba uma mensagem no seu WhatsApp pessoal no mesmo segundo em que o cliente fizer um pedido, com nome, telefone, bairro, lista de produtos e valor!
+                                Caso queira receber também no WhatsApp através da API gratuita CallMeBot:
                             </p>
 
-                            <form onSubmit={handleSaveNotifSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
-                                        Seu Número do WhatsApp (com código do país)
+                                        Seu Número do WhatsApp
                                     </label>
                                     <input
                                         type="text"
@@ -2320,7 +2387,7 @@ export default function Admin() {
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
-                                        Chave API do WhatsApp (CallMeBot - Gratuita)
+                                        Chave API do WhatsApp (CallMeBot)
                                     </label>
                                     <input
                                         type="text"
@@ -2330,37 +2397,9 @@ export default function Admin() {
                                         style={{ width: '100%', padding: '0.65rem 0.85rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', fontSize: '0.85rem' }}
                                     />
                                 </div>
-                                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                                    <button
-                                        type="submit"
-                                        disabled={savingNotif}
-                                        style={{ flex: 1, background: '#16a34a', padding: '0.65rem', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: savingNotif ? 0.7 : 1 }}
-                                    >
-                                        {savingNotif ? 'A guardar...' : '💾 Salvar WhatsApp'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleSendTestNotification}
-                                        disabled={testingNotif}
-                                        style={{ padding: '0.65rem 1.25rem', background: '#0ea5e9', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: testingNotif ? 0.7 : 1 }}
-                                    >
-                                        {testingNotif ? 'A enviar...' : '🚀 Testar Alerta'}
-                                    </button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
 
-                        {/* Step-by-Step Instructions Card */}
-                        <div style={{ background: '#f0fdf4', borderRadius: '16px', padding: '1.75rem', border: '1.5px solid #bbf7d0' }}>
-                            <h3 style={{ margin: '0 0 1rem', fontSize: '1.05rem', color: '#166534' }}>📋 Como ativar o WhatsApp Grátis em 30 Segundos</h3>
-                            <ol style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.85rem', color: '#14532d', lineHeight: 1.8 }}>
-                                <li>Guarde o contacto <strong>CallMeBot</strong> no seu telemóvel: <code>+34 644 59 71 83</code> ou clique <a href="https://wa.me/34644597183?text=I%20allow%20callmebot%20to%20send%20me%20messages" target="_blank" rel="noopener noreferrer" style={{ color: '#15803d', fontWeight: 700, textDecoration: 'underline' }}>aqui para abrir direto no WhatsApp</a>.</li>
-                                <li>Envie a seguinte mensagem para esse número: <br/><code style={{ background: '#dcfce7', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>I allow callmebot to send me messages</code></li>
-                                <li>Em 5 segundos o CallMeBot responde com o seu <strong>apikey</strong> (número de 6 dígitos).</li>
-                                <li>Coloque o seu número e a chave no formulário ao lado e clique em <strong>Salvar WhatsApp</strong>!</li>
-                                <li>Pronto! Ao clicar em <strong>Testar Alerta</strong> você receberá a notificação de teste no seu WhatsApp.</li>
-                            </ol>
-                        </div>
                     </div>
                 </div>
             )}

@@ -2026,6 +2026,31 @@ app.delete('/api/financial-entries/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// SYNC batch financial entries from persistent client storage
+app.post('/api/financial-entries/sync', (req, res) => {
+    try {
+        const { entries } = req.body;
+        if (!Array.isArray(entries)) {
+            return res.status(400).json({ error: 'Array de lançamentos esperado.' });
+        }
+
+        const existing = readLocalFinanceEntries();
+        const map = new Map();
+        existing.forEach(e => map.set(String(e.id), e));
+        entries.forEach(e => {
+            if (e && e.id) map.set(String(e.id), e);
+        });
+
+        const merged = Array.from(map.values()).sort((a, b) => new Date(b.entry_date || b.created_at) - new Date(a.entry_date || a.created_at));
+        writeLocalFinanceEntries(merged);
+
+        res.json({ success: true, count: merged.length });
+    } catch (err) {
+        console.error('Error syncing financial entries:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000;

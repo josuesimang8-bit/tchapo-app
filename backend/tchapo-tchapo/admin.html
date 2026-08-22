@@ -1649,10 +1649,37 @@ function renderUsers(list) {
     }).join('');
 }
 
-// ── FINANCE & CASH FLOW MODULE ──────────────────────────────────────────
+// ── FINANCE & CASH FLOW MODULE (PERSISTENT & AUTO-SYNC) ──────────────────
 let currentFinancePeriod = 'all';
 let allFinanceData = null;
 let entryToDeleteId = null;
+const FINANCE_STORAGE_KEY = 'tchapo_finance_entries_cache_v2';
+
+function getLocalFinanceCache() {
+    try {
+        const raw = localStorage.getItem(FINANCE_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function setLocalFinanceCache(entries) {
+    try {
+        localStorage.setItem(FINANCE_STORAGE_KEY, JSON.stringify(entries));
+    } catch (_) {}
+}
+
+async function syncLocalFinanceToServer(entries) {
+    if (!entries || entries.length === 0) return;
+    try {
+        await fetch('/api/financial-entries/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entries })
+        });
+    } catch (_) {}
+}
 
 async function loadFinanceEntries() {
     try {
@@ -1664,15 +1691,47 @@ async function loadFinanceEntries() {
         if (channelFilter !== 'all') url += `&payment_method=${encodeURIComponent(channelFilter)}`;
 
         const res = await fetch(url);
-        if (!res.ok) throw new Error('Erro ao carregar dados financeiros');
-        
-        const data = await res.json();
-        allFinanceData = data;
-        renderFinanceModule(data);
+        if (res.ok) {
+            const data = await res.json();
+            const serverEntries = data.entries || [];
+
+            if (serverEntries.length > 0) {
+                // Update persistent local cache
+                setLocalFinanceCache(serverEntries);
+                allFinanceData = data;
+                renderFinanceModule(data);
+            } else {
+                // Server returned empty (e.g. Render restart), check if local cache has data
+                const cachedEntries = getLocalFinanceCache();
+                if (cachedEntries && cachedEntries.length > 0) {
+                    console.log('[Finance] Re-syncing local entries to server after restart...');
+                    await syncLocalFinanceToServer(cachedEntries);
+                    // Re-fetch computed summary
+                    const retryRes = await fetch(url);
+                    if (retryRes.ok) {
+                        const retryData = await retryRes.json();
+                        allFinanceData = retryData;
+                        renderFinanceModule(retryData);
+                        return;
+                    }
+                }
+                allFinanceData = data;
+                renderFinanceModule(data);
+            }
+        } else {
+            // Fallback to local cache on network error
+            const cachedEntries = getLocalFinanceCache();
+            renderFinanceModule({ entries: cachedEntries });
+        }
     } catch (err) {
         console.error('[Finance] Error loading entries:', err);
-        const tbody = document.getElementById('finance-tbody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="empty" style="color:#ef4444;">❌ Erro ao carregar dados financeiros: ${err.message}</td></tr>`;
+        const cachedEntries = getLocalFinanceCache();
+        if (cachedEntries.length > 0) {
+            renderFinanceModule({ entries: cachedEntries });
+        } else {
+            const tbody = document.getElementById('finance-tbody');
+            if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="empty" style="color:#ef4444;">❌ Erro ao carregar dados financeiros: ${err.message}</td></tr>`;
+        }
     }
 }
 
@@ -1684,8 +1743,30 @@ function setFinancePeriod(period, btn) {
 }
 
 function renderFinanceModule(data) {
-    const summary = data.summary || {};
     const entries = data.entries || [];
+    let summary = data.summary;
+
+    // Compute summary locally if not provided
+    if (!summary) {
+        let total_revenue = 0, total_expenses = 0, total_investments = 0, total_withdrawals = 0;
+        entries.forEach(e => {
+            const t = (e.type || '').toLowerCase();
+            const amt = Number(e.amount) || 0;
+            if (t === 'receita') total_revenue += amt;
+            else if (t === 'despesa') total_expenses += amt;
+            else if (t === 'investimento') total_investments += amt;
+            else if (t === 'retirada') total_withdrawals += amt;
+        });
+        summary = {
+            total_revenue,
+            total_expenses,
+            total_investments,
+            total_withdrawals,
+            net_profit: total_revenue - total_expenses,
+            current_balance: (total_revenue + total_investments) - (total_expenses + total_withdrawals),
+            total_count: entries.length
+        };
+    }
 
     // 1. Update KPI Summary Cards
     const fmt = (v) => formatMT(v || 0);
@@ -1818,14 +1899,27 @@ async function saveFinanceEntry(e) {
         const selectedType = form.querySelector('input[name="fin-type"]:checked')?.value || 'receita';
         
         const payload = {
+            id: id ? Number(id) : Date.now(),
             type: selectedType,
-            description: document.getElementById('fin-description').value.trim(),
+            description: document.getElementById('fin-description').value.trim() || document.getElementById('fin-category').value || 'Lançamento',
             amount: parseFloat(document.getElementById('fin-amount').value) || 0,
-            entry_date: document.getElementById('fin-date').value,
-            category: document.getElementById('fin-category').value,
-            payment_method: document.getElementById('fin-payment-method').value,
+            entry_date: document.getElementById('fin-date').value || new Date().toISOString().slice(0,10),
+            category: document.getElementById('fin-category').value || 'Geral',
+            payment_method: document.getElementById('fin-payment-method').value || 'Dinheiro',
             notes: document.getElementById('fin-notes').value.trim()
         };
+
+        // Update local cache immediately
+        const currentCache = getLocalFinanceCache();
+        if (id) {
+            const idx = currentCache.findIndex(x => String(x.id) === String(id));
+            if (idx !== -1) currentCache[idx] = { ...currentCache[idx], ...payload };
+            else currentCache.unshift(payload);
+        } else {
+            currentCache.unshift(payload);
+        }
+        setLocalFinanceCache(currentCache);
+        renderFinanceModule({ entries: currentCache });
 
         const url = id ? `/api/financial-entries/${id}` : '/api/financial-entries';
         const method = id ? 'PUT' : 'POST';
@@ -1836,9 +1930,13 @@ async function saveFinanceEntry(e) {
             body: JSON.stringify(payload)
         });
 
-        if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.error || 'Falha ao gravar lançamento');
+        if (res.ok) {
+            const savedItem = await res.json();
+            if (savedItem && savedItem.id) {
+                const idx = currentCache.findIndex(x => String(x.id) === String(payload.id));
+                if (idx !== -1) currentCache[idx] = savedItem;
+                setLocalFinanceCache(currentCache);
+            }
         }
 
         closeFinanceModal();
@@ -1853,9 +1951,28 @@ async function saveFinanceEntry(e) {
 }
 
 function editFinanceEntry(id) {
-    if (!allFinanceData || !allFinanceData.entries) return;
-    const entry = allFinanceData.entries.find(e => String(e.id) === String(id));
+    const cached = getLocalFinanceCache();
+    const entry = cached.find(e => String(e.id) === String(id)) || (allFinanceData?.entries?.find(e => String(e.id) === String(id)));
     if (entry) openFinanceModal(entry);
+}
+
+async function executeDeleteFinance() {
+    if (!entryToDeleteId) return;
+    const id = entryToDeleteId;
+    
+    // Update local cache immediately
+    const currentCache = getLocalFinanceCache().filter(e => String(e.id) !== String(id));
+    setLocalFinanceCache(currentCache);
+    renderFinanceModule({ entries: currentCache });
+    closeDeleteFinanceModal();
+
+    try {
+        await fetch(`/api/financial-entries/${id}`, { method: 'DELETE' });
+        toast('🗑️ Lançamento apagado com sucesso!');
+        loadFinanceEntries();
+    } catch (err) {
+        console.error('Delete error:', err);
+    }
 }
 
 function confirmDeleteFinance(id, desc) {

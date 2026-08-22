@@ -384,7 +384,7 @@ export default function Admin() {
         }
     }, []);
 
-    // --- Fetch finance entries ---
+    // --- Fetch finance entries with LocalStorage Cache & Auto-Sync ---
     const fetchFinanceEntries = useCallback(async () => {
         try {
             let url = `${import.meta.env.VITE_API_URL}/api/financial-entries?period=${financePeriod}`;
@@ -392,20 +392,50 @@ export default function Admin() {
             if (financeChannelFilter !== 'all') url += `&payment_method=${encodeURIComponent(financeChannelFilter)}`;
 
             const res = await fetch(url);
-            if (!res.ok) return;
-            const data = await res.json();
-            setFinanceEntries(data.entries || []);
-            setFinanceSummary(data.summary || {
-                total_revenue: 0,
-                total_expenses: 0,
-                total_investments: 0,
-                total_withdrawals: 0,
-                net_profit: 0,
-                current_balance: 0,
-                total_count: 0
-            });
+            if (res.ok) {
+                const data = await res.json();
+                const serverEntries = data.entries || [];
+
+                if (serverEntries.length > 0) {
+                    try { localStorage.setItem('tchapo_finance_entries_cache_v2', JSON.stringify(serverEntries)); } catch (_) {}
+                    setFinanceEntries(serverEntries);
+                    setFinanceSummary(data.summary || {
+                        total_revenue: 0, total_expenses: 0, total_investments: 0, total_withdrawals: 0,
+                        net_profit: 0, current_balance: 0, total_count: 0
+                    });
+                } else {
+                    // Check local cache
+                    try {
+                        const raw = localStorage.getItem('tchapo_finance_entries_cache_v2');
+                        const cached = raw ? JSON.parse(raw) : [];
+                        if (cached.length > 0) {
+                            fetch(`${import.meta.env.VITE_API_URL}/api/financial-entries/sync`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ entries: cached })
+                            });
+                            setFinanceEntries(cached);
+                            return;
+                        }
+                    } catch (_) {}
+                    setFinanceEntries([]);
+                    setFinanceSummary(data.summary || {
+                        total_revenue: 0, total_expenses: 0, total_investments: 0, total_withdrawals: 0,
+                        net_profit: 0, current_balance: 0, total_count: 0
+                    });
+                }
+            } else {
+                try {
+                    const raw = localStorage.getItem('tchapo_finance_entries_cache_v2');
+                    if (raw) setFinanceEntries(JSON.parse(raw));
+                } catch (_) {}
+            }
         } catch (err) {
             console.error('Erro ao buscar dados financeiros:', err);
+            try {
+                const raw = localStorage.getItem('tchapo_finance_entries_cache_v2');
+                if (raw) setFinanceEntries(JSON.parse(raw));
+            } catch (_) {}
         }
     }, [financePeriod, financeTypeFilter, financeChannelFilter]);
 
@@ -438,8 +468,9 @@ export default function Admin() {
         setSavingFinance(true);
         try {
             const payload = {
+                id: editingFinanceEntry ? editingFinanceEntry.id : Date.now(),
                 type: finType,
-                description: finDesc.trim(),
+                description: finDesc.trim() || finCategory || 'Lançamento',
                 amount: parseFloat(finAmount) || 0,
                 entry_date: finDate,
                 category: finCategory,
@@ -447,21 +478,31 @@ export default function Admin() {
                 notes: finNotes.trim()
             };
 
+            // Save to localStorage immediately
+            try {
+                const raw = localStorage.getItem('tchapo_finance_entries_cache_v2');
+                const list = raw ? JSON.parse(raw) : [];
+                if (editingFinanceEntry) {
+                    const idx = list.findIndex(x => String(x.id) === String(editingFinanceEntry.id));
+                    if (idx !== -1) list[idx] = { ...list[idx], ...payload };
+                    else list.unshift(payload);
+                } else {
+                    list.unshift(payload);
+                }
+                localStorage.setItem('tchapo_finance_entries_cache_v2', JSON.stringify(list));
+                setFinanceEntries(list);
+            } catch (_) {}
+
             const url = editingFinanceEntry
                 ? `${import.meta.env.VITE_API_URL}/api/financial-entries/${editingFinanceEntry.id}`
                 : `${import.meta.env.VITE_API_URL}/api/financial-entries`;
             const method = editingFinanceEntry ? 'PUT' : 'POST';
 
-            const res = await fetch(url, {
+            await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Falha ao guardar lançamento');
-            }
 
             setIsFinanceModalOpen(false);
             setToast(editingFinanceEntry ? '✅ Lançamento atualizado!' : '✅ Novo lançamento financeiro registado!');
@@ -476,10 +517,17 @@ export default function Admin() {
 
     const handleDeleteFinanceEntry = async (id) => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial-entries/${id}`, {
+            try {
+                const raw = localStorage.getItem('tchapo_finance_entries_cache_v2');
+                const list = raw ? JSON.parse(raw) : [];
+                const updated = list.filter(e => String(e.id) !== String(id));
+                localStorage.setItem('tchapo_finance_entries_cache_v2', JSON.stringify(updated));
+                setFinanceEntries(updated);
+            } catch (_) {}
+
+            await fetch(`${import.meta.env.VITE_API_URL}/api/financial-entries/${id}`, {
                 method: 'DELETE'
             });
-            if (!res.ok) throw new Error('Erro ao apagar lançamento');
             setDeleteFinanceToConfirm(null);
             setToast('🗑️ Lançamento apagado com sucesso!');
             setTimeout(() => setToast(null), 3000);

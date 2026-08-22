@@ -1847,8 +1847,8 @@ app.get('/api/financial-entries', async (req, res) => {
             const todayStr = now.toISOString().slice(0, 10);
             filtered = filtered.filter(e => e.entry_date === todayStr);
         } else if (period === 'week') {
-            const一周前 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            filtered = filtered.filter(e => new Date(e.entry_date) >= 一周前);
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            filtered = filtered.filter(e => new Date(e.entry_date) >= oneWeekAgo);
         } else if (period === 'month') {
             const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
             filtered = filtered.filter(e => e.entry_date && e.entry_date.startsWith(currentMonth));
@@ -1916,14 +1916,17 @@ app.post('/api/financial-entries', async (req, res) => {
     try {
         const { type, description, amount, category, payment_method, entry_date, notes } = req.body;
 
-        if (!type || !description || amount === undefined) {
-            return res.status(400).json({ error: 'Tipo, descrição e valor são obrigatórios.' });
+        const numAmount = parseFloat(amount);
+        if (isNaN(numAmount) || numAmount < 0) {
+            return res.status(400).json({ error: 'O valor deve ser um número positivo válido.' });
         }
+
+        const validDesc = (description && description.trim()) ? description.trim() : (category || 'Lançamento Manual');
 
         const newEntry = {
             type: (type || 'receita').toLowerCase(),
-            description: String(description).trim(),
-            amount: Number(amount) || 0,
+            description: validDesc,
+            amount: numAmount,
             category: category || 'Geral',
             payment_method: payment_method || 'Dinheiro',
             entry_date: entry_date || new Date().toISOString().slice(0, 10),

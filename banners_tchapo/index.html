@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Galeria de Banners — Tchapo Tchapo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: #f8fafc; color: #0f172a; padding: 2rem; }
+        .container { max-width: 1300px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 2rem; }
+        h1 { color: #0b3c6d; font-size: 2.2rem; font-weight: 800; }
+        p { color: #64748b; font-size: 1rem; margin-top: 0.5rem; }
+        .search-box { margin: 1.5rem auto; max-width: 500px; }
+        .search-box input { width: 100%; padding: 0.85rem 1.2rem; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 1rem; outline: none; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .card { background: #fff; border-radius: 16px; padding: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-4px); }
+        .card img { width: 100%; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .card .title { font-weight: 700; font-size: 0.95rem; color: #1e293b; margin-top: 0.75rem; text-align: center; }
+        .btn-download { margin-top: 0.75rem; width: 100%; text-align: center; padding: 0.65rem; background: #f97316; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
+        .btn-download:hover { background: #ea580c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Banners Oficiais — Tchapo Tchapo</h1>
+            <p>Total de <strong>92 banners promocionais</strong> gerados em alta resolução prontos para WhatsApp, Instagram e Redes Sociais.</p>
+            <div class="search-box">
+                <input type="text" id="search" placeholder="🔍 Pesquisar produto..." oninput="filterBanners(this.value)">
+            </div>
+        </header>
+        <div class="grid" id="grid">
+            
+                <div class="card" data-name="creme para corrimento">
+                    <img src="banner_100_Creme para Corrimento.png" alt="Creme para Corrimento" loading="lazy">
+                    <div class="title">Creme para Corrimento</div>
+                    <a class="btn-download" href="banner_100_Creme para Corrimento.png" download="banner_100_Creme para Corrimento.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme para partes íntimas">
+                    <img src="banner_101_Creme para Partes íntimas.png" alt="Creme para Partes íntimas" loading="lazy">
+                    <div class="title">Creme para Partes íntimas</div>
+                    <a class="btn-download" href="banner_101_Creme para Partes íntimas.png" download="banner_101_Creme para Partes íntimas.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme para corrimento">
+                    <img src="banner_102_Creme para Corrimento.png" alt="Creme para Corrimento" loading="lazy">
+                    <div class="title">Creme para Corrimento</div>
+                    <a class="btn-download" href="banner_102_Creme para Corrimento.png" download="banner_102_Creme para Corrimento.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="gel de branqueamento de pele">
+                    <img src="banner_103_Gel de Branqueamento de Pele.png" alt="Gel de Branqueamento de Pele" loading="lazy">
+                    <div class="title">Gel de Branqueamento de Pele</div>
+                    <a class="btn-download" href="banner_103_Gel de Branqueamento de Pele.png" download="banner_103_Gel de Branqueamento de Pele.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="capas de silicone">
+                    <img src="banner_12_Capas de Silicone.png" alt="Capas de Silicone" loading="lazy">
+                    <div class="title">Capas de Silicone</div>
+                    <a class="btn-download" href="banner_12_Capas de Silicone.png" download="banner_12_Capas de Silicone.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="protetor de vidro">
+                    <img src="banner_14_Protetor de Vidro.png" alt="Protetor de Vidro" loading="lazy">
+                    <div class="title">Protetor de Vidro</div>
+                    <a class="btn-download" href="banner_14_Protetor de Vidro.png" download="banner_14_Protetor de Vidro.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="capas transparentes magnéticas">
+                    <img src="banner_15_Capas Transparentes Magnéticas.png" alt="Capas Transparentes Magnéticas" loading="lazy">
+                    <div class="title">Capas Transparentes Magnéticas</div>
+                    <a class="btn-download" href="banner_15_Capas Transparentes Magnéticas.png" download="banner_15_Capas Transparentes Magnéticas.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="carregador magsafe para iphone">
+                    <img src="banner_16_Carregador Magsafe Para iPhone.png" alt="Carregador Magsafe Para iPhone" loading="lazy">
+                    <div class="title">Carregador Magsafe Para iPhone</div>
+                    <a class="btn-download" href="banner_16_Carregador Magsafe Para iPhone.png" download="banner_16_Carregador Magsafe Para iPhone.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="auriculares com fio">
+                    <img src="banner_17_Auriculares com Fio.png" alt="Auriculares com Fio" loading="lazy">
+                    <div class="title">Auriculares com Fio</div>
+                    <a class="btn-download" href="banner_17_Auriculares com Fio.png" download="banner_17_Auriculares com Fio.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="mouse com fio">
+                    <img src="banner_18_Mouse com Fio.png" alt="Mouse com Fio" loading="lazy">
+                    <div class="title">Mouse com Fio</div>
+                    <a class="btn-download" href="banner_18_Mouse com Fio.png" download="banner_18_Mouse com Fio.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="adesivo de espinha">
+                    <img src="banner_19_Adesivo de Espinha.png" alt="Adesivo de Espinha" loading="lazy">
+                    <div class="title">Adesivo de Espinha</div>
+                    <a class="btn-download" href="banner_19_Adesivo de Espinha.png" download="banner_19_Adesivo de Espinha.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="fita led rgb 5 metros">
+                    <img src="banner_20_Fita Led RGB 5 metros.png" alt="Fita Led RGB 5 metros" loading="lazy">
+                    <div class="title">Fita Led RGB 5 metros</div>
+                    <a class="btn-download" href="banner_20_Fita Led RGB 5 metros.png" download="banner_20_Fita Led RGB 5 metros.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="dispensador de água automático">
+                    <img src="banner_21_Dispensador de Água Automático.png" alt="Dispensador de Água Automático" loading="lazy">
+                    <div class="title">Dispensador de Água Automático</div>
+                    <a class="btn-download" href="banner_21_Dispensador de Água Automático.png" download="banner_21_Dispensador de Água Automático.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="cabo carregador 4 em 1">
+                    <img src="banner_22_Cabo Carregador 4 em 1.png" alt="Cabo Carregador 4 em 1" loading="lazy">
+                    <div class="title">Cabo Carregador 4 em 1</div>
+                    <a class="btn-download" href="banner_22_Cabo Carregador 4 em 1.png" download="banner_22_Cabo Carregador 4 em 1.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="game stick">
+                    <img src="banner_23_Game Stick.png" alt="Game Stick" loading="lazy">
+                    <div class="title">Game Stick</div>
+                    <a class="btn-download" href="banner_23_Game Stick.png" download="banner_23_Game Stick.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="gamepad v8">
+                    <img src="banner_24_Gamepad V8.png" alt="Gamepad V8" loading="lazy">
+                    <div class="title">Gamepad V8</div>
+                    <a class="btn-download" href="banner_24_Gamepad V8.png" download="banner_24_Gamepad V8.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="power bank 10000 volts">
+                    <img src="banner_25_Power Bank 10000 Volts.png" alt="Power Bank 10000 Volts" loading="lazy">
+                    <div class="title">Power Bank 10000 Volts</div>
+                    <a class="btn-download" href="banner_25_Power Bank 10000 Volts.png" download="banner_25_Power Bank 10000 Volts.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="mouse gamer com fio">
+                    <img src="banner_26_Mouse Gamer Com Fio.png" alt="Mouse Gamer Com Fio" loading="lazy">
+                    <div class="title">Mouse Gamer Com Fio</div>
+                    <a class="btn-download" href="banner_26_Mouse Gamer Com Fio.png" download="banner_26_Mouse Gamer Com Fio.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="combo_ mouse teclado">
+                    <img src="banner_27_Combo_ Mouse Teclado.png" alt="Combo_ Mouse Teclado" loading="lazy">
+                    <div class="title">Combo_ Mouse Teclado</div>
+                    <a class="btn-download" href="banner_27_Combo_ Mouse Teclado.png" download="banner_27_Combo_ Mouse Teclado.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="ventoinha portátil">
+                    <img src="banner_28_Ventoinha Portátil.png" alt="Ventoinha Portátil" loading="lazy">
+                    <div class="title">Ventoinha Portátil</div>
+                    <a class="btn-download" href="banner_28_Ventoinha Portátil.png" download="banner_28_Ventoinha Portátil.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="video maker">
+                    <img src="banner_29_Video Maker.png" alt="Video Maker" loading="lazy">
+                    <div class="title">Video Maker</div>
+                    <a class="btn-download" href="banner_29_Video Maker.png" download="banner_29_Video Maker.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="chaleira elétrica">
+                    <img src="banner_30_Chaleira Elétrica.png" alt="Chaleira Elétrica" loading="lazy">
+                    <div class="title">Chaleira Elétrica</div>
+                    <a class="btn-download" href="banner_30_Chaleira Elétrica.png" download="banner_30_Chaleira Elétrica.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="câmera de vigilância">
+                    <img src="banner_31_Câmera de Vigilância.png" alt="Câmera de Vigilância" loading="lazy">
+                    <div class="title">Câmera de Vigilância</div>
+                    <a class="btn-download" href="banner_31_Câmera de Vigilância.png" download="banner_31_Câmera de Vigilância.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="router wifi">
+                    <img src="banner_32_Router Wifi.png" alt="Router Wifi" loading="lazy">
+                    <div class="title">Router Wifi</div>
+                    <a class="btn-download" href="banner_32_Router Wifi.png" download="banner_32_Router Wifi.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="extensor 4 ports">
+                    <img src="banner_33_Extensor 4 ports.png" alt="Extensor 4 ports" loading="lazy">
+                    <div class="title">Extensor 4 ports</div>
+                    <a class="btn-download" href="banner_33_Extensor 4 ports.png" download="banner_33_Extensor 4 ports.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="pilhas duracell">
+                    <img src="banner_34_Pilhas Duracell.png" alt="Pilhas Duracell" loading="lazy">
+                    <div class="title">Pilhas Duracell</div>
+                    <a class="btn-download" href="banner_34_Pilhas Duracell.png" download="banner_34_Pilhas Duracell.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="colunas bluetooth">
+                    <img src="banner_35_Colunas Bluetooth.png" alt="Colunas Bluetooth" loading="lazy">
+                    <div class="title">Colunas Bluetooth</div>
+                    <a class="btn-download" href="banner_35_Colunas Bluetooth.png" download="banner_35_Colunas Bluetooth.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="ventoinha">
+                    <img src="banner_36_Ventoinha.png" alt="Ventoinha" loading="lazy">
+                    <div class="title">Ventoinha</div>
+                    <a class="btn-download" href="banner_36_Ventoinha.png" download="banner_36_Ventoinha.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="bateria nokia">
+                    <img src="banner_37_Bateria Nokia.png" alt="Bateria Nokia" loading="lazy">
+                    <div class="title">Bateria Nokia</div>
+                    <a class="btn-download" href="banner_37_Bateria Nokia.png" download="banner_37_Bateria Nokia.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="nokia mini bm10">
+                    <img src="banner_38_Nokia Mini BM10.png" alt="Nokia Mini BM10" loading="lazy">
+                    <div class="title">Nokia Mini BM10</div>
+                    <a class="btn-download" href="banner_38_Nokia Mini BM10.png" download="banner_38_Nokia Mini BM10.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="carregador para carro">
+                    <img src="banner_39_Carregador para Carro.png" alt="Carregador para Carro" loading="lazy">
+                    <div class="title">Carregador para Carro</div>
+                    <a class="btn-download" href="banner_39_Carregador para Carro.png" download="banner_39_Carregador para Carro.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="suporte para carro">
+                    <img src="banner_40_Suporte para Carro.png" alt="Suporte para Carro" loading="lazy">
+                    <div class="title">Suporte para Carro</div>
+                    <a class="btn-download" href="banner_40_Suporte para Carro.png" download="banner_40_Suporte para Carro.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="jbl headphone">
+                    <img src="banner_41_JBL Headphone.png" alt="JBL Headphone" loading="lazy">
+                    <div class="title">JBL Headphone</div>
+                    <a class="btn-download" href="banner_41_JBL Headphone.png" download="banner_41_JBL Headphone.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="p47 headphone">
+                    <img src="banner_42_P47 Headphone.png" alt="P47 Headphone" loading="lazy">
+                    <div class="title">P47 Headphone</div>
+                    <a class="btn-download" href="banner_42_P47 Headphone.png" download="banner_42_P47 Headphone.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="jbl bluetooth speaker">
+                    <img src="banner_43_JBL Bluetooth Speaker.png" alt="JBL Bluetooth Speaker" loading="lazy">
+                    <div class="title">JBL Bluetooth Speaker</div>
+                    <a class="btn-download" href="banner_43_JBL Bluetooth Speaker.png" download="banner_43_JBL Bluetooth Speaker.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="jbl m3 mini metal">
+                    <img src="banner_44_JBL M3 Mini Metal.png" alt="JBL M3 Mini Metal" loading="lazy">
+                    <div class="title">JBL M3 Mini Metal</div>
+                    <a class="btn-download" href="banner_44_JBL M3 Mini Metal.png" download="banner_44_JBL M3 Mini Metal.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="bluetooth speaker">
+                    <img src="banner_45_Bluetooth Speaker.png" alt="Bluetooth Speaker" loading="lazy">
+                    <div class="title">Bluetooth Speaker</div>
+                    <a class="btn-download" href="banner_45_Bluetooth Speaker.png" download="banner_45_Bluetooth Speaker.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="jbl live flex">
+                    <img src="banner_46_JBL Live Flex.png" alt="JBL Live Flex" loading="lazy">
+                    <div class="title">JBL Live Flex</div>
+                    <a class="btn-download" href="banner_46_JBL Live Flex.png" download="banner_46_JBL Live Flex.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="auriculares com fio para pescoço">
+                    <img src="banner_47_Auriculares com Fio para Pescoço.png" alt="Auriculares com Fio para Pescoço" loading="lazy">
+                    <div class="title">Auriculares com Fio para Pescoço</div>
+                    <a class="btn-download" href="banner_47_Auriculares com Fio para Pescoço.png" download="banner_47_Auriculares com Fio para Pescoço.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="remote universal">
+                    <img src="banner_48_Remote Universal.png" alt="Remote Universal" loading="lazy">
+                    <div class="title">Remote Universal</div>
+                    <a class="btn-download" href="banner_48_Remote Universal.png" download="banner_48_Remote Universal.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="microfone">
+                    <img src="banner_49_Microfone.png" alt="Microfone" loading="lazy">
+                    <div class="title">Microfone</div>
+                    <a class="btn-download" href="banner_49_Microfone.png" download="banner_49_Microfone.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="lcd para celulares androides">
+                    <img src="banner_50_LCD para Celulares Androides.png" alt="LCD para Celulares Androides" loading="lazy">
+                    <div class="title">LCD para Celulares Androides</div>
+                    <a class="btn-download" href="banner_50_LCD para Celulares Androides.png" download="banner_50_LCD para Celulares Androides.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="pro 2">
+                    <img src="banner_51_Pro 2.png" alt="Pro 2" loading="lazy">
+                    <div class="title">Pro 2</div>
+                    <a class="btn-download" href="banner_51_Pro 2.png" download="banner_51_Pro 2.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="protetor de smartwatch">
+                    <img src="banner_52_Protetor de SmartWatch.png" alt="Protetor de SmartWatch" loading="lazy">
+                    <div class="title">Protetor de SmartWatch</div>
+                    <a class="btn-download" href="banner_52_Protetor de SmartWatch.png" download="banner_52_Protetor de SmartWatch.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="protetor de camera">
+                    <img src="banner_53_Protetor de Camera.png" alt="Protetor de Camera" loading="lazy">
+                    <div class="title">Protetor de Camera</div>
+                    <a class="btn-download" href="banner_53_Protetor de Camera.png" download="banner_53_Protetor de Camera.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="ventosas">
+                    <img src="banner_54_Ventosas.png" alt="Ventosas" loading="lazy">
+                    <div class="title">Ventosas</div>
+                    <a class="btn-download" href="banner_54_Ventosas.png" download="banner_54_Ventosas.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="earbuds m10 newest">
+                    <img src="banner_55_Earbuds M10 NEWEST.png" alt="Earbuds M10 NEWEST" loading="lazy">
+                    <div class="title">Earbuds M10 NEWEST</div>
+                    <a class="btn-download" href="banner_55_Earbuds M10 NEWEST.png" download="banner_55_Earbuds M10 NEWEST.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="joystick de ps4">
+                    <img src="banner_56_Joystick de PS4.png" alt="Joystick de PS4" loading="lazy">
+                    <div class="title">Joystick de PS4</div>
+                    <a class="btn-download" href="banner_56_Joystick de PS4.png" download="banner_56_Joystick de PS4.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="joystick de ps5">
+                    <img src="banner_57_Joystick de PS5.png" alt="Joystick de PS5" loading="lazy">
+                    <div class="title">Joystick de PS5</div>
+                    <a class="btn-download" href="banner_57_Joystick de PS5.png" download="banner_57_Joystick de PS5.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="smartwatch t900 ultra">
+                    <img src="banner_58_Smartwatch T900 Ultra.png" alt="Smartwatch T900 Ultra" loading="lazy">
+                    <div class="title">Smartwatch T900 Ultra</div>
+                    <a class="btn-download" href="banner_58_Smartwatch T900 Ultra.png" download="banner_58_Smartwatch T900 Ultra.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="liquidificador multifunções">
+                    <img src="banner_59_Liquidificador Multifunções.png" alt="Liquidificador Multifunções" loading="lazy">
+                    <div class="title">Liquidificador Multifunções</div>
+                    <a class="btn-download" href="banner_59_Liquidificador Multifunções.png" download="banner_59_Liquidificador Multifunções.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="airpods pro">
+                    <img src="banner_5_AirPods Pro.png" alt="AirPods Pro" loading="lazy">
+                    <div class="title">AirPods Pro</div>
+                    <a class="btn-download" href="banner_5_AirPods Pro.png" download="banner_5_AirPods Pro.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="pendrive usb">
+                    <img src="banner_60_Pendrive USB.png" alt="Pendrive USB" loading="lazy">
+                    <div class="title">Pendrive USB</div>
+                    <a class="btn-download" href="banner_60_Pendrive USB.png" download="banner_60_Pendrive USB.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="cartão de memória microsd">
+                    <img src="banner_61_Cartão de Memória MicroSD.png" alt="Cartão de Memória MicroSD" loading="lazy">
+                    <div class="title">Cartão de Memória MicroSD</div>
+                    <a class="btn-download" href="banner_61_Cartão de Memória MicroSD.png" download="banner_61_Cartão de Memória MicroSD.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="pau de selfie">
+                    <img src="banner_62_Pau de Selfie.png" alt="Pau de Selfie" loading="lazy">
+                    <div class="title">Pau de Selfie</div>
+                    <a class="btn-download" href="banner_62_Pau de Selfie.png" download="banner_62_Pau de Selfie.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="baterias para android">
+                    <img src="banner_63_Baterias para Android.png" alt="Baterias para Android" loading="lazy">
+                    <div class="title">Baterias para Android</div>
+                    <a class="btn-download" href="banner_63_Baterias para Android.png" download="banner_63_Baterias para Android.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="tampas para iphone">
+                    <img src="banner_64_Tampas para iPhone.png" alt="Tampas para iPhone" loading="lazy">
+                    <div class="title">Tampas para iPhone</div>
+                    <a class="btn-download" href="banner_64_Tampas para iPhone.png" download="banner_64_Tampas para iPhone.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="ring light 10_ com tripé">
+                    <img src="banner_65_Ring Light 10_ com Tripé.png" alt="Ring Light 10_ com Tripé" loading="lazy">
+                    <div class="title">Ring Light 10_ com Tripé</div>
+                    <a class="btn-download" href="banner_65_Ring Light 10_ com Tripé.png" download="banner_65_Ring Light 10_ com Tripé.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="cabo usb para type-c">
+                    <img src="banner_66_Cabo USB para Type-C.png" alt="Cabo USB para Type-C" loading="lazy">
+                    <div class="title">Cabo USB para Type-C</div>
+                    <a class="btn-download" href="banner_66_Cabo USB para Type-C.png" download="banner_66_Cabo USB para Type-C.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="cabo micro usb">
+                    <img src="banner_67_Cabo Micro USB.png" alt="Cabo Micro USB" loading="lazy">
+                    <div class="title">Cabo Micro USB</div>
+                    <a class="btn-download" href="banner_67_Cabo Micro USB.png" download="banner_67_Cabo Micro USB.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="cabo type-c para type-c">
+                    <img src="banner_68_Cabo Type-C para Type-C.png" alt="Cabo Type-C para Type-C" loading="lazy">
+                    <div class="title">Cabo Type-C para Type-C</div>
+                    <a class="btn-download" href="banner_68_Cabo Type-C para Type-C.png" download="banner_68_Cabo Type-C para Type-C.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="carregador completo iphone (lightning)">
+                    <img src="banner_69_Carregador Completo iPhone (Lightning).png" alt="Carregador Completo iPhone (Lightning)" loading="lazy">
+                    <div class="title">Carregador Completo iPhone (Lightning)</div>
+                    <a class="btn-download" href="banner_69_Carregador Completo iPhone (Lightning).png" download="banner_69_Carregador Completo iPhone (Lightning).png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="sprey bucal oral">
+                    <img src="banner_70_Sprey Bucal Oral.png" alt="Sprey Bucal Oral" loading="lazy">
+                    <div class="title">Sprey Bucal Oral</div>
+                    <a class="btn-download" href="banner_70_Sprey Bucal Oral.png" download="banner_70_Sprey Bucal Oral.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="pasta removedora de mancha de fumaça">
+                    <img src="banner_71_Pasta Removedora de mancha de fumaça.png" alt="Pasta Removedora de mancha de fumaça" loading="lazy">
+                    <div class="title">Pasta Removedora de mancha de fumaça</div>
+                    <a class="btn-download" href="banner_71_Pasta Removedora de mancha de fumaça.png" download="banner_71_Pasta Removedora de mancha de fumaça.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="pasta de dentes clareadora de carvão">
+                    <img src="banner_72_Pasta de Dentes Clareadora de Carvão.png" alt="Pasta de Dentes Clareadora de Carvão" loading="lazy">
+                    <div class="title">Pasta de Dentes Clareadora de Carvão</div>
+                    <a class="btn-download" href="banner_72_Pasta de Dentes Clareadora de Carvão.png" download="banner_72_Pasta de Dentes Clareadora de Carvão.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="chá de emagrecimento">
+                    <img src="banner_73_Chá de Emagrecimento.png" alt="Chá de Emagrecimento" loading="lazy">
+                    <div class="title">Chá de Emagrecimento</div>
+                    <a class="btn-download" href="banner_73_Chá de Emagrecimento.png" download="banner_73_Chá de Emagrecimento.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="chá de emagrecimento">
+                    <img src="banner_74_Chá de Emagrecimento.png" alt="Chá de Emagrecimento" loading="lazy">
+                    <div class="title">Chá de Emagrecimento</div>
+                    <a class="btn-download" href="banner_74_Chá de Emagrecimento.png" download="banner_74_Chá de Emagrecimento.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="aquecedor de cera roll on depilador">
+                    <img src="banner_75_Aquecedor de Cera Roll On Depilador.png" alt="Aquecedor de Cera Roll On Depilador" loading="lazy">
+                    <div class="title">Aquecedor de Cera Roll On Depilador</div>
+                    <a class="btn-download" href="banner_75_Aquecedor de Cera Roll On Depilador.png" download="banner_75_Aquecedor de Cera Roll On Depilador.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="tsunami">
+                    <img src="banner_76_Tsunami.png" alt="Tsunami" loading="lazy">
+                    <div class="title">Tsunami</div>
+                    <a class="btn-download" href="banner_76_Tsunami.png" download="banner_76_Tsunami.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="balsám">
+                    <img src="banner_77_Balsám.png" alt="Balsám" loading="lazy">
+                    <div class="title">Balsám</div>
+                    <a class="btn-download" href="banner_77_Balsám.png" download="banner_77_Balsám.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="cantil cold keeping cup">
+                    <img src="banner_78_Cantil Cold Keeping Cup.png" alt="Cantil Cold Keeping Cup" loading="lazy">
+                    <div class="title">Cantil Cold Keeping Cup</div>
+                    <a class="btn-download" href="banner_78_Cantil Cold Keeping Cup.png" download="banner_78_Cantil Cold Keeping Cup.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="perfume para carro">
+                    <img src="banner_79_Perfume para Carro.png" alt="Perfume para Carro" loading="lazy">
+                    <div class="title">Perfume para Carro</div>
+                    <a class="btn-download" href="banner_79_Perfume para Carro.png" download="banner_79_Perfume para Carro.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="vaselina para lábios">
+                    <img src="banner_80_Vaselina para Lábios.png" alt="Vaselina para Lábios" loading="lazy">
+                    <div class="title">Vaselina para Lábios</div>
+                    <a class="btn-download" href="banner_80_Vaselina para Lábios.png" download="banner_80_Vaselina para Lábios.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="secador de unhas">
+                    <img src="banner_81_Secador de Unhas.png" alt="Secador de Unhas" loading="lazy">
+                    <div class="title">Secador de Unhas</div>
+                    <a class="btn-download" href="banner_81_Secador de Unhas.png" download="banner_81_Secador de Unhas.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="gillette fusion 5">
+                    <img src="banner_82_Gillette Fusion 5.png" alt="Gillette Fusion 5" loading="lazy">
+                    <div class="title">Gillette Fusion 5</div>
+                    <a class="btn-download" href="banner_82_Gillette Fusion 5.png" download="banner_82_Gillette Fusion 5.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme de pé">
+                    <img src="banner_83_Creme de Pé.png" alt="Creme de Pé" loading="lazy">
+                    <div class="title">Creme de Pé</div>
+                    <a class="btn-download" href="banner_83_Creme de Pé.png" download="banner_83_Creme de Pé.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme de pé">
+                    <img src="banner_84_Creme de Pé.png" alt="Creme de Pé" loading="lazy">
+                    <div class="title">Creme de Pé</div>
+                    <a class="btn-download" href="banner_84_Creme de Pé.png" download="banner_84_Creme de Pé.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme de pé">
+                    <img src="banner_85_Creme de Pé.png" alt="Creme de Pé" loading="lazy">
+                    <div class="title">Creme de Pé</div>
+                    <a class="btn-download" href="banner_85_Creme de Pé.png" download="banner_85_Creme de Pé.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme de estrias">
+                    <img src="banner_86_Creme de Estrias.png" alt="Creme de Estrias" loading="lazy">
+                    <div class="title">Creme de Estrias</div>
+                    <a class="btn-download" href="banner_86_Creme de Estrias.png" download="banner_86_Creme de Estrias.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme de estrias">
+                    <img src="banner_87_Creme de Estrias.png" alt="Creme de Estrias" loading="lazy">
+                    <div class="title">Creme de Estrias</div>
+                    <a class="btn-download" href="banner_87_Creme de Estrias.png" download="banner_87_Creme de Estrias.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme de peitos">
+                    <img src="banner_88_Creme de Peitos.png" alt="Creme de Peitos" loading="lazy">
+                    <div class="title">Creme de Peitos</div>
+                    <a class="btn-download" href="banner_88_Creme de Peitos.png" download="banner_88_Creme de Peitos.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="oléo para alargamento de ancas">
+                    <img src="banner_89_Oléo para Alargamento de Ancas.png" alt="Oléo para Alargamento de Ancas" loading="lazy">
+                    <div class="title">Oléo para Alargamento de Ancas</div>
+                    <a class="btn-download" href="banner_89_Oléo para Alargamento de Ancas.png" download="banner_89_Oléo para Alargamento de Ancas.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="firmante de quadril">
+                    <img src="banner_90_Firmante de Quadril.png" alt="Firmante de Quadril" loading="lazy">
+                    <div class="title">Firmante de Quadril</div>
+                    <a class="btn-download" href="banner_90_Firmante de Quadril.png" download="banner_90_Firmante de Quadril.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme elevador de quadril">
+                    <img src="banner_91_Creme Elevador de Quadril.png" alt="Creme Elevador de Quadril" loading="lazy">
+                    <div class="title">Creme Elevador de Quadril</div>
+                    <a class="btn-download" href="banner_91_Creme Elevador de Quadril.png" download="banner_91_Creme Elevador de Quadril.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="gel antibacteriano intimo">
+                    <img src="banner_92_Gel antibacteriano intimo.png" alt="Gel antibacteriano intimo" loading="lazy">
+                    <div class="title">Gel antibacteriano intimo</div>
+                    <a class="btn-download" href="banner_92_Gel antibacteriano intimo.png" download="banner_92_Gel antibacteriano intimo.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme corporal de emagrecimento">
+                    <img src="banner_93_Creme Corporal de Emagrecimento.png" alt="Creme Corporal de Emagrecimento" loading="lazy">
+                    <div class="title">Creme Corporal de Emagrecimento</div>
+                    <a class="btn-download" href="banner_93_Creme Corporal de Emagrecimento.png" download="banner_93_Creme Corporal de Emagrecimento.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme para abdómen">
+                    <img src="banner_94_Creme para Abdómen.png" alt="Creme para Abdómen" loading="lazy">
+                    <div class="title">Creme para Abdómen</div>
+                    <a class="btn-download" href="banner_94_Creme para Abdómen.png" download="banner_94_Creme para Abdómen.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="creme corporal de emagrecimento">
+                    <img src="banner_95_Creme Corporal de Emagrecimento.png" alt="Creme Corporal de Emagrecimento" loading="lazy">
+                    <div class="title">Creme Corporal de Emagrecimento</div>
+                    <a class="btn-download" href="banner_95_Creme Corporal de Emagrecimento.png" download="banner_95_Creme Corporal de Emagrecimento.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="protetor solar">
+                    <img src="banner_96_Protetor Solar.png" alt="Protetor Solar" loading="lazy">
+                    <div class="title">Protetor Solar</div>
+                    <a class="btn-download" href="banner_96_Protetor Solar.png" download="banner_96_Protetor Solar.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="protetor solar">
+                    <img src="banner_97_Protetor Solar.png" alt="Protetor Solar" loading="lazy">
+                    <div class="title">Protetor Solar</div>
+                    <a class="btn-download" href="banner_97_Protetor Solar.png" download="banner_97_Protetor Solar.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="protetor solar">
+                    <img src="banner_98_Protetor Solar.png" alt="Protetor Solar" loading="lazy">
+                    <div class="title">Protetor Solar</div>
+                    <a class="btn-download" href="banner_98_Protetor Solar.png" download="banner_98_Protetor Solar.png">📥 Baixar Imagem</a>
+                </div>
+                <div class="card" data-name="protetor solar">
+                    <img src="banner_99_Protetor Solar.png" alt="Protetor Solar" loading="lazy">
+                    <div class="title">Protetor Solar</div>
+                    <a class="btn-download" href="banner_99_Protetor Solar.png" download="banner_99_Protetor Solar.png">📥 Baixar Imagem</a>
+                </div>
+        </div>
+    </div>
+    <script>
+        function filterBanners(q) {
+            const query = q.toLowerCase();
+            document.querySelectorAll('.card').forEach(c => {
+                const name = c.dataset.name;
+                c.style.display = name.includes(query) ? 'flex' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>

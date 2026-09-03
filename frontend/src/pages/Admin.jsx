@@ -46,11 +46,22 @@ export default function Admin() {
     // Tabs state: 'orders', 'drivers' or 'products'
     const [activeTab, setActiveTab]     = useState('orders');
 
-    // New Driver form state
-    const [newDriverName, setNewDriverName]   = useState('');
-    const [newDriverPhone, setNewDriverPhone] = useState('');
-    const [newDriverPhoto, setNewDriverPhoto] = useState(null);
-    const [uploading, setUploading]           = useState(false);
+    // Driver management states
+    const [driverFilter, setDriverFilter]           = useState('all'); // 'all' | 'online' | 'pending' | 'approved' | 'suspended'
+    const [warningModalDriver, setWarningModalDriver] = useState(null);
+    const [warningReason, setWarningReason]         = useState('');
+    const [warningSeverity, setWarningSeverity]     = useState('Leve');
+    const [warningNotes, setWarningNotes]           = useState('');
+    const [docPreviewUrl, setDocPreviewUrl]         = useState(null);
+    const [newDriverName, setNewDriverName]         = useState('');
+    const [newDriverPhone, setNewDriverPhone]       = useState('');
+    const [newDriverVehicleType, setNewDriverVehicleType] = useState('Mota');
+    const [newDriverBairro, setNewDriverBairro]     = useState('Macuti');
+    const [newDriverDocType, setNewDriverDocType]   = useState('BI');
+    const [newDriverDocNumber, setNewDriverDocNumber] = useState('');
+    const [newDriverPhoto, setNewDriverPhoto]       = useState(null);
+    const [newDriverDocPhoto, setNewDriverDocPhoto] = useState(null);
+    const [uploading, setUploading]                 = useState(false);
 
     // --- Product management state ---
     const [products, setProducts]             = useState([]);
@@ -292,7 +303,7 @@ export default function Admin() {
     // --- Fetch drivers ---
     const fetchDrivers = useCallback(async () => {
         try {
-            const res = await fetch(import.meta.env.VITE_API_URL + '/api/drivers');
+            const res = await fetch(import.meta.env.VITE_API_URL + '/api/drivers/admin/all');
             if (!res.ok) return;
             const data = await res.json();
             setDrivers(data);
@@ -643,6 +654,81 @@ export default function Admin() {
             setTimeout(() => setToast(null), 3000);
         } catch (err) {
             console.error('Erro ao designar motorista:', err);
+        }
+    };
+
+    
+    const handleApproveDriver = async (id, status) => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/drivers/${id}/approval`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ approval_status: status })
+            });
+            if (res.ok) {
+                setToast(status === 'Aprovado' ? '✅ Motorista aprovado com sucesso!' : `Motorista marcado como ${status}`);
+                setTimeout(() => setToast(null), 3000);
+                fetchDrivers();
+            } else {
+                const data = await res.json();
+                alert('Erro ao atualizar aprovação: ' + (data.error || 'Falha na operação'));
+            }
+        } catch (err) {
+            console.error('Erro ao aprovar motorista:', err);
+            alert('Erro ao aprovar motorista: ' + err.message);
+        }
+    };
+
+    const handleIssueWarning = async (e) => {
+        e.preventDefault();
+        if (!warningModalDriver || !warningReason.trim()) return;
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/drivers/${warningModalDriver.id}/warnings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    severity: warningSeverity,
+                    reason: warningReason.trim(),
+                    notes: warningNotes.trim()
+                })
+            });
+            if (res.ok) {
+                setToast('⚠️ Advertência registada com sucesso!');
+                setTimeout(() => setToast(null), 3000);
+                setWarningModalDriver(null);
+                setWarningReason('');
+                setWarningNotes('');
+                setWarningSeverity('Leve');
+                fetchDrivers();
+            } else {
+                const data = await res.json();
+                alert('Erro ao registar advertência: ' + (data.error || 'Falha na operação'));
+            }
+        } catch (err) {
+            console.error('Erro ao registar advertência:', err);
+            alert('Erro: ' + err.message);
+        }
+    };
+
+    const handleDeleteWarning = async (driverId, warningId) => {
+        if (!confirm('Deseja realmente remover esta advertência?')) return;
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/drivers/${driverId}/warnings/${warningId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                setToast('Advertência removida.');
+                setTimeout(() => setToast(null), 3000);
+                fetchDrivers();
+                if (warningModalDriver && warningModalDriver.id === driverId) {
+                    setWarningModalDriver(prev => ({
+                        ...prev,
+                        warnings: (prev.warnings || []).filter(w => w.id !== warningId)
+                    }));
+                }
+            }
+        } catch (err) {
+            console.error('Erro ao remover advertência:', err);
         }
     };
 
@@ -1371,8 +1457,10 @@ export default function Admin() {
                                                         }}
                                                     >
                                                         <option value="">Nenhum Motorista</option>
-                                                        {drivers.filter(d => d.active).map(d => (
-                                                            <option key={d.id} value={d.id}>{d.name}</option>
+                                                        {drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status).map(d => (
+                                                            <option key={d.id} value={d.id}>
+                                                                {d.is_online ? '🟢' : '⚪'} {d.name} {d.vehicle_type ? `(${d.vehicle_type})` : ''}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </td>
@@ -1443,106 +1531,530 @@ export default function Admin() {
 
             {activeTab === 'drivers' && (
                 <div style={{ padding: '2rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
-                        {/* Register Driver Card */}
-                        <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                            <h3 style={{ margin: '0 0 1.5rem', color: '#111827' }}>👥 Registar Novo Motorista</h3>
-                            <form onSubmit={handleAddDriver} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
-                                        Nome Completo
-                                    </label>
-                                    <input
-                                        type="text" value={newDriverName} required
-                                        onChange={(e) => setNewDriverName(e.target.value)}
-                                        placeholder="Ex: Carlos Alberto"
-                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
-                                        Contacto WhatsApp (com indicativo, ex: 258840000000)
-                                    </label>
-                                    <input
-                                        type="text" value={newDriverPhone} required
-                                        onChange={(e) => setNewDriverPhone(e.target.value)}
-                                        placeholder="Ex: 258841234567"
-                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
-                                        Foto de Perfil
-                                    </label>
-                                    <input
-                                        type="file" accept="image/*" id="driver-photo-input"
-                                        onChange={(e) => setNewDriverPhoto(e.target.files[0])}
-                                        style={{ width: '100%', padding: '0.5rem 0' }}
-                                    />
-                                </div>
-                                <button type="submit" disabled={uploading} style={{
-                                    marginTop: '0.5rem', padding: '0.75rem', background: '#f59e0b',
-                                    color: '#fff', border: 'none', borderRadius: '8px',
-                                    fontWeight: 700, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                    transition: 'background 0.2s', opacity: uploading ? 0.7 : 1
-                                }}>
-                                    {uploading ? 'A carregar ficheiro...' : 'Adicionar Motorista'}
-                                </button>
-                            </form>
+                    {/* Top Stats Overview */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                        gap: '1.25rem',
+                        marginBottom: '2rem'
+                    }}>
+                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>🛵 Total de Motoristas</div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', marginTop: '0.4rem' }}>{drivers.length}</div>
                         </div>
+                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>🟢 Online Agora</div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#16a34a', marginTop: '0.4rem' }}>
+                                {drivers.filter(d => d.is_online).length}
+                            </div>
+                        </div>
+                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#d97706', fontWeight: 600 }}>⏳ Pendentes de Aprovação</div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#d97706', marginTop: '0.4rem' }}>
+                                {drivers.filter(d => d.approval_status === 'Pendente').length}
+                            </div>
+                        </div>
+                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#dc2626', fontWeight: 600 }}>⚠️ Advertências Emitidas</div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#dc2626', marginTop: '0.4rem' }}>
+                                {drivers.reduce((acc, d) => acc + (d.warnings ? d.warnings.length : 0), 0)}
+                            </div>
+                        </div>
+                    </div>
 
-                        {/* Registered Drivers List Card */}
-                        <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                            <h3 style={{ margin: '0 0 1.5rem', color: '#111827' }}>🛵 Motoristas Registados</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '420px', overflowY: 'auto' }}>
-                                {drivers.map(d => (
+                    {/* Pending Approvals Alert Banner & Queue */}
+                    {drivers.filter(d => d.approval_status === 'Pendente').length > 0 && (
+                        <div style={{
+                            background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                            border: '1.5px solid #fde68a',
+                            borderRadius: '16px',
+                            padding: '1.5rem',
+                            marginBottom: '2rem'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                    <span style={{ fontSize: '1.4rem' }}>⏳</span>
+                                    <h3 style={{ margin: 0, color: '#92400e', fontSize: '1.15rem', fontWeight: 800 }}>
+                                        Aprovações Pendentes ({drivers.filter(d => d.approval_status === 'Pendente').length})
+                                    </h3>
+                                </div>
+                                <span style={{ fontSize: '0.85rem', color: '#b45309', fontWeight: 600 }}>
+                                    Revise os documentos e aprove para liberar o acesso ao app
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+                                {drivers.filter(d => d.approval_status === 'Pendente').map(d => (
                                     <div key={d.id} style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '1rem', background: '#f9fafb', borderRadius: '12px',
-                                        border: '1px solid #f3f4f6'
+                                        background: '#fff',
+                                        borderRadius: '14px',
+                                        padding: '1.25rem',
+                                        boxShadow: '0 4px 6px rgba(0,0,0,0.03)',
+                                        border: '1px solid #fef08a',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between'
                                     }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                            <img
-                                                src={d.photo_url || 'https://via.placeholder.com/50'}
-                                                alt={d.name}
-                                                style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', background: '#e5e7eb' }}
-                                            />
-                                            <div>
-                                                <h4 style={{ margin: 0, color: '#111827', fontWeight: 600 }}>{d.name}</h4>
-                                                <p style={{ margin: '2px 0 0', color: '#6b7280', fontSize: '0.8rem' }}>📲 {d.phone}</p>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.85rem' }}>
+                                                <img
+                                                    src={d.photo_url || 'https://via.placeholder.com/60'}
+                                                    alt={d.name}
+                                                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', background: '#f1f5f9', border: '2px solid #e2e8f0' }}
+                                                />
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <h4 style={{ margin: 0, color: '#0f172a', fontWeight: 700, fontSize: '1rem' }}>{d.name}</h4>
+                                                    <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '2px' }}>
+                                                        📞 {d.phone} {d.bairro ? `• 📍 ${d.bairro}` : ''}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 600, marginTop: '2px' }}>
+                                                        🛵 {d.vehicle_type || 'Mota'} {d.vehicle_plate ? `(${d.vehicle_plate})` : ''}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Document Info */}
+                                            <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '10px', marginBottom: '1rem', border: '1px solid #e2e8f0' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#334155' }}>
+                                                    <span><strong>Documento:</strong> {d.doc_type || 'BI'}</span>
+                                                    <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{d.doc_number || 'Sem número'}</span>
+                                                </div>
+                                                {d.doc_photo_url && (
+                                                    <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <img
+                                                            src={d.doc_photo_url}
+                                                            alt="Doc"
+                                                            style={{ width: '45px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                                                            onClick={() => setDocPreviewUrl(d.doc_photo_url)}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDocPreviewUrl(d.doc_photo_url)}
+                                                            style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                                                        >
+                                                            🔍 Ampliar Foto do Doc
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             <button
-                                                onClick={() => toggleDriverActive(d)}
+                                                onClick={() => handleApproveDriver(d.id, 'Aprovado')}
                                                 style={{
-                                                    border: 'none', padding: '0.4rem 0.8rem', borderRadius: '20px',
-                                                    fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                                                    background: d.active ? '#d1fae5' : '#fee2e2',
-                                                    color: d.active ? '#065f46' : '#991b1b'
+                                                    flex: 1,
+                                                    padding: '0.6rem',
+                                                    background: '#16a34a',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer'
                                                 }}
                                             >
-                                                {d.active ? 'Online 🟢' : 'Offline 🔴'}
+                                                ✅ Aprovar
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteDriver(d.id)}
+                                                onClick={() => handleApproveDriver(d.id, 'Recusado')}
                                                 style={{
-                                                    border: 'none', background: 'transparent', color: '#ef4444',
-                                                    cursor: 'pointer', fontSize: '1rem'
+                                                    padding: '0.6rem 1rem',
+                                                    background: '#fee2e2',
+                                                    color: '#991b1b',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer'
                                                 }}
-                                                title="Remover motorista"
                                             >
-                                                🗑️
+                                                ❌ Recusar
                                             </button>
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Filter Tabs */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '1.5rem',
+                        overflowX: 'auto',
+                        paddingBottom: '0.5rem'
+                    }}>
+                        {[
+                            { id: 'all', label: `Todos (${drivers.length})` },
+                            { id: 'online', label: `🟢 Online (${drivers.filter(d => d.is_online).length})` },
+                            { id: 'pending', label: `⏳ Pendentes (${drivers.filter(d => d.approval_status === 'Pendente').length})` },
+                            { id: 'approved', label: `✅ Aprovados (${drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status).length})` },
+                            { id: 'suspended', label: `🔴 Suspensos (${drivers.filter(d => d.approval_status === 'Suspenso').length})` }
+                        ].map(f => (
+                            <button
+                                key={f.id}
+                                onClick={() => setDriverFilter(f.id)}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '999px',
+                                    border: 'none',
+                                    background: driverFilter === f.id ? '#1e293b' : '#fff',
+                                    color: driverFilter === f.id ? '#fff' : '#64748b',
+                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.15s',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                {f.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem', alignItems: 'start' }}>
+                        {/* Registered Drivers List */}
+                        <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                <h3 style={{ margin: 0, color: '#111827', fontSize: '1.15rem', fontWeight: 800 }}>
+                                    🛵 Frota de Motoristas
+                                </h3>
+                                <button
+                                    onClick={fetchDrivers}
+                                    style={{ background: '#f1f5f9', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}
+                                >
+                                    ↻ Atualizar
+                                </button>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '680px', overflowY: 'auto' }}>
+                                {drivers
+                                    .filter(d => {
+                                        if (driverFilter === 'online') return d.is_online;
+                                        if (driverFilter === 'pending') return d.approval_status === 'Pendente';
+                                        if (driverFilter === 'approved') return d.approval_status === 'Aprovado' || !d.approval_status;
+                                        if (driverFilter === 'suspended') return d.approval_status === 'Suspenso';
+                                        return true;
+                                    })
+                                    .map(d => {
+                                        const status = d.approval_status || 'Aprovado';
+                                        const statusBadge = {
+                                            Aprovado: { bg: '#dcfce7', text: '#15803d', label: '✅ Aprovado' },
+                                            Pendente: { bg: '#fef3c7', text: '#b45309', label: '⏳ Pendente' },
+                                            Suspenso: { bg: '#fee2e2', text: '#b91c1c', label: '🔴 Suspenso' },
+                                            Recusado: { bg: '#f1f5f9', text: '#64748b', label: '❌ Recusado' }
+                                        }[status] || { bg: '#f1f5f9', text: '#64748b', label: status };
+
+                                        const totalEarn = d.total_earnings !== undefined
+                                            ? d.total_earnings
+                                            : (d.delivery_count || 0) * (d.earnings_rate_per_delivery || 150);
+
+                                        return (
+                                            <div key={d.id} style={{
+                                                background: '#f8fafc',
+                                                borderRadius: '14px',
+                                                padding: '1.25rem',
+                                                border: d.is_online ? '1.5px solid #86efac' : '1px solid #e2e8f0',
+                                                boxShadow: d.is_online ? '0 4px 12px rgba(34,197,94,0.1)' : 'none'
+                                            }}>
+                                                {/* Header info */}
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.85rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                                        <div style={{ position: 'relative' }}>
+                                                            <img
+                                                                src={d.photo_url || 'https://via.placeholder.com/56'}
+                                                                alt={d.name}
+                                                                style={{ width: '54px', height: '54px', borderRadius: '50%', objectFit: 'cover', background: '#e2e8f0' }}
+                                                            />
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                bottom: 0,
+                                                                right: 0,
+                                                                width: '14px',
+                                                                height: '14px',
+                                                                borderRadius: '50%',
+                                                                background: d.is_online ? '#22c55e' : '#94a3b8',
+                                                                border: '2px solid #fff'
+                                                            }} />
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                                <h4 style={{ margin: 0, color: '#0f172a', fontWeight: 700, fontSize: '1rem' }}>{d.name}</h4>
+                                                                <span style={{
+                                                                    background: statusBadge.bg,
+                                                                    color: statusBadge.text,
+                                                                    padding: '0.15rem 0.5rem',
+                                                                    borderRadius: '999px',
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: 700
+                                                                }}>
+                                                                    {statusBadge.label}
+                                                                </span>
+                                                            </div>
+                                                            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
+                                                                <a
+                                                                    href={`https://wa.me/${(d.phone || '').replace(/\D/g, '')}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    style={{ color: '#059669', textDecoration: 'none', fontWeight: 600 }}
+                                                                >
+                                                                    💬 {d.phone || 'Sem contacto'}
+                                                                </a>
+                                                                {d.bairro ? ` • 📍 ${d.bairro}` : ''}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 700,
+                                                            padding: '0.25rem 0.6rem',
+                                                            borderRadius: '999px',
+                                                            background: d.is_online ? '#dcfce7' : '#f1f5f9',
+                                                            color: d.is_online ? '#15803d' : '#64748b',
+                                                            display: 'inline-block'
+                                                        }}>
+                                                            {d.is_online ? '🟢 Online' : '⚪ Offline'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Stats Badges Grid */}
+                                                <div style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'repeat(3, 1fr)',
+                                                    gap: '0.5rem',
+                                                    background: '#fff',
+                                                    padding: '0.75rem',
+                                                    borderRadius: '10px',
+                                                    border: '1px solid #e2e8f0',
+                                                    marginBottom: '0.85rem',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Entregas</div>
+                                                        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>{d.delivery_count || 0}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Faturamento</div>
+                                                        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#059669' }}>{Number(totalEarn).toLocaleString('pt-MZ')} MT</div>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Advertências</div>
+                                                        <div style={{
+                                                            fontSize: '0.95rem',
+                                                            fontWeight: 800,
+                                                            color: (d.warnings && d.warnings.length > 0) ? '#dc2626' : '#64748b'
+                                                        }}>
+                                                            {d.warnings ? d.warnings.length : 0} ⚠️
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Document Info Row */}
+                                                {(d.doc_number || d.doc_photo_url || d.vehicle_type) && (
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: '#475569', marginBottom: '0.85rem' }}>
+                                                        <div>
+                                                            <span>🛵 {d.vehicle_type || 'Mota'}</span>
+                                                            {d.doc_number && <span style={{ marginLeft: '0.5rem' }}>• 📄 {d.doc_type || 'BI'}: <strong>{d.doc_number}</strong></span>}
+                                                        </div>
+                                                        {d.doc_photo_url && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setDocPreviewUrl(d.doc_photo_url)}
+                                                                style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 600, cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
+                                                            >
+                                                                🔍 Ver Documento
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Action Buttons Row */}
+                                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
+                                                    {status === 'Pendente' && (
+                                                        <button
+                                                            onClick={() => handleApproveDriver(d.id, 'Aprovado')}
+                                                            style={{ flex: 1, padding: '0.45rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                        >
+                                                            ✅ Aprovar
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => setWarningModalDriver(d)}
+                                                        style={{
+                                                            flex: 1,
+                                                            padding: '0.45rem 0.75rem',
+                                                            background: '#fef3c7',
+                                                            color: '#b45309',
+                                                            border: 'none',
+                                                            borderRadius: '8px',
+                                                            fontSize: '0.78rem',
+                                                            fontWeight: 700,
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        ⚠️ Advertir ({d.warnings ? d.warnings.length : 0})
+                                                    </button>
+                                                    {status === 'Suspenso' ? (
+                                                        <button
+                                                            onClick={() => handleApproveDriver(d.id, 'Aprovado')}
+                                                            style={{ padding: '0.45rem 0.75rem', background: '#dcfce7', color: '#15803d', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                        >
+                                                            ✅ Reativar
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleApproveDriver(d.id, 'Suspenso')}
+                                                            style={{ padding: '0.45rem 0.75rem', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                        >
+                                                            🚫 Suspender
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDeleteDriver(d.id)}
+                                                        style={{ padding: '0.45rem 0.75rem', background: '#f1f5f9', color: '#ef4444', border: 'none', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer' }}
+                                                        title="Remover motorista permanentemente"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 {drivers.length === 0 && (
-                                    <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
-                                        Nenhum motorista cadastrado.
+                                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                                        Nenhum motorista registado na plataforma.
                                     </div>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Register Driver Card */}
+                        <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                            <h3 style={{ margin: '0 0 1.5rem', color: '#111827', fontSize: '1.2rem', fontWeight: 800 }}>
+                                👤 Registar Novo Motorista
+                            </h3>
+                            <form onSubmit={handleAddDriver} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
+                                        Nome Completo *
+                                    </label>
+                                    <input
+                                        type="text" value={newDriverName} required
+                                        onChange={(e) => setNewDriverName(e.target.value)}
+                                        placeholder="Ex: Carlos Alberto Macamo"
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
+                                            WhatsApp *
+                                        </label>
+                                        <input
+                                            type="text" value={newDriverPhone} required
+                                            onChange={(e) => setNewDriverPhone(e.target.value)}
+                                            placeholder="Ex: 258841234567"
+                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
+                                            Bairro Base
+                                        </label>
+                                        <input
+                                            type="text" value={newDriverBairro}
+                                            onChange={(e) => setNewDriverBairro(e.target.value)}
+                                            placeholder="Ex: Macuti, Beira"
+                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
+                                            Tipo de Veículo
+                                        </label>
+                                        <select
+                                            value={newDriverVehicleType}
+                                            onChange={(e) => setNewDriverVehicleType(e.target.value)}
+                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none', background: '#fff' }}
+                                        >
+                                            <option value="Mota">🛵 Moto / Scooter</option>
+                                            <option value="Carro">🚗 Carro / Viatura</option>
+                                            <option value="Bicicleta">🚲 Bicicleta</option>
+                                            <option value="Carrinha">🚐 Carrinha / Van</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
+                                            Tipo de Documento
+                                        </label>
+                                        <select
+                                            value={newDriverDocType}
+                                            onChange={(e) => setNewDriverDocType(e.target.value)}
+                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none', background: '#fff' }}
+                                        >
+                                            <option value="BI">Bilhete de Identidade (BI)</option>
+                                            <option value="Carta de Condução">Carta de Condução</option>
+                                            <option value="DIRE">DIRE</option>
+                                            <option value="Passaporte">Passaporte</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
+                                        Número do Documento (ID)
+                                    </label>
+                                    <input
+                                        type="text" value={newDriverDocNumber}
+                                        onChange={(e) => setNewDriverDocNumber(e.target.value)}
+                                        placeholder="Ex: 110100234567N"
+                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
+                                            Foto de Perfil
+                                        </label>
+                                        <input
+                                            type="file" accept="image/*" id="driver-photo-input"
+                                            onChange={(e) => setNewDriverPhoto(e.target.files[0])}
+                                            style={{ width: '100%', padding: '0.4rem 0', fontSize: '0.85rem' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
+                                            Foto do Documento (BI / Carta)
+                                        </label>
+                                        <input
+                                            type="file" accept="image/*" id="driver-docphoto-input"
+                                            onChange={(e) => setNewDriverDocPhoto(e.target.files[0])}
+                                            style={{ width: '100%', padding: '0.4rem 0', fontSize: '0.85rem' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button type="submit" disabled={uploading} style={{
+                                    marginTop: '0.5rem', padding: '0.85rem', background: '#f59e0b',
+                                    color: '#fff', border: 'none', borderRadius: '10px',
+                                    fontWeight: 700, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                    transition: 'background 0.2s', opacity: uploading ? 0.7 : 1, fontSize: '0.95rem'
+                                }}>
+                                    {uploading ? 'A enviar dados...' : '➕ Cadastrar e Aprovar Motorista'}
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -2918,6 +3430,193 @@ export default function Admin() {
                     </div>
                 </div>
             )}
+
+            {/* Driver Warning Modal */}
+            {warningModalDriver && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: 9999, backdropFilter: 'blur(4px)'
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: '20px', padding: '2rem',
+                        maxWidth: '540px', width: '90%', maxHeight: '90vh', overflowY: 'auto',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <h3 style={{ margin: 0, color: '#111827', fontSize: '1.2rem', fontWeight: 800 }}>
+                                ⚠️ Advertências Disciplinares
+                            </h3>
+                            <button
+                                onClick={() => setWarningModalDriver(null)}
+                                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', fontWeight: 700 }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
+                            <img
+                                src={warningModalDriver.photo_url || 'https://via.placeholder.com/45'}
+                                alt={warningModalDriver.name}
+                                style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                            <div>
+                                <div style={{ fontWeight: 700, color: '#0f172a' }}>{warningModalDriver.name}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>📞 {warningModalDriver.phone}</div>
+                            </div>
+                        </div>
+
+                        {/* Existing Warnings on this driver */}
+                        {warningModalDriver.warnings && warningModalDriver.warnings.length > 0 && (
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: '#475569' }}>
+                                    Histórico de Advertências ({warningModalDriver.warnings.length})
+                                </h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {warningModalDriver.warnings.map(w => {
+                                        const sevBadge = {
+                                            Leve: { bg: '#fef3c7', text: '#b45309' },
+                                            Média: { bg: '#fed7aa', text: '#c2410c' },
+                                            Grave: { bg: '#fee2e2', text: '#b91c1c' }
+                                        }[w.severity] || { bg: '#fef3c7', text: '#b45309' };
+
+                                        return (
+                                            <div key={w.id} style={{
+                                                background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '10px',
+                                                border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem'
+                                            }}>
+                                                <div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{
+                                                            background: sevBadge.bg, color: sevBadge.text,
+                                                            padding: '0.1rem 0.45rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800
+                                                        }}>
+                                                            {w.severity || 'Leve'}
+                                                        </span>
+                                                        <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>{w.reason}</span>
+                                                    </div>
+                                                    {w.notes && <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>{w.notes}</div>}
+                                                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                                                        📅 {new Date(w.date).toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDeleteWarning(warningModalDriver.id, w.id)}
+                                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem' }}
+                                                    title="Remover advertência"
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* New Warning Form */}
+                        <form onSubmit={handleIssueWarning} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem' }}>
+                            <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#111827', fontWeight: 700 }}>
+                                ➕ Emitir Nova Advertência
+                            </h4>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>
+                                    Gravidade da Infração
+                                </label>
+                                <select
+                                    value={warningSeverity}
+                                    onChange={(e) => setWarningSeverity(e.target.value)}
+                                    style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff', outline: 'none' }}
+                                >
+                                    <option value="Leve">🟡 Advertência Leve (Atraso pontual, falta de comunicação)</option>
+                                    <option value="Média">🟠 Advertência Média (Conduta inadequada, desvio de rota)</option>
+                                    <option value="Grave">🔴 Advertência Grave (Perda de mercadoria, reincidência)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>
+                                    Motivo da Advertência *
+                                </label>
+                                <input
+                                    type="text" required
+                                    value={warningReason}
+                                    onChange={(e) => setWarningReason(e.target.value)}
+                                    placeholder="Ex: Atraso de 40 min na entrega sem aviso prévio"
+                                    style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box', outline: 'none' }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>
+                                    Observações ou Medidas Tomadas
+                                </label>
+                                <textarea
+                                    rows="2"
+                                    value={warningNotes}
+                                    onChange={(e) => setWarningNotes(e.target.value)}
+                                    placeholder="Detalhes adicionais sobre o ocorrido..."
+                                    style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box', outline: 'none' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setWarningModalDriver(null)}
+                                    style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontWeight: 600 }}
+                                >
+                                    Fechar
+                                </button>
+                                <button
+                                    type="submit"
+                                    style={{ padding: '0.65rem 1.5rem', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontWeight: 700 }}
+                                >
+                                    ⚠️ Registar Advertência
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Document Image Zoom Lightbox Modal */}
+            {docPreviewUrl && (
+                <div
+                    onClick={() => setDocPreviewUrl(null)}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 99999, backdropFilter: 'blur(6px)', padding: '2rem'
+                    }}
+                >
+                    <div style={{ position: 'relative', maxWidth: '800px', width: '100%', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <button
+                            onClick={() => setDocPreviewUrl(null)}
+                            style={{
+                                position: 'absolute', top: '-15px', right: '-15px',
+                                background: '#ef4444', color: '#fff', border: 'none',
+                                borderRadius: '50%', width: '36px', height: '36px',
+                                fontSize: '1.2rem', fontWeight: 800, cursor: 'pointer',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                            }}
+                        >
+                            ✕
+                        </button>
+                        <img
+                            src={docPreviewUrl}
+                            alt="Documento do Motorista"
+                            style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)', objectFit: 'contain' }}
+                        />
+                        <div style={{ color: '#fff', marginTop: '1rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                            Documento de Identificação do Motorista
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

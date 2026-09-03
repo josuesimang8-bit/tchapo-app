@@ -847,8 +847,70 @@ app.put('/api/orders/:id/status', async (req, res) => {
     }
 });
 
+// ─── DRIVERS METADATA & REPUTATION ENGINE ────────────────────────────────
+const DRIVERS_META_FILE = path.join(__dirname, 'data', 'drivers_meta.json');
+
+function ensureDriversMetaDir() {
+    const dir = path.dirname(DRIVERS_META_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(DRIVERS_META_FILE)) fs.writeFileSync(DRIVERS_META_FILE, '{}', 'utf8');
+}
+
+function loadDriversMeta() {
+    ensureDriversMetaDir();
+    try {
+        const raw = fs.readFileSync(DRIVERS_META_FILE, 'utf8');
+        return JSON.parse(raw) || {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function saveDriversMeta(data) {
+    ensureDriversMetaDir();
+    try {
+        fs.writeFileSync(DRIVERS_META_FILE, JSON.stringify(data, null, 2), 'utf8');
+    } catch (e) {
+        console.error('Failed to save drivers meta:', e);
+    }
+}
+
+function getDriverMeta(driverId) {
+    const meta = loadDriversMeta();
+    const idKey = String(driverId);
+    if (meta[idKey]) return meta[idKey];
+    return {
+        approval_status: 'Aprovado', // Default existing drivers to Aprovado
+        is_online: false,
+        last_seen_at: null,
+        doc_type: 'BI',
+        doc_number: '',
+        doc_photo_url: '',
+        vehicle_type: 'Mota',
+        vehicle_plate: '',
+        bairro: 'Beira',
+        pin: '1234',
+        warnings: [],
+        earnings_rate_per_delivery: 150
+    };
+}
+
+function updateDriverMeta(driverId, updates) {
+    const meta = loadDriversMeta();
+    const idKey = String(driverId);
+    const current = getDriverMeta(driverId);
+    meta[idKey] = { ...current, ...updates };
+    saveDriversMeta(meta);
+    return meta[idKey];
+}
+
+function normalizeDriverPhone(phone) {
+    if (!phone) return '';
+    return String(phone).replace(/\s+/g, '').replace('+', '').replace(/^258/, '');
+}
+
 // ─── DRIVERS ENDPOINTS ────────────────────────────────────────────────
-// GET all drivers
+// GET approved drivers for customer tracking & selection
 app.get('/api/drivers', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -856,128 +918,379 @@ app.get('/api/drivers', async (req, res) => {
             .select('*')
             .order('name', { ascending: true });
         if (error) throw error;
-        res.json(data);
+        
+        const metaMap = loadDriversMeta();
+        const tenMinsAgo = Date.now() - 10 * 60 * 1000;
+
+        const merged = (data || []).map(d => {
+            const meta = metaMap[String(d.id)] || {
+                approval_status: 'Aprovado',
+                is_online: false,
+                last_seen_at: null,
+                vehicle_type: 'Mota',
+                warnings: []
+            };
+            const isOnline = meta.is_online && meta.last_seen_at && new Date(meta.last_seen_at).getTime() > tenMinsAgo;
+            return {
+                ...d,
+                ...meta,
+                is_online: isOnline,
+                approval_status: meta.approval_status || 'Aprovado'
+            };
+        }).filter(d => d.approval_status === 'Aprovado');
+
+        res.json(merged);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-async function uploadToSupabaseStorage(bucketName, file) {
+// GET all drivers for Admin Dashboard (includes pending, rejected, online status, docs, warnings)
+app.get('/api/drivers/admin/all', async (req, res) => {
     try {
-        const fileBuffer = fs.readFileSync(file.path);
-        const { data, error } = await supabase.storage
-            .from(bucketName)
-            .upload(file.filename, fileBuffer, {
-                contentType: file.mimetype,
-                cacheControl: '3600',
-                upsert: true
-            });
-            
-        if (error) {
-            console.error(`Supabase storage upload error to ${bucketName}:`, error);
-            return null;
-        }
-        
-        const { data: publicUrlData } = supabase.storage
-            .from(bucketName)
-            .getPublicUrl(file.filename);
-            
-        // Delete local temp file
-        try {
-            fs.unlinkSync(file.path);
-        } catch (e) {
-            console.error('Failed to delete temp file:', e);
-        }
-        
-        return publicUrlData.publicUrl;
-    } catch (err) {
-        console.error(`Failed to upload to Supabase storage ${bucketName}:`, err);
-        return null;
-    }
-}
+        const { data: drivers, error } = await supabase
+            .from('drivers')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
 
-async function uploadToCatbox(file) {
-    try {
-        const formData = new FormData();
-        formData.append('reqtype', 'fileupload');
-        
-        const fileBuffer = fs.readFileSync(file.path);
-        const blob = new Blob([fileBuffer], { type: file.mimetype });
-        formData.append('fileToUpload', blob, file.filename);
+        const { data: orders } = await supabase
+            .from('orders')
+            .select('id, driver_id, status, total, created_at');
 
-        const response = await fetch('https://catbox.moe/user/api.php', {
-            method: 'POST',
-            body: formData
+        const metaMap = loadDriversMeta();
+        const tenMinsAgo = Date.now() - 10 * 60 * 1000;
+
+        const enrichedDrivers = (drivers || []).map(d => {
+            const meta = metaMap[String(d.id)] || {
+                approval_status: 'Aprovado',
+                is_online: false,
+                last_seen_at: null,
+                doc_type: 'BI',
+                doc_number: '',
+                doc_photo_url: '',
+                vehicle_type: 'Mota',
+                vehicle_plate: '',
+                bairro: 'Beira',
+                pin: '1234',
+                warnings: [],
+                earnings_rate_per_delivery: 150
+            };
+
+            const isOnline = meta.is_online && meta.last_seen_at && new Date(meta.last_seen_at).getTime() > tenMinsAgo;
+            const driverOrders = (orders || []).filter(o => o.driver_id === d.id);
+            const deliveredOrders = driverOrders.filter(o => o.status === 'Entregue');
+            const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista'].includes(o.status));
+            const totalEarnings = deliveredOrders.length * (meta.earnings_rate_per_delivery || 150);
+
+            return {
+                ...d,
+                ...meta,
+                is_online: isOnline,
+                total_delivered: deliveredOrders.length,
+                active_orders_count: activeOrders.length,
+                total_orders: driverOrders.length,
+                total_earnings: totalEarnings,
+                warnings_count: (meta.warnings || []).length
+            };
         });
 
-        if (!response.ok) {
-            console.error(`Catbox upload HTTP error for ${file.filename}:`, response.statusText);
-            return null;
-        }
-
-        const text = await response.text();
-        const url = text.trim();
-        
-        // Delete local temp file since we uploaded it successfully
-        try {
-            fs.unlinkSync(file.path);
-        } catch (e) {
-            console.error('Failed to delete temp file after Catbox upload:', e);
-        }
-        
-        if (url && url.startsWith('http')) {
-            return url;
-        }
-        return null;
-    } catch (err) {
-        console.error(`Failed to upload to Catbox ${file.filename}:`, err);
-        return null;
-    }
-}
-
-// POST new driver
-app.post('/api/drivers', async (req, res) => {
-    try {
-        const { name, phone, photo_url } = req.body;
-        const { data, error } = await supabase
-            .from('drivers')
-            .insert([{ name, phone, photo_url, active: true }])
-            .select()
-            .single();
-        if (error) throw error;
-        res.status(201).json(data);
+        res.json(enrichedDrivers);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// POST upload photo for driver
+// POST Driver Self-Registration (Onboarding with BI / Carta upload)
+app.post('/api/drivers/register', upload.fields([
+    { name: 'photo', maxCount: 1 },
+    { name: 'doc_photo', maxCount: 1 }
+]), async (req, res) => {
+    try {
+        const { name, phone, bairro, vehicle_type, vehicle_plate, doc_type, doc_number, pin } = req.body;
+
+        if (!name || !phone) {
+            return res.status(400).json({ error: 'Nome e telefone são obrigatórios.' });
+        }
+
+        const normalizedPhone = normalizeDriverPhone(phone);
+
+        // Upload Profile Photo
+        let photoUrl = '/assets/default_avatar.png';
+        if (req.files && req.files['photo'] && req.files['photo'][0]) {
+            const photoFile = req.files['photo'][0];
+            const publicUrl = await uploadToCatbox(photoFile) || await uploadToSupabaseStorage('drivers', photoFile);
+            photoUrl = publicUrl || `/uploads/drivers/${photoFile.filename}`;
+        }
+
+        // Upload Document Photo
+        let docPhotoUrl = '';
+        if (req.files && req.files['doc_photo'] && req.files['doc_photo'][0]) {
+            const docFile = req.files['doc_photo'][0];
+            const publicDocUrl = await uploadToCatbox(docFile) || await uploadToSupabaseStorage('drivers', docFile);
+            docPhotoUrl = publicDocUrl || `/uploads/drivers/${docFile.filename}`;
+        }
+
+        // Insert into Supabase drivers table
+        const { data: newDriver, error: insertErr } = await supabase
+            .from('drivers')
+            .insert([{
+                name: name.trim(),
+                phone: phone.trim(),
+                photo_url: photoUrl,
+                active: true
+            }])
+            .select()
+            .single();
+
+        if (insertErr) throw insertErr;
+
+        // Save extended meta with 'Pendente' status
+        const meta = updateDriverMeta(newDriver.id, {
+            approval_status: 'Pendente',
+            is_online: false,
+            last_seen_at: new Date().toISOString(),
+            doc_type: doc_type || 'BI',
+            doc_number: doc_number ? String(doc_number).trim() : '',
+            doc_photo_url: docPhotoUrl,
+            vehicle_type: vehicle_type || 'Mota',
+            vehicle_plate: vehicle_plate ? String(vehicle_plate).trim() : '',
+            bairro: bairro ? String(bairro).trim() : 'Beira',
+            pin: pin ? String(pin).trim() : '1234',
+            warnings: [],
+            earnings_rate_per_delivery: 150
+        });
+
+        // Send instant Ntfy alert to Admin about new driver signup
+        try {
+            sendNtfyAlert({
+                title: '🛵 Novo Cadastro de Motorista!',
+                message: `${name} cadastrou-se como estafeta (${vehicle_type || 'Mota'} - ${bairro || 'Beira'}). Documento: ${doc_type || 'BI'} ${doc_number || ''}. Aguarda aprovação.`
+            });
+        } catch (_) {}
+
+        res.status(201).json({
+            ...newDriver,
+            ...meta,
+            message: 'Cadastro submetido com sucesso! A sua conta está sob análise pelo Administrador.'
+        });
+    } catch (err) {
+        console.error('Error registering driver:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST Driver Login (Phone + PIN)
+app.post('/api/drivers/login', async (req, res) => {
+    try {
+        const { phone, pin } = req.body;
+        if (!phone) {
+            return res.status(400).json({ error: 'Por favor introduza o número de telefone.' });
+        }
+
+        const inputNormalized = normalizeDriverPhone(phone);
+
+        const { data: drivers, error } = await supabase
+            .from('drivers')
+            .select('*');
+
+        if (error) throw error;
+
+        const driver = (drivers || []).find(d => normalizeDriverPhone(d.phone) === inputNormalized);
+
+        if (!driver) {
+            return res.status(404).json({ error: 'Nenhum motorista encontrado com este número de telefone.' });
+        }
+
+        const meta = getDriverMeta(driver.id);
+        const driverPin = meta.pin || '1234';
+
+        if (pin && String(pin).trim() !== String(driverPin).trim()) {
+            return res.status(401).json({ error: 'PIN de acesso incorreto.' });
+        }
+
+        // Update heartbeat
+        updateDriverMeta(driver.id, { last_seen_at: new Date().toISOString() });
+
+        res.json({
+            ...driver,
+            ...meta,
+            id: driver.id
+        });
+    } catch (err) {
+        console.error('Driver login error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET Driver Dashboard & Live Stats
+app.get('/api/drivers/:id/dashboard', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const numId = Number(id);
+
+        const { data: driver, error: driverErr } = await supabase
+            .from('drivers')
+            .select('*')
+            .eq('id', numId)
+            .single();
+
+        if (driverErr || !driver) {
+            return res.status(404).json({ error: 'Motorista não encontrado.' });
+        }
+
+        const meta = getDriverMeta(numId);
+
+        // Fetch driver assigned orders
+        const { data: orders, error: ordersErr } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('driver_id', numId)
+            .order('created_at', { ascending: false });
+
+        const driverOrders = orders || [];
+        const delivered = driverOrders.filter(o => o.status === 'Entregue');
+        const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista'].includes(o.status));
+
+        // Date calculations
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+        const todayDelivered = delivered.filter(o => (o.created_at || '').slice(0, 10) === todayStr);
+        const weekDelivered = delivered.filter(o => new Date(o.created_at) >= oneWeekAgo);
+
+        const rate = meta.earnings_rate_per_delivery || 150;
+        const todayEarnings = todayDelivered.length * rate;
+        const weekEarnings = weekDelivered.length * rate;
+        const totalEarnings = delivered.length * rate;
+
+        res.json({
+            driver: {
+                ...driver,
+                ...meta
+            },
+            stats: {
+                today_earnings: todayEarnings,
+                week_earnings: weekEarnings,
+                total_earnings: totalEarnings,
+                today_deliveries: todayDelivered.length,
+                total_deliveries: delivered.length,
+                active_deliveries: activeOrders.length,
+                rate_per_delivery: rate
+            },
+            active_orders: activeOrders.map(formatOrderResponse),
+            recent_deliveries: delivered.slice(0, 15).map(formatOrderResponse),
+            warnings: meta.warnings || []
+        });
+    } catch (err) {
+        console.error('Driver dashboard error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT Toggle Driver Availability & Heartbeat (Online / Offline)
+app.put('/api/drivers/:id/availability', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_online } = req.body;
+
+        const updatedMeta = updateDriverMeta(id, {
+            is_online: Boolean(is_online),
+            last_seen_at: new Date().toISOString()
+        });
+
+        res.json({ success: true, is_online: updatedMeta.is_online, last_seen_at: updatedMeta.last_seen_at });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT Admin Update Driver Approval Status (Aprovar, Recusar, Suspender)
+app.put('/api/drivers/:id/approval', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { approval_status, notes } = req.body;
+
+        if (!['Aprovado', 'Pendente', 'Recusado', 'Suspenso'].includes(approval_status)) {
+            return res.status(400).json({ error: 'Estado de aprovação inválido.' });
+        }
+
+        const updatedMeta = updateDriverMeta(id, {
+            approval_status,
+            approval_notes: notes || '',
+            approval_updated_at: new Date().toISOString()
+        });
+
+        res.json({ success: true, driver_id: id, approval_status: updatedMeta.approval_status });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST Admin Issue Driver Warning
+app.post('/api/drivers/:id/warnings', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason, severity, notes } = req.body;
+
+        if (!reason) {
+            return res.status(400).json({ error: 'O motivo da advertência é obrigatório.' });
+        }
+
+        const meta = getDriverMeta(id);
+        const warnings = meta.warnings || [];
+
+        const newWarning = {
+            id: Date.now(),
+            reason: String(reason).trim(),
+            severity: severity || 'Leve', // Leve, Média, Grave
+            notes: notes ? String(notes).trim() : '',
+            issued_at: new Date().toISOString()
+        };
+
+        warnings.unshift(newWarning);
+        updateDriverMeta(id, { warnings });
+
+        res.status(201).json({ success: true, warning: newWarning, total_warnings: warnings.length });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE Admin Remove Warning
+app.delete('/api/drivers/:id/warnings/:warningId', async (req, res) => {
+    try {
+        const { id, warningId } = req.params;
+        const meta = getDriverMeta(id);
+        const filtered = (meta.warnings || []).filter(w => String(w.id) !== String(warningId));
+        updateDriverMeta(id, { warnings: filtered });
+        res.json({ success: true, remaining: filtered.length });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST legacy driver upload photo
 app.post('/api/drivers/upload', upload.single('photo'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
     
-    let publicUrl = await uploadToSupabaseStorage('drivers', req.file);
-    
-    if (!publicUrl) {
-        console.log('Supabase storage failed for driver photo, using Catbox fallback...');
-        publicUrl = await uploadToCatbox(req.file);
-    }
+    let publicUrl = await uploadToCatbox(req.file) || await uploadToSupabaseStorage('drivers', req.file);
     
     if (publicUrl) {
         res.json({ photo_url: publicUrl });
     } else {
-        // Fallback to local file
         const photoUrl = `/uploads/drivers/${req.file.filename}`;
         res.json({ photo_url: photoUrl });
     }
 });
 
-// PUT update driver
+// PUT update basic driver info
 app.put('/api/drivers/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, phone, photo_url, active } = req.body;
+        const { name, phone, photo_url, active, vehicle_type, vehicle_plate, bairro, pin, earnings_rate_per_delivery } = req.body;
         
         const updates = {};
         if (name !== undefined) updates.name = name;
@@ -985,14 +1298,28 @@ app.put('/api/drivers/:id', async (req, res) => {
         if (photo_url !== undefined) updates.photo_url = photo_url;
         if (active !== undefined) updates.active = active;
         
-        const { data, error } = await supabase
-            .from('drivers')
-            .update(updates)
-            .eq('id', id)
-            .select()
-            .single();
-        if (error) throw error;
-        res.json(data);
+        let data = null;
+        if (Object.keys(updates).length > 0) {
+            const { data: updated, error } = await supabase
+                .from('drivers')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            data = updated;
+        }
+
+        const metaUpdates = {};
+        if (vehicle_type !== undefined) metaUpdates.vehicle_type = vehicle_type;
+        if (vehicle_plate !== undefined) metaUpdates.vehicle_plate = vehicle_plate;
+        if (bairro !== undefined) metaUpdates.bairro = bairro;
+        if (pin !== undefined) metaUpdates.pin = pin;
+        if (earnings_rate_per_delivery !== undefined) metaUpdates.earnings_rate_per_delivery = Number(earnings_rate_per_delivery);
+
+        const meta = updateDriverMeta(id, metaUpdates);
+
+        res.json({ ...data, ...meta });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1002,12 +1329,16 @@ app.put('/api/drivers/:id', async (req, res) => {
 app.delete('/api/drivers/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        // Unassign driver from any assigned orders first to satisfy foreign key constraints
         await supabase.from('orders').update({ driver_id: null }).eq('driver_id', id);
-        
         const { error } = await supabase.from('drivers').delete().eq('id', id);
         if (error) throw error;
-        res.json({ success: true });
+
+        // Clean meta
+        const meta = loadDriversMeta();
+        delete meta[String(id)];
+        saveDriversMeta(meta);
+
+        res.json({ success: true, id });
     } catch (error) {
         console.error('Error deleting driver:', error);
         res.status(500).json({ error: error.message });

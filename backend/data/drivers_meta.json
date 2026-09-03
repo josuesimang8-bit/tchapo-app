@@ -1,0 +1,16 @@
+{
+  "7": {
+    "approval_status": "Aprovado",
+    "is_online": false,
+    "last_seen_at": "2026-09-03T22:54:24.307Z",
+    "doc_type": "BI",
+    "doc_number": "",
+    "doc_photo_url": "",
+    "vehicle_type": "Mota",
+    "vehicle_plate": "",
+    "bairro": "Beira",
+    "pin": "1234",
+    "warnings": [],
+    "earnings_rate_per_delivery": 150
+  }
+}

@@ -1323,7 +1323,7 @@ async function deleteOrder(id) {
 // ── DRIVERS ──────────────────────────────────────────────────────────────
 async function loadDrivers() {
     try {
-        const res = await fetch('/api/drivers');
+        const res = await fetch('/api/drivers/admin/all');
         if (!res.ok) return;
         allDrivers = await res.json();
         renderDrivers();
@@ -1333,22 +1333,73 @@ async function loadDrivers() {
 function renderDrivers() {
     const el = document.getElementById('drivers-list');
     if (!allDrivers.length) { el.innerHTML = '<div class="empty">Nenhum motorista cadastrado.</div>'; return; }
-    el.innerHTML = allDrivers.map(d => `
-        <div class="driver-card">
-            <div class="driver-info">
-                <img class="driver-img" src="${d.photo_url||'https://via.placeholder.com/50'}" alt="${d.name}">
-                <div>
-                    <h4 style="margin:0;color:#111827;font-weight:600;">${d.name}</h4>
-                    <p style="margin:2px 0 0;color:#6b7280;font-size:0.8rem;">📲 ${d.phone||'—'}</p>
+    el.innerHTML = allDrivers.map(d => {
+        const isOnline = d.is_online;
+        const status = d.approval_status || 'Aprovado';
+        const isPending = status === 'Pendente';
+        const isSuspended = status === 'Suspenso';
+        
+        return `
+        <div class="driver-card" style="display:flex;flex-direction:column;gap:0.75rem;padding:1rem;background:#f8fafc;border-radius:12px;border:1px solid ${isOnline ? '#86efac' : '#e2e8f0'};margin-bottom:0.75rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div style="position:relative;">
+                        <img class="driver-img" src="${d.photo_url||'https://via.placeholder.com/50'}" alt="${d.name}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                        <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:${isOnline?'#22c55e':'#94a3b8'};border:2px solid #fff;"></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;align-items:center;gap:0.4rem;">
+                            <h4 style="margin:0;color:#111827;font-weight:700;font-size:0.95rem;">${d.name}</h4>
+                            <span style="font-size:0.7rem;font-weight:700;padding:0.1rem 0.4rem;border-radius:999px;background:${isPending?'#fef3c7':isSuspended?'#fee2e2':'#dcfce7'};color:${isPending?'#b45309':isSuspended?'#b91c1c':'#15803d'};">
+                                ${status}
+                            </span>
+                        </div>
+                        <p style="margin:2px 0 0;color:#6b7280;font-size:0.8rem;">
+                            📲 <a href="https://wa.me/${(d.phone||'').replace(/\D/g,'')}" target="_blank" style="color:#059669;text-decoration:none;font-weight:600;">${d.phone||'—'}</a>
+                            ${d.bairro ? ` • 📍 ${d.bairro}` : ''}
+                        </p>
+                    </div>
                 </div>
+                <span style="font-size:0.75rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:999px;background:${isOnline?'#dcfce7':'#f1f5f9'};color:${isOnline?'#15803d':'#64748b'};">
+                    ${isOnline ? '🟢 Online' : '⚪ Offline'}
+                </span>
             </div>
-            <div class="driver-actions">
-                <button class="${d.active ? 'btn-toggle-online':'btn-toggle-offline'}" onclick="toggleDriver(${d.id},${!d.active})">
-                    ${d.active ? 'Online 🟢':'Offline 🔴'}
-                </button>
-                <button class="btn-trash" onclick="deleteDriver(${d.id})" title="Remover">🗑️</button>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;background:#fff;padding:0.5rem 0.75rem;border-radius:8px;border:1px solid #e2e8f0;">
+                <div>🛵 ${d.vehicle_type||'Mota'} ${d.doc_number ? `• 📄 ${d.doc_type||'BI'}: <strong>${d.doc_number}</strong>` : ''}</div>
+                <div style="color:#059669;font-weight:700;">📦 ${d.delivery_count||0} entregas</div>
             </div>
-        </div>`).join('');
+
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+                ${isPending ? `
+                    <button style="background:#16a34a;color:#fff;border:none;padding:0.35rem 0.75rem;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;" onclick="approveDriver(${d.id},'Aprovado')">✅ Aprovar</button>
+                    <button style="background:#fee2e2;color:#991b1b;border:none;padding:0.35rem 0.75rem;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;" onclick="approveDriver(${d.id},'Recusado')">❌ Recusar</button>
+                ` : ''}
+                ${isSuspended ? `
+                    <button style="background:#dcfce7;color:#15803d;border:none;padding:0.35rem 0.75rem;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;" onclick="approveDriver(${d.id},'Aprovado')">✅ Reativar</button>
+                ` : `
+                    <button style="background:#fee2e2;color:#b91c1c;border:none;padding:0.35rem 0.75rem;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;" onclick="approveDriver(${d.id},'Suspenso')">🚫 Suspender</button>
+                `}
+                <button class="btn-trash" onclick="deleteDriver(${d.id})" title="Remover" style="padding:0.35rem 0.5rem;">🗑️</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function approveDriver(id, status) {
+    try {
+        const res = await fetch(`/api/drivers/${id}/approval`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approval_status: status })
+        });
+        if (res.ok) {
+            loadDrivers();
+            toast(status === 'Aprovado' ? '✅ Motorista aprovado!' : `Motorista marcado como ${status}`);
+        }
+    } catch (err) {
+        alert('Erro ao atualizar motorista: ' + err.message);
+    }
 }
 
 document.getElementById('form-add-driver').addEventListener('submit', async (e) => {

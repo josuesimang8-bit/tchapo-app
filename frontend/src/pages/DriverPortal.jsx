@@ -204,14 +204,28 @@ export default function DriverPortal() {
     };
 
     const handleLogout = () => {
-        if (authDriver && isOnline) {
-            handleToggleAvailability(false);
-        }
-        localStorage.removeItem('tchapo_driver_session');
+        try {
+            if (heartbeatRef.current) {
+                clearInterval(heartbeatRef.current);
+            }
+            if (authDriver?.id) {
+                fetch(`${API_URL}/api/drivers/${authDriver.id}/availability`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_online: false })
+                }).catch(() => {});
+            }
+        } catch (_) {}
+
+        try {
+            localStorage.removeItem('tchapo_driver_session');
+        } catch (_) {}
+
         setAuthDriver(null);
         setDashboardData(null);
         setIsOnline(false);
-        showToast('Sessão terminada.', 'info');
+        setActiveTab('dashboard');
+        showToast('Sessão terminada com sucesso.', 'info');
     };
 
     // Fetch Dashboard Data

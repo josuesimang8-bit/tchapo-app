@@ -349,7 +349,7 @@
         </button>
         <button class="nav-tab"        id="nav-drivers"  onclick="showTab('drivers')" style="display:inline-flex;align-items:center;gap:0.4rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-5a1 1 0 0 0-1 1v5h8V7a1 1 0 0 0-1-1z"/><path d="M9 17h6"/><path d="M12 12v5"/></svg>
-            <span>Motoristas</span>
+            <span>Entregadores</span>
         </button>
         <button class="nav-tab"        id="nav-products" onclick="showTab('products')" style="display:inline-flex;align-items:center;gap:0.4rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -393,7 +393,7 @@
                                 <th>Pagamento</th>
                                 <th>Total</th>
                                 <th>Hora / ⏱️ Entrega</th>
-                                <th>Designar Motorista</th>
+                                <th>Designar Entregador</th>
                                 <th>Status</th>
                                 <th>Ações</th>
                             </tr>
@@ -411,7 +411,7 @@
             <div class="cards-area">
                 <!-- Register Driver -->
                 <div class="card">
-                    <h3>👥 Registar Novo Motorista</h3>
+                    <h3>👥 Registar Novo Entregador</h3>
                     <form id="form-add-driver" style="display:flex;flex-direction:column;gap:1.25rem;">
                         <div class="form-field">
                             <label>Nome Completo</label>
@@ -425,12 +425,12 @@
                             <label>Foto de Perfil</label>
                             <input class="form-input" id="d-photo" type="file" accept="image/*" style="padding:0.4rem 0;">
                         </div>
-                        <button type="submit" class="btn-yellow" id="btn-add-driver">Adicionar Motorista</button>
+                        <button type="submit" class="btn-yellow" id="btn-add-driver">Adicionar Entregador</button>
                     </form>
                 </div>
                 <!-- Drivers List -->
                 <div class="card">
-                    <h3>🛵 Motoristas Registados</h3>
+                    <h3>🛵 Entregadores Registados</h3>
                     <div id="drivers-list" style="display:flex;flex-direction:column;gap:1rem;max-height:420px;overflow-y:auto;">
                         <div class="empty">⏳ A carregar...</div>
                     </div>
@@ -1035,7 +1035,7 @@ function tickTimers() {
 
         if (rem <= 0) {
             el.className = 'timer-lost';
-            el.innerHTML = '🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Motorista/Cliente</div>';
+            el.innerHTML = '🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Entregador/Cliente</div>';
         } else {
             const h = Math.floor(rem / 3600), m = Math.floor((rem % 3600)/60), s = Math.floor(rem % 60);
             const fmt = `${pad(h)}:${pad(m)}:${pad(s)}`;
@@ -1051,7 +1051,7 @@ const STATUS_COLORS = {
     'Pendente':      { bg:'#fef3c7', color:'#92400e' },
     'Processando':   { bg:'#dbeafe', color:'#1e40af' },
     'Preparando':    { bg:'#ede9fe', color:'#5b21b6' },
-    'Com Motorista': { bg:'#d1fae5', color:'#065f46' },
+    'Com Entregador': { bg:'#d1fae5', color:'#065f46' },
     'Entregue':      { bg:'#dcfce7', color:'#166534' },
     'Cancelado':     { bg:'#fee2e2', color:'#991b1b' },
     'Perdido':       { bg:'#fee2e2', color:'#991b1b' },
@@ -1170,7 +1170,7 @@ async function loadOrders() {
 }
 
 function renderStats() {
-    const statuses = ['Pendente','Processando','Preparando','Com Motorista','Entregue'];
+    const statuses = ['Pendente','Processando','Preparando','Com Entregador','Entregue'];
     const bar = document.getElementById('stats-bar');
     bar.innerHTML = statuses.map(s => {
         const cnt = allOrders.filter(o => o.status === s || (s==='Pendente' && !o.status)).length;
@@ -1211,7 +1211,7 @@ function renderOrders() {
         } else if (o.status === 'Cancelado') {
             timerHtml = `<div class="timer-lost">❌ Cancelado</div>`;
         } else if (o.status === 'Perdido' || remSecs <= 0) {
-            timerHtml = `<div class="timer-lost">🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Motorista/Cliente</div></div>`;
+            timerHtml = `<div class="timer-lost">🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Entregador/Cliente</div></div>`;
         } else {
             const h = Math.floor(remSecs / 3600), m = Math.floor((remSecs % 3600)/60), s = Math.floor(remSecs % 60);
             const fmt = `${pad(h)}:${pad(m)}:${pad(s)}`;
@@ -1245,7 +1245,7 @@ function renderOrders() {
             </td>
             <td>
                 <select class="driver-select" onchange="assignDriver(${o.id}, this.value)">
-                    <option value="">Nenhum Motorista</option>
+                    <option value="">Nenhum Entregador</option>
                     ${driverOpts}
                 </select>
             </td>
@@ -1255,7 +1255,7 @@ function renderOrders() {
                     <option value="Pendente">📋 Pendente</option>
                     <option value="Processando">🔄 Processando</option>
                     <option value="Preparando">📦 Preparando</option>
-                    <option value="Com Motorista">🛵 Com Motorista</option>
+                    <option value="Com Entregador">🛵 Com Entregador</option>
                     <option value="Entregue">✅ Entregue</option>
                     <option value="Perdido">🔴 Perdido (Multa 50%)</option>
                     <option value="Cancelado">❌ Cancelado</option>
@@ -1279,9 +1279,9 @@ function renderOrders() {
 }
 
 async function updateStatus(id, status) {
-    if (status === 'Com Motorista') {
+    if (status === 'Com Entregador') {
         const order = allOrders.find(o => o.id == id);
-        if (!order?.driver_id) { alert('Por favor, designe um motorista primeiro.'); return; }
+        if (!order?.driver_id) { alert('Por favor, designe um entregador primeiro.'); return; }
     }
     await fetch(`/api/orders/${id}/status`, {
         method:'PUT', headers:{'Content-Type':'application/json'},
@@ -1296,7 +1296,7 @@ async function assignDriver(orderId, driverId) {
         body: JSON.stringify({ driver_id: driverId ? parseInt(driverId) : null })
     });
     loadOrders();
-    toast('Motorista designado com sucesso!');
+    toast('Entregador designado com sucesso!');
 }
 
 function downloadPDF(id) { window.open(`/api/orders/${id}/pdf`, '_blank'); }
@@ -1332,7 +1332,7 @@ async function loadDrivers() {
 
 function renderDrivers() {
     const el = document.getElementById('drivers-list');
-    if (!allDrivers.length) { el.innerHTML = '<div class="empty">Nenhum motorista cadastrado.</div>'; return; }
+    if (!allDrivers.length) { el.innerHTML = '<div class="empty">Nenhum entregador cadastrado.</div>'; return; }
     el.innerHTML = allDrivers.map(d => {
         const isOnline = d.is_online;
         const status = d.approval_status || 'Aprovado';
@@ -1395,10 +1395,10 @@ async function approveDriver(id, status) {
         });
         if (res.ok) {
             loadDrivers();
-            toast(status === 'Aprovado' ? '✅ Motorista aprovado!' : `Motorista marcado como ${status}`);
+            toast(status === 'Aprovado' ? '✅ Entregador aprovado!' : `Entregador marcado como ${status}`);
         }
     } catch (err) {
-        alert('Erro ao atualizar motorista: ' + err.message);
+        alert('Erro ao atualizar entregador: ' + err.message);
     }
 }
 
@@ -1418,8 +1418,8 @@ document.getElementById('form-add-driver').addEventListener('submit', async (e) 
         body: JSON.stringify({ name: document.getElementById('d-name').value, phone: document.getElementById('d-phone').value, photo_url: photoUrl })
     });
     e.target.reset();
-    btn.textContent = 'Adicionar Motorista'; btn.disabled = false;
-    loadDrivers(); toast('Motorista adicionado com sucesso!');
+    btn.textContent = 'Adicionar Entregador'; btn.disabled = false;
+    loadDrivers(); toast('Entregador adicionado com sucesso!');
 });
 
 async function toggleDriver(id, active) {
@@ -1428,18 +1428,18 @@ async function toggleDriver(id, active) {
 }
 
 async function deleteDriver(id) {
-    if (!confirm('Tem a certeza de que deseja remover este motorista?')) return;
+    if (!confirm('Tem a certeza de que deseja remover este entregador?')) return;
     try {
         const res = await fetch(`/api/drivers/${id}`, { method:'DELETE' });
         if (!res.ok) {
             const data = await res.json();
-            throw new Error(data.error || 'Erro ao remover motorista');
+            throw new Error(data.error || 'Erro ao remover entregador');
         }
         loadDrivers();
         loadOrders();
-        toast('🗑️ Motorista removido com sucesso.');
+        toast('🗑️ Entregador removido com sucesso.');
     } catch (err) {
-        alert('Erro ao apagar motorista: ' + err.message);
+        alert('Erro ao apagar entregador: ' + err.message);
     }
 }
 

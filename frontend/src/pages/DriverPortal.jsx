@@ -395,7 +395,7 @@ export default function DriverPortal() {
             setIsRegisterModalOpen(false);
             showToast('Registo submetido com sucesso! A sua conta está pendente de aprovação.', 'success');
         } catch (err) {
-            showToast('Erro de conexão ao registar motorista.', 'error');
+            showToast('Erro de conexão ao registar entregador.', 'error');
         } finally {
             setRegLoading(false);
         }
@@ -466,8 +466,8 @@ export default function DriverPortal() {
         {
             id: '5k',
             target: 5000,
-            title: 'Camisa Oficial + Motorista Verificado',
-            desc: 'Camisa Oficial de Motorista Tchapo Tchapo + Selo de Verificação no Perfil.',
+            title: 'Camisa Oficial + Entregador Verificado',
+            desc: 'Camisa Oficial de Entregador Tchapo Tchapo + Selo de Verificação no Perfil.',
             icon: <Icons.ShirtReward />,
             badge: '5.000 MT',
             level: 'Nível 1'
@@ -565,7 +565,7 @@ export default function DriverPortal() {
                                     Tchapo Tchapo
                                 </div>
                                 <div style={{ color: '#f59e0b', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                    Portal do Motorista
+                                    Portal do Entregador
                                 </div>
                             </div>
                         </a>
@@ -615,7 +615,7 @@ export default function DriverPortal() {
                                     />
                                     <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>{authDriver.name}</span>
                                     {currentSales >= 5000 && (
-                                        <span title="Motorista Verificado" style={{ color: '#3b82f6', display: 'flex', alignItems: 'center' }}>
+                                        <span title="Entregador Verificado" style={{ color: '#3b82f6', display: 'flex', alignItems: 'center' }}>
                                             <Icons.BadgeCheck />
                                         </span>
                                     )}
@@ -679,7 +679,7 @@ export default function DriverPortal() {
                                     }}
                                 >
                                     <Icons.Plus />
-                                    <span>Cadastrar como Motorista</span>
+                                    <span>Cadastrar como Entregador</span>
                                 </button>
                             </>
                         )}
@@ -749,7 +749,7 @@ export default function DriverPortal() {
                                         }}
                                     >
                                         <Icons.Plus />
-                                        <span>Quero Ser Motorista Agora</span>
+                                        <span>Quero Ser Entregador Agora</span>
                                     </button>
                                     <button
                                         onClick={() => setIsLoginModalOpen(true)}
@@ -809,7 +809,7 @@ export default function DriverPortal() {
                                         <div style={{ color: '#f59e0b', display: 'flex', alignItems: 'center' }}><Icons.ShirtReward /></div>
                                         <div>
                                             <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>5.000 MT: Camisa Oficial + Verificado</div>
-                                            <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Camisa da marca + Selo de Motorista Verificado</div>
+                                            <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Camisa da marca + Selo de Entregador Verificado</div>
                                         </div>
                                     </div>
 
@@ -850,7 +850,7 @@ export default function DriverPortal() {
                                     Simples e Eficiente
                                 </span>
                                 <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.75rem' }}>
-                                    Como Funciona Ser Motorista Tchapo Tchapo
+                                    Como Funciona Ser Entregador Tchapo Tchapo
                                 </h2>
                                 <p style={{ fontSize: '1rem', color: '#64748b', margin: 0, lineHeight: 1.6 }}>
                                     A Tchapo Tchapo cuida de todo o trabalho pesado de vendas e marketing para garantir que você tenha entregas contínuas na Beira.
@@ -927,7 +927,7 @@ export default function DriverPortal() {
                                     marginBottom: '0.5rem'
                                 }}>
                                     <Icons.Trophy />
-                                    <span>Plano de Carreira do Motorista</span>
+                                    <span>Plano de Carreira do Entregador</span>
                                 </div>
                                 <h2 style={{ fontSize: '1.9rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.5rem' }}>
                                     Metas, Prêmios e Bónus Exclusivos
@@ -969,8 +969,8 @@ export default function DriverPortal() {
                                         Camisa Oficial + Selo Verificado
                                     </div>
                                     <ul style={{ paddingLeft: '1.2rem', color: '#475569', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
-                                        <li>Camisa Oficial de Motorista Tchapo Tchapo</li>
-                                        <li>Selo de Motorista Verificado no sistema</li>
+                                        <li>Camisa Oficial de Entregador Tchapo Tchapo</li>
+                                        <li>Selo de Entregador Verificado no sistema</li>
                                         <li>Prioridade na distribuição de pedidos da zona</li>
                                     </ul>
                                 </div>
@@ -1045,7 +1045,7 @@ export default function DriverPortal() {
                                     <ul style={{ paddingLeft: '1.2rem', color: '#475569', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
                                         <li>Placa de Reconhecimento Oficial de Honra gravada</li>
                                         <li>Super Bónus Especial de 5.000 MT em dinheiro</li>
-                                        <li>Destaque permanente como Motorista de Honra</li>
+                                        <li>Destaque permanente como Entregador de Honra</li>
                                     </ul>
                                 </div>
                             </div>
@@ -1082,7 +1082,7 @@ export default function DriverPortal() {
                             Conta em Análise
                         </h2>
                         <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 2rem' }}>
-                            Olá, <strong>{authDriver.name}</strong>! O seu cadastro de motorista foi recebido com sucesso e os seus documentos estão a ser analisados pela equipa da Tchapo Tchapo.
+                            Olá, <strong>{authDriver.name}</strong>! O seu cadastro de entregador foi recebido com sucesso e os seus documentos estão a ser analisados pela equipa da Tchapo Tchapo.
                         </p>
 
                         <div style={{
@@ -1365,8 +1365,8 @@ export default function DriverPortal() {
                                                             fontWeight: 700,
                                                             padding: '0.2rem 0.6rem',
                                                             borderRadius: '999px',
-                                                            background: order.status === 'Com Motorista' ? '#d1fae5' : '#dbeafe',
-                                                            color: order.status === 'Com Motorista' ? '#065f46' : '#1e40af'
+                                                            background: (order.status === 'Com Entregador' || order.status === 'Com Motorista') ? '#d1fae5' : '#dbeafe',
+                                                            color: (order.status === 'Com Entregador' || order.status === 'Com Motorista') ? '#065f46' : '#1e40af'
                                                         }}>
                                                             {order.status}
                                                         </span>
@@ -1385,7 +1385,7 @@ export default function DriverPortal() {
                                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                         {order.customer_phone && (
                                                             <a
-                                                                href={`https://wa.me/${String(order.customer_phone).replace(/\D/g, '')}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20motorista%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
+                                                                href={`https://wa.me/${String(order.customer_phone).replace(/\D/g, '')}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20entregador%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 style={{
@@ -1410,7 +1410,7 @@ export default function DriverPortal() {
 
                                                         {order.status === 'Processando' || order.status === 'Preparando' ? (
                                                             <button
-                                                                onClick={() => handleUpdateOrderStatus(order.id, 'Com Motorista')}
+                                                                onClick={() => handleUpdateOrderStatus(order.id, 'Com Entregador')}
                                                                 style={{
                                                                     flex: 1,
                                                                     background: '#2563eb',
@@ -1657,7 +1657,7 @@ export default function DriverPortal() {
                         {activeTab === 'profile' && (
                             <div style={{ background: '#fff', padding: '2rem', borderRadius: '20px', border: '1px solid #e2e8f0', maxWidth: '640px' }}>
                                 <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.2rem', fontWeight: 800 }}>
-                                    Dados do Motorista
+                                    Dados do Entregador
                                 </h3>
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.75rem' }}>
@@ -1670,12 +1670,12 @@ export default function DriverPortal() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                             <h4 style={{ margin: '0', fontSize: '1.15rem', fontWeight: 800 }}>{authDriver.name}</h4>
                                             {currentSales >= 5000 && (
-                                                <span title="Motorista Verificado" style={{ color: '#3b82f6', display: 'flex', alignItems: 'center' }}>
+                                                <span title="Entregador Verificado" style={{ color: '#3b82f6', display: 'flex', alignItems: 'center' }}>
                                                     <Icons.BadgeCheck />
                                                 </span>
                                             )}
                                         </div>
-                                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Motorista Oficial Tchapo Tchapo</div>
+                                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Entregador Oficial Tchapo Tchapo</div>
                                         <span style={{ display: 'inline-block', marginTop: '0.35rem', background: '#dcfce7', color: '#15803d', fontSize: '0.75rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
                                             Conta Aprovada
                                         </span>
@@ -1777,7 +1777,7 @@ export default function DriverPortal() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <div>
                                 <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#0f172a' }}>
-                                    Cadastrar como Motorista
+                                    Cadastrar como Entregador
                                 </h3>
                                 <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
                                     Preencha os seus dados para submeter à aprovação da equipa.
@@ -1958,7 +1958,7 @@ export default function DriverPortal() {
                                 }}
                             >
                                 <Icons.CheckCircle />
-                                <span>{regLoading ? 'A enviar registo...' : 'Submeter Cadastro de Motorista'}</span>
+                                <span>{regLoading ? 'A enviar registo...' : 'Submeter Cadastro de Entregador'}</span>
                             </button>
                         </form>
                     </div>
@@ -2111,7 +2111,7 @@ export default function DriverPortal() {
                         </button>
                         <img
                             src={docPreviewModal}
-                            alt="Documento do Motorista"
+                            alt="Documento do Entregador"
                             style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '14px', objectFit: 'contain', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}
                         />
                     </div>

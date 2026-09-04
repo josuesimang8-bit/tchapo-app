@@ -4,7 +4,7 @@ const STATUS_COLORS = {
     'Pendente':       { bg: '#fef3c7', color: '#92400e' },
     'Processando':    { bg: '#dbeafe', color: '#1e40af' },
     'Preparando':     { bg: '#ede9fe', color: '#5b21b6' },
-    'Com Motorista':  { bg: '#d1fae5', color: '#065f46' },
+    'Com Entregador':  { bg: '#d1fae5', color: '#065f46' },
     'Entregue':       { bg: '#dcfce7', color: '#166534' },
     'Cancelado':      { bg: '#fee2e2', color: '#991b1b' },
     'Perdido':        { bg: '#fee2e2', color: '#991b1b' },
@@ -308,7 +308,7 @@ export default function Admin() {
             const data = await res.json();
             setDrivers(data);
         } catch (err) {
-            console.error('Erro ao buscar motoristas:', err);
+            console.error('Erro ao buscar entregadores:', err);
         }
     }, []);
 
@@ -623,10 +623,10 @@ export default function Admin() {
     };
 
     const updateStatus = async (id, status) => {
-        if (status === 'Com Motorista') {
+        if ((status === 'Com Entregador' || status === 'Com Motorista')) {
             const order = orders.find(o => o.id === id);
             if (!order || !order.driver_id) {
-                alert('Por favor, designe um motorista para este pedido primeiro.');
+                alert('Por favor, designe um entregador para este pedido primeiro.');
                 return;
             }
         }
@@ -650,10 +650,10 @@ export default function Admin() {
                 body: JSON.stringify({ driver_id: driverId ? parseInt(driverId) : null })
             });
             fetchOrders();
-            setToast('Motorista designado com sucesso!');
+            setToast('Entregador designado com sucesso!');
             setTimeout(() => setToast(null), 3000);
         } catch (err) {
-            console.error('Erro ao designar motorista:', err);
+            console.error('Erro ao designar entregador:', err);
         }
     };
 
@@ -666,7 +666,7 @@ export default function Admin() {
                 body: JSON.stringify({ approval_status: status })
             });
             if (res.ok) {
-                setToast(status === 'Aprovado' ? '✅ Motorista aprovado com sucesso!' : `Motorista marcado como ${status}`);
+                setToast(status === 'Aprovado' ? '✅ Entregador aprovado com sucesso!' : `Entregador marcado como ${status}`);
                 setTimeout(() => setToast(null), 3000);
                 fetchDrivers();
             } else {
@@ -674,8 +674,8 @@ export default function Admin() {
                 alert('Erro ao atualizar aprovação: ' + (data.error || 'Falha na operação'));
             }
         } catch (err) {
-            console.error('Erro ao aprovar motorista:', err);
-            alert('Erro ao aprovar motorista: ' + err.message);
+            console.error('Erro ao aprovar entregador:', err);
+            alert('Erro ao aprovar entregador: ' + err.message);
         }
     };
 
@@ -752,7 +752,7 @@ export default function Admin() {
                     photoUrl = uploadData.photo_url;
                 }
             } catch (err) {
-                console.error('Erro ao carregar foto do motorista:', err);
+                console.error('Erro ao carregar foto do entregador:', err);
             }
         }
 
@@ -776,11 +776,11 @@ export default function Admin() {
                 if (fileInput) fileInput.value = '';
 
                 fetchDrivers();
-                setToast('Motorista adicionado com sucesso!');
+                setToast('Entregador adicionado com sucesso!');
                 setTimeout(() => setToast(null), 3000);
             }
         } catch (err) {
-            console.error('Erro ao registar motorista:', err);
+            console.error('Erro ao registar entregador:', err);
         } finally {
             setUploading(false);
         }
@@ -797,12 +797,12 @@ export default function Admin() {
                 fetchDrivers();
             }
         } catch (err) {
-            console.error('Erro ao atualizar estado do motorista:', err);
+            console.error('Erro ao atualizar estado do entregador:', err);
         }
     };
 
     const handleDeleteDriver = async (id) => {
-        if (!confirm('Deseja realmente remover este motorista?')) return;
+        if (!confirm('Deseja realmente remover este entregador?')) return;
         try {
             const res = await fetch(import.meta.env.VITE_API_URL + `/api/drivers/${id}`, {
                 method: 'DELETE'
@@ -810,15 +810,15 @@ export default function Admin() {
             if (res.ok) {
                 fetchDrivers();
                 fetchOrders();
-                setToast('🗑️ Motorista removido com sucesso.');
+                setToast('🗑️ Entregador removido com sucesso.');
                 setTimeout(() => setToast(null), 3000);
             } else {
                 const data = await res.json();
-                alert('Erro ao remover motorista: ' + (data.error || 'Falha na operação'));
+                alert('Erro ao remover entregador: ' + (data.error || 'Falha na operação'));
             }
         } catch (err) {
-            console.error('Erro ao remover motorista:', err);
-            alert('Erro ao remover motorista: ' + err.message);
+            console.error('Erro ao remover entregador:', err);
+            alert('Erro ao remover entregador: ' + err.message);
         }
     };
 
@@ -1200,7 +1200,7 @@ export default function Admin() {
                     }}
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-5a1 1 0 0 0-1 1v5h8V7a1 1 0 0 0-1-1z"/><path d="M9 17h6"/><path d="M12 12v5"/></svg>
-                    Motoristas
+                    Entregadores
                 </button>
                 <button
                     onClick={() => setActiveTab('products')}
@@ -1281,7 +1281,7 @@ export default function Admin() {
                         display: 'flex', gap: '1rem', padding: '1.5rem 2rem',
                         flexWrap: 'wrap'
                     }}>
-                        {['Pendente', 'Processando', 'Preparando', 'Com Motorista', 'Entregue'].map(s => {
+                        {['Pendente', 'Processando', 'Preparando', 'Com Entregador', 'Com Motorista', 'Entregue'].map(s => {
                             const count = orders.filter(o => o.status === s || (s === 'Pendente' && !o.status)).length;
                             const style = STATUS_COLORS[s] || STATUS_COLORS['Pendente'];
                             return (
@@ -1320,7 +1320,7 @@ export default function Admin() {
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Pagamento</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Total</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>⏱️ Temporizador (4h)</th>
-                                        <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Designar Motorista</th>
+                                        <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Designar Entregador</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Status</th>
                                         <th style={{ padding: '1rem 1.25rem', textAlign: 'left', fontWeight: 600 }}>Ações</th>
                                     </tr>
@@ -1421,7 +1421,7 @@ export default function Admin() {
                                                             return (
                                                                 <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', fontSize: '0.78rem', fontWeight: 700 }}>
                                                                     🔴 PERDIDO (Expirado 4h)
-                                                                    <div style={{ fontSize: '0.7rem', fontWeight: 500, marginTop: '2px' }}>Pagar 50% ao Motorista/Cliente</div>
+                                                                    <div style={{ fontSize: '0.7rem', fontWeight: 500, marginTop: '2px' }}>Pagar 50% ao Entregador/Cliente</div>
                                                                 </div>
                                                             );
                                                         }
@@ -1456,7 +1456,7 @@ export default function Admin() {
                                                             fontSize: '0.85rem', cursor: 'pointer', outline: 'none'
                                                         }}
                                                     >
-                                                        <option value="">Nenhum Motorista</option>
+                                                        <option value="">Nenhum Entregador</option>
                                                         {drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status).map(d => (
                                                             <option key={d.id} value={d.id}>
                                                                 {d.is_online ? '🟢' : '⚪'} {d.name} {d.vehicle_type ? `(${d.vehicle_type})` : ''}
@@ -1478,7 +1478,7 @@ export default function Admin() {
                                                         <option value="Pendente">📋 Pendente</option>
                                                         <option value="Processando">🔄 Processando</option>
                                                         <option value="Preparando">📦 Preparando</option>
-                                                        <option value="Com Motorista">🛵 Com Motorista</option>
+                                                        <option value="Com Entregador">🛵 Com Entregador</option>
                                                         <option value="Entregue">✅ Entregue</option>
                                                         <option value="Perdido">🔴 Perdido (Multa 50%)</option>
                                                         <option value="Cancelado">❌ Cancelado</option>
@@ -1539,7 +1539,7 @@ export default function Admin() {
                         marginBottom: '2rem'
                     }}>
                         <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
-                            <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>🛵 Total de Motoristas</div>
+                            <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>🛵 Total de Entregadores</div>
                             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', marginTop: '0.4rem' }}>{drivers.length}</div>
                         </div>
                         <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
@@ -1721,7 +1721,7 @@ export default function Admin() {
                         <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                                 <h3 style={{ margin: 0, color: '#111827', fontSize: '1.15rem', fontWeight: 800 }}>
-                                    🛵 Frota de Motoristas
+                                    🛵 Frota de Entregadores
                                 </h3>
                                 <button
                                     onClick={fetchDrivers}
@@ -1919,7 +1919,7 @@ export default function Admin() {
                                                     <button
                                                         onClick={() => handleDeleteDriver(d.id)}
                                                         style={{ padding: '0.45rem 0.75rem', background: '#f1f5f9', color: '#ef4444', border: 'none', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer' }}
-                                                        title="Remover motorista permanentemente"
+                                                        title="Remover entregador permanentemente"
                                                     >
                                                         🗑️
                                                     </button>
@@ -1929,7 +1929,7 @@ export default function Admin() {
                                     })}
                                 {drivers.length === 0 && (
                                     <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-                                        Nenhum motorista registado na plataforma.
+                                        Nenhum entregador registado na plataforma.
                                     </div>
                                 )}
                             </div>
@@ -1938,7 +1938,7 @@ export default function Admin() {
                         {/* Register Driver Card */}
                         <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
                             <h3 style={{ margin: '0 0 1.5rem', color: '#111827', fontSize: '1.2rem', fontWeight: 800 }}>
-                                👤 Registar Novo Motorista
+                                👤 Registar Novo Entregador
                             </h3>
                             <form onSubmit={handleAddDriver} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                                 <div>
@@ -2052,7 +2052,7 @@ export default function Admin() {
                                     fontWeight: 700, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center',
                                     transition: 'background 0.2s', opacity: uploading ? 0.7 : 1, fontSize: '0.95rem'
                                 }}>
-                                    {uploading ? 'A enviar dados...' : '➕ Cadastrar e Aprovar Motorista'}
+                                    {uploading ? 'A enviar dados...' : '➕ Cadastrar e Aprovar Entregador'}
                                 </button>
                             </form>
                         </div>
@@ -3607,11 +3607,11 @@ export default function Admin() {
                         </button>
                         <img
                             src={docPreviewUrl}
-                            alt="Documento do Motorista"
+                            alt="Documento do Entregador"
                             style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)', objectFit: 'contain' }}
                         />
                         <div style={{ color: '#fff', marginTop: '1rem', fontSize: '0.9rem', fontWeight: 600 }}>
-                            Documento de Identificação do Motorista
+                            Documento de Identificação do Entregador
                         </div>
                     </div>
                 </div>

@@ -799,8 +799,8 @@ app.put('/api/orders/:id/status', async (req, res) => {
                 
             if (currentOrder) {
                 const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente';
-                const wasActive = ['Processando', 'Preparando', 'Com Motorista'].includes(currentOrder.status);
-                const isNowActive = ['Processando', 'Preparando', 'Com Motorista'].includes(status);
+                const wasActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(currentOrder.status);
+                const isNowActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(status);
                 const isNowPendente = status === 'Pendente';
                 const createdDate = new Date(currentOrder.created_at);
                 const createdMs = createdDate.getTime();
@@ -980,7 +980,7 @@ app.get('/api/drivers/admin/all', async (req, res) => {
             const isOnline = meta.is_online && meta.last_seen_at && new Date(meta.last_seen_at).getTime() > tenMinsAgo;
             const driverOrders = (orders || []).filter(o => o.driver_id === d.id);
             const deliveredOrders = driverOrders.filter(o => o.status === 'Entregue');
-            const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista'].includes(o.status));
+            const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(o.status));
             const totalEarnings = deliveredOrders.length * (meta.earnings_rate_per_delivery || 150);
 
             return {
@@ -1064,8 +1064,8 @@ app.post('/api/drivers/register', upload.fields([
         // Send instant Ntfy alert to Admin about new driver signup
         try {
             sendNtfyAlert({
-                title: '🛵 Novo Cadastro de Motorista!',
-                message: `${name} cadastrou-se como motorista (${vehicle_type || 'Mota'} - ${bairro || 'Beira'}). Documento: ${doc_type || 'BI'} ${doc_number || ''}. Aguarda aprovação.`
+                title: '🛵 Novo Cadastro de Entregador!',
+                message: `${name} cadastrou-se como entregador (${vehicle_type || 'Mota'} - ${bairro || 'Beira'}). Documento: ${doc_type || 'BI'} ${doc_number || ''}. Aguarda aprovação.`
             });
         } catch (_) {}
 
@@ -1099,7 +1099,7 @@ app.post('/api/drivers/login', async (req, res) => {
         const driver = (drivers || []).find(d => normalizeDriverPhone(d.phone) === inputNormalized);
 
         if (!driver) {
-            return res.status(404).json({ error: 'Nenhum motorista encontrado com este número de telefone.' });
+            return res.status(404).json({ error: 'Nenhum entregador encontrado com este número de telefone.' });
         }
 
         const meta = getDriverMeta(driver.id);
@@ -1136,7 +1136,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             .single();
 
         if (driverErr || !driver) {
-            return res.status(404).json({ error: 'Motorista não encontrado.' });
+            return res.status(404).json({ error: 'Entregador não encontrado.' });
         }
 
         const meta = getDriverMeta(numId);
@@ -1150,7 +1150,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
 
         const driverOrders = orders || [];
         const delivered = driverOrders.filter(o => o.status === 'Entregue');
-        const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista'].includes(o.status));
+        const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(o.status));
 
         // Date calculations
         const todayStr = new Date().toISOString().slice(0, 10);

@@ -16,8 +16,43 @@ const Icons = {
         </svg>
     ),
     ShirtReward: () => (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+        </svg>
+    ),
+    Helmet: () => (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 14a8 8 0 0 1 16 0v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2z"/>
+            <path d="M4 14h16"/>
+            <path d="M12 6v4"/>
+        </svg>
+    ),
+    Plaque: () => (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <path d="M8 7h8"/>
+            <path d="M8 11h8"/>
+            <path d="M10 15h4"/>
+            <circle cx="12" cy="12" r="1"/>
+        </svg>
+    ),
+    BadgeCheck: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76z"/>
+            <path d="m9 12 2 2 4-4"/>
+        </svg>
+    ),
+    Gift: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="8" width="18" height="4" rx="1"/>
+            <path d="M12 8v13"/>
+            <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/>
+            <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>
+        </svg>
+    ),
+    Navigation: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
         </svg>
     ),
     Trophy: () => (
@@ -74,23 +109,9 @@ const Icons = {
             <circle cx="12" cy="7" r="4"/>
         </svg>
     ),
-    Phone: () => (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-        </svg>
-    ),
     WhatsApp: () => (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M17.472 14.382c-.301-.15-1.78-.878-2.056-.979-.276-.1-.476-.15-.676.15-.2.301-.777.979-.953 1.18-.175.2-.35.225-.651.075-.3-.15-1.267-.467-2.414-1.49-.893-.797-1.496-1.781-1.672-2.082-.175-.3-.019-.462.132-.612.135-.135.301-.35.451-.526.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525s-.676-1.63-.927-2.234c-.244-.588-.493-.508-.676-.518l-.576-.01c-.2 0-.526.075-.801.375-.276.3-1.053 1.03-1.053 2.51 0 1.48 1.078 2.91 1.229 3.11.15.2 2.122 3.24 5.14 4.542.718.31 1.28.495 1.718.634.723.23 1.38.197 1.9.12.58-.087 1.78-.727 2.03-1.43.25-.703.25-1.306.175-1.43-.075-.125-.276-.2-.576-.35zM12.04 2C6.544 2 2.08 6.463 2.08 11.96c0 1.758.459 3.473 1.332 4.987L2 22l5.2-1.364c1.458.795 3.1 1.214 4.84 1.214 5.496 0 9.96-4.463 9.96-9.96S17.536 2 12.04 2zm0 18.232c-1.547 0-3.064-.416-4.388-1.203l-.315-.187-3.257.854.87-3.175-.205-.327a8.212 8.212 0 0 1-1.26-4.304c0-4.548 3.702-8.25 8.25-8.25 4.548 0 8.25 3.702 8.25 8.25 0 4.548-3.702 8.25-8.25 8.25z"/>
-        </svg>
-    ),
-    FileText: () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <line x1="10" y1="9" x2="8" y2="9"/>
         </svg>
     ),
     LogOut: () => (
@@ -117,12 +138,6 @@ const Icons = {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             <path d="m9 12 2 2 4-4"/>
-        </svg>
-    ),
-    Eye: () => (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-            <circle cx="12" cy="12" r="3"/>
         </svg>
     ),
     Close: () => (
@@ -437,22 +452,45 @@ export default function DriverPortal() {
         today_deliveries: 0,
         total_deliveries: 0,
         active_deliveries: 0,
-        total_sales: 0,
-        sales_target: 5000,
-        reward_unlocked: false,
-        reward_progress: 0
+        total_sales: 0
     };
 
     const activeOrders = dashboardData?.active_orders || [];
     const recentDeliveries = dashboardData?.recent_deliveries || [];
     const warnings = dashboardData?.warnings || authDriver?.warnings || [];
 
-    // Calculate Shirt Reward Progress
-    const totalSales = stats.total_sales || (stats.total_deliveries * 150);
-    const targetSales = 5000;
-    const progressPercent = Math.min(100, Math.round((totalSales / targetSales) * 100));
-    const isShirtUnlocked = totalSales >= targetSales;
-    const remainingToShirt = Math.max(0, targetSales - totalSales);
+    // Milestone calculations: 5k (Camisa + Verificado), 20k (Capacete + Mochila + 1.000 MT), 100k (Placa de Ouro + 5.000 MT)
+    const currentSales = stats.total_sales || (stats.total_deliveries * 150);
+
+    const rewards = [
+        {
+            id: '5k',
+            target: 5000,
+            title: 'Camisa Oficial + Motorista Verificado',
+            desc: 'Camisa Oficial de Motorista Tchapo Tchapo + Selo de Verificação no Perfil.',
+            icon: <Icons.ShirtReward />,
+            badge: '5.000 MT',
+            level: 'Nível 1'
+        },
+        {
+            id: '20k',
+            target: 20000,
+            title: 'Capacete de Segurança + Mochila Térmica + Bónus 1.000 MT',
+            desc: 'Capacete Oficial Tchapo Tchapo + Mochila Térmica de Entregas Impermeável + Bónus em dinheiro.',
+            icon: <Icons.Helmet />,
+            badge: '20.000 MT',
+            level: 'Nível 2'
+        },
+        {
+            id: '100k',
+            target: 100000,
+            title: 'Placa Oficial de Ouro + Super Bónus 5.000 MT',
+            desc: 'Placa de Reconhecimento Oficial de Ouro gravada com o seu nome + Bónus de 5.000 MT.',
+            icon: <Icons.Plaque />,
+            badge: '100.000 MT',
+            level: 'Nível Lendário'
+        }
+    ];
 
     return (
         <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', fontFamily: "'Inter', -apple-system, sans-serif" }}>
@@ -576,6 +614,11 @@ export default function DriverPortal() {
                                         style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', background: '#374151' }}
                                     />
                                     <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>{authDriver.name}</span>
+                                    {currentSales >= 5000 && (
+                                        <span title="Motorista Verificado" style={{ color: '#3b82f6', display: 'flex', alignItems: 'center' }}>
+                                            <Icons.BadgeCheck />
+                                        </span>
+                                    )}
                                 </div>
 
                                 <button
@@ -652,16 +695,16 @@ export default function DriverPortal() {
                     <div>
                         {/* Hero Card */}
                         <div style={{
-                            background: 'linear-gradient(135deg, #111827 0%, #1e293b 100%)',
+                            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
                             borderRadius: '24px',
-                            padding: '3rem 2rem',
+                            padding: '3rem 2.25rem',
                             color: '#fff',
                             marginBottom: '2.5rem',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                            boxShadow: '0 20px 40px rgba(0,0,0,0.14)',
                             border: '1px solid #334151',
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                            gap: '2rem',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                            gap: '2.5rem',
                             alignItems: 'center'
                         }}>
                             <div>
@@ -671,21 +714,21 @@ export default function DriverPortal() {
                                     gap: '0.5rem',
                                     background: 'rgba(245, 158, 11, 0.15)',
                                     color: '#f59e0b',
-                                    padding: '0.4rem 0.9rem',
+                                    padding: '0.45rem 1rem',
                                     borderRadius: '999px',
-                                    fontSize: '0.8rem',
+                                    fontSize: '0.82rem',
                                     fontWeight: 700,
-                                    marginBottom: '1rem',
+                                    marginBottom: '1.25rem',
                                     border: '1px solid rgba(245, 158, 11, 0.3)'
                                 }}>
-                                    <Icons.Bike />
-                                    <span>Equipa Oficial de Motoristas</span>
+                                    <Icons.Navigation />
+                                    <span>Clientes Prontos Fornecidos Pela Tchapo Tchapo</span>
                                 </div>
-                                <h1 style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1.15, margin: '0 0 1rem', color: '#fff' }}>
-                                    Faça Entregas com a <span style={{ color: '#f59e0b' }}>Tchapo Tchapo</span>
+                                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1.15, margin: '0 0 1.15rem', color: '#fff' }}>
+                                    A Tchapo Tchapo Fornece <span style={{ color: '#f59e0b' }}>Clientes Para Si</span>
                                 </h1>
                                 <p style={{ fontSize: '1.05rem', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 2rem' }}>
-                                    Trabalhe com horários flexíveis na Beira, receba ganhos rápidos por entrega e conquiste a Camisa Oficial exclusiva da Tchapo Tchapo.
+                                    Não precisa de procurar clientes ou esperar na rua. As encomendas da loja online são direcionadas diretamente para o seu telemóvel na Beira. Ganhe muito dinheiro por entrega e conquiste bónus e prêmios incríveis!
                                 </p>
                                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                     <button
@@ -694,7 +737,7 @@ export default function DriverPortal() {
                                             background: '#f59e0b',
                                             color: '#111827',
                                             border: 'none',
-                                            padding: '0.9rem 1.8rem',
+                                            padding: '0.95rem 1.85rem',
                                             borderRadius: '12px',
                                             fontSize: '1rem',
                                             fontWeight: 800,
@@ -706,15 +749,15 @@ export default function DriverPortal() {
                                         }}
                                     >
                                         <Icons.Plus />
-                                        <span>Quero ser Motorista</span>
+                                        <span>Quero Ser Motorista Agora</span>
                                     </button>
                                     <button
                                         onClick={() => setIsLoginModalOpen(true)}
                                         style={{
-                                            background: 'rgba(255, 255, 255, 0.1)',
+                                            background: 'rgba(255, 255, 255, 0.08)',
                                             color: '#fff',
                                             border: '1px solid #475569',
-                                            padding: '0.9rem 1.8rem',
+                                            padding: '0.95rem 1.85rem',
                                             borderRadius: '12px',
                                             fontSize: '1rem',
                                             fontWeight: 700,
@@ -725,23 +768,23 @@ export default function DriverPortal() {
                                         }}
                                     >
                                         <Icons.LogIn />
-                                        <span>Aceder ao Meu Painel</span>
+                                        <span>Já Tenho Conta / Entrar</span>
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Reward Highlight Box */}
+                            {/* Reward Showcase Box */}
                             <div style={{
-                                background: 'rgba(255, 255, 255, 0.05)',
+                                background: 'rgba(255, 255, 255, 0.04)',
                                 borderRadius: '20px',
                                 padding: '1.75rem',
                                 border: '1.5px solid rgba(245, 158, 11, 0.3)',
                                 backdropFilter: 'blur(8px)'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
                                     <div style={{
-                                        width: '42px',
-                                        height: '42px',
+                                        width: '44px',
+                                        height: '44px',
                                         borderRadius: '12px',
                                         background: '#f59e0b',
                                         color: '#111827',
@@ -749,56 +792,262 @@ export default function DriverPortal() {
                                         alignItems: 'center',
                                         justifyContent: 'center'
                                     }}>
-                                        <Icons.ShirtReward />
+                                        <Icons.Gift />
                                     </div>
                                     <div>
-                                        <div style={{ fontSize: '0.8rem', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase' }}>
-                                            Prémio de Reconhecimento
+                                        <div style={{ fontSize: '0.78rem', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase' }}>
+                                            Carreira & Reconhecimento
                                         </div>
                                         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff' }}>
-                                            Camisa Oficial do Motorista
+                                            Prêmios & Bónus Incríveis
                                         </div>
                                     </div>
                                 </div>
-                                <p style={{ fontSize: '0.9rem', color: '#cbd5e1', lineHeight: 1.5, margin: '0 0 1.25rem' }}>
-                                    Ao atingir <strong>5.000 MT em vendas e entregas</strong> com a Tchapo Tchapo, você ganha gratuitamente a Camisa Oficial de Motorista.
-                                </p>
-                                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.85rem', borderRadius: '10px', border: '1px solid #334151', fontSize: '0.82rem', color: '#94a3b8' }}>
-                                    Processo de entrada transparente: cadastre com o seu <strong>BI</strong> ou <strong>Carta de Condução</strong>, aguarde a aprovação do administrador e comece a rodar.
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(0,0,0,0.35)', padding: '0.85rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                        <div style={{ color: '#f59e0b', display: 'flex', alignItems: 'center' }}><Icons.ShirtReward /></div>
+                                        <div>
+                                            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>5.000 MT: Camisa Oficial + Verificado</div>
+                                            <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Camisa da marca + Selo de Motorista Verificado</div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(0,0,0,0.35)', padding: '0.85rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                        <div style={{ color: '#38bdf8', display: 'flex', alignItems: 'center' }}><Icons.Helmet /></div>
+                                        <div>
+                                            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>20.000 MT: Capacete + Mochila + Bónus</div>
+                                            <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Capacete Oficial + Mochila Térmica + 1.000 MT Bónus</div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(0,0,0,0.35)', padding: '0.85rem', borderRadius: '12px', border: '1px solid rgba(245,158,11,0.2)' }}>
+                                        <div style={{ color: '#fbbf24', display: 'flex', alignItems: 'center' }}><Icons.Plaque /></div>
+                                        <div>
+                                            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fbbf24' }}>100.000 MT: Placa de Ouro + 5.000 MT</div>
+                                            <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Placa de Reconhecimento Oficial + Super Bónus em Dinheiro</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Benefits Grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
-                            <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-                                    <Icons.Wallet />
-                                </div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem' }}>Ganhos por Entrega</h3>
-                                <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                                    Receba a sua taxa de entrega de forma garantida e visualize o seu faturamento diário e semanal no painel.
+                        {/* SECTION: Como Funciona na Prática */}
+                        <div style={{ marginBottom: '3.5rem' }}>
+                            <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 2.5rem' }}>
+                                <span style={{
+                                    background: '#fef3c7',
+                                    color: '#b45309',
+                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.8px',
+                                    padding: '0.35rem 0.85rem',
+                                    borderRadius: '999px',
+                                    display: 'inline-block',
+                                    marginBottom: '0.6rem'
+                                }}>
+                                    Simples e Eficiente
+                                </span>
+                                <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.75rem' }}>
+                                    Como Funciona Ser Motorista Tchapo Tchapo
+                                </h2>
+                                <p style={{ fontSize: '1rem', color: '#64748b', margin: 0, lineHeight: 1.6 }}>
+                                    A Tchapo Tchapo cuida de todo o trabalho pesado de vendas e marketing para garantir que você tenha entregas contínuas na Beira.
                                 </p>
                             </div>
 
-                            <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-                                    <Icons.TrendingUp />
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+                                <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', fontWeight: 900, fontSize: '1.2rem' }}>
+                                        1
+                                    </div>
+                                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#0f172a' }}>
+                                        Registo e Documentos
+                                    </h3>
+                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
+                                        Inscreva-se em menos de 2 minutos enviando o seu BI ou Carta de Condução e foto. A administração valida e aprova a sua conta.
+                                    </p>
                                 </div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem' }}>Controlo de Disponibilidade</h3>
-                                <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                                    Ligue e desligue o botão Online quando estiver pronto para aceitar novos pedidos em tempo real.
+
+                                <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', fontWeight: 900, fontSize: '1.2rem' }}>
+                                        2
+                                    </div>
+                                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#0f172a' }}>
+                                        Ligue o Botão Online
+                                    </h3>
+                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
+                                        Você decide quando rodar. Basta clicar no alternador Online no seu painel para sinalizar à central que está disponível para pedidos.
+                                    </p>
+                                </div>
+
+                                <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', fontWeight: 900, fontSize: '1.2rem' }}>
+                                        3
+                                    </div>
+                                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#0f172a' }}>
+                                        Clientes Fornecidos
+                                    </h3>
+                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
+                                        Os pedidos chegam com endereço, valor total e botão de WhatsApp direto para o cliente com mensagem pronta. Sem complicações.
+                                    </p>
+                                </div>
+
+                                <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', fontWeight: 900, fontSize: '1.2rem' }}>
+                                        4
+                                    </div>
+                                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#0f172a' }}>
+                                        Entregue e Ganhe Prêmios
+                                    </h3>
+                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
+                                        Receba os seus ganhos por entrega e acumule volume de vendas para desbloquear a Camisa Oficial (5k), Capacete (20k) e Placa de Ouro (100k).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* SECTION: Tabela de Prêmios e Bónus Incríveis */}
+                        <div style={{
+                            background: '#fff',
+                            borderRadius: '24px',
+                            padding: '2.5rem 2rem',
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.04)'
+                        }}>
+                            <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 2.5rem' }}>
+                                <div style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    color: '#d97706',
+                                    fontWeight: 800,
+                                    fontSize: '0.85rem',
+                                    marginBottom: '0.5rem'
+                                }}>
+                                    <Icons.Trophy />
+                                    <span>Plano de Carreira do Motorista</span>
+                                </div>
+                                <h2 style={{ fontSize: '1.9rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.5rem' }}>
+                                    Metas, Prêmios e Bónus Exclusivos
+                                </h2>
+                                <p style={{ fontSize: '0.95rem', color: '#64748b', margin: 0 }}>
+                                    Reconhecemos e premiamos o seu esforço com equipamentos de primeira linha e gratificações em dinheiro real.
                                 </p>
                             </div>
 
-                            <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-                                    <Icons.ShieldCheck />
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.75rem' }}>
+                                {/* 5K */}
+                                <div style={{
+                                    borderRadius: '20px',
+                                    padding: '2rem',
+                                    border: '2px solid #fde68a',
+                                    background: 'linear-gradient(180deg, #fffbeb 0%, #fff 100%)',
+                                    position: 'relative'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: '1.5rem',
+                                        right: '1.5rem',
+                                        background: '#fef3c7',
+                                        color: '#b45309',
+                                        fontWeight: 800,
+                                        fontSize: '0.78rem',
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '999px'
+                                    }}>
+                                        5.000 MT
+                                    </span>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#f59e0b', color: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                                        <Icons.ShirtReward />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.5rem' }}>
+                                        Nível 1 • Bronze
+                                    </h3>
+                                    <div style={{ fontWeight: 700, color: '#d97706', fontSize: '0.95rem', marginBottom: '0.75rem' }}>
+                                        Camisa Oficial + Selo Verificado
+                                    </div>
+                                    <ul style={{ paddingLeft: '1.2rem', color: '#475569', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
+                                        <li>Camisa Oficial de Motorista Tchapo Tchapo</li>
+                                        <li>Selo de Motorista Verificado no sistema</li>
+                                        <li>Prioridade na distribuição de pedidos da zona</li>
+                                    </ul>
                                 </div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem' }}>Registo Seguro</h3>
-                                <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                                    Documentação validada pelo administrador com proteção dos dados do motorista e dos clientes.
-                                </p>
+
+                                {/* 20K */}
+                                <div style={{
+                                    borderRadius: '20px',
+                                    padding: '2rem',
+                                    border: '2px solid #bae6fd',
+                                    background: 'linear-gradient(180deg, #f0f9ff 0%, #fff 100%)',
+                                    position: 'relative'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: '1.5rem',
+                                        right: '1.5rem',
+                                        background: '#e0f2fe',
+                                        color: '#0369a1',
+                                        fontWeight: 800,
+                                        fontSize: '0.78rem',
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '999px'
+                                    }}>
+                                        20.000 MT
+                                    </span>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#0284c7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                                        <Icons.Helmet />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.5rem' }}>
+                                        Nível 2 • Prata
+                                    </h3>
+                                    <div style={{ fontWeight: 700, color: '#0284c7', fontSize: '0.95rem', marginBottom: '0.75rem' }}>
+                                        Capacete + Mochila + Bónus 1.000 MT
+                                    </div>
+                                    <ul style={{ paddingLeft: '1.2rem', color: '#475569', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
+                                        <li>Capacete de Segurança Oficial Tchapo Tchapo</li>
+                                        <li>Mochila Térmica de Entregas Impermeável</li>
+                                        <li>Bónus direto em dinheiro de 1.000 MT</li>
+                                    </ul>
+                                </div>
+
+                                {/* 100K */}
+                                <div style={{
+                                    borderRadius: '20px',
+                                    padding: '2rem',
+                                    border: '2px solid #fef08a',
+                                    background: 'linear-gradient(180deg, #fefce8 0%, #fff 100%)',
+                                    position: 'relative'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: '1.5rem',
+                                        right: '1.5rem',
+                                        background: '#fef08a',
+                                        color: '#854d0e',
+                                        fontWeight: 800,
+                                        fontSize: '0.78rem',
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '999px'
+                                    }}>
+                                        100.000 MT
+                                    </span>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#eab308', color: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                                        <Icons.Plaque />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.5rem' }}>
+                                        Nível 3 • Ouro Lendário
+                                    </h3>
+                                    <div style={{ fontWeight: 700, color: '#ca8a04', fontSize: '0.95rem', marginBottom: '0.75rem' }}>
+                                        Placa Oficial + Super Bónus 5.000 MT
+                                    </div>
+                                    <ul style={{ paddingLeft: '1.2rem', color: '#475569', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
+                                        <li>Placa de Reconhecimento Oficial de Honra gravada</li>
+                                        <li>Super Bónus Especial de 5.000 MT em dinheiro</li>
+                                        <li>Destaque permanente como Motorista de Honra</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -908,6 +1157,7 @@ export default function DriverPortal() {
                         }}>
                             {[
                                 { id: 'dashboard', label: 'Painel Geral', icon: <Icons.TrendingUp /> },
+                                { id: 'rewards', label: 'Prêmios & Bónus', icon: <Icons.Gift /> },
                                 { id: 'orders', label: `Entregas (${activeOrders.length})`, icon: <Icons.Package /> },
                                 { id: 'warnings', label: `Advertências (${warnings.length})`, icon: <Icons.AlertTriangle /> },
                                 { id: 'profile', label: 'O Meu Perfil', icon: <Icons.User /> }
@@ -940,75 +1190,81 @@ export default function DriverPortal() {
                         {/* TAB 1: Dashboard Overview */}
                         {activeTab === 'dashboard' && (
                             <div>
-                                {/* REWARD / GOAL CARD: 5000 MT SHIRT */}
+                                {/* REWARDS PROGRESS SUMMARY BOX */}
                                 <div style={{
-                                    background: isShirtUnlocked
-                                        ? 'linear-gradient(135deg, #065f46 0%, #047857 100%)'
-                                        : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-                                    borderRadius: '20px',
+                                    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                                    borderRadius: '22px',
                                     padding: '1.75rem 2rem',
                                     color: '#fff',
                                     marginBottom: '2rem',
-                                    boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
-                                    border: isShirtUnlocked ? '1.5px solid #34d399' : '1px solid #334151',
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                                    gap: '1.5rem',
-                                    alignItems: 'center'
+                                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                                    border: '1px solid #334151'
                                 }}>
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-                                            <div style={{
-                                                width: '36px',
-                                                height: '36px',
-                                                borderRadius: '10px',
-                                                background: isShirtUnlocked ? '#34d399' : '#f59e0b',
-                                                color: '#111827',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            }}>
-                                                <Icons.ShirtReward />
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#f59e0b', color: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Icons.Trophy />
                                             </div>
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: isShirtUnlocked ? '#6ee7b7' : '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                {isShirtUnlocked ? 'Meta Concluída' : 'Meta Especial de Vendas'}
-                                            </span>
+                                            <div>
+                                                <div style={{ fontSize: '0.78rem', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                    Carreira de Entregas
+                                                </div>
+                                                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff' }}>
+                                                    Progresso de Prêmios & Bónus
+                                                </div>
+                                            </div>
                                         </div>
-                                        <h3 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.4rem', color: '#fff' }}>
-                                            {isShirtUnlocked ? 'Camisa Oficial de Motorista Desbloqueada!' : 'Conquiste a Camisa Oficial Tchapo Tchapo'}
-                                        </h3>
-                                        <p style={{ fontSize: '0.88rem', color: isShirtUnlocked ? '#d1fae5' : '#94a3b8', margin: 0, lineHeight: 1.5 }}>
-                                            {isShirtUnlocked
-                                                ? 'Parabéns! Atingiu mais de 5.000 MT em vendas e entregas. Já pode levantar a sua Camisa Oficial na central da Tchapo Tchapo!'
-                                                : `Atinja 5.000 MT em vendas/entregas para ganhar gratuitamente a Camisa Oficial de Motorista da Tchapo Tchapo.`
-                                            }
-                                        </p>
+
+                                        <button
+                                            onClick={() => setActiveTab('rewards')}
+                                            style={{
+                                                background: 'rgba(245,158,11,0.15)',
+                                                border: '1px solid #f59e0b',
+                                                color: '#f59e0b',
+                                                padding: '0.45rem 1rem',
+                                                borderRadius: '999px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Ver Todos os Prêmios
+                                        </button>
                                     </div>
 
-                                    {/* Progress Bar Column */}
-                                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', fontSize: '0.85rem' }}>
-                                            <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Progresso da Meta:</span>
-                                            <strong style={{ color: '#fff', fontSize: '0.95rem' }}>
-                                                {formatMZCurrency(totalSales)} / 5.000 MT
-                                            </strong>
-                                        </div>
-
-                                        {/* Progress Bar */}
-                                        <div style={{ width: '100%', height: '12px', background: '#334151', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.6rem' }}>
-                                            <div style={{
-                                                width: `${progressPercent}%`,
-                                                height: '100%',
-                                                background: isShirtUnlocked ? '#10b981' : 'linear-gradient(90deg, #f59e0b, #fbbf24)',
-                                                borderRadius: '999px',
-                                                transition: 'width 0.4s ease'
-                                            }} />
-                                        </div>
-
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#94a3b8' }}>
-                                            <span>{progressPercent}% atingido</span>
-                                            <span>{isShirtUnlocked ? '100% Desbloqueado' : `Faltam ${formatMZCurrency(remainingToShirt)}`}</span>
-                                        </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                                        {rewards.map(r => {
+                                            const pct = Math.min(100, Math.round((currentSales / r.target) * 100));
+                                            const unlocked = currentSales >= r.target;
+                                            return (
+                                                <div key={r.id} style={{
+                                                    background: 'rgba(0,0,0,0.3)',
+                                                    borderRadius: '16px',
+                                                    padding: '1.25rem',
+                                                    border: unlocked ? '1.5px solid #10b981' : '1px solid rgba(255,255,255,0.08)'
+                                                }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: unlocked ? '#34d399' : '#f59e0b' }}>
+                                                            {r.level} • {r.badge}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: unlocked ? '#10b981' : '#94a3b8' }}>
+                                                            {unlocked ? 'Desbloqueado' : `${pct}%`}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#fff', marginBottom: '0.5rem' }}>
+                                                        {r.title}
+                                                    </div>
+                                                    <div style={{ width: '100%', height: '8px', background: '#334151', borderRadius: '999px', overflow: 'hidden' }}>
+                                                        <div style={{
+                                                            width: `${pct}%`,
+                                                            height: '100%',
+                                                            background: unlocked ? '#10b981' : '#f59e0b',
+                                                            borderRadius: '999px'
+                                                        }} />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
@@ -1196,6 +1452,88 @@ export default function DriverPortal() {
                             </div>
                         )}
 
+                        {/* TAB: Prêmios & Bónus Details */}
+                        {activeTab === 'rewards' && (
+                            <div style={{ background: '#fff', padding: '2rem', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ marginBottom: '2rem' }}>
+                                    <h3 style={{ margin: '0 0 0.4rem', fontSize: '1.35rem', fontWeight: 900, color: '#0f172a' }}>
+                                        Metas de Carreira & Premiações
+                                    </h3>
+                                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.92rem' }}>
+                                        O seu volume total de vendas e entregas acumulado é de: <strong>{formatMZCurrency(currentSales)}</strong>
+                                    </p>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                                    {rewards.map(r => {
+                                        const unlocked = currentSales >= r.target;
+                                        const pct = Math.min(100, Math.round((currentSales / r.target) * 100));
+                                        const remaining = Math.max(0, r.target - currentSales);
+
+                                        return (
+                                            <div key={r.id} style={{
+                                                borderRadius: '20px',
+                                                padding: '1.75rem',
+                                                border: unlocked ? '2px solid #10b981' : '1px solid #e2e8f0',
+                                                background: unlocked ? '#f0fdf4' : '#f8fafc',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'space-between'
+                                            }}>
+                                                <div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                                        <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: unlocked ? '#10b981' : '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            {r.icon}
+                                                        </div>
+                                                        <span style={{
+                                                            background: unlocked ? '#dcfce7' : '#fef3c7',
+                                                            color: unlocked ? '#15803d' : '#b45309',
+                                                            fontWeight: 800,
+                                                            fontSize: '0.78rem',
+                                                            padding: '0.25rem 0.75rem',
+                                                            borderRadius: '999px'
+                                                        }}>
+                                                            {r.badge}
+                                                        </span>
+                                                    </div>
+
+                                                    <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                                                        {r.title}
+                                                    </h4>
+                                                    <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: '#475569', lineHeight: 1.5 }}>
+                                                        {r.desc}
+                                                    </p>
+                                                </div>
+
+                                                <div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.4rem' }}>
+                                                        <span style={{ fontWeight: 600, color: '#64748b' }}>Progresso:</span>
+                                                        <strong style={{ color: unlocked ? '#059669' : '#0f172a' }}>{pct}%</strong>
+                                                    </div>
+
+                                                    <div style={{ width: '100%', height: '10px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.75rem' }}>
+                                                        <div style={{
+                                                            width: `${pct}%`,
+                                                            height: '100%',
+                                                            background: unlocked ? '#10b981' : '#f59e0b',
+                                                            borderRadius: '999px'
+                                                        }} />
+                                                    </div>
+
+                                                    <div style={{ fontSize: '0.8rem', color: unlocked ? '#059669' : '#64748b', fontWeight: 600 }}>
+                                                        {unlocked
+                                                            ? 'Prémio Desbloqueado! Pode solicitar o levantamento na central Tchapo Tchapo.'
+                                                            : `Faltam ${formatMZCurrency(remaining)} para desbloquear este prémio.`
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
                         {/* TAB 2: Orders & Delivery History */}
                         {activeTab === 'orders' && (
                             <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
@@ -1329,7 +1667,14 @@ export default function DriverPortal() {
                                         style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #f59e0b' }}
                                     />
                                     <div>
-                                        <h4 style={{ margin: '0 0 0.2rem', fontSize: '1.15rem', fontWeight: 800 }}>{authDriver.name}</h4>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <h4 style={{ margin: '0', fontSize: '1.15rem', fontWeight: 800 }}>{authDriver.name}</h4>
+                                            {currentSales >= 5000 && (
+                                                <span title="Motorista Verificado" style={{ color: '#3b82f6', display: 'flex', alignItems: 'center' }}>
+                                                    <Icons.BadgeCheck />
+                                                </span>
+                                            )}
+                                        </div>
                                         <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Motorista Oficial Tchapo Tchapo</div>
                                         <span style={{ display: 'inline-block', marginTop: '0.35rem', background: '#dcfce7', color: '#15803d', fontSize: '0.75rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
                                             Conta Aprovada
@@ -1448,7 +1793,7 @@ export default function DriverPortal() {
 
                         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                     Nome Completo *
                                 </label>
                                 <input
@@ -1462,7 +1807,7 @@ export default function DriverPortal() {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                         Contacto WhatsApp *
                                     </label>
                                     <input
@@ -1474,7 +1819,7 @@ export default function DriverPortal() {
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                         Bairro Base na Beira *
                                     </label>
                                     <input
@@ -1489,7 +1834,7 @@ export default function DriverPortal() {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                         Tipo de Veículo
                                     </label>
                                     <select
@@ -1504,7 +1849,7 @@ export default function DriverPortal() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                         Matrícula (Opcional)
                                     </label>
                                     <input
@@ -1519,7 +1864,7 @@ export default function DriverPortal() {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                         Tipo de Documento *
                                     </label>
                                     <select
@@ -1534,7 +1879,7 @@ export default function DriverPortal() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                         Número do Documento (ID) *
                                     </label>
                                     <input
@@ -1549,7 +1894,7 @@ export default function DriverPortal() {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                         Foto de Perfil
                                     </label>
                                     <input
@@ -1563,7 +1908,7 @@ export default function DriverPortal() {
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                         Foto do Documento (BI / Carta) *
                                     </label>
                                     <input
@@ -1579,7 +1924,7 @@ export default function DriverPortal() {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                     Defina o seu PIN de 4 dígitos para Acesso *
                                 </label>
                                 <input
@@ -1661,7 +2006,7 @@ export default function DriverPortal() {
 
                         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                     Telefone Registado *
                                 </label>
                                 <input
@@ -1674,7 +2019,7 @@ export default function DriverPortal() {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                     PIN de Acesso *
                                 </label>
                                 <input

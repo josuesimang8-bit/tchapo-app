@@ -1065,7 +1065,7 @@ app.post('/api/drivers/register', upload.fields([
         try {
             sendNtfyAlert({
                 title: '🛵 Novo Cadastro de Motorista!',
-                message: `${name} cadastrou-se como estafeta (${vehicle_type || 'Mota'} - ${bairro || 'Beira'}). Documento: ${doc_type || 'BI'} ${doc_number || ''}. Aguarda aprovação.`
+                message: `${name} cadastrou-se como motorista (${vehicle_type || 'Mota'} - ${bairro || 'Beira'}). Documento: ${doc_type || 'BI'} ${doc_number || ''}. Aguarda aprovação.`
             });
         } catch (_) {}
 
@@ -1164,6 +1164,11 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
         const weekEarnings = weekDelivered.length * rate;
         const totalEarnings = delivered.length * rate;
 
+        const totalSales = delivered.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+        const salesTarget = 5000;
+        const rewardUnlocked = totalSales >= salesTarget;
+        const rewardProgress = Math.min(100, Math.round((totalSales / salesTarget) * 100));
+
         res.json({
             driver: {
                 ...driver,
@@ -1176,7 +1181,11 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 today_deliveries: todayDelivered.length,
                 total_deliveries: delivered.length,
                 active_deliveries: activeOrders.length,
-                rate_per_delivery: rate
+                rate_per_delivery: rate,
+                total_sales: totalSales,
+                sales_target: salesTarget,
+                reward_unlocked: rewardUnlocked,
+                reward_progress: rewardProgress
             },
             active_orders: activeOrders.map(formatOrderResponse),
             recent_deliveries: delivered.slice(0, 15).map(formatOrderResponse),

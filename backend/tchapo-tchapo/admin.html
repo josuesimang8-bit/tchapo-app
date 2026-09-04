@@ -1035,7 +1035,7 @@ function tickTimers() {
 
         if (rem <= 0) {
             el.className = 'timer-lost';
-            el.innerHTML = '🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Estafeta/Cliente</div>';
+            el.innerHTML = '🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Motorista/Cliente</div>';
         } else {
             const h = Math.floor(rem / 3600), m = Math.floor((rem % 3600)/60), s = Math.floor(rem % 60);
             const fmt = `${pad(h)}:${pad(m)}:${pad(s)}`;
@@ -1211,7 +1211,7 @@ function renderOrders() {
         } else if (o.status === 'Cancelado') {
             timerHtml = `<div class="timer-lost">❌ Cancelado</div>`;
         } else if (o.status === 'Perdido' || remSecs <= 0) {
-            timerHtml = `<div class="timer-lost">🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Estafeta/Cliente</div></div>`;
+            timerHtml = `<div class="timer-lost">🔴 PERDIDO (Expirado 4h)<div style="font-size:0.7rem;font-weight:500;margin-top:2px;">Pagar 50% ao Motorista/Cliente</div></div>`;
         } else {
             const h = Math.floor(remSecs / 3600), m = Math.floor((remSecs % 3600)/60), s = Math.floor(remSecs % 60);
             const fmt = `${pad(h)}:${pad(m)}:${pad(s)}`;

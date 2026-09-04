@@ -1421,7 +1421,7 @@ export default function Admin() {
                                                             return (
                                                                 <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', fontSize: '0.78rem', fontWeight: 700 }}>
                                                                     🔴 PERDIDO (Expirado 4h)
-                                                                    <div style={{ fontSize: '0.7rem', fontWeight: 500, marginTop: '2px' }}>Pagar 50% ao Estafeta/Cliente</div>
+                                                                    <div style={{ fontSize: '0.7rem', fontWeight: 500, marginTop: '2px' }}>Pagar 50% ao Motorista/Cliente</div>
                                                                 </div>
                                                             );
                                                         }

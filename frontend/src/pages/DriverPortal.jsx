@@ -1,12 +1,136 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 
-const STATUS_COLORS = {
-    'Pendente':       { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
-    'Processando':    { bg: '#dbeafe', color: '#1e40af', border: '#bfdbfe' },
-    'Preparando':     { bg: '#ede9fe', color: '#5b21b6', border: '#ddd6fe' },
-    'Com Motorista':  { bg: '#d1fae5', color: '#065f46', border: '#a7f3d0' },
-    'Entregue':       { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' },
-    'Cancelado':      { bg: '#fee2e2', color: '#991b1b', border: '#fecaca' },
+// Modern SVG Icons (No Emojis)
+const Icons = {
+    LogoBadge: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+    ),
+    Bike: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18.5" cy="17.5" r="3.5"/>
+            <circle cx="5.5" cy="17.5" r="3.5"/>
+            <circle cx="15" cy="5" r="1"/>
+            <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+        </svg>
+    ),
+    ShirtReward: () => (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+        </svg>
+    ),
+    Trophy: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34"/>
+            <path d="M6 2h12v7a6 6 0 0 1-12 0V2z"/>
+        </svg>
+    ),
+    Wallet: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="20" height="14" x="2" y="5" rx="2"/>
+            <line x1="2" x2="22" y1="10" y2="10"/>
+        </svg>
+    ),
+    Package: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16.5 9.4 7.55 4.24a1.78 1.78 0 0 0-2.5 1.55v12.42a1.78 1.78 0 0 0 2.5 1.55L16.5 14.6a1.78 1.78 0 0 0 0-3.1z"/>
+            <path d="m21 16-4-2.3v-3.4l4-2.3z"/>
+            <path d="M3.27 6.96 12 12.01l8.73-5.05"/>
+            <path d="M12 22.08V12"/>
+        </svg>
+    ),
+    TrendingUp: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+            <polyline points="16 7 22 7 22 13"/>
+        </svg>
+    ),
+    AlertTriangle: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+    ),
+    CheckCircle: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+    ),
+    Clock: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+        </svg>
+    ),
+    User: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+        </svg>
+    ),
+    Phone: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </svg>
+    ),
+    WhatsApp: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.301-.15-1.78-.878-2.056-.979-.276-.1-.476-.15-.676.15-.2.301-.777.979-.953 1.18-.175.2-.35.225-.651.075-.3-.15-1.267-.467-2.414-1.49-.893-.797-1.496-1.781-1.672-2.082-.175-.3-.019-.462.132-.612.135-.135.301-.35.451-.526.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525s-.676-1.63-.927-2.234c-.244-.588-.493-.508-.676-.518l-.576-.01c-.2 0-.526.075-.801.375-.276.3-1.053 1.03-1.053 2.51 0 1.48 1.078 2.91 1.229 3.11.15.2 2.122 3.24 5.14 4.542.718.31 1.28.495 1.718.634.723.23 1.38.197 1.9.12.58-.087 1.78-.727 2.03-1.43.25-.703.25-1.306.175-1.43-.075-.125-.276-.2-.576-.35zM12.04 2C6.544 2 2.08 6.463 2.08 11.96c0 1.758.459 3.473 1.332 4.987L2 22l5.2-1.364c1.458.795 3.1 1.214 4.84 1.214 5.496 0 9.96-4.463 9.96-9.96S17.536 2 12.04 2zm0 18.232c-1.547 0-3.064-.416-4.388-1.203l-.315-.187-3.257.854.87-3.175-.205-.327a8.212 8.212 0 0 1-1.26-4.304c0-4.548 3.702-8.25 8.25-8.25 4.548 0 8.25 3.702 8.25 8.25 0 4.548-3.702 8.25-8.25 8.25z"/>
+        </svg>
+    ),
+    FileText: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+        </svg>
+    ),
+    LogOut: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+    ),
+    Plus: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+    ),
+    LogIn: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+    ),
+    ShieldCheck: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+        </svg>
+    ),
+    Eye: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+    ),
+    Close: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+    )
 };
 
 const formatMZCurrency = (value) => {
@@ -31,10 +155,14 @@ export default function DriverPortal() {
         }
     });
 
-    const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
     const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'orders' | 'warnings' | 'profile'
     const [dashboardData, setDashboardData] = useState(null);
     const [toast, setToast] = useState(null);
+
+    // Modal Controls
+    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [docPreviewModal, setDocPreviewModal] = useState(null);
 
     // Login Form State
     const [loginPhone, setLoginPhone] = useState('');
@@ -47,7 +175,7 @@ export default function DriverPortal() {
     const [regBairro, setRegBairro] = useState('Macuti');
     const [regVehicleType, setRegVehicleType] = useState('Mota');
     const [regVehiclePlate, setRegVehiclePlate] = useState('');
-    const [regDocType, setRegDocType] = useState('BI'); // 'BI' | 'Carta de Condução' | 'DIRE'
+    const [regDocType, setRegDocType] = useState('BI'); // 'BI' | 'Carta de Condução' | 'DIRE' | 'Passaporte'
     const [regDocNumber, setRegDocNumber] = useState('');
     const [regPin, setRegPin] = useState('');
     const [photoFile, setPhotoFile] = useState(null);
@@ -148,14 +276,16 @@ export default function DriverPortal() {
             });
             const data = await res.json();
             if (!res.ok) {
-                throw new Error(data.error || 'Falha ao iniciar sessão');
+                showToast(data.error || 'Erro ao iniciar sessão.', 'error');
+                return;
             }
             saveSession(data);
             setIsOnline(Boolean(data.is_online));
-            showToast(`Bem-vindo, ${data.name}!`, 'success');
+            setIsLoginModalOpen(false);
+            showToast(`Bem-vindo de volta, ${data.name}!`, 'success');
             fetchDashboard(data.id);
         } catch (err) {
-            showToast(err.message, 'error');
+            showToast('Falha na comunicação com o servidor.', 'error');
         } finally {
             setLoginLoading(false);
         }
@@ -165,11 +295,11 @@ export default function DriverPortal() {
     const handleRegister = async (e) => {
         e.preventDefault();
         if (!regName.trim() || !regPhone.trim()) {
-            showToast('Por favor preencha o Nome e Telefone.', 'error');
+            showToast('Por favor preencha o seu nome e telefone.', 'error');
             return;
         }
         if (!regDocNumber.trim()) {
-            showToast(`Por favor introduza o número do seu ${regDocType}.`, 'error');
+            showToast('Por favor introduza o número do seu documento.', 'error');
             return;
         }
 
@@ -178,15 +308,19 @@ export default function DriverPortal() {
             const formData = new FormData();
             formData.append('name', regName.trim());
             formData.append('phone', regPhone.trim());
-            formData.append('bairro', regBairro);
+            formData.append('bairro', regBairro.trim());
             formData.append('vehicle_type', regVehicleType);
             formData.append('vehicle_plate', regVehiclePlate.trim());
             formData.append('doc_type', regDocType);
             formData.append('doc_number', regDocNumber.trim());
             formData.append('pin', regPin.trim() || '1234');
 
-            if (photoFile) formData.append('photo', photoFile);
-            if (docPhotoFile) formData.append('doc_photo', docPhotoFile);
+            if (photoFile) {
+                formData.append('photo', photoFile);
+            }
+            if (docPhotoFile) {
+                formData.append('doc_photo', docPhotoFile);
+            }
 
             const res = await fetch(`${API_URL}/api/drivers/register`, {
                 method: 'POST',
@@ -194,31 +328,40 @@ export default function DriverPortal() {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Erro ao submeter cadastro');
+            if (!res.ok) {
+                showToast(data.error || 'Erro ao realizar registo.', 'error');
+                return;
+            }
 
             saveSession(data);
-            showToast('Cadastro submetido! Aguarda aprovação.', 'success');
+            setIsRegisterModalOpen(false);
+            showToast('Registo submetido com sucesso! A sua conta está pendente de aprovação.', 'success');
         } catch (err) {
-            showToast(err.message, 'error');
+            showToast('Erro de conexão ao registar motorista.', 'error');
         } finally {
             setRegLoading(false);
         }
     };
 
-    // Handle Availability Toggle
-    const handleToggleAvailability = async (targetState = !isOnline) => {
-        if (!authDriver) return;
+    // Toggle Availability
+    const handleToggleAvailability = async (targetState) => {
+        if (!authDriver?.id) return;
+        if (authDriver.approval_status !== 'Aprovado') {
+            showToast('A sua conta precisa de ser aprovada pelo Administrador para ficar online.', 'error');
+            return;
+        }
         setTogglingOnline(true);
+        const newState = targetState !== undefined ? targetState : !isOnline;
         try {
             const res = await fetch(`${API_URL}/api/drivers/${authDriver.id}/availability`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ is_online: targetState })
+                body: JSON.stringify({ is_online: newState })
             });
             if (res.ok) {
-                setIsOnline(targetState);
-                showToast(targetState ? '🟢 Você está ONLINE e pronto para entregas!' : '⚪ Você está OFFLINE (Pausa)', targetState ? 'success' : 'info');
-                fetchDashboard(authDriver.id);
+                setIsOnline(newState);
+                setAuthDriver(prev => ({ ...prev, is_online: newState }));
+                showToast(newState ? 'Você está Online e pronto para entregas.' : 'Você está Offline.', 'info');
             }
         } catch (err) {
             showToast('Erro ao atualizar disponibilidade.', 'error');
@@ -233,363 +376,17 @@ export default function DriverPortal() {
             const res = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
+                body: JSON.stringify({ status: newStatus, driver_id: authDriver?.id })
             });
             if (res.ok) {
-                showToast(`Encomenda #${orderId} atualizada para "${newStatus}"!`, 'success');
-                fetchDashboard(authDriver.id);
+                showToast(`Estado da entrega atualizado para: ${newStatus}`, 'success');
+                fetchDashboard(authDriver?.id);
             }
         } catch (err) {
-            showToast('Erro ao atualizar estado da encomenda.', 'error');
+            showToast('Erro ao atualizar entrega.', 'error');
         }
     };
 
-    const contactClient = (phone, customerName = 'Cliente', orderId = '') => {
-        let cleaned = (phone || '').replace(/\s+/g, '').replace('+', '');
-        if (!cleaned.startsWith('258') && cleaned.length === 9) {
-            cleaned = '258' + cleaned;
-        }
-        const msg = encodeURIComponent(`Olá ${customerName}, sou o estafeta da Tchapo Tchapo responsável pela sua entrega #${orderId}. Já estou a caminho! 🛵💨`);
-        window.open(`https://wa.me/${cleaned}?text=${msg}`, '_blank');
-    };
-
-    // 1. NOT LOGGED IN / AUTH SCREENS
-    if (!authDriver) {
-        return (
-            <div style={styles.authContainer}>
-                <div style={styles.authCard}>
-                    <div style={styles.authHeader}>
-                        <div style={styles.logoBadge}>🛵 TCHAPO TCHAPO</div>
-                        <h1 style={styles.authTitle}>Portal do Motorista</h1>
-                        <p style={styles.authSubtitle}>Faça login ou cadastre-se para realizar entregas na Beira</p>
-                    </div>
-
-                    <div style={styles.tabToggle}>
-                        <button
-                            type="button"
-                            style={{ ...styles.tabBtn, ...(authMode === 'login' ? styles.tabBtnActive : {}) }}
-                            onClick={() => setAuthMode('login')}
-                        >
-                            🔑 Iniciar Sessão
-                        </button>
-                        <button
-                            type="button"
-                            style={{ ...styles.tabBtn, ...(authMode === 'register' ? styles.tabBtnActive : {}) }}
-                            onClick={() => setAuthMode('register')}
-                        >
-                            📝 Novo Cadastro
-                        </button>
-                    </div>
-
-                    {authMode === 'login' && (
-                        <form onSubmit={handleLogin} style={styles.form}>
-                            <div style={styles.inputGroup}>
-                                <label style={styles.label}>📱 Telefone / WhatsApp</label>
-                                <input
-                                    type="tel"
-                                    placeholder="Ex: 841234567"
-                                    style={styles.input}
-                                    value={loginPhone}
-                                    onChange={(e) => setLoginPhone(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div style={styles.inputGroup}>
-                                <label style={styles.label}>🔒 PIN de Acesso (4 dígitos)</label>
-                                <input
-                                    type="password"
-                                    placeholder="Ex: 1234"
-                                    maxLength={6}
-                                    style={styles.input}
-                                    value={loginPin}
-                                    onChange={(e) => setLoginPin(e.target.value)}
-                                />
-                                <small style={{ color: '#64748b', fontSize: '0.78rem', marginTop: '4px' }}>
-                                    PIN padrão é <strong>1234</strong> caso não tenha configurado.
-                                </small>
-                            </div>
-
-                            <button type="submit" style={styles.primaryBtn} disabled={loginLoading}>
-                                {loginLoading ? 'A verificar...' : '🚀 Entrar no Painel'}
-                            </button>
-
-                            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                                <span style={{ color: '#64748b', fontSize: '0.88rem' }}>Ainda não é estafeta? </span>
-                                <button
-                                    type="button"
-                                    style={styles.linkBtn}
-                                    onClick={() => setAuthMode('register')}
-                                >
-                                    Cadastre-se aqui
-                                </button>
-                            </div>
-                        </form>
-                    )}
-
-                    {authMode === 'register' && (
-                        <form onSubmit={handleRegister} style={styles.form}>
-                            <div style={styles.sectionDivider}>
-                                <span>1. DADOS PESSOAIS</span>
-                            </div>
-
-                            <div style={styles.inputGroup}>
-                                <label style={styles.label}>👤 Nome Completo *</label>
-                                <input
-                                    type="text"
-                                    placeholder="Seu nome e apelido"
-                                    style={styles.input}
-                                    value={regName}
-                                    onChange={(e) => setRegName(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div style={styles.inputRow}>
-                                <div style={{ ...styles.inputGroup, flex: 1 }}>
-                                    <label style={styles.label}>📱 Telefone (WhatsApp) *</label>
-                                    <input
-                                        type="tel"
-                                        placeholder="84 / 85 / 87..."
-                                        style={styles.input}
-                                        value={regPhone}
-                                        onChange={(e) => setRegPhone(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div style={{ ...styles.inputGroup, flex: 1 }}>
-                                    <label style={styles.label}>📍 Bairro Principal</label>
-                                    <select
-                                        style={styles.input}
-                                        value={regBairro}
-                                        onChange={(e) => setRegBairro(e.target.value)}
-                                    >
-                                        <option value="Macuti">Macuti</option>
-                                        <option value="Ponta Gêa">Ponta Gêa</option>
-                                        <option value="Maquinino">Maquinino</option>
-                                        <option value="Pioneiros">Pioneiros</option>
-                                        <option value="Estoril">Estoril</option>
-                                        <option value="Palmeiras">Palmeiras</option>
-                                        <option value="Munhava">Munhava</option>
-                                        <option value="Manga">Manga</option>
-                                        <option value="Chota">Chota</option>
-                                        <option value="Inhamizua">Inhamizua</option>
-                                        <option value="Matacuane">Matacuane</option>
-                                        <option value="Macurungo">Macurungo</option>
-                                        <option value="Outro (Beira)">Outro (Beira)</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div style={styles.sectionDivider}>
-                                <span>2. VEÍCULO & TRANSPORTE</span>
-                            </div>
-
-                            <div style={styles.inputRow}>
-                                <div style={{ ...styles.inputGroup, flex: 1 }}>
-                                    <label style={styles.label}>🛵 Tipo de Veículo</label>
-                                    <select
-                                        style={styles.input}
-                                        value={regVehicleType}
-                                        onChange={(e) => setRegVehicleType(e.target.value)}
-                                    >
-                                        <option value="Mota">Mota 🏍️</option>
-                                        <option value="Bicicleta">Bicicleta 🚲</option>
-                                        <option value="Carro">Carro 🚗</option>
-                                        <option value="A pé">A pé 🚶</option>
-                                    </select>
-                                </div>
-                                <div style={{ ...styles.inputGroup, flex: 1 }}>
-                                    <label style={styles.label}>Matrícula / Modelo</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Ex: ABC-123-MC"
-                                        style={styles.input}
-                                        value={regVehiclePlate}
-                                        onChange={(e) => setRegVehiclePlate(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div style={styles.sectionDivider}>
-                                <span>3. DOCUMENTAÇÃO OBRIGATÓRIA</span>
-                            </div>
-
-                            <div style={styles.inputGroup}>
-                                <label style={styles.label}>📄 Escolha o Documento *</label>
-                                <div style={styles.docTypeSelector}>
-                                    {['BI', 'Carta de Condução', 'DIRE'].map((doc) => (
-                                        <button
-                                            key={doc}
-                                            type="button"
-                                            style={{
-                                                ...styles.docTypeBtn,
-                                                ...(regDocType === doc ? styles.docTypeBtnActive : {})
-                                            }}
-                                            onClick={() => setRegDocType(doc)}
-                                        >
-                                            {doc === 'BI' ? '🆔 BI' : doc === 'Carta de Condução' ? '🚗 Carta Condução' : '🌍 DIRE'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div style={styles.inputGroup}>
-                                <label style={styles.label}>🔢 Número / ID do {regDocType} *</label>
-                                <input
-                                    type="text"
-                                    placeholder={`Ex: Número do ${regDocType}`}
-                                    style={styles.input}
-                                    value={regDocNumber}
-                                    onChange={(e) => setRegDocNumber(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div style={styles.inputRow}>
-                                <div style={{ ...styles.inputGroup, flex: 1 }}>
-                                    <label style={styles.label}>📸 Foto do {regDocType} *</label>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        style={styles.fileInput}
-                                        onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            if (file) {
-                                                setDocPhotoFile(file);
-                                                setDocPhotoPreview(URL.createObjectURL(file));
-                                            }
-                                        }}
-                                    />
-                                    {docPhotoPreview && (
-                                        <img src={docPhotoPreview} alt="Doc Preview" style={styles.thumbPreview} />
-                                    )}
-                                </div>
-
-                                <div style={{ ...styles.inputGroup, flex: 1 }}>
-                                    <label style={styles.label}>🤳 Foto de Perfil (Rosto)</label>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        style={styles.fileInput}
-                                        onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            if (file) {
-                                                setPhotoFile(file);
-                                                setPhotoPreview(URL.createObjectURL(file));
-                                            }
-                                        }}
-                                    />
-                                    {photoPreview && (
-                                        <img src={photoPreview} alt="Photo Preview" style={styles.thumbPreview} />
-                                    )}
-                                </div>
-                            </div>
-
-                            <div style={styles.sectionDivider}>
-                                <span>4. SEGURANÇA DE ACESSO</span>
-                            </div>
-
-                            <div style={styles.inputGroup}>
-                                <label style={styles.label}>🔒 Criar PIN de Acesso (4 dígitos)</label>
-                                <input
-                                    type="password"
-                                    placeholder="Ex: 5678"
-                                    maxLength={6}
-                                    style={styles.input}
-                                    value={regPin}
-                                    onChange={(e) => setRegPin(e.target.value)}
-                                />
-                            </div>
-
-                            <button type="submit" style={styles.primaryBtn} disabled={regLoading}>
-                                {regLoading ? 'A enviar documentação...' : '📩 Submeter Cadastro para Aprovação'}
-                            </button>
-
-                            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                                <span style={{ color: '#64748b', fontSize: '0.88rem' }}>Já tem conta? </span>
-                                <button
-                                    type="button"
-                                    style={styles.linkBtn}
-                                    onClick={() => setAuthMode('login')}
-                                >
-                                    Fazer Login
-                                </button>
-                            </div>
-                        </form>
-                    )}
-                </div>
-                {renderToast()}
-            </div>
-        );
-    }
-
-    // 2. APPROVAL PENDING / REJECTED / SUSPENDED STATE
-    const approvalStatus = authDriver.approval_status || 'Pendente';
-
-    if (approvalStatus !== 'Aprovado') {
-        return (
-            <div style={styles.authContainer}>
-                <div style={styles.authCard}>
-                    <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-                        {approvalStatus === 'Pendente' && (
-                            <>
-                                <div style={{ fontSize: '4rem', marginBottom: '0.5rem' }}>⏳</div>
-                                <h2 style={{ color: '#0b3c6d', fontSize: '1.6rem', fontWeight: 800 }}>Cadastro em Análise</h2>
-                                <div style={styles.badgePending}>Aguardando Aprovação do Administrador</div>
-                                <p style={{ color: '#475569', fontSize: '0.95rem', margin: '1.2rem 0', lineHeight: 1.6 }}>
-                                    Olá <strong>{authDriver.name}</strong>, a sua conta e documentação (<strong>{authDriver.doc_type || 'BI'} nº {authDriver.doc_number || 'enviado'}</strong>) foram submetidas com sucesso e estão a ser revistas pela administração da Tchapo Tchapo.
-                                </p>
-                                <div style={styles.pendingInfoBox}>
-                                    <div><strong>Telefone:</strong> {authDriver.phone}</div>
-                                    <div><strong>Veículo:</strong> {authDriver.vehicle_type || 'Mota'} ({authDriver.bairro || 'Beira'})</div>
-                                    <div><strong>Estado:</strong> <span style={{ color: '#d97706', fontWeight: 700 }}>Em Revisão</span></div>
-                                </div>
-                            </>
-                        )}
-
-                        {approvalStatus === 'Recusado' && (
-                            <>
-                                <div style={{ fontSize: '4rem', marginBottom: '0.5rem' }}>❌</div>
-                                <h2 style={{ color: '#991b1b', fontSize: '1.6rem', fontWeight: 800 }}>Cadastro Não Aprovado</h2>
-                                <p style={{ color: '#475569', fontSize: '0.95rem', margin: '1.2rem 0' }}>
-                                    O seu pedido de adesão não foi aceite pela equipa da Tchapo Tchapo. Por favor verifique a documentação enviada ou contacte o suporte.
-                                </p>
-                            </>
-                        )}
-
-                        {approvalStatus === 'Suspenso' && (
-                            <>
-                                <div style={{ fontSize: '4rem', marginBottom: '0.5rem' }}>🚫</div>
-                                <h2 style={{ color: '#991b1b', fontSize: '1.6rem', fontWeight: 800 }}>Conta Suspensa</h2>
-                                <p style={{ color: '#475569', fontSize: '0.95rem', margin: '1.2rem 0' }}>
-                                    A sua conta de motorista foi temporariamente suspensa por motivos administrativos ou violação de diretrizes.
-                                </p>
-                            </>
-                        )}
-
-                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-                            <button
-                                style={{ ...styles.primaryBtn, flex: 1 }}
-                                onClick={() => fetchDashboard(authDriver.id)}
-                            >
-                                🔄 Atualizar Estado
-                            </button>
-                            <button
-                                style={{ ...styles.secondaryBtn, flex: 1 }}
-                                onClick={handleLogout}
-                            >
-                                Sair da Conta
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                {renderToast()}
-            </div>
-        );
-    }
-
-    // 3. MAIN DRIVER PORTAL DASHBOARD (APPROVED)
     const stats = dashboardData?.stats || {
         today_earnings: 0,
         week_earnings: 0,
@@ -597,950 +394,1341 @@ export default function DriverPortal() {
         today_deliveries: 0,
         total_deliveries: 0,
         active_deliveries: 0,
-        rate_per_delivery: 150
+        total_sales: 0,
+        sales_target: 5000,
+        reward_unlocked: false,
+        reward_progress: 0
     };
 
     const activeOrders = dashboardData?.active_orders || [];
     const recentDeliveries = dashboardData?.recent_deliveries || [];
-    const warnings = dashboardData?.warnings || [];
+    const warnings = dashboardData?.warnings || authDriver?.warnings || [];
+
+    // Calculate Shirt Reward Progress
+    const totalSales = stats.total_sales || (stats.total_deliveries * 150);
+    const targetSales = 5000;
+    const progressPercent = Math.min(100, Math.round((totalSales / targetSales) * 100));
+    const isShirtUnlocked = totalSales >= targetSales;
+    const remainingToShirt = Math.max(0, targetSales - totalSales);
 
     return (
-        <div style={styles.mainContainer}>
-            <header style={styles.header}>
-                <div style={styles.headerInner}>
-                    <div style={styles.driverProfile}>
-                        <img
-                            src={authDriver.photo_url || '/assets/default_avatar.png'}
-                            alt={authDriver.name}
-                            style={styles.avatarImg}
-                            onError={(e) => { e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(authDriver.name); }}
-                        />
-                        <div>
-                            <div style={styles.driverName}>{authDriver.name}</div>
-                            <div style={styles.driverMetaText}>
-                                🛵 {authDriver.vehicle_type || 'Mota'} • {authDriver.bairro || 'Beira'}
+        <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+            
+            {/* Toast Notification */}
+            {toast && (
+                <div style={{
+                    position: 'fixed',
+                    top: '20px',
+                    right: '20px',
+                    zIndex: 99999,
+                    background: toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#059669' : '#1e293b',
+                    color: '#fff',
+                    padding: '0.85rem 1.4rem',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem'
+                }}>
+                    {toast.type === 'error' ? <Icons.AlertTriangle /> : <Icons.CheckCircle />}
+                    <span>{toast.msg}</span>
+                </div>
+            )}
+
+            {/* Top Store Header */}
+            <header style={{
+                background: '#111827',
+                borderBottom: '1px solid #1f2937',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }}>
+                <div style={{
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                    padding: '0.85rem 1.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem'
+                }}>
+                    {/* Brand & Logo */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{
+                                width: '44px',
+                                height: '44px',
+                                borderRadius: '12px',
+                                background: '#f59e0b',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                padding: '2px'
+                            }}>
+                                <img
+                                    src="/assets/logo_original.png"
+                                    alt="Tchapo Tchapo"
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                    }}
+                                />
                             </div>
-                        </div>
+                            <div>
+                                <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.15rem', letterSpacing: '-0.3px' }}>
+                                    Tchapo Tchapo
+                                </div>
+                                <div style={{ color: '#f59e0b', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    Portal do Motorista
+                                </div>
+                            </div>
+                        </a>
                     </div>
 
-                    <div style={styles.availabilityWrapper}>
-                        <button
-                            type="button"
-                            disabled={togglingOnline}
-                            onClick={() => handleToggleAvailability(!isOnline)}
-                            style={{
-                                ...styles.availabilityBtn,
-                                ...(isOnline ? styles.onlineActiveBtn : styles.offlineBtn)
-                            }}
-                        >
-                            <span style={{
-                                ...styles.pulsingDot,
-                                backgroundColor: isOnline ? '#22c55e' : '#94a3b8',
-                                boxShadow: isOnline ? '0 0 10px #22c55e' : 'none'
-                            }}></span>
-                            {isOnline ? '🟢 DISPONÍVEL (ONLINE)' : '⚪ INDISPONÍVEL (OFFLINE)'}
-                        </button>
+                    {/* Right Controls */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                        {authDriver ? (
+                            <>
+                                {/* Online / Offline Switch */}
+                                {authDriver.approval_status === 'Aprovado' && (
+                                    <button
+                                        onClick={() => handleToggleAvailability()}
+                                        disabled={togglingOnline}
+                                        style={{
+                                            background: isOnline ? 'rgba(5, 150, 105, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                                            border: isOnline ? '1.5px solid #059669' : '1px solid #374151',
+                                            color: isOnline ? '#34d399' : '#9ca3af',
+                                            padding: '0.55rem 1.1rem',
+                                            borderRadius: '999px',
+                                            fontWeight: 700,
+                                            fontSize: '0.82rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <span style={{
+                                            width: '9px',
+                                            height: '9px',
+                                            borderRadius: '50%',
+                                            background: isOnline ? '#10b981' : '#6b7280',
+                                            boxShadow: isOnline ? '0 0 8px #10b981' : 'none'
+                                        }} />
+                                        <span>{isOnline ? 'Online para Entregas' : 'Indisponível (Offline)'}</span>
+                                    </button>
+                                )}
+
+                                {/* Profile info pill */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: '#1f2937', padding: '0.35rem 0.85rem', borderRadius: '10px' }}>
+                                    <img
+                                        src={authDriver.photo_url || '/assets/logo_original.png'}
+                                        alt={authDriver.name}
+                                        style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', background: '#374151' }}
+                                    />
+                                    <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>{authDriver.name}</span>
+                                </div>
+
+                                <button
+                                    onClick={handleLogout}
+                                    title="Terminar sessão"
+                                    style={{
+                                        background: 'transparent',
+                                        border: '1px solid #374151',
+                                        color: '#ef4444',
+                                        padding: '0.5rem',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <Icons.LogOut />
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={() => setIsLoginModalOpen(true)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: '1.5px solid #374151',
+                                        color: '#e2e8f0',
+                                        padding: '0.55rem 1.1rem',
+                                        borderRadius: '10px',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem'
+                                    }}
+                                >
+                                    <Icons.LogIn />
+                                    <span>Entrar</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setIsRegisterModalOpen(true)}
+                                    style={{
+                                        background: '#f59e0b',
+                                        border: 'none',
+                                        color: '#111827',
+                                        padding: '0.6rem 1.25rem',
+                                        borderRadius: '10px',
+                                        fontWeight: 800,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem',
+                                        boxShadow: '0 4px 14px rgba(245, 158, 11, 0.35)'
+                                    }}
+                                >
+                                    <Icons.Plus />
+                                    <span>Cadastrar como Motorista</span>
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </header>
 
-            <div style={styles.navBar}>
-                <div style={styles.navBarInner}>
-                    <button
-                        style={{ ...styles.navTab, ...(activeTab === 'dashboard' ? styles.navTabActive : {}) }}
-                        onClick={() => setActiveTab('dashboard')}
-                    >
-                        📊 Faturamento
-                    </button>
-                    <button
-                        style={{ ...styles.navTab, ...(activeTab === 'orders' ? styles.navTabActive : {}) }}
-                        onClick={() => setActiveTab('orders')}
-                    >
-                        🛵 Entregas ({activeOrders.length})
-                    </button>
-                    <button
-                        style={{ ...styles.navTab, ...(activeTab === 'warnings' ? styles.navTabActive : {}) }}
-                        onClick={() => setActiveTab('warnings')}
-                    >
-                        ⚠️ Advertências {warnings.length > 0 && <span style={styles.warningCountBadge}>{warnings.length}</span>}
-                    </button>
-                    <button
-                        style={{ ...styles.navTab, ...(activeTab === 'profile' ? styles.navTabActive : {}) }}
-                        onClick={() => setActiveTab('profile')}
-                    >
-                        👤 Meu Perfil
-                    </button>
-                </div>
-            </div>
+            {/* Main Content Area */}
+            <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.75rem 1.5rem 4rem' }}>
 
-            <main style={styles.content}>
-                {activeTab === 'dashboard' && (
-                    <div style={styles.tabContent}>
-                        {!isOnline && (
-                            <div style={styles.offlineNotice}>
-                                ⚠️ <strong>Você está offline.</strong> Ative o botão <em>"DISPONÍVEL"</em> no topo para receber novos pedidos e entregas!
-                            </div>
-                        )}
-
-                        <div style={styles.metricGrid}>
-                            <div style={styles.metricCard}>
-                                <div style={styles.metricLabel}>💰 Ganho Hoje</div>
-                                <div style={styles.metricValue}>{formatMZCurrency(stats.today_earnings)}</div>
-                                <div style={styles.metricSub}>{stats.today_deliveries} entregas feitas hoje</div>
-                            </div>
-
-                            <div style={styles.metricCard}>
-                                <div style={styles.metricLabel}>📅 Esta Semana</div>
-                                <div style={styles.metricValue}>{formatMZCurrency(stats.week_earnings)}</div>
-                                <div style={styles.metricSub}>Acumulado 7 dias</div>
-                            </div>
-
-                            <div style={styles.metricCard}>
-                                <div style={styles.metricLabel}>🏁 Total Entregas</div>
-                                <div style={styles.metricValue}>{stats.total_deliveries}</div>
-                                <div style={styles.metricSub}>Concluídas com sucesso</div>
-                            </div>
-
-                            <div style={styles.metricCard}>
-                                <div style={styles.metricLabel}>💵 Faturamento Total</div>
-                                <div style={{ ...styles.metricValue, color: '#16a34a' }}>{formatMZCurrency(stats.total_earnings)}</div>
-                                <div style={styles.metricSub}>Taxa: {stats.rate_per_delivery} MT / entrega</div>
-                            </div>
-                        </div>
-
-                        <div style={styles.sectionCard}>
-                            <div style={styles.sectionHeaderRow}>
-                                <h3 style={styles.sectionTitle}>🛵 Entregas em Curso ({activeOrders.length})</h3>
-                                <button style={styles.linkBtn} onClick={() => setActiveTab('orders')}>Ver Todas ➔</button>
-                            </div>
-
-                            {activeOrders.length === 0 ? (
-                                <div style={styles.emptyState}>
-                                    <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📭</div>
-                                    <div style={{ fontWeight: 700, color: '#475569' }}>Nenhuma entrega em andamento</div>
-                                    <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Assim que o administrador atribuir um pedido, ele aparecerá aqui.</div>
+                {/* VIEW 1: Non-logged in Hero Landing & Welcome Hub */}
+                {!authDriver && (
+                    <div>
+                        {/* Hero Card */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #111827 0%, #1e293b 100%)',
+                            borderRadius: '24px',
+                            padding: '3rem 2rem',
+                            color: '#fff',
+                            marginBottom: '2.5rem',
+                            boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                            border: '1px solid #334151',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                            gap: '2rem',
+                            alignItems: 'center'
+                        }}>
+                            <div>
+                                <div style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    background: 'rgba(245, 158, 11, 0.15)',
+                                    color: '#f59e0b',
+                                    padding: '0.4rem 0.9rem',
+                                    borderRadius: '999px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
+                                    marginBottom: '1rem',
+                                    border: '1px solid rgba(245, 158, 11, 0.3)'
+                                }}>
+                                    <Icons.Bike />
+                                    <span>Equipa Oficial de Motoristas</span>
                                 </div>
-                            ) : (
-                                activeOrders.map(order => (
-                                    <div key={order.id} style={styles.orderCard}>
-                                        <div style={styles.orderHeader}>
-                                            <span style={styles.orderId}>Pedido #{order.id}</span>
-                                            <span style={{
-                                                ...styles.statusBadge,
-                                                backgroundColor: STATUS_COLORS[order.status]?.bg || '#eee',
-                                                color: STATUS_COLORS[order.status]?.color || '#333'
-                                            }}>
-                                                {order.status}
-                                            </span>
+                                <h1 style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1.15, margin: '0 0 1rem', color: '#fff' }}>
+                                    Faça Entregas com a <span style={{ color: '#f59e0b' }}>Tchapo Tchapo</span>
+                                </h1>
+                                <p style={{ fontSize: '1.05rem', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 2rem' }}>
+                                    Trabalhe com horários flexíveis na Beira, receba ganhos rápidos por entrega e conquiste a Camisa Oficial exclusiva da Tchapo Tchapo.
+                                </p>
+                                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                    <button
+                                        onClick={() => setIsRegisterModalOpen(true)}
+                                        style={{
+                                            background: '#f59e0b',
+                                            color: '#111827',
+                                            border: 'none',
+                                            padding: '0.9rem 1.8rem',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: 800,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            boxShadow: '0 6px 20px rgba(245, 158, 11, 0.35)'
+                                        }}
+                                    >
+                                        <Icons.Plus />
+                                        <span>Quero ser Motorista</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setIsLoginModalOpen(true)}
+                                        style={{
+                                            background: 'rgba(255, 255, 255, 0.1)',
+                                            color: '#fff',
+                                            border: '1px solid #475569',
+                                            padding: '0.9rem 1.8rem',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem'
+                                        }}
+                                    >
+                                        <Icons.LogIn />
+                                        <span>Aceder ao Meu Painel</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Reward Highlight Box */}
+                            <div style={{
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                borderRadius: '20px',
+                                padding: '1.75rem',
+                                border: '1.5px solid rgba(245, 158, 11, 0.3)',
+                                backdropFilter: 'blur(8px)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                    <div style={{
+                                        width: '42px',
+                                        height: '42px',
+                                        borderRadius: '12px',
+                                        background: '#f59e0b',
+                                        color: '#111827',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <Icons.ShirtReward />
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.8rem', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase' }}>
+                                            Prémio de Reconhecimento
                                         </div>
-                                        <div style={styles.orderBody}>
-                                            <div><strong>👤 Cliente:</strong> {order.customer_name}</div>
-                                            <div><strong>📍 Destino:</strong> {order.bairro} — {order.address}</div>
-                                            <div><strong>💵 Valor a Cobrar:</strong> {formatMZCurrency(order.total)} ({order.payment})</div>
-                                        </div>
-                                        <div style={styles.orderActions}>
-                                            <button
-                                                style={styles.whatsappActionBtn}
-                                                onClick={() => contactClient(order.phone, order.customer_name, order.id)}
-                                            >
-                                                📱 Contactar Cliente no WhatsApp
-                                            </button>
-                                            {order.status !== 'Com Motorista' && (
-                                                <button
-                                                    style={styles.transitActionBtn}
-                                                    onClick={() => handleUpdateOrderStatus(order.id, 'Com Motorista')}
-                                                >
-                                                    🛵 Iniciar Transporte
-                                                </button>
-                                            )}
-                                            <button
-                                                style={styles.deliverActionBtn}
-                                                onClick={() => handleUpdateOrderStatus(order.id, 'Entregue')}
-                                            >
-                                                ✅ Concluir Entrega
-                                            </button>
+                                        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff' }}>
+                                            Camisa Oficial do Motorista
                                         </div>
                                     </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'orders' && (
-                    <div style={styles.tabContent}>
-                        <h2 style={styles.pageTitle}>Gestão de Entregas</h2>
-
-                        <div style={styles.sectionCard}>
-                            <h3 style={styles.sectionTitle}>🔴 Pedidos Ativos para Entrega ({activeOrders.length})</h3>
-                            {activeOrders.length === 0 ? (
-                                <div style={styles.emptyState}>
-                                    <p>Nenhuma entrega ativa no momento.</p>
                                 </div>
-                            ) : (
-                                activeOrders.map(order => (
-                                    <div key={order.id} style={styles.orderCard}>
-                                        <div style={styles.orderHeader}>
-                                            <span style={styles.orderId}>Pedido #{order.id}</span>
-                                            <span style={{
-                                                ...styles.statusBadge,
-                                                backgroundColor: STATUS_COLORS[order.status]?.bg || '#eee',
-                                                color: STATUS_COLORS[order.status]?.color || '#333'
-                                            }}>
-                                                {order.status}
-                                            </span>
-                                        </div>
-                                        <div style={styles.orderBody}>
-                                            <div><strong>Cliente:</strong> {order.customer_name}</div>
-                                            <div><strong>Telefone:</strong> {order.phone}</div>
-                                            <div><strong>Endereço:</strong> {order.bairro}, {order.address}</div>
-                                            <div><strong>Total:</strong> {formatMZCurrency(order.total)} ({order.payment})</div>
-                                            {order.items && order.items.length > 0 && (
-                                                <div style={{ marginTop: '0.5rem', background: '#f8fafc', padding: '0.5rem', borderRadius: '6px' }}>
-                                                    <strong>Itens:</strong>
-                                                    <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.85rem' }}>
-                                                        {order.items.map((it, idx) => (
-                                                            <li key={idx}>{it.quantity}x {it.product_name || it.name}</li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div style={styles.orderActions}>
-                                            <button
-                                                style={styles.whatsappActionBtn}
-                                                onClick={() => contactClient(order.phone, order.customer_name, order.id)}
-                                            >
-                                                📱 WhatsApp do Cliente
-                                            </button>
-                                            {order.status !== 'Com Motorista' ? (
-                                                <button
-                                                    style={styles.transitActionBtn}
-                                                    onClick={() => handleUpdateOrderStatus(order.id, 'Com Motorista')}
-                                                >
-                                                    🛵 Peguei a Encomenda
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    style={styles.deliverActionBtn}
-                                                    onClick={() => handleUpdateOrderStatus(order.id, 'Entregue')}
-                                                >
-                                                    ✅ Entrega Efetuada com Sucesso
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                                <p style={{ fontSize: '0.9rem', color: '#cbd5e1', lineHeight: 1.5, margin: '0 0 1.25rem' }}>
+                                    Ao atingir <strong>5.000 MT em vendas e entregas</strong> com a Tchapo Tchapo, você ganha gratuitamente a Camisa Oficial de Motorista.
+                                </p>
+                                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.85rem', borderRadius: '10px', border: '1px solid #334151', fontSize: '0.82rem', color: '#94a3b8' }}>
+                                    Processo de entrada transparente: cadastre com o seu <strong>BI</strong> ou <strong>Carta de Condução</strong>, aguarde a aprovação do administrador e comece a rodar.
+                                </div>
+                            </div>
                         </div>
 
-                        <div style={styles.sectionCard}>
-                            <h3 style={styles.sectionTitle}>🏁 Histórico de Entregas Concluídas ({recentDeliveries.length})</h3>
-                            {recentDeliveries.length === 0 ? (
-                                <div style={styles.emptyState}>
-                                    <p>Nenhuma entrega concluída recentemente.</p>
+                        {/* Benefits Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+                            <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                                    <Icons.Wallet />
                                 </div>
-                            ) : (
-                                <div style={styles.historyList}>
-                                    {recentDeliveries.map(order => (
-                                        <div key={order.id} style={styles.historyItem}>
-                                            <div>
-                                                <div style={{ fontWeight: 700, color: '#1e293b' }}>
-                                                    Pedido #{order.id} — {order.customer_name}
-                                                </div>
-                                                <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
-                                                    {order.bairro} • {new Date(order.created_at).toLocaleDateString('pt-MZ')}
-                                                </div>
-                                            </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontWeight: 800, color: '#16a34a' }}>+150 MT</div>
-                                                <div style={{ fontSize: '0.78rem', color: '#059669' }}>Entregue ✅</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'warnings' && (
-                    <div style={styles.tabContent}>
-                        <h2 style={styles.pageTitle}>Registo de Advertências e Conduta</h2>
-                        <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.2rem' }}>
-                            Mantenha um bom índice de pontualidade e comunicação para evitar penalizações na sua conta.
-                        </p>
-
-                        {warnings.length === 0 ? (
-                            <div style={styles.noWarningsCard}>
-                                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🌟</div>
-                                <h3 style={{ color: '#166534', fontWeight: 800, marginBottom: '0.25rem' }}>Excelente Registo!</h3>
-                                <p style={{ color: '#15803d', fontSize: '0.9rem' }}>
-                                    Você não possui nenhuma advertência registada. Continue prestando um serviço pontual e de qualidade!
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem' }}>Ganhos por Entrega</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
+                                    Receba a sua taxa de entrega de forma garantida e visualize o seu faturamento diário e semanal no painel.
                                 </p>
                             </div>
-                        ) : (
-                            <div style={styles.warningList}>
-                                {warnings.map(w => {
-                                    const isGrave = w.severity === 'Grave';
-                                    const isMedia = w.severity === 'Média';
-                                    const cardColor = isGrave ? '#fee2e2' : isMedia ? '#ffedd5' : '#fef9c3';
-                                    const borderColor = isGrave ? '#ef4444' : isMedia ? '#f97316' : '#eab308';
-                                    const textColor = isGrave ? '#991b1b' : isMedia ? '#9a3412' : '#854d0e';
 
-                                    return (
-                                        <div key={w.id} style={{ ...styles.warningCard, background: cardColor, borderColor }}>
-                                            <div style={styles.warningHeader}>
-                                                <span style={{ fontWeight: 800, color: textColor }}>
-                                                    ⚠️ Advertência ({w.severity || 'Leve'})
-                                                </span>
-                                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                                    {w.issued_at ? new Date(w.issued_at).toLocaleString('pt-MZ') : 'Recentemente'}
-                                                </span>
-                                            </div>
-                                            <div style={{ ...styles.warningReason, color: textColor }}>
-                                                <strong>Motivo:</strong> {w.reason}
-                                            </div>
-                                            {w.notes && (
-                                                <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '4px' }}>
-                                                    <strong>Observações:</strong> {w.notes}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                            <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                                    <Icons.TrendingUp />
+                                </div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem' }}>Controlo de Disponibilidade</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
+                                    Ligue e desligue o botão Online quando estiver pronto para aceitar novos pedidos em tempo real.
+                                </p>
                             </div>
-                        )}
+
+                            <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                                    <Icons.ShieldCheck />
+                                </div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 0.5rem' }}>Registo Seguro</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
+                                    Documentação validada pelo administrador com proteção dos dados do motorista e dos clientes.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                {activeTab === 'profile' && (
-                    <div style={styles.tabContent}>
-                        <h2 style={styles.pageTitle}>Meu Perfil de Estafeta</h2>
+                {/* VIEW 2: Pending Approval Status Screen */}
+                {authDriver && authDriver.approval_status === 'Pendente' && (
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: '24px',
+                        padding: '3rem 2rem',
+                        maxWidth: '620px',
+                        margin: '2rem auto',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+                        border: '1.5px solid #fde68a',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            background: '#fef3c7',
+                            color: '#d97706',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1.5rem'
+                        }}>
+                            <Icons.Clock />
+                        </div>
+                        <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.75rem' }}>
+                            Conta em Análise
+                        </h2>
+                        <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 2rem' }}>
+                            Olá, <strong>{authDriver.name}</strong>! O seu cadastro de motorista foi recebido com sucesso e os seus documentos estão a ser analisados pela equipa da Tchapo Tchapo.
+                        </p>
 
-                        <div style={styles.profileCard}>
-                            <div style={styles.profileHeaderSection}>
-                                <img
-                                    src={authDriver.photo_url || '/assets/default_avatar.png'}
-                                    alt={authDriver.name}
-                                    style={styles.profileBigAvatar}
-                                    onError={(e) => { e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(authDriver.name); }}
-                                />
-                                <div>
-                                    <h3 style={{ fontSize: '1.3rem', color: '#0b3c6d', fontWeight: 800 }}>{authDriver.name}</h3>
-                                    <div style={{ color: '#16a34a', fontWeight: 700, fontSize: '0.9rem' }}>
-                                        🟢 Estafeta Aprovado Tchapo Tchapo
-                                    </div>
-                                </div>
+                        <div style={{
+                            background: '#f8fafc',
+                            padding: '1.25rem',
+                            borderRadius: '14px',
+                            border: '1px solid #e2e8f0',
+                            textAlign: 'left',
+                            marginBottom: '2rem',
+                            fontSize: '0.88rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span style={{ color: '#64748b' }}>Contacto:</span>
+                                <strong>{authDriver.phone}</strong>
                             </div>
-
-                            <div style={styles.profileDetailsGrid}>
-                                <div style={styles.profileDetailItem}>
-                                    <span style={styles.detailLabel}>📱 Telefone</span>
-                                    <span style={styles.detailValue}>{authDriver.phone}</span>
-                                </div>
-                                <div style={styles.profileDetailItem}>
-                                    <span style={styles.detailLabel}>📍 Bairro de Actuação</span>
-                                    <span style={styles.detailValue}>{authDriver.bairro || 'Beira'}</span>
-                                </div>
-                                <div style={styles.profileDetailItem}>
-                                    <span style={styles.detailLabel}>🛵 Veículo</span>
-                                    <span style={styles.detailValue}>{authDriver.vehicle_type || 'Mota'} ({authDriver.vehicle_plate || 'Sem matrícula'})</span>
-                                </div>
-                                <div style={styles.profileDetailItem}>
-                                    <span style={styles.detailLabel}>📄 Documento Cadastrado</span>
-                                    <span style={styles.detailValue}>{authDriver.doc_type || 'BI'}: {authDriver.doc_number || 'N/A'}</span>
-                                </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span style={{ color: '#64748b' }}>Veículo:</span>
+                                <strong>{authDriver.vehicle_type || 'Mota'}</strong>
                             </div>
-
-                            {authDriver.doc_photo_url && (
-                                <div style={{ marginTop: '1.2rem' }}>
-                                    <span style={styles.detailLabel}>📸 Foto do Documento Enviado</span>
-                                    <img src={authDriver.doc_photo_url} alt="Documento" style={styles.docImagePreview} />
-                                </div>
-                            )}
-
-                            <div style={{ marginTop: '2rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.2rem' }}>
-                                <button style={styles.logoutBtn} onClick={handleLogout}>
-                                    🚪 Sair da Conta (Logout)
-                                </button>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#64748b' }}>Documento:</span>
+                                <strong>{authDriver.doc_type || 'BI'} ({authDriver.doc_number || 'Em análise'})</strong>
                             </div>
                         </div>
+
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button
+                                onClick={() => fetchDashboard(authDriver.id)}
+                                style={{
+                                    background: '#f59e0b',
+                                    color: '#111827',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '10px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                Verificar Estado
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                style={{
+                                    background: 'transparent',
+                                    color: '#64748b',
+                                    border: '1px solid #cbd5e1',
+                                    padding: '0.75rem 1.25rem',
+                                    borderRadius: '10px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* VIEW 3: Approved Driver Portal Dashboard */}
+                {authDriver && authDriver.approval_status === 'Aprovado' && (
+                    <div>
+                        {/* Tabs Bar */}
+                        <div style={{
+                            display: 'flex',
+                            gap: '0.5rem',
+                            borderBottom: '1px solid #e2e8f0',
+                            paddingBottom: '0.75rem',
+                            marginBottom: '1.75rem',
+                            overflowX: 'auto'
+                        }}>
+                            {[
+                                { id: 'dashboard', label: 'Painel Geral', icon: <Icons.TrendingUp /> },
+                                { id: 'orders', label: `Entregas (${activeOrders.length})`, icon: <Icons.Package /> },
+                                { id: 'warnings', label: `Advertências (${warnings.length})`, icon: <Icons.AlertTriangle /> },
+                                { id: 'profile', label: 'O Meu Perfil', icon: <Icons.User /> }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    style={{
+                                        background: activeTab === tab.id ? '#111827' : 'transparent',
+                                        color: activeTab === tab.id ? '#fff' : '#64748b',
+                                        border: 'none',
+                                        padding: '0.6rem 1.15rem',
+                                        borderRadius: '10px',
+                                        fontWeight: 700,
+                                        fontSize: '0.88rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.45rem',
+                                        transition: 'all 0.15s',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    {tab.icon}
+                                    <span>{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* TAB 1: Dashboard Overview */}
+                        {activeTab === 'dashboard' && (
+                            <div>
+                                {/* REWARD / GOAL CARD: 5000 MT SHIRT */}
+                                <div style={{
+                                    background: isShirtUnlocked
+                                        ? 'linear-gradient(135deg, #065f46 0%, #047857 100%)'
+                                        : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                                    borderRadius: '20px',
+                                    padding: '1.75rem 2rem',
+                                    color: '#fff',
+                                    marginBottom: '2rem',
+                                    boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+                                    border: isShirtUnlocked ? '1.5px solid #34d399' : '1px solid #334151',
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                                    gap: '1.5rem',
+                                    alignItems: 'center'
+                                }}>
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                                            <div style={{
+                                                width: '36px',
+                                                height: '36px',
+                                                borderRadius: '10px',
+                                                background: isShirtUnlocked ? '#34d399' : '#f59e0b',
+                                                color: '#111827',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <Icons.ShirtReward />
+                                            </div>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: isShirtUnlocked ? '#6ee7b7' : '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                {isShirtUnlocked ? 'Meta Concluída' : 'Meta Especial de Vendas'}
+                                            </span>
+                                        </div>
+                                        <h3 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.4rem', color: '#fff' }}>
+                                            {isShirtUnlocked ? 'Camisa Oficial de Motorista Desbloqueada!' : 'Conquiste a Camisa Oficial Tchapo Tchapo'}
+                                        </h3>
+                                        <p style={{ fontSize: '0.88rem', color: isShirtUnlocked ? '#d1fae5' : '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                                            {isShirtUnlocked
+                                                ? 'Parabéns! Atingiu mais de 5.000 MT em vendas e entregas. Já pode levantar a sua Camisa Oficial na central da Tchapo Tchapo!'
+                                                : `Atinja 5.000 MT em vendas/entregas para ganhar gratuitamente a Camisa Oficial de Motorista da Tchapo Tchapo.`
+                                            }
+                                        </p>
+                                    </div>
+
+                                    {/* Progress Bar Column */}
+                                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', fontSize: '0.85rem' }}>
+                                            <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Progresso da Meta:</span>
+                                            <strong style={{ color: '#fff', fontSize: '0.95rem' }}>
+                                                {formatMZCurrency(totalSales)} / 5.000 MT
+                                            </strong>
+                                        </div>
+
+                                        {/* Progress Bar */}
+                                        <div style={{ width: '100%', height: '12px', background: '#334151', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.6rem' }}>
+                                            <div style={{
+                                                width: `${progressPercent}%`,
+                                                height: '100%',
+                                                background: isShirtUnlocked ? '#10b981' : 'linear-gradient(90deg, #f59e0b, #fbbf24)',
+                                                borderRadius: '999px',
+                                                transition: 'width 0.4s ease'
+                                            }} />
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#94a3b8' }}>
+                                            <span>{progressPercent}% atingido</span>
+                                            <span>{isShirtUnlocked ? '100% Desbloqueado' : `Faltam ${formatMZCurrency(remainingToShirt)}`}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Financial Metric Cards */}
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                                    gap: '1.25rem',
+                                    marginBottom: '2rem'
+                                }}>
+                                    <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '0.82rem', fontWeight: 700 }}>
+                                            <span>Ganhos de Hoje</span>
+                                            <Icons.Wallet />
+                                        </div>
+                                        <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#059669', marginTop: '0.5rem' }}>
+                                            {formatMZCurrency(stats.today_earnings)}
+                                        </div>
+                                        <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.35rem' }}>
+                                            {stats.today_deliveries} entregas feitas hoje
+                                        </div>
+                                    </div>
+
+                                    <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '0.82rem', fontWeight: 700 }}>
+                                            <span>Ganhos Esta Semana</span>
+                                            <Icons.TrendingUp />
+                                        </div>
+                                        <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginTop: '0.5rem' }}>
+                                            {formatMZCurrency(stats.week_earnings)}
+                                        </div>
+                                        <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.35rem' }}>
+                                            Acumulado nos últimos 7 dias
+                                        </div>
+                                    </div>
+
+                                    <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '0.82rem', fontWeight: 700 }}>
+                                            <span>Total Acumulado</span>
+                                            <Icons.Trophy />
+                                        </div>
+                                        <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#f59e0b', marginTop: '0.5rem' }}>
+                                            {formatMZCurrency(stats.total_earnings)}
+                                        </div>
+                                        <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.35rem' }}>
+                                            {stats.total_deliveries} entregas finalizadas
+                                        </div>
+                                    </div>
+
+                                    <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '0.82rem', fontWeight: 700 }}>
+                                            <span>Pedidos em Aberto</span>
+                                            <Icons.Package />
+                                        </div>
+                                        <div style={{ fontSize: '1.75rem', fontWeight: 900, color: activeOrders.length > 0 ? '#2563eb' : '#0f172a', marginTop: '0.5rem' }}>
+                                            {activeOrders.length}
+                                        </div>
+                                        <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.35rem' }}>
+                                            Prontos ou em trânsito
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Active Deliveries Section */}
+                                <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                                            Entregas Designadas para Si
+                                        </h3>
+                                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '0.2rem 0.6rem', borderRadius: '999px' }}>
+                                            {activeOrders.length} em andamento
+                                        </span>
+                                    </div>
+
+                                    {activeOrders.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#94a3b8' }}>
+                                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f1f5f9', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' }}>
+                                                <Icons.Package />
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: '0.92rem', fontWeight: 600 }}>Nenhuma entrega em aberto no momento.</p>
+                                            <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>Mantenha o estado Online para ser notificado de novos pedidos.</p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+                                            {activeOrders.map(order => (
+                                                <div key={order.id} style={{
+                                                    background: '#f8fafc',
+                                                    borderRadius: '16px',
+                                                    padding: '1.25rem',
+                                                    border: '1px solid #e2e8f0'
+                                                }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                                        <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>
+                                                            Pedido #{order.id}
+                                                        </span>
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 700,
+                                                            padding: '0.2rem 0.6rem',
+                                                            borderRadius: '999px',
+                                                            background: order.status === 'Com Motorista' ? '#d1fae5' : '#dbeafe',
+                                                            color: order.status === 'Com Motorista' ? '#065f46' : '#1e40af'
+                                                        }}>
+                                                            {order.status}
+                                                        </span>
+                                                    </div>
+
+                                                    <div style={{ fontSize: '0.85rem', color: '#334151', marginBottom: '0.5rem' }}>
+                                                        <strong>Cliente:</strong> {order.customer_name || 'Cliente'}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85rem', color: '#334151', marginBottom: '0.5rem' }}>
+                                                        <strong>Endereço:</strong> {order.address || 'Beira'} ({order.bairro || 'Centro'})
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85rem', color: '#059669', fontWeight: 700, marginBottom: '1rem' }}>
+                                                        <strong>Total a Cobrar:</strong> {formatMZCurrency(order.total)}
+                                                    </div>
+
+                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                        {order.customer_phone && (
+                                                            <a
+                                                                href={`https://wa.me/${String(order.customer_phone).replace(/\D/g, '')}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20motorista%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{
+                                                                    flex: 1,
+                                                                    background: '#059669',
+                                                                    color: '#fff',
+                                                                    textDecoration: 'none',
+                                                                    padding: '0.6rem',
+                                                                    borderRadius: '8px',
+                                                                    fontWeight: 700,
+                                                                    fontSize: '0.82rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    gap: '0.4rem'
+                                                                }}
+                                                            >
+                                                                <Icons.WhatsApp />
+                                                                <span>WhatsApp</span>
+                                                            </a>
+                                                        )}
+
+                                                        {order.status === 'Processando' || order.status === 'Preparando' ? (
+                                                            <button
+                                                                onClick={() => handleUpdateOrderStatus(order.id, 'Com Motorista')}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    background: '#2563eb',
+                                                                    color: '#fff',
+                                                                    border: 'none',
+                                                                    padding: '0.6rem',
+                                                                    borderRadius: '8px',
+                                                                    fontWeight: 700,
+                                                                    fontSize: '0.82rem',
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                Recolher Pedido
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleUpdateOrderStatus(order.id, 'Entregue')}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    background: '#16a34a',
+                                                                    color: '#fff',
+                                                                    border: 'none',
+                                                                    padding: '0.6rem',
+                                                                    borderRadius: '8px',
+                                                                    fontWeight: 700,
+                                                                    fontSize: '0.82rem',
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                Confirmar Entrega
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 2: Orders & Delivery History */}
+                        {activeTab === 'orders' && (
+                            <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+                                <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.15rem', fontWeight: 800 }}>
+                                    Histórico de Entregas Realizadas
+                                </h3>
+                                {recentDeliveries.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                                        Nenhuma entrega finalizada até ao momento.
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {recentDeliveries.map(d => (
+                                            <div key={d.id} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '1rem',
+                                                background: '#f8fafc',
+                                                borderRadius: '12px',
+                                                border: '1px solid #e2e8f0',
+                                                flexWrap: 'wrap',
+                                                gap: '0.5rem'
+                                            }}>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                                                        Pedido #{d.id} • {d.customer_name}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
+                                                        📍 {d.address || d.bairro || 'Beira'} • {d.created_at ? new Date(d.created_at).toLocaleDateString('pt-MZ') : ''}
+                                                    </div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontWeight: 800, color: '#059669' }}>
+                                                        {formatMZCurrency(d.total)}
+                                                    </div>
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', background: '#dcfce7', padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
+                                                        Entregue
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* TAB 3: Disciplinary Warnings Tab */}
+                        {activeTab === 'warnings' && (
+                            <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+                                        Registo de Advertências Disciplinares
+                                    </h3>
+                                    <span style={{
+                                        fontSize: '0.82rem',
+                                        fontWeight: 700,
+                                        color: warnings.length > 0 ? '#dc2626' : '#059669',
+                                        background: warnings.length > 0 ? '#fee2e2' : '#dcfce7',
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '999px'
+                                    }}>
+                                        {warnings.length === 0 ? 'Sem Advertências (Ficha Limpa)' : `${warnings.length} Advertência(s)`}
+                                    </span>
+                                </div>
+
+                                {warnings.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#64748b' }}>
+                                        <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#dcfce7', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                            <Icons.CheckCircle />
+                                        </div>
+                                        <h4 style={{ margin: '0 0 0.4rem', color: '#0f172a', fontWeight: 800 }}>Excelente Conduta!</h4>
+                                        <p style={{ margin: 0, fontSize: '0.9rem' }}>Você não possui nenhuma advertência registada. Continue com o bom trabalho!</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                                        {warnings.map((w, idx) => {
+                                            const sevStyle = {
+                                                Leve: { bg: '#fef3c7', color: '#b45309' },
+                                                Média: { bg: '#fed7aa', color: '#c2410c' },
+                                                Grave: { bg: '#fee2e2', color: '#b91c1c' }
+                                            }[w.severity] || { bg: '#fee2e2', color: '#b91c1c' };
+
+                                            return (
+                                                <div key={idx} style={{
+                                                    background: '#fff5f5',
+                                                    padding: '1.25rem',
+                                                    borderRadius: '14px',
+                                                    border: '1px solid #fecaca'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                                        <span style={{
+                                                            background: sevStyle.bg,
+                                                            color: sevStyle.color,
+                                                            padding: '0.15rem 0.5rem',
+                                                            borderRadius: '999px',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 800
+                                                        }}>
+                                                            Gravidade {w.severity || 'Leve'}
+                                                        </span>
+                                                        <strong style={{ color: '#0f172a', fontSize: '0.95rem' }}>{w.reason}</strong>
+                                                    </div>
+                                                    {w.notes && (
+                                                        <p style={{ margin: '0.4rem 0', fontSize: '0.85rem', color: '#475569' }}>
+                                                            {w.notes}
+                                                        </p>
+                                                    )}
+                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.35rem' }}>
+                                                        Data: {w.date ? new Date(w.date).toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* TAB 4: Profile Details */}
+                        {activeTab === 'profile' && (
+                            <div style={{ background: '#fff', padding: '2rem', borderRadius: '20px', border: '1px solid #e2e8f0', maxWidth: '640px' }}>
+                                <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.2rem', fontWeight: 800 }}>
+                                    Dados do Motorista
+                                </h3>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.75rem' }}>
+                                    <img
+                                        src={authDriver.photo_url || '/assets/logo_original.png'}
+                                        alt={authDriver.name}
+                                        style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #f59e0b' }}
+                                    />
+                                    <div>
+                                        <h4 style={{ margin: '0 0 0.2rem', fontSize: '1.15rem', fontWeight: 800 }}>{authDriver.name}</h4>
+                                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Motorista Oficial Tchapo Tchapo</div>
+                                        <span style={{ display: 'inline-block', marginTop: '0.35rem', background: '#dcfce7', color: '#15803d', fontSize: '0.75rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
+                                            Conta Aprovada
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.9rem', marginBottom: '2rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                                        <span style={{ color: '#64748b' }}>WhatsApp / Contacto:</span>
+                                        <strong>{authDriver.phone}</strong>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                                        <span style={{ color: '#64748b' }}>Bairro de Atuação:</span>
+                                        <strong>{authDriver.bairro || 'Beira'}</strong>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                                        <span style={{ color: '#64748b' }}>Tipo de Veículo:</span>
+                                        <strong>{authDriver.vehicle_type || 'Mota'} {authDriver.vehicle_plate ? `(${authDriver.vehicle_plate})` : ''}</strong>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                                        <span style={{ color: '#64748b' }}>Documento:</span>
+                                        <strong>{authDriver.doc_type || 'BI'} • {authDriver.doc_number || 'Sem número'}</strong>
+                                    </div>
+                                </div>
+
+                                {authDriver.doc_photo_url && (
+                                    <div style={{ marginBottom: '2rem' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700, fontSize: '0.85rem', color: '#475569' }}>
+                                            Documento Submetido
+                                        </label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <img
+                                                src={authDriver.doc_photo_url}
+                                                alt="Documento"
+                                                style={{ width: '80px', height: '55px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                                                onClick={() => setDocPreviewModal(authDriver.doc_photo_url)}
+                                            />
+                                            <button
+                                                onClick={() => setDocPreviewModal(authDriver.doc_photo_url)}
+                                                style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
+                                            >
+                                                Visualizar Foto do Documento
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={handleLogout}
+                                    style={{
+                                        width: '100%',
+                                        background: '#fee2e2',
+                                        color: '#b91c1c',
+                                        border: 'none',
+                                        padding: '0.85rem',
+                                        borderRadius: '10px',
+                                        fontWeight: 700,
+                                        fontSize: '0.9rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem'
+                                    }}
+                                >
+                                    <Icons.LogOut />
+                                    <span>Terminar Sessão</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </main>
 
-            {renderToast()}
+            {/* MODAL 1: Driver Registration Modal */}
+            {isRegisterModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(15, 23, 42, 0.75)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 99999,
+                    backdropFilter: 'blur(5px)',
+                    padding: '1.5rem'
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: '24px',
+                        padding: '2rem',
+                        maxWidth: '560px',
+                        width: '100%',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+                        border: '1px solid #e2e8f0'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#0f172a' }}>
+                                    Cadastrar como Motorista
+                                </h3>
+                                <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                                    Preencha os seus dados para submeter à aprovação da equipa.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsRegisterModalOpen(false)}
+                                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}
+                            >
+                                <Icons.Close />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    Nome Completo *
+                                </label>
+                                <input
+                                    type="text" required
+                                    value={regName}
+                                    onChange={(e) => setRegName(e.target.value)}
+                                    placeholder="Ex: Carlos Alberto Macamo"
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                        Contacto WhatsApp *
+                                    </label>
+                                    <input
+                                        type="text" required
+                                        value={regPhone}
+                                        onChange={(e) => setRegPhone(e.target.value)}
+                                        placeholder="Ex: 258841234567"
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                        Bairro Base na Beira *
+                                    </label>
+                                    <input
+                                        type="text" required
+                                        value={regBairro}
+                                        onChange={(e) => setRegBairro(e.target.value)}
+                                        placeholder="Ex: Macuti, Ponta Gêa"
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                        Tipo de Veículo
+                                    </label>
+                                    <select
+                                        value={regVehicleType}
+                                        onChange={(e) => setRegVehicleType(e.target.value)}
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                                    >
+                                        <option value="Mota">Moto / Scooter</option>
+                                        <option value="Carro">Carro / Viatura</option>
+                                        <option value="Bicicleta">Bicicleta</option>
+                                        <option value="Carrinha">Carrinha / Van</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                        Matrícula (Opcional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={regVehiclePlate}
+                                        onChange={(e) => setRegVehiclePlate(e.target.value)}
+                                        placeholder="Ex: ABC-123-MC"
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                        Tipo de Documento *
+                                    </label>
+                                    <select
+                                        value={regDocType}
+                                        onChange={(e) => setRegDocType(e.target.value)}
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                                    >
+                                        <option value="BI">Bilhete de Identidade (BI)</option>
+                                        <option value="Carta de Condução">Carta de Condução</option>
+                                        <option value="DIRE">DIRE</option>
+                                        <option value="Passaporte">Passaporte</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                        Número do Documento (ID) *
+                                    </label>
+                                    <input
+                                        type="text" required
+                                        value={regDocNumber}
+                                        onChange={(e) => setRegDocNumber(e.target.value)}
+                                        placeholder="Ex: 110100234567N"
+                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                        Foto de Perfil
+                                    </label>
+                                    <input
+                                        type="file" accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            setPhotoFile(file);
+                                            if (file) setPhotoPreview(URL.createObjectURL(file));
+                                        }}
+                                        style={{ width: '100%', fontSize: '0.8rem' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                        Foto do Documento (BI / Carta) *
+                                    </label>
+                                    <input
+                                        type="file" accept="image/*" required
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            setDocPhotoFile(file);
+                                            if (file) setDocPhotoPreview(URL.createObjectURL(file));
+                                        }}
+                                        style={{ width: '100%', fontSize: '0.8rem' }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    Defina o seu PIN de 4 dígitos para Acesso *
+                                </label>
+                                <input
+                                    type="password" maxLength="6" required
+                                    value={regPin}
+                                    onChange={(e) => setRegPin(e.target.value)}
+                                    placeholder="Ex: 1234"
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={regLoading}
+                                style={{
+                                    marginTop: '0.5rem',
+                                    background: '#f59e0b',
+                                    color: '#111827',
+                                    border: 'none',
+                                    padding: '0.9rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 800,
+                                    fontSize: '0.95rem',
+                                    cursor: 'pointer',
+                                    opacity: regLoading ? 0.7 : 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)'
+                                }}
+                            >
+                                <Icons.CheckCircle />
+                                <span>{regLoading ? 'A enviar registo...' : 'Submeter Cadastro de Motorista'}</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 2: Login Modal */}
+            {isLoginModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(15, 23, 42, 0.75)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 99999,
+                    backdropFilter: 'blur(5px)',
+                    padding: '1.5rem'
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: '24px',
+                        padding: '2.25rem',
+                        maxWidth: '420px',
+                        width: '100%',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+                        border: '1px solid #e2e8f0'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900, color: '#0f172a' }}>
+                                    Entrar no Portal
+                                </h3>
+                                <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                                    Aceda ao seu painel com telefone e PIN.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsLoginModalOpen(false)}
+                                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}
+                            >
+                                <Icons.Close />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    Telefone Registado *
+                                </label>
+                                <input
+                                    type="text" required
+                                    value={loginPhone}
+                                    onChange={(e) => setLoginPhone(e.target.value)}
+                                    placeholder="Ex: 258841234567 ou 841234567"
+                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>
+                                    PIN de Acesso *
+                                </label>
+                                <input
+                                    type="password" maxLength="6" required
+                                    value={loginPin}
+                                    onChange={(e) => setLoginPin(e.target.value)}
+                                    placeholder="••••"
+                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loginLoading}
+                                style={{
+                                    background: '#f59e0b',
+                                    color: '#111827',
+                                    border: 'none',
+                                    padding: '0.85rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 800,
+                                    fontSize: '0.95rem',
+                                    cursor: 'pointer',
+                                    opacity: loginLoading ? 0.7 : 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)'
+                                }}
+                            >
+                                <Icons.LogIn />
+                                <span>{loginLoading ? 'A verificar...' : 'Entrar no Painel'}</span>
+                            </button>
+
+                            <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.82rem', color: '#64748b' }}>
+                                Ainda não tem conta?{' '}
+                                <button
+                                    type="button"
+                                    onClick={() => { setIsLoginModalOpen(false); setIsRegisterModalOpen(true); }}
+                                    style={{ background: 'none', border: 'none', color: '#d97706', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                                >
+                                    Cadastre-se aqui
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 3: Document Preview Lightbox */}
+            {docPreviewModal && (
+                <div
+                    onClick={() => setDocPreviewModal(null)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.85)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 999999,
+                        backdropFilter: 'blur(6px)',
+                        padding: '2rem'
+                    }}
+                >
+                    <div style={{ position: 'relative', maxWidth: '750px', width: '100%', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <button
+                            onClick={() => setDocPreviewModal(null)}
+                            style={{
+                                position: 'absolute',
+                                top: '-15px',
+                                right: '-15px',
+                                background: '#ef4444',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '36px',
+                                height: '36px',
+                                fontSize: '1rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            <Icons.Close />
+                        </button>
+                        <img
+                            src={docPreviewModal}
+                            alt="Documento do Motorista"
+                            style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '14px', objectFit: 'contain', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
-
-    function renderToast() {
-        if (!toast) return null;
-        const isError = toast.type === 'error';
-        const isSuccess = toast.type === 'success';
-        return (
-            <div style={{
-                position: 'fixed',
-                bottom: '2rem',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 9999,
-                background: isError ? '#991b1b' : isSuccess ? '#166534' : '#0f172a',
-                color: '#fff',
-                padding: '0.85rem 1.6rem',
-                borderRadius: '30px',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.25)',
-                fontSize: '0.92rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-            }}>
-                {toast.msg}
-            </div>
-        );
-    }
 }
-
-const styles = {
-    authContainer: {
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0b3c6d 0%, #032042 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1.5rem',
-        fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif"
-    },
-    authCard: {
-        background: '#ffffff',
-        borderRadius: '20px',
-        padding: '2rem',
-        width: '100%',
-        maxWidth: '520px',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.25)'
-    },
-    authHeader: {
-        textAlign: 'center',
-        marginBottom: '1.5rem'
-    },
-    logoBadge: {
-        display: 'inline-block',
-        background: '#f97316',
-        color: '#ffffff',
-        fontWeight: 900,
-        fontSize: '0.85rem',
-        padding: '4px 12px',
-        borderRadius: '20px',
-        letterSpacing: '1px',
-        marginBottom: '0.5rem'
-    },
-    authTitle: {
-        color: '#0b3c6d',
-        fontSize: '1.75rem',
-        fontWeight: 800,
-        margin: '0.2rem 0'
-    },
-    authSubtitle: {
-        color: '#64748b',
-        fontSize: '0.9rem'
-    },
-    tabToggle: {
-        display: 'flex',
-        background: '#f1f5f9',
-        borderRadius: '12px',
-        padding: '4px',
-        marginBottom: '1.5rem'
-    },
-    tabBtn: {
-        flex: 1,
-        padding: '0.65rem',
-        border: 'none',
-        background: 'transparent',
-        borderRadius: '10px',
-        fontWeight: 700,
-        fontSize: '0.9rem',
-        color: '#64748b',
-        cursor: 'pointer',
-        transition: 'all 0.2s'
-    },
-    tabBtnActive: {
-        background: '#ffffff',
-        color: '#0b3c6d',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-    },
-    form: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem'
-    },
-    sectionDivider: {
-        fontSize: '0.75rem',
-        fontWeight: 800,
-        color: '#94a3b8',
-        letterSpacing: '1px',
-        margin: '0.5rem 0 0.2rem 0',
-        borderBottom: '1px solid #f1f5f9',
-        paddingBottom: '4px'
-    },
-    inputGroup: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px'
-    },
-    inputRow: {
-        display: 'flex',
-        gap: '0.75rem'
-    },
-    label: {
-        fontSize: '0.85rem',
-        fontWeight: 700,
-        color: '#1e293b'
-    },
-    input: {
-        padding: '0.75rem 1rem',
-        borderRadius: '10px',
-        border: '1.5px solid #cbd5e1',
-        fontSize: '0.95rem',
-        outline: 'none',
-        fontFamily: 'inherit'
-    },
-    fileInput: {
-        fontSize: '0.85rem',
-        color: '#475569'
-    },
-    docTypeSelector: {
-        display: 'flex',
-        gap: '6px'
-    },
-    docTypeBtn: {
-        flex: 1,
-        padding: '0.5rem',
-        border: '1.5px solid #cbd5e1',
-        background: '#f8fafc',
-        borderRadius: '8px',
-        fontSize: '0.8rem',
-        fontWeight: 700,
-        color: '#475569',
-        cursor: 'pointer'
-    },
-    docTypeBtnActive: {
-        background: '#eff6ff',
-        borderColor: '#3b82f6',
-        color: '#1d4ed8'
-    },
-    thumbPreview: {
-        width: '60px',
-        height: '60px',
-        objectFit: 'cover',
-        borderRadius: '8px',
-        marginTop: '6px',
-        border: '1px solid #cbd5e1'
-    },
-    primaryBtn: {
-        background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-        color: '#fff',
-        border: 'none',
-        padding: '0.9rem',
-        borderRadius: '12px',
-        fontWeight: 800,
-        fontSize: '1rem',
-        cursor: 'pointer',
-        boxShadow: '0 4px 15px rgba(249, 115, 22, 0.35)',
-        marginTop: '0.5rem'
-    },
-    secondaryBtn: {
-        background: '#f1f5f9',
-        color: '#475569',
-        border: '1px solid #cbd5e1',
-        padding: '0.9rem',
-        borderRadius: '12px',
-        fontWeight: 700,
-        fontSize: '0.95rem',
-        cursor: 'pointer'
-    },
-    linkBtn: {
-        background: 'none',
-        border: 'none',
-        color: '#f97316',
-        fontWeight: 700,
-        cursor: 'pointer',
-        textDecoration: 'underline'
-    },
-    badgePending: {
-        display: 'inline-block',
-        background: '#fef3c7',
-        color: '#92400e',
-        padding: '4px 14px',
-        borderRadius: '20px',
-        fontWeight: 700,
-        fontSize: '0.85rem'
-    },
-    pendingInfoBox: {
-        background: '#f8fafc',
-        borderRadius: '12px',
-        padding: '1rem',
-        textAlign: 'left',
-        fontSize: '0.9rem',
-        color: '#334155',
-        lineHeight: 1.8,
-        border: '1px solid #e2e8f0'
-    },
-    mainContainer: {
-        minHeight: '100vh',
-        background: '#f8fafc',
-        fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif"
-    },
-    header: {
-        background: '#0b3c6d',
-        color: '#ffffff',
-        padding: '1rem 1.5rem',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-    },
-    headerInner: {
-        maxWidth: '1000px',
-        margin: '0 auto',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '1rem'
-    },
-    driverProfile: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px'
-    },
-    avatarImg: {
-        width: '48px',
-        height: '48px',
-        borderRadius: '50%',
-        objectFit: 'cover',
-        border: '2px solid #ffffff'
-    },
-    driverName: {
-        fontWeight: 800,
-        fontSize: '1.15rem'
-    },
-    driverMetaText: {
-        fontSize: '0.82rem',
-        color: '#cbd5e1'
-    },
-    availabilityWrapper: {
-        display: 'flex',
-        alignItems: 'center'
-    },
-    availabilityBtn: {
-        border: 'none',
-        padding: '0.65rem 1.4rem',
-        borderRadius: '30px',
-        fontWeight: 800,
-        fontSize: '0.88rem',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        transition: 'all 0.2s',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-    },
-    onlineActiveBtn: {
-        background: '#15803d',
-        color: '#ffffff',
-        border: '2px solid #4ade80'
-    },
-    offlineBtn: {
-        background: '#334155',
-        color: '#cbd5e1',
-        border: '2px solid #64748b'
-    },
-    pulsingDot: {
-        width: '10px',
-        height: '10px',
-        borderRadius: '50%'
-    },
-    navBar: {
-        background: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-    },
-    navBarInner: {
-        maxWidth: '1000px',
-        margin: '0 auto',
-        display: 'flex',
-        overflowX: 'auto'
-    },
-    navTab: {
-        flex: 1,
-        padding: '1rem 0.5rem',
-        background: 'transparent',
-        border: 'none',
-        borderBottom: '3px solid transparent',
-        fontWeight: 700,
-        fontSize: '0.92rem',
-        color: '#64748b',
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '6px'
-    },
-    navTabActive: {
-        color: '#0b3c6d',
-        borderBottomColor: '#f97316'
-    },
-    warningCountBadge: {
-        background: '#ef4444',
-        color: '#fff',
-        fontSize: '0.75rem',
-        padding: '2px 6px',
-        borderRadius: '10px'
-    },
-    content: {
-        maxWidth: '1000px',
-        margin: '1.5rem auto',
-        padding: '0 1rem'
-    },
-    tabContent: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.5rem'
-    },
-    pageTitle: {
-        fontSize: '1.4rem',
-        fontWeight: 800,
-        color: '#0b3c6d',
-        margin: 0
-    },
-    offlineNotice: {
-        background: '#fffbeb',
-        border: '1.5px solid #fef3c7',
-        color: '#92400e',
-        padding: '1rem',
-        borderRadius: '12px',
-        fontSize: '0.92rem'
-    },
-    metricGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '1rem'
-    },
-    metricCard: {
-        background: '#ffffff',
-        borderRadius: '16px',
-        padding: '1.25rem',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.04)',
-        border: '1px solid #e2e8f0'
-    },
-    metricLabel: {
-        fontSize: '0.85rem',
-        color: '#64748b',
-        fontWeight: 700,
-        marginBottom: '6px'
-    },
-    metricValue: {
-        fontSize: '1.65rem',
-        fontWeight: 900,
-        color: '#0b3c6d'
-    },
-    metricSub: {
-        fontSize: '0.78rem',
-        color: '#94a3b8',
-        marginTop: '4px'
-    },
-    sectionCard: {
-        background: '#ffffff',
-        borderRadius: '16px',
-        padding: '1.25rem',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.04)',
-        border: '1px solid #e2e8f0'
-    },
-    sectionHeaderRow: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem'
-    },
-    sectionTitle: {
-        fontSize: '1.1rem',
-        fontWeight: 800,
-        color: '#0b3c6d',
-        margin: 0
-    },
-    emptyState: {
-        textAlign: 'center',
-        padding: '2rem 1rem',
-        color: '#64748b'
-    },
-    orderCard: {
-        border: '1.5px solid #e2e8f0',
-        borderRadius: '12px',
-        padding: '1rem',
-        marginBottom: '1rem',
-        background: '#fafafa'
-    },
-    orderHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '0.75rem'
-    },
-    orderId: {
-        fontWeight: 800,
-        color: '#0b3c6d',
-        fontSize: '1.05rem'
-    },
-    statusBadge: {
-        padding: '4px 10px',
-        borderRadius: '20px',
-        fontWeight: 700,
-        fontSize: '0.8rem'
-    },
-    orderBody: {
-        fontSize: '0.9rem',
-        color: '#334155',
-        lineHeight: 1.6,
-        marginBottom: '1rem'
-    },
-    orderActions: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '0.5rem'
-    },
-    whatsappActionBtn: {
-        flex: 1,
-        minWidth: '200px',
-        background: '#25D366',
-        color: '#ffffff',
-        border: 'none',
-        padding: '0.65rem 1rem',
-        borderRadius: '8px',
-        fontWeight: 700,
-        fontSize: '0.88rem',
-        cursor: 'pointer'
-    },
-    transitActionBtn: {
-        background: '#3b82f6',
-        color: '#ffffff',
-        border: 'none',
-        padding: '0.65rem 1rem',
-        borderRadius: '8px',
-        fontWeight: 700,
-        fontSize: '0.88rem',
-        cursor: 'pointer'
-    },
-    deliverActionBtn: {
-        background: '#16a34a',
-        color: '#ffffff',
-        border: 'none',
-        padding: '0.65rem 1rem',
-        borderRadius: '8px',
-        fontWeight: 700,
-        fontSize: '0.88rem',
-        cursor: 'pointer'
-    },
-    historyList: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem'
-    },
-    historyItem: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0.75rem',
-        background: '#f8fafc',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0'
-    },
-    noWarningsCard: {
-        background: '#f0fdf4',
-        border: '1.5px solid #bbf7d0',
-        borderRadius: '16px',
-        padding: '2.5rem 1.5rem',
-        textAlign: 'center'
-    },
-    warningList: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem'
-    },
-    warningCard: {
-        border: '1.5px solid',
-        borderRadius: '12px',
-        padding: '1rem'
-    },
-    warningHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '6px'
-    },
-    warningReason: {
-        fontSize: '0.95rem',
-        fontWeight: 600,
-        lineHeight: 1.4
-    },
-    profileCard: {
-        background: '#ffffff',
-        borderRadius: '16px',
-        padding: '1.5rem',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.04)'
-    },
-    profileHeaderSection: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        marginBottom: '1.5rem'
-    },
-    profileBigAvatar: {
-        width: '72px',
-        height: '72px',
-        borderRadius: '50%',
-        objectFit: 'cover',
-        border: '3px solid #0b3c6d'
-    },
-    profileDetailsGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '1rem'
-    },
-    profileDetailItem: {
-        background: '#f8fafc',
-        padding: '0.85rem',
-        borderRadius: '10px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px'
-    },
-    detailLabel: {
-        fontSize: '0.78rem',
-        fontWeight: 700,
-        color: '#64748b'
-    },
-    detailValue: {
-        fontSize: '0.95rem',
-        fontWeight: 800,
-        color: '#1e293b'
-    },
-    docImagePreview: {
-        width: '100%',
-        maxWidth: '320px',
-        borderRadius: '10px',
-        marginTop: '6px',
-        border: '1px solid #cbd5e1'
-    },
-    logoutBtn: {
-        background: '#fee2e2',
-        color: '#991b1b',
-        border: '1px solid #fecaca',
-        padding: '0.75rem 1.5rem',
-        borderRadius: '10px',
-        fontWeight: 700,
-        fontSize: '0.9rem',
-        cursor: 'pointer'
-    }
-};

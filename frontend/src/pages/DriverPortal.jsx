@@ -189,6 +189,8 @@ export default function DriverPortal() {
     const [togglingOnline, setTogglingOnline] = useState(false);
 
     const heartbeatRef = useRef(null);
+    const pollIntervalRef = useRef(null);
+    const isLoggedOutRef = useRef(false);
 
     const showToast = (msg, type = 'info') => {
         setToast({ msg, type });
@@ -197,6 +199,7 @@ export default function DriverPortal() {
 
     // Save session
     const saveSession = (driver) => {
+        isLoggedOutRef.current = false;
         setAuthDriver(driver);
         try {
             localStorage.setItem('tchapo_driver_session', JSON.stringify(driver));
@@ -204,21 +207,31 @@ export default function DriverPortal() {
     };
 
     const handleLogout = () => {
-        try {
-            if (heartbeatRef.current) {
-                clearInterval(heartbeatRef.current);
-            }
-            if (authDriver?.id) {
-                fetch(`${API_URL}/api/drivers/${authDriver.id}/availability`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ is_online: false })
-                }).catch(() => {});
-            }
-        } catch (_) {}
+        isLoggedOutRef.current = true;
+
+        if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+        }
+
+        if (heartbeatRef.current) {
+            clearInterval(heartbeatRef.current);
+            heartbeatRef.current = null;
+        }
+
+        const currentId = authDriver?.id;
+        if (currentId) {
+            fetch(`${API_URL}/api/drivers/${currentId}/availability`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_online: false })
+            }).catch(() => {});
+        }
 
         try {
             localStorage.removeItem('tchapo_driver_session');
+            localStorage.removeItem('tchapo_driver_user');
+            sessionStorage.removeItem('tchapo_driver_session');
         } catch (_) {}
 
         setAuthDriver(null);
@@ -229,39 +242,53 @@ export default function DriverPortal() {
     };
 
     // Fetch Dashboard Data
-    const fetchDashboard = useCallback(async (driverId = authDriver?.id) => {
-        if (!driverId) return;
+    const fetchDashboard = useCallback(async (driverId) => {
+        const targetId = driverId || authDriver?.id;
+        if (!targetId || isLoggedOutRef.current) return;
         try {
-            const res = await fetch(`${API_URL}/api/drivers/${driverId}/dashboard`);
-            if (res.ok) {
+            const res = await fetch(`${API_URL}/api/drivers/${targetId}/dashboard`);
+            if (res.ok && !isLoggedOutRef.current) {
                 const data = await res.json();
+                if (isLoggedOutRef.current) return;
+
                 setDashboardData(data);
                 if (data.driver) {
                     setIsOnline(Boolean(data.driver.is_online));
-                    setAuthDriver(prev => ({ ...prev, ...data.driver }));
-                    try {
-                        localStorage.setItem('tchapo_driver_session', JSON.stringify({ ...authDriver, ...data.driver }));
-                    } catch (_) {}
+                    setAuthDriver(prev => {
+                        if (isLoggedOutRef.current || !prev) return null;
+                        const updated = { ...prev, ...data.driver };
+                        try {
+                            localStorage.setItem('tchapo_driver_session', JSON.stringify(updated));
+                        } catch (_) {}
+                        return updated;
+                    });
                 }
             }
         } catch (err) {
             console.error('Erro ao buscar dados do dashboard:', err);
         }
-    }, [API_URL, authDriver]);
+    }, [API_URL, authDriver?.id]);
 
     // Initial Load & Polling
     useEffect(() => {
-        if (authDriver?.id) {
+        if (authDriver?.id && !isLoggedOutRef.current) {
             fetchDashboard(authDriver.id);
-            const interval = setInterval(() => fetchDashboard(authDriver.id), 8000);
-            return () => clearInterval(interval);
+            pollIntervalRef.current = setInterval(() => {
+                if (!isLoggedOutRef.current) {
+                    fetchDashboard(authDriver.id);
+                }
+            }, 8000);
+            return () => {
+                if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            };
         }
     }, [authDriver?.id, fetchDashboard]);
 
     // Heartbeat to keep online status active
     useEffect(() => {
-        if (authDriver?.id && isOnline && authDriver.approval_status === 'Aprovado') {
+        if (authDriver?.id && isOnline && authDriver.approval_status === 'Aprovado' && !isLoggedOutRef.current) {
             heartbeatRef.current = setInterval(async () => {
+                if (isLoggedOutRef.current) return;
                 try {
                     await fetch(`${API_URL}/api/drivers/${authDriver.id}/availability`, {
                         method: 'PUT',
@@ -270,7 +297,9 @@ export default function DriverPortal() {
                     });
                 } catch (_) {}
             }, 25000);
-            return () => clearInterval(heartbeatRef.current);
+            return () => {
+                if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+            };
         }
     }, [authDriver?.id, isOnline, authDriver?.approval_status, API_URL]);
 

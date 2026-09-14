@@ -1148,7 +1148,16 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             .eq('driver_id', numId)
             .order('created_at', { ascending: false });
 
+        // Fetch unassigned orders waiting for a driver to accept
+        const { data: poolOrders } = await supabase
+            .from('orders')
+            .select('*')
+            .is('driver_id', null)
+            .in('status', ['Pendente', 'Processando', 'Preparando'])
+            .order('created_at', { ascending: false });
+
         const driverOrders = orders || [];
+        const availableOrders = (poolOrders || []).map(formatOrderResponse);
         const delivered = driverOrders.filter(o => o.status === 'Entregue');
         const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(o.status));
 
@@ -1187,12 +1196,102 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 reward_unlocked: rewardUnlocked,
                 reward_progress: rewardProgress
             },
+            available_orders: availableOrders,
             active_orders: activeOrders.map(formatOrderResponse),
             recent_deliveries: delivered.slice(0, 15).map(formatOrderResponse),
             warnings: meta.warnings || []
         });
     } catch (err) {
         console.error('Driver dashboard error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// PUT Accept Order (Driver claims an available order)
+app.put('/api/orders/:id/accept', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { driver_id } = req.body;
+        if (!driver_id) {
+            return res.status(400).json({ error: 'ID do entregador é obrigatório.' });
+        }
+
+        const numDriverId = Number(driver_id);
+
+        // Fetch current order to ensure it is not already taken
+        const { data: order, error: orderErr } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (orderErr || !order) {
+            return res.status(404).json({ error: 'Pedido não encontrado.' });
+        }
+
+        if (order.driver_id && Number(order.driver_id) !== numDriverId) {
+            return res.status(409).json({ error: 'Este pedido já foi aceito por outro entregador.' });
+        }
+
+        // Set status to Com Entregador (or keep if already in transit)
+        const newStatus = ['Processando', 'Preparando'].includes(order.status)
+            ? 'Com Entregador'
+            : (order.status || 'Com Entregador');
+
+        const { data: updated, error: updateErr } = await supabase
+            .from('orders')
+            .update({
+                driver_id: numDriverId,
+                status: newStatus
+            })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (updateErr) throw updateErr;
+
+        res.json({
+            success: true,
+            order: formatOrderResponse(updated),
+            message: 'Pedido aceito com sucesso! O cliente está a aguardar a entrega.'
+        });
+    } catch (err) {
+        console.error('Error accepting order:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT Reject / Release Order (Driver releases an order back to the pool)
+app.put('/api/orders/:id/reject', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { driver_id } = req.body;
+
+        const { data: order } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (order && (!driver_id || Number(order.driver_id) === Number(driver_id))) {
+            const { data: updated, error } = await supabase
+                .from('orders')
+                .update({
+                    driver_id: null,
+                    status: 'Processando'
+                })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return res.json({ success: true, order: formatOrderResponse(updated), message: 'Pedido devolvido à fila de disponíveis.' });
+        }
+
+        res.json({ success: true, message: 'Operação concluída.' });
+    } catch (err) {
+        console.error('Error rejecting order:', err);
         res.status(500).json({ error: err.message });
     }
 });

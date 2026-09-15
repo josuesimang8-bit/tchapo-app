@@ -146,6 +146,12 @@ const Icons = {
             <circle cx="12" cy="10" r="3"/>
         </svg>
     ),
+    CreditCard: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="20" height="14" x="2" y="5" rx="2"/>
+            <line x1="2" x2="22" y1="10" y2="10"/>
+        </svg>
+    ),
     Close: () => (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/>
@@ -161,6 +167,15 @@ const formatMZCurrency = (value) => {
     } catch (_) {
         return (value || '0') + ' MT';
     }
+};
+
+// Format remaining seconds into HH:MM:SS
+const formatTimer = (secs) => {
+    if (secs <= 0) return '00:00:00';
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
 export default function DriverPortal() {
@@ -186,6 +201,12 @@ export default function DriverPortal() {
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [docPreviewModal, setDocPreviewModal] = useState(null);
+    const [confirmingOrder, setConfirmingOrder] = useState(null); // Strict Acceptance Modal
+
+    // Debt Payment State
+    const [debtPaymentRef, setDebtPaymentRef] = useState('');
+    const [submittingDebt, setSubmittingDebt] = useState(false);
+    const [debtSecondsLeft, setDebtSecondsLeft] = useState(7200);
 
     // Login Form State
     const [loginPhone, setLoginPhone] = useState('');
@@ -307,9 +328,10 @@ export default function DriverPortal() {
         }
     }, [authDriver?.id, fetchDashboard]);
 
-    // Heartbeat to keep online status active
+    // Heartbeat to keep online status active (Only if account is approved and NOT blocked by debt)
     useEffect(() => {
-        if (authDriver?.id && isOnline && authDriver.approval_status === 'Aprovado' && !isLoggedOutRef.current) {
+        const hasUnpaidDebt = dashboardData?.pending_debt && dashboardData.pending_debt.status !== 'Pago';
+        if (authDriver?.id && isOnline && authDriver.approval_status === 'Aprovado' && !hasUnpaidDebt && !isLoggedOutRef.current) {
             heartbeatRef.current = setInterval(async () => {
                 if (isLoggedOutRef.current) return;
                 try {
@@ -324,7 +346,24 @@ export default function DriverPortal() {
                 if (heartbeatRef.current) clearInterval(heartbeatRef.current);
             };
         }
-    }, [authDriver?.id, isOnline, authDriver?.approval_status, API_URL]);
+    }, [authDriver?.id, isOnline, authDriver?.approval_status, dashboardData?.pending_debt, API_URL]);
+
+    // 2-Hour Countdown Timer Effect for Pending Debt
+    useEffect(() => {
+        const debt = dashboardData?.pending_debt;
+        if (!debt || debt.status === 'Pago') return;
+
+        const calculateRemaining = () => {
+            const dueMs = new Date(debt.due_at).getTime();
+            const nowMs = Date.now();
+            const left = Math.max(0, Math.floor((dueMs - nowMs) / 1000));
+            setDebtSecondsLeft(left);
+        };
+
+        calculateRemaining();
+        const timer = setInterval(calculateRemaining, 1000);
+        return () => clearInterval(timer);
+    }, [dashboardData?.pending_debt]);
 
     // Handle Login
     const handleLogin = async (e) => {
@@ -416,6 +455,10 @@ export default function DriverPortal() {
             showToast('A sua conta precisa de ser aprovada pelo Administrador para ficar online.', 'error');
             return;
         }
+        if (dashboardData?.pending_debt && dashboardData.pending_debt.status !== 'Pago') {
+            showToast('Conta temporariamente bloqueada devido a dívida pendente. Pague a comissão de 20% para ficar online.', 'error');
+            return;
+        }
         setTogglingOnline(true);
         const newState = targetState !== undefined ? targetState : !isOnline;
         try {
@@ -436,13 +479,19 @@ export default function DriverPortal() {
         }
     };
 
-    // Accept Available Order
-    const handleAcceptOrder = async (orderId) => {
-        if (!authDriver?.id) return;
-        if (authDriver.approval_status !== 'Aprovado') {
-            showToast('A sua conta precisa de estar aprovada para aceitar pedidos.', 'error');
+    // Prompt Strict Acceptance Modal
+    const promptAcceptOrder = (order) => {
+        if (dashboardData?.pending_debt && dashboardData.pending_debt.status !== 'Pago') {
+            showToast(`A sua conta está bloqueada com uma dívida de ${dashboardData.pending_debt.amount} MT. Pague a comissão para aceitar pedidos.`, 'error');
             return;
         }
+        setConfirmingOrder(order);
+    };
+
+    // Confirm and Execute Order Acceptance
+    const handleConfirmAcceptOrder = async () => {
+        if (!confirmingOrder || !authDriver?.id) return;
+        const orderId = confirmingOrder.id;
         setAcceptingId(orderId);
         try {
             const res = await fetch(`${API_URL}/api/orders/${orderId}/accept`, {
@@ -452,11 +501,13 @@ export default function DriverPortal() {
             });
             const data = await res.json();
             if (res.ok) {
-                showToast('Pedido aceito com sucesso! Prepare a entrega.', 'success');
+                showToast('Pedido aceito com sucesso! Prepare a entrega imediatamente.', 'success');
+                setConfirmingOrder(null);
                 setOrdersSubTab('active');
                 fetchDashboard(authDriver.id);
             } else {
                 showToast(data.error || 'Não foi possível aceitar este pedido.', 'error');
+                setConfirmingOrder(null);
                 fetchDashboard(authDriver.id);
             }
         } catch (err) {
@@ -466,25 +517,7 @@ export default function DriverPortal() {
         }
     };
 
-    // Reject / Release Order
-    const handleRejectOrder = async (orderId) => {
-        if (!window.confirm('Tem a certeza de que deseja devolver este pedido à fila para outro entregador?')) return;
-        try {
-            const res = await fetch(`${API_URL}/api/orders/${orderId}/reject`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ driver_id: authDriver?.id })
-            });
-            if (res.ok) {
-                showToast('Pedido devolvido à lista de disponíveis.', 'info');
-                fetchDashboard(authDriver?.id);
-            }
-        } catch (err) {
-            showToast('Erro ao devolver pedido.', 'error');
-        }
-    };
-
-    // Update Order Status (Progression)
+    // Update Order Status (Progression to 'Entregue' creates 20% debt)
     const handleUpdateOrderStatus = async (orderId, newStatus) => {
         try {
             const res = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
@@ -493,11 +526,45 @@ export default function DriverPortal() {
                 body: JSON.stringify({ status: newStatus, driver_id: authDriver?.id })
             });
             if (res.ok) {
-                showToast(`Estado da entrega atualizado: ${newStatus}`, 'success');
+                if (newStatus === 'Entregue') {
+                    showToast('Entrega concluída! Foi gerada uma dívida de 20% de comissão da empresa a pagar em 2h.', 'success');
+                } else {
+                    showToast(`Estado da entrega atualizado: ${newStatus}`, 'success');
+                }
                 fetchDashboard(authDriver?.id);
             }
         } catch (err) {
             showToast('Erro ao atualizar entrega.', 'error');
+        }
+    };
+
+    // Driver Submits Debt Payment Proof
+    const handleSubmitDebtPayment = async (e) => {
+        e.preventDefault();
+        if (!debtPaymentRef.trim()) {
+            showToast('Por favor introduza o código de confirmação M-Pesa ou número.', 'error');
+            return;
+        }
+
+        setSubmittingDebt(true);
+        try {
+            const res = await fetch(`${API_URL}/api/drivers/${authDriver?.id}/pay-debt`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reference: debtPaymentRef.trim() })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('Comprovativo submetido com sucesso! A administração irá validar.', 'success');
+                setDebtPaymentRef('');
+                fetchDashboard(authDriver?.id);
+            } else {
+                showToast(data.error || 'Erro ao submeter comprovativo.', 'error');
+            }
+        } catch (err) {
+            showToast('Erro de comunicação com o servidor.', 'error');
+        } finally {
+            setSubmittingDebt(false);
         }
     };
 
@@ -515,6 +582,8 @@ export default function DriverPortal() {
     const activeOrders = dashboardData?.active_orders || [];
     const recentDeliveries = dashboardData?.recent_deliveries || [];
     const warnings = dashboardData?.warnings || authDriver?.warnings || [];
+    const pendingDebt = dashboardData?.pending_debt || null;
+    const isDebtBlocked = Boolean(pendingDebt && pendingDebt.status !== 'Pago');
 
     // Milestone calculations: 5k, 20k, 100k
     const currentSales = stats.total_sales || (stats.total_deliveries * 150);
@@ -633,7 +702,7 @@ export default function DriverPortal() {
                         {authDriver ? (
                             <>
                                 {/* Online / Offline Switch */}
-                                {authDriver.approval_status === 'Aprovado' && (
+                                {authDriver.approval_status === 'Aprovado' && !isDebtBlocked && (
                                     <button
                                         onClick={() => handleToggleAvailability()}
                                         disabled={togglingOnline}
@@ -661,6 +730,24 @@ export default function DriverPortal() {
                                         }} />
                                         <span>{isOnline ? 'Online para Entregas' : 'Indisponível (Offline)'}</span>
                                     </button>
+                                )}
+
+                                {isDebtBlocked && (
+                                    <span style={{
+                                        background: 'rgba(239, 68, 68, 0.15)',
+                                        border: '1px solid #ef4444',
+                                        color: '#f87171',
+                                        padding: '0.45rem 0.9rem',
+                                        borderRadius: '999px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 800,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem'
+                                    }}>
+                                        <Icons.AlertTriangle />
+                                        <span>Bloqueado por Dívida</span>
+                                    </span>
                                 )}
 
                                 {/* Profile info pill */}
@@ -747,7 +834,7 @@ export default function DriverPortal() {
             {/* Main Content Area */}
             <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.75rem 1.5rem 4rem' }}>
 
-                {/* VIEW 1: Non-logged in Hero Landing & Welcome Hub */}
+                {/* VIEW 1: Non-logged in Hero Landing */}
                 {!authDriver && (
                     <div>
                         {/* Hero Card */}
@@ -785,7 +872,7 @@ export default function DriverPortal() {
                                     A Tchapo Tchapo Fornece <span style={{ color: '#f59e0b' }}>Clientes Para Si</span>
                                 </h1>
                                 <p style={{ fontSize: '1.05rem', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 2rem' }}>
-                                    Não precisa de procurar clientes ou esperar na rua. As encomendas da loja online são direcionadas diretamente para o seu telemóvel na Beira. Aceite pedidos, entregue e conquiste bónus e prêmios incríveis!
+                                    As encomendas da loja online são direcionadas diretamente para o seu telemóvel na Beira. Aceite pedidos, realize entregas e repasse os 20% da empresa para continuar sempre ativo!
                                 </p>
                                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                     <button
@@ -888,82 +975,6 @@ export default function DriverPortal() {
                                 </div>
                             </div>
                         </div>
-
-                        {/* SECTION: Como Funciona na Prática */}
-                        <div style={{ marginBottom: '3.5rem' }}>
-                            <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 2.5rem' }}>
-                                <span style={{
-                                    background: '#fef3c7',
-                                    color: '#b45309',
-                                    fontWeight: 800,
-                                    fontSize: '0.8rem',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.8px',
-                                    padding: '0.35rem 0.85rem',
-                                    borderRadius: '999px',
-                                    display: 'inline-block',
-                                    marginBottom: '0.6rem'
-                                }}>
-                                    Simples e Eficiente
-                                </span>
-                                <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.75rem' }}>
-                                    Como Funciona Ser Entregador Tchapo Tchapo
-                                </h2>
-                                <p style={{ fontSize: '1rem', color: '#64748b', margin: 0, lineHeight: 1.6 }}>
-                                    A Tchapo Tchapo cuida de todo o trabalho de vendas para garantir que você tenha entregas contínuas na Beira.
-                                </p>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
-                                <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', fontWeight: 900, fontSize: '1.2rem' }}>
-                                        1
-                                    </div>
-                                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#0f172a' }}>
-                                        Registo e Documentos
-                                    </h3>
-                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
-                                        Inscreva-se em menos de 2 minutos enviando o seu BI ou Carta de Condução e foto. A administração valida e aprova a sua conta.
-                                    </p>
-                                </div>
-
-                                <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', fontWeight: 900, fontSize: '1.2rem' }}>
-                                        2
-                                    </div>
-                                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#0f172a' }}>
-                                        Ligue o Botão Online
-                                    </h3>
-                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
-                                        Você decide quando rodar. Basta clicar no alternador Online no seu painel para sinalizar à central que está disponível para pedidos.
-                                    </p>
-                                </div>
-
-                                <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', fontWeight: 900, fontSize: '1.2rem' }}>
-                                        3
-                                    </div>
-                                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#0f172a' }}>
-                                        Aceite Pedidos Disponíveis
-                                    </h3>
-                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
-                                        Veja os pedidos em aberto na cidade da Beira, analise a rota e clique em "Aceitar Pedido" para iniciar a entrega.
-                                    </p>
-                                </div>
-
-                                <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', fontWeight: 900, fontSize: '1.2rem' }}>
-                                        4
-                                    </div>
-                                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#0f172a' }}>
-                                        Entregue e Ganhe Prêmios
-                                    </h3>
-                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
-                                        Receba 150 MT por entrega e acumule volume de vendas para desbloquear a Camisa Oficial (5k), Capacete (20k) e Placa de Ouro (100k).
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 )}
 
@@ -998,29 +1009,6 @@ export default function DriverPortal() {
                         <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 2rem' }}>
                             Olá, <strong>{authDriver.name}</strong>! O seu cadastro de entregador foi recebido com sucesso e os seus documentos estão a ser analisados pela equipa da Tchapo Tchapo.
                         </p>
-
-                        <div style={{
-                            background: '#f8fafc',
-                            padding: '1.25rem',
-                            borderRadius: '14px',
-                            border: '1px solid #e2e8f0',
-                            textAlign: 'left',
-                            marginBottom: '2rem',
-                            fontSize: '0.88rem'
-                        }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                <span style={{ color: '#64748b' }}>Contacto:</span>
-                                <strong>{authDriver.phone}</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                <span style={{ color: '#64748b' }}>Veículo:</span>
-                                <strong>{authDriver.vehicle_type || 'Mota'}</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: '#64748b' }}>Documento:</span>
-                                <strong>{authDriver.doc_type || 'BI'} ({authDriver.doc_number || 'Em análise'})</strong>
-                            </div>
-                        </div>
 
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                             <button
@@ -1060,6 +1048,157 @@ export default function DriverPortal() {
                 {/* VIEW 3: Approved Driver Portal Dashboard */}
                 {authDriver && authDriver.approval_status === 'Aprovado' && (
                     <div>
+
+                        {/* CRITICAL ALERT: PENDING 20% DEBT & 2-HOUR COUNTDOWN BANNER */}
+                        {isDebtBlocked && (
+                            <div style={{
+                                background: debtSecondsLeft === 0
+                                    ? 'linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%)'
+                                    : 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+                                borderRadius: '22px',
+                                padding: '1.75rem 2rem',
+                                color: '#fff',
+                                marginBottom: '2rem',
+                                border: debtSecondsLeft === 0 ? '2px solid #ef4444' : '2px solid #f59e0b',
+                                boxShadow: '0 12px 30px rgba(0,0,0,0.2)'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                        <div style={{
+                                            width: '46px',
+                                            height: '46px',
+                                            borderRadius: '14px',
+                                            background: debtSecondsLeft === 0 ? '#ef4444' : '#f59e0b',
+                                            color: '#111827',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <Icons.AlertTriangle />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.8rem', color: debtSecondsLeft === 0 ? '#fca5a5' : '#fbbf24', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                {debtSecondsLeft === 0 ? 'Prazo de 2 Horas Esgotado' : 'Comissão da Empresa Pendente (20%)'}
+                                            </div>
+                                            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff' }}>
+                                                Dívida Atual: {formatMZCurrency(pendingDebt.amount)}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 2h Countdown Clock */}
+                                    <div style={{
+                                        background: 'rgba(0,0,0,0.4)',
+                                        padding: '0.65rem 1.25rem',
+                                        borderRadius: '14px',
+                                        border: '1px solid rgba(255,255,255,0.15)',
+                                        textAlign: 'center'
+                                    }}>
+                                        <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>
+                                            Tempo Limite (2 Horas)
+                                        </div>
+                                        <div style={{
+                                            fontSize: '1.6rem',
+                                            fontWeight: 900,
+                                            fontFamily: 'monospace',
+                                            color: debtSecondsLeft === 0 ? '#ef4444' : debtSecondsLeft < 1800 ? '#f87171' : '#34d399'
+                                        }}>
+                                            {formatTimer(debtSecondsLeft)}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p style={{ fontSize: '0.92rem', color: '#e2e8f0', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
+                                    A entrega do <strong>Pedido #{pendingDebt.order_id}</strong> foi concluída com sucesso. Conforme o regulamento, deve enviar a comissão de <strong>20% ({pendingDebt.amount} MT)</strong> para a empresa. <strong>A plataforma está temporariamente indisponível para novos pedidos até a confirmação do pagamento.</strong>
+                                    {debtSecondsLeft === 0 && (
+                                        <span style={{ display: 'block', marginTop: '0.5rem', color: '#fca5a5', fontWeight: 800 }}>
+                                            ⚠️ Atenção: O prazo limite de 2 horas foi ultrapassado. Uma advertência foi registada no seu perfil. Pague agora para evitar suspensão definitiva!
+                                        </span>
+                                    )}
+                                </p>
+
+                                {/* Payment Instructions & Form */}
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.07)',
+                                    borderRadius: '16px',
+                                    padding: '1.25rem',
+                                    border: '1px solid rgba(255,255,255,0.1)'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.88rem' }}>
+                                        <div>
+                                            <span style={{ color: '#cbd5e1' }}>M-Pesa Tchapo Tchapo: </span>
+                                            <strong style={{ color: '#f59e0b', fontSize: '1rem' }}>84 840 0000 / 87 840 0000</strong>
+                                        </div>
+                                        <div style={{ color: '#cbd5e1' }}>
+                                            Titular: <strong>Tchapo Tchapo Lda</strong>
+                                        </div>
+                                    </div>
+
+                                    {pendingDebt.status === 'Aguardando Confirmação' ? (
+                                        <div style={{
+                                            background: 'rgba(5, 150, 105, 0.2)',
+                                            border: '1.5px solid #059669',
+                                            padding: '1rem',
+                                            borderRadius: '12px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem'
+                                        }}>
+                                            <Icons.Clock />
+                                            <div style={{ fontSize: '0.9rem' }}>
+                                                <strong style={{ color: '#34d399' }}>Comprovativo em Análise!</strong>
+                                                <div style={{ color: '#e2e8f0', fontSize: '0.82rem', marginTop: '2px' }}>
+                                                    Ref submetida: <em>{pendingDebt.payment_proof}</em>. A administração foi notificada e irá desbloquear a sua conta em instantes.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <form onSubmit={handleSubmitDebtPayment} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={debtPaymentRef}
+                                                onChange={(e) => setDebtPaymentRef(e.target.value)}
+                                                placeholder="Código da Mensagem M-Pesa (Ex: PP240915.1234.A01234)"
+                                                style={{
+                                                    flex: 1,
+                                                    minWidth: '240px',
+                                                    padding: '0.75rem 1rem',
+                                                    borderRadius: '10px',
+                                                    border: '1px solid #64748b',
+                                                    background: 'rgba(0,0,0,0.4)',
+                                                    color: '#fff',
+                                                    fontSize: '0.88rem',
+                                                    outline: 'none'
+                                                }}
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={submittingDebt}
+                                                style={{
+                                                    background: '#f59e0b',
+                                                    color: '#111827',
+                                                    border: 'none',
+                                                    padding: '0.75rem 1.5rem',
+                                                    borderRadius: '10px',
+                                                    fontWeight: 800,
+                                                    fontSize: '0.9rem',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.4rem',
+                                                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+                                                }}
+                                            >
+                                                <Icons.CheckCircle />
+                                                <span>{submittingDebt ? 'A enviar...' : 'Confirmar Pagamento'}</span>
+                                            </button>
+                                        </form>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Tabs Bar */}
                         <div style={{
                             display: 'flex',
@@ -1125,7 +1264,7 @@ export default function DriverPortal() {
                         {activeTab === 'dashboard' && (
                             <div>
                                 {/* High-priority prompt if orders are waiting to be accepted */}
-                                {availableOrders.length > 0 && (
+                                {!isDebtBlocked && availableOrders.length > 0 && (
                                     <div style={{
                                         background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
                                         borderRadius: '18px',
@@ -1175,84 +1314,6 @@ export default function DriverPortal() {
                                     </div>
                                 )}
 
-                                {/* REWARDS PROGRESS SUMMARY BOX */}
-                                <div style={{
-                                    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                                    borderRadius: '22px',
-                                    padding: '1.75rem 2rem',
-                                    color: '#fff',
-                                    marginBottom: '2rem',
-                                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                                    border: '1px solid #334151'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#f59e0b', color: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Icons.Trophy />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: '0.78rem', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase' }}>
-                                                    Carreira de Entregas
-                                                </div>
-                                                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff' }}>
-                                                    Progresso de Prêmios & Bónus
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={() => setActiveTab('rewards')}
-                                            style={{
-                                                background: 'rgba(245,158,11,0.15)',
-                                                border: '1px solid #f59e0b',
-                                                color: '#f59e0b',
-                                                padding: '0.45rem 1rem',
-                                                borderRadius: '999px',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 700,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            Ver Todos os Prêmios
-                                        </button>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-                                        {rewards.map(r => {
-                                            const pct = Math.min(100, Math.round((currentSales / r.target) * 100));
-                                            const unlocked = currentSales >= r.target;
-                                            return (
-                                                <div key={r.id} style={{
-                                                    background: 'rgba(0,0,0,0.3)',
-                                                    borderRadius: '16px',
-                                                    padding: '1.25rem',
-                                                    border: unlocked ? '1.5px solid #10b981' : '1px solid rgba(255,255,255,0.08)'
-                                                }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-                                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: unlocked ? '#34d399' : '#f59e0b' }}>
-                                                            {r.level} • {r.badge}
-                                                        </span>
-                                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: unlocked ? '#10b981' : '#94a3b8' }}>
-                                                            {unlocked ? 'Desbloqueado' : `${pct}%`}
-                                                        </span>
-                                                    </div>
-                                                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#fff', marginBottom: '0.5rem' }}>
-                                                        {r.title}
-                                                    </div>
-                                                    <div style={{ width: '100%', height: '8px', background: '#334151', borderRadius: '999px', overflow: 'hidden' }}>
-                                                        <div style={{
-                                                            width: `${pct}%`,
-                                                            height: '100%',
-                                                            background: unlocked ? '#10b981' : '#f59e0b',
-                                                            borderRadius: '999px'
-                                                        }} />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
                                 {/* Financial Metric Cards */}
                                 <div style={{
                                     display: 'grid',
@@ -1270,19 +1331,6 @@ export default function DriverPortal() {
                                         </div>
                                         <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.35rem' }}>
                                             {stats.today_deliveries} entregas feitas hoje
-                                        </div>
-                                    </div>
-
-                                    <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '0.82rem', fontWeight: 700 }}>
-                                            <span>Ganhos Esta Semana</span>
-                                            <Icons.TrendingUp />
-                                        </div>
-                                        <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', marginTop: '0.5rem' }}>
-                                            {formatMZCurrency(stats.week_earnings)}
-                                        </div>
-                                        <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.35rem' }}>
-                                            Acumulado nos últimos 7 dias
                                         </div>
                                     </div>
 
@@ -1315,7 +1363,7 @@ export default function DriverPortal() {
                             </div>
                         )}
 
-                        {/* TAB 2: ABA DE PEDIDOS (Disponíveis para Aceitar, Em Trânsito, Concluídos) */}
+                        {/* TAB 2: ABA DE PEDIDOS */}
                         {activeTab === 'orders' && (
                             <div>
                                 {/* Sub-navigation Pills */}
@@ -1402,16 +1450,16 @@ export default function DriverPortal() {
                                     </button>
                                 </div>
 
-                                {/* SUB-VIEW 1: PEDIDOS DISPONÍVEIS PARA ACEITAR */}
+                                {/* SUB-VIEW 1: PEDIDOS DISPONÍVEIS (COM PRIVACIDADE DE DADOS) */}
                                 {ordersSubTab === 'available' && (
                                     <div>
                                         <div style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                                             <div>
                                                 <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>
-                                                    Pedidos Aguardando Entregador
+                                                    Pedidos Aguardando Entregador na Beira
                                                 </h3>
                                                 <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.88rem' }}>
-                                                    Analise a localização e clique em "Aceitar Pedido" para assumir a entrega.
+                                                    Por motivos de segurança, o nome e contacto do cliente só são revelados após a aceitação definitiva do pedido.
                                                 </p>
                                             </div>
                                             <button
@@ -1446,7 +1494,7 @@ export default function DriverPortal() {
                                                     Nenhum pedido novo disponível no momento
                                                 </h4>
                                                 <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', maxWidth: '480px', marginInline: 'auto' }}>
-                                                    Assim que um cliente fizer uma encomenda na loja, ela aparecerá aqui automaticamente. Mantenha o estado Online para ser o primeiro a aceitar!
+                                                    Assim que um cliente fizer uma encomenda na loja, ela aparecerá aqui automaticamente.
                                                 </p>
                                             </div>
                                         ) : (
@@ -1486,14 +1534,15 @@ export default function DriverPortal() {
                                                                 </span>
                                                             </div>
 
-                                                            {/* Destination & Customer */}
-                                                            <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.88rem' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 700, marginBottom: '0.35rem' }}>
+                                                            {/* Destination Location (ONLY LOCATION, NO NAME OR NUMBER) */}
+                                                            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.88rem' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 800, marginBottom: '0.35rem' }}>
                                                                     <Icons.MapPin />
-                                                                    <span>{order.bairro || 'Beira'} • {order.address || 'Centro'}</span>
+                                                                    <span>Bairro: {order.bairro || 'Beira (Zona Central)'}</span>
                                                                 </div>
-                                                                <div style={{ color: '#475569', fontSize: '0.82rem' }}>
-                                                                    Cliente: <strong>{order.customer_name || 'Cliente'}</strong>
+                                                                <div style={{ color: '#64748b', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                                    <Icons.ShieldCheck />
+                                                                    <span>Nome e contacto do cliente protegidos até aceitação.</span>
                                                                 </div>
                                                             </div>
 
@@ -1518,29 +1567,28 @@ export default function DriverPortal() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Accept Button */}
+                                                        {/* Accept Button (Opens Strict Confirmation Modal) */}
                                                         <button
-                                                            onClick={() => handleAcceptOrder(order.id)}
-                                                            disabled={acceptingId === order.id}
+                                                            onClick={() => promptAcceptOrder(order)}
+                                                            disabled={isDebtBlocked}
                                                             style={{
-                                                                background: '#059669',
+                                                                background: isDebtBlocked ? '#94a3b8' : '#059669',
                                                                 color: '#fff',
                                                                 border: 'none',
                                                                 padding: '0.85rem',
                                                                 borderRadius: '12px',
                                                                 fontWeight: 800,
                                                                 fontSize: '0.95rem',
-                                                                cursor: 'pointer',
+                                                                cursor: isDebtBlocked ? 'not-allowed' : 'pointer',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center',
                                                                 gap: '0.5rem',
-                                                                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
-                                                                opacity: acceptingId === order.id ? 0.7 : 1
+                                                                boxShadow: isDebtBlocked ? 'none' : '0 4px 12px rgba(5, 150, 105, 0.25)'
                                                             }}
                                                         >
                                                             <Icons.CheckCircle />
-                                                            <span>{acceptingId === order.id ? 'A aceitar pedido...' : 'Aceitar este Pedido'}</span>
+                                                            <span>{isDebtBlocked ? 'Bloqueado por Dívida' : 'Aceitar este Pedido'}</span>
                                                         </button>
                                                     </div>
                                                 ))}
@@ -1549,7 +1597,7 @@ export default function DriverPortal() {
                                     </div>
                                 )}
 
-                                {/* SUB-VIEW 2: MINHAS ENTREGAS EM CURSO */}
+                                {/* SUB-VIEW 2: MINHAS ENTREGAS EM CURSO (DADOS COMPLETOS REVELADOS) */}
                                 {ordersSubTab === 'active' && (
                                     <div>
                                         <div style={{ marginBottom: '1.25rem' }}>
@@ -1557,7 +1605,7 @@ export default function DriverPortal() {
                                                 Entregas em Andamento ({activeOrders.length})
                                             </h3>
                                             <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.88rem' }}>
-                                                Pedidos aceitos sob a sua responsabilidade. Contacte o cliente e confirme a entrega ao finalizar.
+                                                Pedidos aceitos sob a sua inteira responsabilidade. Contacte o cliente e confirme a entrega ao finalizar.
                                             </p>
                                         </div>
 
@@ -1620,27 +1668,31 @@ export default function DriverPortal() {
                                                             </span>
                                                         </div>
 
+                                                        {/* Full Customer Details Now Revealed */}
                                                         <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.88rem' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 700, marginBottom: '0.35rem' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 800, marginBottom: '0.45rem' }}>
                                                                 <Icons.MapPin />
                                                                 <span>{order.bairro || 'Beira'} • {order.address || 'Centro'}</span>
                                                             </div>
-                                                            <div style={{ color: '#334151', marginBottom: '0.25rem' }}>
-                                                                Cliente: <strong>{order.customer_name || 'Cliente'}</strong>
+                                                            <div style={{ color: '#0f172a', fontWeight: 700, marginBottom: '0.25rem' }}>
+                                                                Cliente: {order.customer_name || 'Cliente'}
                                                             </div>
-                                                            <div style={{ color: '#059669', fontWeight: 800 }}>
-                                                                Valor a Cobrar: {formatMZCurrency(order.total)}
+                                                            <div style={{ color: '#475569', marginBottom: '0.35rem' }}>
+                                                                Contacto: <strong>{order.customer_phone || 'Sem número'}</strong>
+                                                            </div>
+                                                            <div style={{ color: '#059669', fontWeight: 800, fontSize: '0.95rem' }}>
+                                                                Total a Cobrar: {formatMZCurrency(order.total)}
                                                             </div>
                                                         </div>
 
                                                         {order.items && order.items.length > 0 && (
                                                             <div style={{ marginBottom: '1.25rem', fontSize: '0.82rem', color: '#475569' }}>
-                                                                <span style={{ fontWeight: 700, color: '#334151' }}>Itens: </span>
+                                                                <span style={{ fontWeight: 700, color: '#334151' }}>Itens do Pedido: </span>
                                                                 {order.items.map(it => `${it.quantity}x ${it.product_name}`).join(', ')}
                                                             </div>
                                                         )}
 
-                                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                             {order.customer_phone && (
                                                                 <a
                                                                     href={`https://wa.me/${String(order.customer_phone).replace(/\D/g, '')}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20entregador%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
@@ -1651,7 +1703,7 @@ export default function DriverPortal() {
                                                                         background: '#059669',
                                                                         color: '#fff',
                                                                         textDecoration: 'none',
-                                                                        padding: '0.75rem',
+                                                                        padding: '0.8rem',
                                                                         borderRadius: '10px',
                                                                         fontWeight: 700,
                                                                         fontSize: '0.85rem',
@@ -1669,11 +1721,11 @@ export default function DriverPortal() {
                                                             <button
                                                                 onClick={() => handleUpdateOrderStatus(order.id, 'Entregue')}
                                                                 style={{
-                                                                    flex: 1.2,
+                                                                    flex: 1.3,
                                                                     background: '#2563eb',
                                                                     color: '#fff',
                                                                     border: 'none',
-                                                                    padding: '0.75rem',
+                                                                    padding: '0.8rem',
                                                                     borderRadius: '10px',
                                                                     fontWeight: 800,
                                                                     fontSize: '0.85rem',
@@ -1681,28 +1733,12 @@ export default function DriverPortal() {
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'center',
-                                                                    gap: '0.4rem'
+                                                                    gap: '0.4rem',
+                                                                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
                                                                 }}
                                                             >
                                                                 <Icons.CheckCircle />
                                                                 <span>Confirmar Entrega</span>
-                                                            </button>
-                                                        </div>
-
-                                                        <div style={{ textAlign: 'center' }}>
-                                                            <button
-                                                                onClick={() => handleRejectOrder(order.id)}
-                                                                style={{
-                                                                    background: 'none',
-                                                                    border: 'none',
-                                                                    color: '#ef4444',
-                                                                    fontSize: '0.78rem',
-                                                                    fontWeight: 600,
-                                                                    cursor: 'pointer',
-                                                                    padding: '0.3rem'
-                                                                }}
-                                                            >
-                                                                Devolver pedido à fila pública
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1963,28 +1999,6 @@ export default function DriverPortal() {
                                     </div>
                                 </div>
 
-                                {authDriver.doc_photo_url && (
-                                    <div style={{ marginBottom: '2rem' }}>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700, fontSize: '0.85rem', color: '#475569' }}>
-                                            Documento Submetido
-                                        </label>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            <img
-                                                src={authDriver.doc_photo_url}
-                                                alt="Documento"
-                                                style={{ width: '80px', height: '55px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #cbd5e1', cursor: 'pointer' }}
-                                                onClick={() => setDocPreviewModal(authDriver.doc_photo_url)}
-                                            />
-                                            <button
-                                                onClick={() => setDocPreviewModal(authDriver.doc_photo_url)}
-                                                style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
-                                            >
-                                                Visualizar Foto do Documento
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
                                 <button
                                     onClick={handleLogout}
                                     style={{
@@ -2012,7 +2026,147 @@ export default function DriverPortal() {
                 )}
             </main>
 
-            {/* MODAL 1: Driver Registration Modal */}
+            {/* STRICT CONFIRMATION MODAL ("NÃO SE DEVE VOLTAR ATRÁS") */}
+            {confirmingOrder && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 999999,
+                    backdropFilter: 'blur(8px)',
+                    padding: '1.5rem'
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: '24px',
+                        padding: '2.25rem',
+                        maxWidth: '520px',
+                        width: '100%',
+                        boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+                        border: '2px solid #f59e0b',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            background: '#fef3c7',
+                            color: '#d97706',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1.25rem'
+                        }}>
+                            <Icons.AlertTriangle />
+                        </div>
+
+                        <span style={{
+                            background: '#fee2e2',
+                            color: '#b91c1c',
+                            fontWeight: 900,
+                            fontSize: '0.78rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.8px',
+                            padding: '0.3rem 0.85rem',
+                            borderRadius: '999px',
+                            display: 'inline-block',
+                            marginBottom: '0.75rem'
+                        }}>
+                            Compromisso Irrevogável
+                        </span>
+
+                        <h3 style={{ margin: '0 0 0.85rem', fontSize: '1.45rem', fontWeight: 900, color: '#0f172a' }}>
+                            Tem Certeza em Aceitar Este Pedido?
+                        </h3>
+
+                        <div style={{
+                            background: '#fff7ed',
+                            border: '1.5px solid #fdba74',
+                            borderRadius: '14px',
+                            padding: '1.15rem',
+                            textAlign: 'left',
+                            marginBottom: '1.5rem'
+                        }}>
+                            <p style={{ margin: '0 0 0.65rem', fontSize: '0.9rem', color: '#9a3412', fontWeight: 800, lineHeight: 1.5 }}>
+                                ⚠️ ATENÇÃO: Quando aceita o pedido, NÃO É PERMITIDO VOLTAR ATRÁS nem cancelar a entrega!
+                            </p>
+                            <p style={{ margin: 0, fontSize: '0.84rem', color: '#7c2d12', lineHeight: 1.5 }}>
+                                A partir deste momento, o cliente e a central Tchapo Tchapo contam exclusivamente consigo para recolher e entregar no destino.
+                            </p>
+                        </div>
+
+                        <div style={{
+                            background: '#f8fafc',
+                            padding: '0.95rem 1.25rem',
+                            borderRadius: '12px',
+                            border: '1px solid #e2e8f0',
+                            textAlign: 'left',
+                            marginBottom: '1.75rem',
+                            fontSize: '0.88rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                <span style={{ color: '#64748b' }}>Pedido:</span>
+                                <strong>#{confirmingOrder.id}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                <span style={{ color: '#64748b' }}>Bairro de Entrega:</span>
+                                <strong>{confirmingOrder.bairro || 'Beira'}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                <span style={{ color: '#64748b' }}>Valor da Mercadoria:</span>
+                                <strong>{formatMZCurrency(confirmingOrder.total)}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem' }}>
+                                <span style={{ color: '#059669', fontWeight: 700 }}>Seu Ganho por Entrega:</span>
+                                <strong style={{ color: '#059669', fontSize: '0.95rem' }}>150 MT</strong>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.85rem' }}>
+                            <button
+                                onClick={() => setConfirmingOrder(null)}
+                                style={{
+                                    flex: 1,
+                                    background: '#f1f5f9',
+                                    color: '#475569',
+                                    border: '1px solid #cbd5e1',
+                                    padding: '0.85rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 700,
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancelar / Voltar
+                            </button>
+
+                            <button
+                                onClick={handleConfirmAcceptOrder}
+                                disabled={acceptingId === confirmingOrder.id}
+                                style={{
+                                    flex: 1.4,
+                                    background: '#059669',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '0.85rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 800,
+                                    fontSize: '0.92rem',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)'
+                                }}
+                            >
+                                {acceptingId === confirmingOrder.id ? 'A processar...' : 'Sim, Tenho Certeza e Aceito'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 1: Entregador Registration Modal */}
             {isRegisterModalOpen && (
                 <div style={{
                     position: 'fixed',

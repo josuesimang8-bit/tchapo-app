@@ -1148,7 +1148,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             .eq('driver_id', numId)
             .order('created_at', { ascending: false });
 
-        // Fetch unassigned orders waiting for a driver to accept
+        // Fetch unassigned orders waiting for a driver to accept (WITH PRIVACY: NO CUSTOMER NAME/PHONE)
         const { data: poolOrders } = await supabase
             .from('orders')
             .select('*')
@@ -1157,7 +1157,42 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             .order('created_at', { ascending: false });
 
         const driverOrders = orders || [];
-        const availableOrders = (poolOrders || []).map(formatOrderResponse);
+        
+        // MASK CUSTOMER DATA for available orders before acceptance
+        const availableOrders = (poolOrders || []).map(order => {
+            const formatted = formatOrderResponse(order);
+            return {
+                ...formatted,
+                customer_name: 'Cliente Tchapo Tchapo (Disponível após aceitar)',
+                customer_phone: null,
+                is_masked: true
+            };
+        });
+
+        // Check 2h debt status and auto-issue warning if overdue
+        if (meta.pending_debt && meta.pending_debt.status === 'Pendente') {
+            const dueTime = new Date(meta.pending_debt.due_at).getTime();
+            const nowTime = Date.now();
+            if (nowTime > dueTime && !meta.pending_debt.overdue_warned) {
+                // Auto add warning for overdue debt
+                const overdueWarning = {
+                    id: 'W-' + Date.now(),
+                    date: new Date().toISOString(),
+                    reason: `Atraso no repasse da comissão de 20% da empresa (${meta.pending_debt.amount} MT) após o prazo de 2 horas no pedido #${meta.pending_debt.order_id}.`,
+                    severity: 'Média',
+                    notes: 'Advertência gerada automaticamente pelo sistema devido ao não pagamento da comissão dentro do prazo regulamentar.'
+                };
+                const existingWarnings = meta.warnings || [];
+                meta.warnings = [overdueWarning, ...existingWarnings];
+                meta.pending_debt.overdue_warned = true;
+                meta.is_blocked = true;
+                updateDriverMeta(numId, {
+                    warnings: meta.warnings,
+                    pending_debt: meta.pending_debt,
+                    is_blocked: true
+                });
+            }
+        }
         const delivered = driverOrders.filter(o => o.status === 'Entregue');
         const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(o.status));
 
@@ -1181,8 +1216,11 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
         res.json({
             driver: {
                 ...driver,
-                ...meta
+                ...meta,
+                is_blocked: Boolean(meta.pending_debt && meta.pending_debt.status !== 'Pago')
             },
+            pending_debt: meta.pending_debt || null,
+            debt_history: meta.debt_history || [],
             stats: {
                 today_earnings: todayEarnings,
                 week_earnings: weekEarnings,
@@ -1232,6 +1270,14 @@ app.put('/api/orders/:id/accept', async (req, res) => {
 
         if (order.driver_id && Number(order.driver_id) !== numDriverId) {
             return res.status(409).json({ error: 'Este pedido já foi aceito por outro entregador.' });
+        }
+
+        // Check if driver has an unpaid pending debt
+        const driverMeta = getDriverMeta(numDriverId);
+        if (driverMeta.pending_debt && driverMeta.pending_debt.status !== 'Pago') {
+            return res.status(403).json({
+                error: `Não pode aceitar novos pedidos enquanto tiver uma comissão/dívida pendente de ${driverMeta.pending_debt.amount} MT. Por favor regularize o pagamento para desbloquear a sua conta.`
+            });
         }
 
         // Set status to Com Entregador (or keep if already in transit)
@@ -1292,6 +1338,126 @@ app.put('/api/orders/:id/reject', async (req, res) => {
         res.json({ success: true, message: 'Operação concluída.' });
     } catch (err) {
         console.error('Error rejecting order:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// POST Driver submits debt payment proof
+app.post('/api/drivers/:id/pay-debt', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reference, notes } = req.body;
+        const numId = Number(id);
+        const meta = getDriverMeta(numId);
+
+        if (!meta.pending_debt) {
+            return res.status(400).json({ error: 'Nenhuma dívida pendente encontrada.' });
+        }
+
+        const updatedDebt = {
+            ...meta.pending_debt,
+            status: 'Aguardando Confirmação',
+            payment_proof: reference || notes || 'Comprovativo submetido',
+            paid_submission_at: new Date().toISOString()
+        };
+
+        updateDriverMeta(numId, {
+            pending_debt: updatedDebt
+        });
+
+        // Notify Admin via Ntfy
+        sendPushNotification(
+            `🛵 Pagamento de Comissão Submetido pelo Entregador!`,
+            `O entregador #${numId} submeteu ${updatedDebt.amount} MT ref: ${reference || 'N/A'}. Aceda ao admin para validar.`,
+            'admin'
+        );
+
+        res.json({
+            success: true,
+            pending_debt: updatedDebt,
+            message: 'Comprovativo enviado com sucesso! A administração irá validar e desbloquear a sua conta.'
+        });
+    } catch (err) {
+        console.error('Error paying debt:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT Admin confirms debt payment and unlocks driver
+app.put('/api/drivers/:id/confirm-debt', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const numId = Number(id);
+        const meta = getDriverMeta(numId);
+
+        if (!meta.pending_debt) {
+            return res.status(400).json({ error: 'Nenhuma dívida pendente para este entregador.' });
+        }
+
+        const clearedDebt = {
+            ...meta.pending_debt,
+            status: 'Pago',
+            confirmed_at: new Date().toISOString()
+        };
+
+        const debtHistory = meta.debt_history || [];
+        debtHistory.unshift(clearedDebt);
+
+        updateDriverMeta(numId, {
+            pending_debt: null,
+            debt_history: debtHistory,
+            is_blocked: false
+        });
+
+        // Notify Driver
+        sendPushNotification(
+            `✅ Comissão Confirmada! Conta Desbloqueada`,
+            `O seu pagamento de ${clearedDebt.amount} MT foi confirmado pela Tchapo Tchapo. Já pode receber e aceitar pedidos!`,
+            'driver',
+            numId
+        );
+
+        res.json({
+            success: true,
+            message: 'Pagamento de comissão confirmado! Entregador desbloqueado com sucesso.',
+            cleared_debt: clearedDebt
+        });
+    } catch (err) {
+        console.error('Error confirming debt:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET Admin list all drivers with debts
+app.get('/api/drivers/admin/debts', async (req, res) => {
+    try {
+        const { data: drivers } = await supabase
+            .from('drivers')
+            .select('*');
+
+        const allDrivers = drivers || [];
+        const debtList = [];
+
+        for (const d of allDrivers) {
+            const m = getDriverMeta(d.id);
+            if (m.pending_debt) {
+                const dueTime = new Date(m.pending_debt.due_at).getTime();
+                const isOverdue = Date.now() > dueTime;
+                debtList.push({
+                    driver_id: d.id,
+                    driver_name: d.name,
+                    driver_phone: d.phone,
+                    debt: m.pending_debt,
+                    is_overdue: isOverdue,
+                    remaining_secs: Math.max(0, Math.floor((dueTime - Date.now()) / 1000))
+                });
+            }
+        }
+
+        res.json(debtList);
+    } catch (err) {
+        console.error('Error fetching admin debts:', err);
         res.status(500).json({ error: err.message });
     }
 });

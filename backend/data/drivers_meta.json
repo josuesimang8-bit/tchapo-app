@@ -1,8 +1,8 @@
 {
   "7": {
     "approval_status": "Aprovado",
-    "is_online": false,
-    "last_seen_at": "2026-09-14T01:38:55.139Z",
+    "is_online": true,
+    "last_seen_at": "2026-09-15T00:13:47.418Z",
     "doc_type": "BI",
     "doc_number": "",
     "doc_photo_url": "",

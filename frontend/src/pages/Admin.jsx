@@ -658,6 +658,27 @@ export default function Admin() {
     };
 
     
+    
+    const handleConfirmDebt = async (driverId) => {
+        if (!confirm('Deseja confirmar o pagamento da comissão de 20% e desbloquear este entregador?')) return;
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/drivers/${driverId}/confirm-debt`, {
+                method: 'PUT'
+            });
+            if (res.ok) {
+                setToast('✅ Pagamento de comissão confirmado! Entregador desbloqueado com sucesso.');
+                setTimeout(() => setToast(null), 3500);
+                fetchDrivers();
+            } else {
+                const data = await res.json();
+                alert('Erro: ' + (data.error || 'Falha ao confirmar pagamento'));
+            }
+        } catch (err) {
+            console.error('Erro ao confirmar dívida:', err);
+            alert('Erro: ' + err.message);
+        }
+    };
+
     const handleApproveDriver = async (id, status) => {
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/drivers/${id}/approval`, {
@@ -1558,6 +1579,12 @@ export default function Admin() {
                             <div style={{ fontSize: '0.85rem', color: '#dc2626', fontWeight: 600 }}>⚠️ Advertências Emitidas</div>
                             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#dc2626', marginTop: '0.4rem' }}>
                                 {drivers.reduce((acc, d) => acc + (d.warnings ? d.warnings.length : 0), 0)}
+                            </div>
+                        </div>
+                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#b91c1c', fontWeight: 600 }}>💳 Dívidas / Comissões Pendentes</div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#b91c1c', marginTop: '0.4rem' }}>
+                                {drivers.filter(d => d.pending_debt).length}
                             </div>
                         </div>
                     </div>

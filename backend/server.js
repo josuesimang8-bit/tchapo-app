@@ -1225,6 +1225,8 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 today_earnings: todayEarnings,
                 week_earnings: weekEarnings,
                 total_earnings: totalEarnings,
+                saldo: Math.max(0, totalEarnings - (meta.pending_debt && meta.pending_debt.status !== 'Pago' ? meta.pending_debt.amount : 0)),
+                pending_debt_amount: meta.pending_debt && meta.pending_debt.status !== 'Pago' ? meta.pending_debt.amount : 0,
                 today_deliveries: todayDelivered.length,
                 total_deliveries: delivered.length,
                 active_deliveries: activeOrders.length,
@@ -1277,6 +1279,19 @@ app.put('/api/orders/:id/accept', async (req, res) => {
         if (driverMeta.pending_debt && driverMeta.pending_debt.status !== 'Pago') {
             return res.status(403).json({
                 error: `Não pode aceitar novos pedidos enquanto tiver uma comissão/dívida pendente de ${driverMeta.pending_debt.amount} MT. Por favor regularize o pagamento para desbloquear a sua conta.`
+            });
+        }
+
+        // Check if driver already has an active order in progress
+        const { data: currentActiveOrders } = await supabase
+            .from('orders')
+            .select('id')
+            .eq('driver_id', numDriverId)
+            .in('status', ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador']);
+
+        if (currentActiveOrders && currentActiveOrders.length > 0) {
+            return res.status(400).json({
+                error: 'Já possui um pedido em andamento! Deve concluir a entrega atual e efetuar o pagamento da plataforma antes de aceitar outro pedido.'
             });
         }
 

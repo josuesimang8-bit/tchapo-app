@@ -835,10 +835,43 @@ app.put('/api/orders/:id/status', async (req, res) => {
 
         if (error) throw error;
 
-        // If marked as Entregue, process referral earnings
-        if (status === 'Entregue' && data && data.referral_code) {
-            console.log(`Order #${id} marked as Entregue. Processing referral code: ${data.referral_code}`);
-            await processReferralCommission(data);
+        // If marked as Entregue, generate 20% debt for the assigned driver
+        if (status === 'Entregue' && data) {
+            const assignedDriverId = data.driver_id || driver_id;
+            if (assignedDriverId) {
+                const numDId = Number(assignedDriverId);
+                const orderTotal = Number(data.total) || 150;
+                // Exactly 20% commission of the order total
+                const commissionAmount = Math.max(30, Math.round(orderTotal * 0.20));
+                const now = new Date();
+                const dueAt = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours countdown
+
+                const newDebt = {
+                    id: 'DEBT-' + Date.now(),
+                    order_id: data.id,
+                    order_total: orderTotal,
+                    amount: commissionAmount,
+                    percentage: 20,
+                    created_at: now.toISOString(),
+                    due_at: dueAt.toISOString(),
+                    status: 'Pendente',
+                    payment_proof: null,
+                    overdue_warned: false
+                };
+
+                updateDriverMeta(numDId, {
+                    pending_debt: newDebt,
+                    is_blocked: true,
+                    is_online: false
+                });
+
+                console.log(`[DEBT] Created 20% commission debt of ${commissionAmount} MT for driver #${numDId} on order #${data.id}. Due at: ${dueAt.toISOString()}`);
+            }
+
+            if (data.referral_code) {
+                console.log(`Order #${id} marked as Entregue. Processing referral code: ${data.referral_code}`);
+                await processReferralCommission(data);
+            }
         }
 
         res.json(formatOrderResponse(data));

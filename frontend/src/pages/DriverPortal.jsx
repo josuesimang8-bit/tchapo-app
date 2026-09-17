@@ -2,6 +2,62 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 // Modern SVG Icons (No Emojis)
 const Icons = {
+    Car: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+            <circle cx="7" cy="17" r="2"/>
+            <path d="M9 17h6"/>
+            <circle cx="17" cy="17" r="2"/>
+        </svg>
+    ),
+    Truck: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/>
+            <path d="M15 18H9"/>
+            <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/>
+            <circle cx="17" cy="18" r="2"/>
+            <circle cx="7" cy="18" r="2"/>
+        </svg>
+    ),
+    UploadCloud: () => (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+            <path d="M12 12v9"/>
+            <path d="m16 16-4-4-4 4"/>
+        </svg>
+    ),
+    Lock: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+    ),
+    IdCard: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="20" height="14" x="2" y="5" rx="2"/>
+            <circle cx="8" cy="12" r="2"/>
+            <path d="M14 10h4"/>
+            <path d="M14 14h4"/>
+        </svg>
+    ),
+    ChevronRight: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 18 6-6-6-6"/>
+        </svg>
+    ),
+    ChevronLeft: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 18-6-6 6-6"/>
+        </svg>
+    ),
+    Trash: () => (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18"/>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+        </svg>
+    ),
+
     LogoBadge: () => (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -228,6 +284,7 @@ export default function DriverPortal() {
     const [docPhotoFile, setDocPhotoFile] = useState(null);
     const [docPhotoPreview, setDocPhotoPreview] = useState(null);
     const [regLoading, setRegLoading] = useState(false);
+    const [regStep, setRegStep] = useState(1); // 1: Perfil & Contacto | 2: Veículo & Documentos
 
     // Availability State
     const [isOnline, setIsOnline] = useState(false);
@@ -2253,213 +2310,690 @@ export default function DriverPortal() {
                 </div>
             )}
 
-            {/* MODAL 1: Entregador Registration Modal */}
+            {/* MODAL 1: Modern Entregador Registration Modal */}
             {isRegisterModalOpen && (
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(15, 23, 42, 0.75)',
+                    background: 'rgba(15, 23, 42, 0.78)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     zIndex: 99999,
-                    backdropFilter: 'blur(5px)',
-                    padding: '1.5rem'
+                    backdropFilter: 'blur(8px)',
+                    padding: '1.25rem'
                 }}>
                     <div style={{
-                        background: '#fff',
+                        background: '#ffffff',
                         borderRadius: '24px',
-                        padding: '2rem',
-                        maxWidth: '560px',
+                        maxWidth: '580px',
                         width: '100%',
-                        maxHeight: '90vh',
-                        overflowY: 'auto',
-                        boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-                        border: '1px solid #e2e8f0'
+                        maxHeight: '92vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.35)',
+                        border: '1px solid #e2e8f0',
+                        animation: 'fadeInUp 0.2s ease-out'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        {/* Header with gradient badge and close button */}
+                        <div style={{
+                            padding: '1.5rem 1.75rem 1.25rem',
+                            borderBottom: '1px solid #f1f5f9',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            justifyContent: 'space-between',
+                            background: '#fafafa'
+                        }}>
                             <div>
-                                <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#0f172a' }}>
-                                    Cadastrar como Entregador
+                                <div style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.45rem',
+                                    background: '#fef3c7',
+                                    color: '#b45309',
+                                    padding: '0.28rem 0.65rem',
+                                    borderRadius: '6px',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 800,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    marginBottom: '0.5rem'
+                                }}>
+                                    <Icons.Bike />
+                                    <span>Junta-te à Frota Oficial</span>
+                                </div>
+                                <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.3px' }}>
+                                    Registo de Entregador
                                 </h3>
-                                <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                                    Preencha os seus dados para submeter à aprovação da equipa.
+                                <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                                    Receba encomendas dos clientes Tchapo Tchapo na Beira e ganhe por entrega.
                                 </p>
                             </div>
-                            <button onClick={() => setIsRegisterModalOpen(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                            <button
+                                onClick={() => {
+                                    setIsRegisterModalOpen(false);
+                                    setRegStep(1);
+                                }}
+                                style={{
+                                    background: '#ffffff',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#64748b',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.15s'
+                                }}
+                            >
                                 <Icons.Close />
                             </button>
                         </div>
 
-                        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                    Nome Completo *
-                                </label>
-                                <input
-                                    type="text" required
-                                    value={regName}
-                                    onChange={(e) => setRegName(e.target.value)}
-                                    placeholder="Ex: Carlos Alberto Macamo"
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
-                                />
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                        Contacto WhatsApp *
-                                    </label>
-                                    <input
-                                        type="text" required
-                                        value={regPhone}
-                                        onChange={(e) => setRegPhone(e.target.value)}
-                                        placeholder="Ex: 258841234567"
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                        Bairro Base na Beira *
-                                    </label>
-                                    <input
-                                        type="text" required
-                                        value={regBairro}
-                                        onChange={(e) => setRegBairro(e.target.value)}
-                                        placeholder="Ex: Macuti, Ponta Gêa"
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                        Tipo de Veículo
-                                    </label>
-                                    <select
-                                        value={regVehicleType}
-                                        onChange={(e) => setRegVehicleType(e.target.value)}
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
-                                    >
-                                        <option value="Mota">Moto / Scooter</option>
-                                        <option value="Carro">Carro / Viatura</option>
-                                        <option value="Bicicleta">Bicicleta</option>
-                                        <option value="Carrinha">Carrinha / Van</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                        Matrícula (Opcional)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={regVehiclePlate}
-                                        onChange={(e) => setRegVehiclePlate(e.target.value)}
-                                        placeholder="Ex: ABC-123-MC"
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                        Tipo de Documento *
-                                    </label>
-                                    <select
-                                        value={regDocType}
-                                        onChange={(e) => setRegDocType(e.target.value)}
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
-                                    >
-                                        <option value="BI">Bilhete de Identidade (BI)</option>
-                                        <option value="Carta de Condução">Carta de Condução</option>
-                                        <option value="DIRE">DIRE</option>
-                                        <option value="Passaporte">Passaporte</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                        Número do Documento (ID) *
-                                    </label>
-                                    <input
-                                        type="text" required
-                                        value={regDocNumber}
-                                        onChange={(e) => setRegDocNumber(e.target.value)}
-                                        placeholder="Ex: 110100234567N"
-                                        style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                        Foto de Perfil
-                                    </label>
-                                    <input
-                                        type="file" accept="image/*"
-                                        onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            setPhotoFile(file);
-                                            if (file) setPhotoPreview(URL.createObjectURL(file));
-                                        }}
-                                        style={{ width: '100%', fontSize: '0.8rem' }}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                        Foto do Documento (BI / Carta) *
-                                    </label>
-                                    <input
-                                        type="file" accept="image/*" required
-                                        onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            setDocPhotoFile(file);
-                                            if (file) setDocPhotoPreview(URL.createObjectURL(file));
-                                        }}
-                                        style={{ width: '100%', fontSize: '0.8rem' }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                    Defina o seu PIN de 4 dígitos para Acesso *
-                                </label>
-                                <input
-                                    type="password" maxLength="6" required
-                                    value={regPin}
-                                    onChange={(e) => setRegPin(e.target.value)}
-                                    placeholder="Ex: 1234"
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={regLoading}
+                        {/* Step Progress Bar */}
+                        <div style={{ padding: '0.85rem 1.75rem', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div
+                                onClick={() => setRegStep(1)}
                                 style={{
-                                    marginTop: '0.5rem',
-                                    background: '#f59e0b',
-                                    color: '#111827',
-                                    border: 'none',
-                                    padding: '0.9rem',
-                                    borderRadius: '12px',
-                                    fontWeight: 800,
-                                    fontSize: '0.95rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
                                     cursor: 'pointer',
-                                    opacity: regLoading ? 0.7 : 1,
+                                    opacity: regStep === 1 ? 1 : 0.6
+                                }}
+                            >
+                                <span style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    background: regStep >= 1 ? '#0f172a' : '#cbd5e1',
+                                    color: '#fff',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700
+                                }}>1</span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: regStep === 1 ? '#0f172a' : '#64748b' }}>
+                                    Identificação & Contacto
+                                </span>
+                            </div>
+                            <div style={{ flex: 1, height: '2px', background: regStep === 2 ? '#0f172a' : '#e2e8f0' }} />
+                            <div
+                                onClick={() => {
+                                    if (regName.trim() && regPhone.trim()) setRegStep(2);
+                                }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     gap: '0.5rem',
-                                    boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)'
+                                    cursor: regName.trim() && regPhone.trim() ? 'pointer' : 'default',
+                                    opacity: regStep === 2 ? 1 : 0.6
                                 }}
                             >
-                                <Icons.CheckCircle />
-                                <span>{regLoading ? 'A enviar registo...' : 'Submeter Cadastro de Entregador'}</span>
-                            </button>
+                                <span style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    background: regStep === 2 ? '#0f172a' : '#cbd5e1',
+                                    color: '#fff',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700
+                                }}>2</span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: regStep === 2 ? '#0f172a' : '#64748b' }}>
+                                    Veículo & Documentos
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Modal Body / Scrollable Form */}
+                        <form onSubmit={handleRegister} style={{ overflowY: 'auto', padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            
+                            {/* STEP 1: Identification & Contact */}
+                            {regStep === 1 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+                                    
+                                    {/* Profile Photo Upload */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem', background: '#f8fafc', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{
+                                                width: '72px',
+                                                height: '72px',
+                                                borderRadius: '50%',
+                                                background: '#e2e8f0',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                overflow: 'hidden',
+                                                border: '2px solid #fff',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                            }}>
+                                                {photoPreview ? (
+                                                    <img src={photoPreview} alt="Foto de Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <Icons.User />
+                                                )}
+                                            </div>
+                                            {photoPreview && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setPhotoFile(null);
+                                                        setPhotoPreview(null);
+                                                    }}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        bottom: '-4px',
+                                                        right: '-4px',
+                                                        background: '#ef4444',
+                                                        color: '#fff',
+                                                        border: 'none',
+                                                        borderRadius: '50%',
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                    }}
+                                                    title="Remover foto"
+                                                >
+                                                    <Icons.Trash />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.2rem' }}>
+                                                Foto de Perfil (Rosto)
+                                            </div>
+                                            <p style={{ margin: '0 0 0.6rem', fontSize: '0.76rem', color: '#64748b' }}>
+                                                Foto nítida para identificação perante clientes na Beira.
+                                            </p>
+                                            <label style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                background: '#ffffff',
+                                                border: '1px solid #cbd5e1',
+                                                padding: '0.45rem 0.9rem',
+                                                borderRadius: '8px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 600,
+                                                color: '#334155',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                            }}>
+                                                <Icons.UploadCloud />
+                                                <span>{photoFile ? 'Alterar Fotografia' : 'Carregar Fotografia'}</span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    style={{ display: 'none' }}
+                                                    onChange={(e) => {
+                                                        const file = e.target.files[0];
+                                                        setPhotoFile(file);
+                                                        if (file) setPhotoPreview(URL.createObjectURL(file));
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Full Name */}
+                                    <div>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                            <Icons.User />
+                                            <span>Nome Completo *</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={regName}
+                                            onChange={(e) => setRegName(e.target.value)}
+                                            placeholder="Ex: Carlos Alberto Macamo"
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.8rem 1rem',
+                                                borderRadius: '12px',
+                                                border: '1.5px solid #e2e8f0',
+                                                fontSize: '0.92rem',
+                                                color: '#0f172a',
+                                                outline: 'none',
+                                                background: '#fdfdfd',
+                                                boxSizing: 'border-box',
+                                                transition: 'border-color 0.15s'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
+                                            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                        />
+                                    </div>
+
+                                    {/* WhatsApp & Bairro */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                                <Icons.WhatsApp />
+                                                <span>WhatsApp / Celular *</span>
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                required
+                                                value={regPhone}
+                                                onChange={(e) => setRegPhone(e.target.value)}
+                                                placeholder="84XXXXXXX ou 87XXXXXXX"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.8rem 1rem',
+                                                    borderRadius: '12px',
+                                                    border: '1.5px solid #e2e8f0',
+                                                    fontSize: '0.92rem',
+                                                    color: '#0f172a',
+                                                    outline: 'none',
+                                                    background: '#fdfdfd',
+                                                    boxSizing: 'border-box',
+                                                    transition: 'border-color 0.15s'
+                                                }}
+                                                onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
+                                                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                                <Icons.MapPin />
+                                                <span>Bairro Base na Beira *</span>
+                                            </label>
+                                            <select
+                                                value={regBairro}
+                                                onChange={(e) => setRegBairro(e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.8rem 1rem',
+                                                    borderRadius: '12px',
+                                                    border: '1.5px solid #e2e8f0',
+                                                    fontSize: '0.92rem',
+                                                    color: '#0f172a',
+                                                    outline: 'none',
+                                                    background: '#fdfdfd',
+                                                    boxSizing: 'border-box',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <option value="Macuti">Macuti</option>
+                                                <option value="Ponta Gêa">Ponta Gêa</option>
+                                                <option value="Chaimite">Chaimite</option>
+                                                <option value="Munhava">Munhava</option>
+                                                <option value="Manga">Manga</option>
+                                                <option value="Estoril">Estoril</option>
+                                                <option value="Chota">Chota</option>
+                                                <option value="Inhamízua">Inhamízua</option>
+                                                <option value="Maraza">Maraza</option>
+                                                <option value="Chingussura">Chingussura</option>
+                                                <option value="Matacuane">Matacuane</option>
+                                                <option value="Vaz">Vaz</option>
+                                                <option value="Pioneiros">Pioneiros</option>
+                                                <option value="Outro Bairro">Outro Bairro da Beira</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Security PIN */}
+                                    <div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                                <Icons.Lock />
+                                                <span>PIN de Acesso (4 Dígitos) *</span>
+                                            </label>
+                                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Usado para entrar no portal</span>
+                                        </div>
+                                        <input
+                                            type="password"
+                                            maxLength="4"
+                                            required
+                                            value={regPin}
+                                            onChange={(e) => setRegPin(e.target.value.replace(/\D/g, ''))}
+                                            placeholder="Ex: 4821"
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.8rem 1rem',
+                                                borderRadius: '12px',
+                                                border: '1.5px solid #e2e8f0',
+                                                fontSize: '1rem',
+                                                letterSpacing: '3px',
+                                                color: '#0f172a',
+                                                outline: 'none',
+                                                background: '#fdfdfd',
+                                                boxSizing: 'border-box'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
+                                            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                        />
+                                    </div>
+
+                                    {/* Step 1 Next Button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (!regName.trim()) {
+                                                showToast('Por favor introduza o seu nome completo.', 'error');
+                                                return;
+                                            }
+                                            if (!regPhone.trim()) {
+                                                showToast('Por favor introduza o seu número de telefone.', 'error');
+                                                return;
+                                            }
+                                            if (!regPin.trim() || regPin.length < 4) {
+                                                showToast('Defina um PIN de 4 dígitos para segurança da sua conta.', 'error');
+                                                return;
+                                            }
+                                            setRegStep(2);
+                                        }}
+                                        style={{
+                                            marginTop: '0.5rem',
+                                            background: '#0f172a',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            padding: '0.9rem',
+                                            borderRadius: '12px',
+                                            fontWeight: 700,
+                                            fontSize: '0.92rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem',
+                                            transition: 'background 0.15s'
+                                        }}
+                                    >
+                                        <span>Continuar para Veículo & Documentos</span>
+                                        <Icons.ChevronRight />
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* STEP 2: Vehicle & ID Document */}
+                            {regStep === 2 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+                                    
+                                    {/* Visual Vehicle Selector */}
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                            Tipo de Veículo de Entrega *
+                                        </label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
+                                            {[
+                                                { type: 'Mota', label: 'Moto', icon: <Icons.Bike />, desc: 'Mais Rápido' },
+                                                { type: 'Bicicleta', label: 'Bicicleta', icon: <Icons.Navigation />, desc: 'Económico' },
+                                                { type: 'Carro', label: 'Carro', icon: <Icons.Car />, desc: 'Volume Médio' },
+                                                { type: 'Carrinha', label: 'Carrinha', icon: <Icons.Truck />, desc: 'Carga Pesada' }
+                                            ].map(item => {
+                                                const isSelected = regVehicleType === item.type;
+                                                return (
+                                                    <div
+                                                        key={item.type}
+                                                        onClick={() => setRegVehicleType(item.type)}
+                                                        style={{
+                                                            border: isSelected ? '2px solid #f59e0b' : '1.5px solid #e2e8f0',
+                                                            background: isSelected ? '#fffbeb' : '#ffffff',
+                                                            borderRadius: '12px',
+                                                            padding: '0.75rem 0.5rem',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center',
+                                                            gap: '0.35rem',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.15s'
+                                                        }}
+                                                    >
+                                                        <div style={{ color: isSelected ? '#d97706' : '#64748b' }}>
+                                                            {item.icon}
+                                                        </div>
+                                                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: isSelected ? '#92400e' : '#334155' }}>
+                                                            {item.label}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.65rem', color: isSelected ? '#b45309' : '#94a3b8', fontWeight: 600 }}>
+                                                            {item.desc}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Vehicle Plate (Optional) */}
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                            Matrícula do Veículo <span style={{ fontWeight: 400, color: '#64748b' }}>(Opcional para bicicleta)</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={regVehiclePlate}
+                                            onChange={(e) => setRegVehiclePlate(e.target.value)}
+                                            placeholder="Ex: ABE-894-MC"
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.8rem 1rem',
+                                                borderRadius: '12px',
+                                                border: '1.5px solid #e2e8f0',
+                                                fontSize: '0.92rem',
+                                                color: '#0f172a',
+                                                outline: 'none',
+                                                background: '#fdfdfd',
+                                                boxSizing: 'border-box'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
+                                            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                        />
+                                    </div>
+
+                                    {/* Document Type & Number */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                                <Icons.IdCard />
+                                                <span>Documento *</span>
+                                            </label>
+                                            <select
+                                                value={regDocType}
+                                                onChange={(e) => setRegDocType(e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.8rem 0.85rem',
+                                                    borderRadius: '12px',
+                                                    border: '1.5px solid #e2e8f0',
+                                                    fontSize: '0.88rem',
+                                                    color: '#0f172a',
+                                                    outline: 'none',
+                                                    background: '#fdfdfd',
+                                                    boxSizing: 'border-box',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <option value="BI">Bilhete de Identidade (BI)</option>
+                                                <option value="Carta de Condução">Carta de Condução</option>
+                                                <option value="DIRE">DIRE</option>
+                                                <option value="Passaporte">Passaporte</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                                Número do Documento *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={regDocNumber}
+                                                onChange={(e) => setRegDocNumber(e.target.value)}
+                                                placeholder="Ex: 110100234567N"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.8rem 1rem',
+                                                    borderRadius: '12px',
+                                                    border: '1.5px solid #e2e8f0',
+                                                    fontSize: '0.92rem',
+                                                    color: '#0f172a',
+                                                    outline: 'none',
+                                                    background: '#fdfdfd',
+                                                    boxSizing: 'border-box'
+                                                }}
+                                                onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
+                                                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Document Photo Upload Box */}
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                            Fotografia do Documento (Frente do BI / Carta) *
+                                        </label>
+                                        <div style={{
+                                            border: '1.5px dashed #cbd5e1',
+                                            borderRadius: '16px',
+                                            padding: '1.25rem',
+                                            textAlign: 'center',
+                                            background: '#f8fafc',
+                                            position: 'relative'
+                                        }}>
+                                            {docPhotoPreview ? (
+                                                <div style={{ position: 'relative', display: 'inline-block' }}>
+                                                    <img
+                                                        src={docPhotoPreview}
+                                                        alt="Documento"
+                                                        style={{
+                                                            maxHeight: '140px',
+                                                            maxWidth: '100%',
+                                                            borderRadius: '10px',
+                                                            objectFit: 'contain',
+                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                                        }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setDocPhotoFile(null);
+                                                            setDocPhotoPreview(null);
+                                                        }}
+                                                        style={{
+                                                            position: 'absolute',
+                                                            top: '-8px',
+                                                            right: '-8px',
+                                                            background: '#ef4444',
+                                                            color: '#fff',
+                                                            border: 'none',
+                                                            borderRadius: '50%',
+                                                            width: '26px',
+                                                            height: '26px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                        }}
+                                                        title="Remover documento"
+                                                    >
+                                                        <Icons.Trash />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <div style={{
+                                                        width: '44px',
+                                                        height: '44px',
+                                                        borderRadius: '50%',
+                                                        background: '#ffffff',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: '#f59e0b',
+                                                        boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                                                    }}>
+                                                        <Icons.UploadCloud />
+                                                    </div>
+                                                    <div>
+                                                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>
+                                                            Clique para anexar foto do BI ou Carta
+                                                        </span>
+                                                        <p style={{ margin: '0.2rem 0 0', fontSize: '0.74rem', color: '#64748b' }}>
+                                                            Formatos aceites: JPG, PNG, WEBP (Max: 5MB)
+                                                        </p>
+                                                    </div>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        required
+                                                        style={{ display: 'none' }}
+                                                        onChange={(e) => {
+                                                            const file = e.target.files[0];
+                                                            setDocPhotoFile(file);
+                                                            if (file) setDocPhotoPreview(URL.createObjectURL(file));
+                                                        }}
+                                                    />
+                                                </label>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Buttons: Back and Submit */}
+                                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRegStep(1)}
+                                            style={{
+                                                flex: 1,
+                                                background: '#f1f5f9',
+                                                color: '#475569',
+                                                border: '1px solid #cbd5e1',
+                                                padding: '0.9rem',
+                                                borderRadius: '12px',
+                                                fontWeight: 700,
+                                                fontSize: '0.88rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.4rem'
+                                            }}
+                                        >
+                                            <Icons.ChevronLeft />
+                                            <span>Voltar</span>
+                                        </button>
+
+                                        <button
+                                            type="submit"
+                                            disabled={regLoading}
+                                            style={{
+                                                flex: 2,
+                                                background: '#f59e0b',
+                                                color: '#111827',
+                                                border: 'none',
+                                                padding: '0.9rem',
+                                                borderRadius: '12px',
+                                                fontWeight: 800,
+                                                fontSize: '0.95rem',
+                                                cursor: 'pointer',
+                                                opacity: regLoading ? 0.7 : 1,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.35)'
+                                            }}
+                                        >
+                                            <Icons.CheckCircle />
+                                            <span>{regLoading ? 'A enviar candidatura...' : 'Concluir & Submeter'}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </form>
                     </div>
                 </div>

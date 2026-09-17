@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { MZ_PROVINCES, ALL_PROVINCES, DEFAULT_PROVINCE, getBairrosByProvince } from '../data/mozambiqueLocations';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rkempjcqoefhdthvwewm.supabase.co';
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -758,10 +759,10 @@ export default function Store() {
     const [toastMessage, setToastMessage] = useState(null);
 
     // Form inputs
-    const [checkoutForm, setCheckoutForm] = useState({ name: '', phone: '', bairro: '', address: '', time: '', payment: '' });
+    const [checkoutForm, setCheckoutForm] = useState({ name: '', phone: '', province: DEFAULT_PROVINCE, bairro: '', address: '', time: '', payment: '' });
     const [isCartCheckoutModalOpen, setIsCartCheckoutModalOpen] = useState(false);
     const [quickOrderQty, setQuickOrderQty] = useState(1);
-    const [quickOrderForm, setQuickOrderForm] = useState({ name: '', phone: '', bairro: '', address: '', time: '', payment: '' });
+    const [quickOrderForm, setQuickOrderForm] = useState({ name: '', phone: '', province: DEFAULT_PROVINCE, bairro: '', address: '', time: '', payment: '' });
     
     const [searchQuery, setSearchQuery] = useState('');
     // Price filter states
@@ -1304,7 +1305,7 @@ export default function Store() {
         const orderData = {
             customer_name: checkoutForm.name,
             phone: checkoutForm.phone,
-            bairro: checkoutForm.bairro,
+            bairro: checkoutForm.province ? `${checkoutForm.province} - ${checkoutForm.bairro}` : checkoutForm.bairro,
             address: checkoutForm.address,
             time: checkoutForm.time,
             payment: checkoutForm.payment,
@@ -1410,7 +1411,7 @@ export default function Store() {
         const orderData = {
             customer_name: quickOrderForm.name.trim(),
             phone: quickOrderForm.phone.trim(),
-            bairro: quickOrderForm.bairro,
+            bairro: quickOrderForm.province ? `${quickOrderForm.province} - ${quickOrderForm.bairro}` : quickOrderForm.bairro,
             address: quickOrderForm.address.trim(),
             time: quickOrderForm.time,
             payment: quickOrderForm.payment,
@@ -1661,7 +1662,7 @@ export default function Store() {
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         </span>
                         <span>Tchapo Tchapo</span>
-                        <span className="delivery-badge" style={{ marginLeft: '0.5rem' }}>4 Horas Beira</span>
+                        <span className="delivery-badge" style={{ marginLeft: '0.5rem' }}>Entregas em Moçambique</span>
                     </div>
                     <div className="nav-right">
                         <div className="auth-menu">
@@ -1702,7 +1703,7 @@ export default function Store() {
                 <section className="hero" style={{ margin: '1.5rem auto', maxWidth: '1200px', width: 'calc(100% - 3rem)' }}>
                     <div className="hero-content">
                         <h1>Tudo o que precisas, entregue em 4 horas.</h1>
-                        <p>Tecnologia, gadgets, acessórios e muito mais com pagamento na entrega. Rápido, seguro e exclusivo para a cidade da Beira, Sofala.</p>
+                        <p>Tecnologia, gadgets, acessórios e muito mais com pagamento na entrega. Rápido, seguro e disponível para todas as províncias e cidades de Moçambique.</p>
                         <a href="#catalog" className="btn-primary">Ver Produtos</a>
                     </div>
                 </section>
@@ -1869,7 +1870,7 @@ export default function Store() {
                         <div className="faq-item" style={{ borderBottom: '1px solid #e5e7eb', padding: '1rem 0' }}>
                             <details style={{ cursor: 'pointer' }}>
                                 <summary style={{ fontWeight: 600, fontSize: '1.1rem' }}>Quanto tempo demora a entrega?</summary>
-                                <p style={{ color: '#6b7280', marginTop: '0.5rem', paddingLeft: '1rem' }}>Garantimos a entrega num prazo máximo de 4 horas dentro da cidade da Beira, ou em até 2 horas se escolheres o envio Imediato urgente.</p>
+                                <p style={{ color: '#6b7280', marginTop: '0.5rem', paddingLeft: '1rem' }}>Garantimos a entrega rápida em todas as capitais e cidades de Moçambique, com opção de envio imediato urgente em até 2 a 4 horas nos centros urbanos principais.</p>
                             </details>
                         </div>
                         <div className="faq-item" style={{ borderBottom: '1px solid #e5e7eb', padding: '1rem 0' }}>
@@ -2180,7 +2181,7 @@ export default function Store() {
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                                 Dados para Entrega
                             </h2>
-                            <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '1.25rem' }}>Preencha o seu endereço em Beira para enviarmos o seu pedido.</p>
+                            <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '1.25rem' }}>Preencha os seus dados de entrega para qualquer província de Moçambique.</p>
                             <form className="checkout-form" onSubmit={(e) => {
                                 handleCheckoutSubmit(e);
                                 setIsCartCheckoutModalOpen(false);
@@ -2200,16 +2201,32 @@ export default function Store() {
                                     pattern="[0-9\s+\-()]{8,15}"
                                     onChange={e => setCheckoutForm({ ...checkoutForm, phone: e.target.value })}
                                 />
-                                <select
-                                    value={checkoutForm.bairro}
-                                    required
-                                    onChange={e => setCheckoutForm({ ...checkoutForm, bairro: e.target.value })}
-                                >
-                                    <option value="" disabled>Selecione o Bairro...</option>
-                                    {['Macuti', 'Ponta Gêa', 'Maquinino', 'Pioneiros', 'Chota', 'Estoril', 'Palmeiras', 'Munhava', 'Manga', 'Inhamizua', 'Matacuane', 'Macurungo'].map(b => (
-                                        <option key={b} value={b}>{b}</option>
-                                    ))}
-                                </select>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                                    <select
+                                        value={checkoutForm.province || DEFAULT_PROVINCE}
+                                        required
+                                        onChange={e => {
+                                            const newProv = e.target.value;
+                                            setCheckoutForm({ ...checkoutForm, province: newProv, bairro: '' });
+                                        }}
+                                    >
+                                        <option value="" disabled>Província...</option>
+                                        {ALL_PROVINCES.map(p => (
+                                            <option key={p} value={p}>{p}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        value={checkoutForm.bairro}
+                                        required
+                                        onChange={e => setCheckoutForm({ ...checkoutForm, bairro: e.target.value })}
+                                    >
+                                        <option value="" disabled>Bairro / Cidade...</option>
+                                        {getBairrosByProvince(checkoutForm.province || DEFAULT_PROVINCE).map(b => (
+                                            <option key={b} value={b}>{b}</option>
+                                        ))}
+                                        <option value="Outro Bairro / Distrito">Outro Bairro / Distrito</option>
+                                    </select>
+                                </div>
                                 <input
                                     type="text"
                                     placeholder="Morada e Referência detalhado"
@@ -2419,16 +2436,32 @@ export default function Store() {
                                             required
                                             onChange={e => setQuickOrderForm({ ...quickOrderForm, phone: e.target.value })}
                                         />
-                                        <select
-                                            value={quickOrderForm.bairro}
-                                            required
-                                            onChange={e => setQuickOrderForm({ ...quickOrderForm, bairro: e.target.value })}
-                                        >
-                                            <option value="" disabled>Selecione o Bairro...</option>
-                                            {['Macuti', 'Ponta Gêa', 'Maquinino', 'Pioneiros', 'Chota', 'Estoril', 'Palmeiras', 'Munhava', 'Manga', 'Inhamizua', 'Matacuane', 'Macurungo'].map(b => (
-                                                <option key={b} value={b}>{b}</option>
-                                            ))}
-                                        </select>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                                            <select
+                                                value={quickOrderForm.province || DEFAULT_PROVINCE}
+                                                required
+                                                onChange={e => {
+                                                    const newProv = e.target.value;
+                                                    setQuickOrderForm({ ...quickOrderForm, province: newProv, bairro: '' });
+                                                }}
+                                            >
+                                                <option value="" disabled>Província...</option>
+                                                {ALL_PROVINCES.map(p => (
+                                                    <option key={p} value={p}>{p}</option>
+                                                ))}
+                                            </select>
+                                            <select
+                                                value={quickOrderForm.bairro}
+                                                required
+                                                onChange={e => setQuickOrderForm({ ...quickOrderForm, bairro: e.target.value })}
+                                            >
+                                                <option value="" disabled>Bairro / Cidade...</option>
+                                                {getBairrosByProvince(quickOrderForm.province || DEFAULT_PROVINCE).map(b => (
+                                                    <option key={b} value={b}>{b}</option>
+                                                ))}
+                                                <option value="Outro Bairro / Distrito">Outro Bairro / Distrito</option>
+                                            </select>
+                                        </div>
                                         <input
                                             type="text"
                                             placeholder="Morada e Referência"

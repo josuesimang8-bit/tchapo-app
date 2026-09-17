@@ -58,7 +58,8 @@ export default function Admin() {
     const [newDriverName, setNewDriverName]         = useState('');
     const [newDriverPhone, setNewDriverPhone]       = useState('');
     const [newDriverVehicleType, setNewDriverVehicleType] = useState('Mota');
-    const [newDriverBairro, setNewDriverBairro]     = useState('Macuti');
+    const [newDriverProvince, setNewDriverProvince] = useState(DEFAULT_PROVINCE);
+    const [newDriverBairro, setNewDriverBairro]     = useState('Macuti (Beira)');
     const [newDriverDocType, setNewDriverDocType]   = useState('BI');
     const [newDriverDocNumber, setNewDriverDocNumber] = useState('');
     const [newDriverPhoto, setNewDriverPhoto]       = useState(null);
@@ -1680,7 +1681,7 @@ export default function Admin() {
                                 <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#16a34a', marginTop: '0.35rem' }}>
                                     {onlineDrivers.length}
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Prontos na Beira</div>
+                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Prontos em Moçambique</div>
                             </div>
 
                             <div
@@ -1998,14 +1999,34 @@ export default function Admin() {
                                         </div>
                                         <div>
                                             <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                                Bairro Base na Beira
+                                                Província e Bairro (Moçambique) *
                                             </label>
-                                            <input
-                                                type="text" value={newDriverBairro}
-                                                onChange={(e) => setNewDriverBairro(e.target.value)}
-                                                placeholder="Ex: Macuti, Ponta Gêa, Manga"
-                                                style={{ width: '100%', padding: '0.8rem 1rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', fontSize: '0.92rem' }}
-                                            />
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                                <select
+                                                    value={newDriverProvince}
+                                                    onChange={(e) => {
+                                                        const p = e.target.value;
+                                                        setNewDriverProvince(p);
+                                                        const bl = getBairrosByProvince(p);
+                                                        if (bl.length > 0) setNewDriverBairro(bl[0]);
+                                                    }}
+                                                    style={{ width: '100%', padding: '0.8rem 0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', fontSize: '0.86rem' }}
+                                                >
+                                                    {ALL_PROVINCES.map(pr => (
+                                                        <option key={pr} value={pr}>{pr}</option>
+                                                    ))}
+                                                </select>
+                                                <select
+                                                    value={newDriverBairro}
+                                                    onChange={(e) => setNewDriverBairro(e.target.value)}
+                                                    style={{ width: '100%', padding: '0.8rem 0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', fontSize: '0.86rem' }}
+                                                >
+                                                    {getBairrosByProvince(newDriverProvince).map(b => (
+                                                        <option key={b} value={b}>{b}</option>
+                                                    ))}
+                                                    <option value="Outro Bairro">Outro Bairro</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
 

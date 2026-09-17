@@ -2009,7 +2009,7 @@ app.get('/api/orders/:id/pdf', async (req, res) => {
 
         // Header / Branding
         doc.fontSize(22).fillColor('#f59e0b').text('TCHAPO TCHAPO', { align: 'center' });
-        doc.fontSize(10).fillColor('#6b7280').text('Entregas Rápidas na Cidade da Beira', { align: 'center' });
+        doc.fontSize(10).fillColor('#6b7280').text('Entregas Rápidas em Moçambique', { align: 'center' });
         doc.moveDown(1.2);
 
         // Receipt Details Box

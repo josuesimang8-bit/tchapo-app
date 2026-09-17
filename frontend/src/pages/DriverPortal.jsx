@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { MZ_PROVINCES, ALL_PROVINCES, DEFAULT_PROVINCE, getBairrosByProvince } from '../data/mozambiqueLocations';
 
 // Modern SVG Icons (No Emojis)
 const Icons = {
@@ -273,7 +274,8 @@ export default function DriverPortal() {
     // Register Form State
     const [regName, setRegName] = useState('');
     const [regPhone, setRegPhone] = useState('');
-    const [regBairro, setRegBairro] = useState('Macuti');
+    const [regProvince, setRegProvince] = useState(DEFAULT_PROVINCE);
+    const [regBairro, setRegBairro] = useState('Macuti (Beira)');
     const [regVehicleType, setRegVehicleType] = useState('Mota');
     const [regVehiclePlate, setRegVehiclePlate] = useState('');
     const [regDocType, setRegDocType] = useState('BI');
@@ -471,7 +473,7 @@ export default function DriverPortal() {
             const formData = new FormData();
             formData.append('name', regName.trim());
             formData.append('phone', regPhone.trim());
-            formData.append('bairro', regBairro.trim());
+            formData.append('bairro', `${regProvince} - ${regBairro}`.trim());
             formData.append('vehicle_type', regVehicleType);
             formData.append('vehicle_plate', regVehiclePlate.trim());
             formData.append('doc_type', regDocType);
@@ -939,7 +941,7 @@ export default function DriverPortal() {
                                     A Tchapo Tchapo Fornece <span style={{ color: '#f59e0b' }}>Clientes Para Si</span>
                                 </h1>
                                 <p style={{ fontSize: '1.05rem', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 2rem' }}>
-                                    As encomendas da loja online são direcionadas diretamente para o seu telemóvel na Beira. Aceite pedidos, realize entregas e mantenha o seu saldo e taxas em dia para receber entregas contínuas!
+                                    As encomendas da loja online são direcionadas diretamente para o seu telemóvel em qualquer província de Moçambique. Aceite pedidos, realize entregas e mantenha o seu saldo e taxas em dia para receber entregas contínuas!
                                 </p>
                                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                     <button
@@ -1416,7 +1418,7 @@ export default function DriverPortal() {
                                                     {availableOrders.length === 1 ? '1 Novo Pedido Disponível para Aceitar!' : `${availableOrders.length} Novos Pedidos Disponíveis para Aceitar!`}
                                                 </div>
                                                 <div style={{ fontSize: '0.82rem', color: '#b45309' }}>
-                                                    Clientes aguardando entregador na Beira. Aceite agora e ganhe 150 MT por entrega.
+                                                    Clientes aguardando entregador em Moçambique. Aceite agora e ganhe 150 MT por entrega.
                                                 </div>
                                             </div>
                                         </div>
@@ -1675,7 +1677,7 @@ export default function DriverPortal() {
                                                 <div style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                                                     <div>
                                                         <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>
-                                                            Pedidos Aguardando Entregador na Beira
+                                                            Pedidos Aguardando Entregador em Moçambique
                                                         </h3>
                                                         <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.88rem' }}>
                                                             Nome e contacto do cliente protegidos até aceitação definitiva do pedido.
@@ -2367,7 +2369,7 @@ export default function DriverPortal() {
                                     Registo de Entregador
                                 </h3>
                                 <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                                    Receba encomendas dos clientes Tchapo Tchapo na Beira e ganhe por entrega.
+                                    Receba encomendas dos clientes Tchapo Tchapo em qualquer província de Moçambique e ganhe por entrega.
                                 </p>
                             </div>
                             <button
@@ -2515,7 +2517,7 @@ export default function DriverPortal() {
                                                 Foto de Perfil (Rosto)
                                             </div>
                                             <p style={{ margin: '0 0 0.6rem', fontSize: '0.76rem', color: '#64748b' }}>
-                                                Foto nítida para identificação perante clientes na Beira.
+                                                Foto nítida para identificação perante clientes em Moçambique.
                                             </p>
                                             <label style={{
                                                 display: 'inline-flex',
@@ -2609,39 +2611,56 @@ export default function DriverPortal() {
                                         <div>
                                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
                                                 <Icons.MapPin />
-                                                <span>Bairro Base na Beira *</span>
+                                                <span>Localização Base (Moçambique) *</span>
                                             </label>
-                                            <select
-                                                value={regBairro}
-                                                onChange={(e) => setRegBairro(e.target.value)}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.8rem 1rem',
-                                                    borderRadius: '12px',
-                                                    border: '1.5px solid #e2e8f0',
-                                                    fontSize: '0.92rem',
-                                                    color: '#0f172a',
-                                                    outline: 'none',
-                                                    background: '#fdfdfd',
-                                                    boxSizing: 'border-box',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                <option value="Macuti">Macuti</option>
-                                                <option value="Ponta Gêa">Ponta Gêa</option>
-                                                <option value="Chaimite">Chaimite</option>
-                                                <option value="Munhava">Munhava</option>
-                                                <option value="Manga">Manga</option>
-                                                <option value="Estoril">Estoril</option>
-                                                <option value="Chota">Chota</option>
-                                                <option value="Inhamízua">Inhamízua</option>
-                                                <option value="Maraza">Maraza</option>
-                                                <option value="Chingussura">Chingussura</option>
-                                                <option value="Matacuane">Matacuane</option>
-                                                <option value="Vaz">Vaz</option>
-                                                <option value="Pioneiros">Pioneiros</option>
-                                                <option value="Outro Bairro">Outro Bairro da Beira</option>
-                                            </select>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                                <select
+                                                    value={regProvince}
+                                                    onChange={(e) => {
+                                                        const p = e.target.value;
+                                                        setRegProvince(p);
+                                                        const bList = getBairrosByProvince(p);
+                                                        if (bList.length > 0) setRegBairro(bList[0]);
+                                                    }}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.8rem 0.6rem',
+                                                        borderRadius: '12px',
+                                                        border: '1.5px solid #e2e8f0',
+                                                        fontSize: '0.86rem',
+                                                        color: '#0f172a',
+                                                        outline: 'none',
+                                                        background: '#fdfdfd',
+                                                        boxSizing: 'border-box',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {ALL_PROVINCES.map(prov => (
+                                                        <option key={prov} value={prov}>{prov}</option>
+                                                    ))}
+                                                </select>
+                                                <select
+                                                    value={regBairro}
+                                                    onChange={(e) => setRegBairro(e.target.value)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.8rem 0.6rem',
+                                                        borderRadius: '12px',
+                                                        border: '1.5px solid #e2e8f0',
+                                                        fontSize: '0.86rem',
+                                                        color: '#0f172a',
+                                                        outline: 'none',
+                                                        background: '#fdfdfd',
+                                                        boxSizing: 'border-box',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {getBairrosByProvince(regProvince).map(b => (
+                                                        <option key={b} value={b}>{b}</option>
+                                                    ))}
+                                                    <option value="Outro Bairro">Outro Bairro</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
 

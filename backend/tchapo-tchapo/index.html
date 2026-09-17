@@ -201,27 +201,20 @@
         <button class="close-modal" id="close-checkout-modal">&times;</button>
         <div style="padding: 2rem;">
             <h2 style="margin-bottom: 0.25rem;">🚚 Dados para Entrega</h2>
-            <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 1.25rem;">Preencha o seu endereço em Beira para enviarmos o seu pedido.</p>
+            <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 1.25rem;">Preencha os seus dados de entrega para qualquer província de Moçambique.</p>
             <form class="checkout-form" id="checkout-form">
                 <input type="text" id="customer-name" placeholder="Seu Nome Completo" required>
                 <input type="tel" id="customer-phone" placeholder="Número de Telefone (ex: 84 123 4567)" required
                     pattern="[0-9\s+\-()]{8,15}">
 
-                <select id="customer-bairro" required>
-                    <option value="" disabled selected>Selecione o Bairro...</option>
-                    <option value="Macuti">Macuti</option>
-                    <option value="Ponta Gêa">Ponta Gêa</option>
-                    <option value="Maquinino">Maquinino</option>
-                    <option value="Pioneiros">Pioneiros</option>
-                    <option value="Chota">Chota</option>
-                    <option value="Estoril">Estoril</option>
-                    <option value="Palmeiras">Palmeiras</option>
-                    <option value="Munhava">Munhava</option>
-                    <option value="Manga">Manga</option>
-                    <option value="Inhamizua">Inhamizua</option>
-                    <option value="Matacuane">Matacuane</option>
-                    <option value="Macurungo">Macurungo</option>
-                </select>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+                    <select id="customer-province" required>
+                        <option value="" disabled selected>Província...</option>
+                    </select>
+                    <select id="customer-bairro" required>
+                        <option value="" disabled selected>Bairro / Cidade...</option>
+                    </select>
+                </div>
 
                 <input type="text" id="customer-address" placeholder="Morada e Ponto de Referência detalhado" required>
 

@@ -366,16 +366,24 @@ app.post('/api/admin/test-notification', async (req, res) => {
     }
 });
 
-// Servir o frontend React (dist) ou fallback estático
-const frontendDistPath = path.join(__dirname, '../frontend/dist');
-if (fs.existsSync(frontendDistPath)) {
-    app.use(express.static(frontendDistPath));
-} else {
-    app.use(express.static(path.join(__dirname, 'tchapo-tchapo')));
-    app.get('/admin', (req, res) => {
-        res.sendFile(path.join(__dirname, 'tchapo-tchapo', 'admin.html'));
-    });
-}
+// Servir o frontend estático original do Tchapo Tchapo
+app.use(express.static(path.join(__dirname, 'tchapo-tchapo')));
+
+// Rota para o painel admin original
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'tchapo-tchapo', 'admin.html'));
+});
+
+// Rota para o Portal de Entregadores (React build se existir)
+app.get(['/drivers', '/drivers/*'], (req, res) => {
+    const frontendDistIndex = path.join(__dirname, '../frontend/dist/index.html');
+    if (fs.existsSync(frontendDistIndex)) {
+        res.sendFile(frontendDistIndex);
+    } else {
+        res.redirect('/');
+    }
+});
+app.use('/assets', express.static(path.join(__dirname, '../frontend/dist/assets')));
 
 // Ping / Health check endpoint for Keep-Alive & Uptime monitoring
 app.get('/api/ping', (req, res) => {
@@ -2752,14 +2760,9 @@ app.post('/api/financial-entries/sync', (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-// SPA Fallback para React Router (/admin, /drivers, etc.)
+// Fallback para loja Tchapo Tchapo
 app.get('*', (req, res) => {
-    const frontendDistIndex = path.join(__dirname, '../frontend/dist/index.html');
-    if (fs.existsSync(frontendDistIndex)) {
-        res.sendFile(frontendDistIndex);
-    } else {
-        res.sendFile(path.join(__dirname, 'tchapo-tchapo', 'index.html'));
-    }
+    res.sendFile(path.join(__dirname, 'tchapo-tchapo', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;

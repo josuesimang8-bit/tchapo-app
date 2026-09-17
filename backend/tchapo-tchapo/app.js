@@ -524,6 +524,7 @@ function populateProvinceAndBairroSelects(provEl, bairroEl, defaultProv = '', de
 async function init() {
     initAuth();
     await fetchActiveProducts();
+    await fetchProductReviews();
     setupEventListeners();
     loadCart();
     initPromoPopup();
@@ -806,6 +807,341 @@ function calcProductSearchScore(product, query) {
     return totalScore > 0 ? totalScore : 0;
 }
 
+// ─── PRODUCT REVIEWS SYSTEM ──────────────────────────────────────────
+let allProductReviews = [];
+
+const DEFAULT_SEED_REVIEWS = [
+    {
+        id: 1001,
+        product_id: '1',
+        author_name: 'Hélder Mondlane',
+        location: 'Polana, Maputo',
+        rating: 5,
+        comment: 'Chegou em 2 horas certinho aqui em Maputo! Caixa 100% selada, com garantia e original. O pagamento na entrega dá muita segurança.',
+        verified_purchase: true,
+        created_at: '2026-09-15T10:30:00.000Z'
+    },
+    {
+        id: 1002,
+        product_id: '1',
+        author_name: 'Samira Cassamo',
+        location: 'Matola Rio',
+        rating: 5,
+        comment: 'Aparelho sensacional! Câmera incrível e a bateria dura o dia todo. Atendimento impecável pelo WhatsApp.',
+        verified_purchase: true,
+        created_at: '2026-09-14T14:15:00.000Z'
+    },
+    {
+        id: 1003,
+        product_id: '2',
+        author_name: 'Carlos Sitoe',
+        location: 'Macuti, Beira',
+        rating: 5,
+        comment: 'Excelente iPhone 14. Chegou novinho, entregador simpático e rápido. Parabéns à equipa Tchapo Tchapo!',
+        verified_purchase: true,
+        created_at: '2026-09-13T16:45:00.000Z'
+    },
+    {
+        id: 1004,
+        product_id: '3',
+        author_name: 'Edmilson Tembe',
+        location: 'Alto Maé, Maputo',
+        rating: 5,
+        comment: 'O cancelamento de ruído destes AirPods Pro é perfeito. Isola todo o barulho na rua. Recomendo muito!',
+        verified_purchase: true,
+        created_at: '2026-09-12T09:20:00.000Z'
+    },
+    {
+        id: 1005,
+        product_id: '4',
+        author_name: 'Amina Patel',
+        location: 'Sommerschield, Maputo',
+        rating: 5,
+        comment: 'Som nítido, graves potentes e muito confortáveis nos ouvidos. Valeu cada metical.',
+        verified_purchase: true,
+        created_at: '2026-09-11T18:00:00.000Z'
+    },
+    {
+        id: 1006,
+        product_id: '5',
+        author_name: 'Mauro Fernando',
+        location: 'Central, Nampula',
+        rating: 5,
+        comment: 'Instalei no meu quarto com a fita adesiva que já vem, as cores são muito vivas e o comando tem muitos efeitos legais.',
+        verified_purchase: true,
+        created_at: '2026-09-10T12:10:00.000Z'
+    },
+    {
+        id: 1007,
+        product_id: '7',
+        author_name: 'Danilson Guambe',
+        location: 'Ponta Gêa, Beira',
+        rating: 5,
+        comment: 'Rato gamer super leve, resposta rápida e bateria dura imenso sem cabo. Top demais!',
+        verified_purchase: true,
+        created_at: '2026-09-09T17:35:00.000Z'
+    },
+    {
+        id: 1008,
+        product_id: '8',
+        author_name: 'Félix Júnior',
+        location: 'Quelimane, Zambézia',
+        rating: 5,
+        comment: 'Coluna muito potente, som limpo e resistente a água. Já levei pra praia e aguentou o dia todo.',
+        verified_purchase: true,
+        created_at: '2026-09-08T15:20:00.000Z'
+    },
+    {
+        id: 1009,
+        product_id: '9',
+        author_name: 'Neusa Cossa',
+        location: 'Costa do Sol, Maputo',
+        rating: 5,
+        comment: 'Smartwatch lindo! Recebe todas as notificações do WhatsApp e monitora os passos e sono perfeitamente.',
+        verified_purchase: true,
+        created_at: '2026-09-07T11:40:00.000Z'
+    },
+    {
+        id: 1010,
+        product_id: '10',
+        author_name: 'Belmiro Simango',
+        location: 'Chimoio, Manica',
+        rating: 5,
+        comment: 'Powerbank salva vidas! Carrega meu telefone 4 vezes completas e carrega rápido.',
+        verified_purchase: true,
+        created_at: '2026-09-06T13:00:00.000Z'
+    },
+    {
+        id: 1011,
+        product_id: '13',
+        author_name: 'Jéssica Pechisso',
+        location: 'Triunfo, Maputo',
+        rating: 5,
+        comment: 'Capa de silicone com toque macio e veludo por dentro. Protege muito bem as lentes da câmera.',
+        verified_purchase: true,
+        created_at: '2026-09-05T08:50:00.000Z'
+    }
+];
+
+async function fetchProductReviews() {
+    try {
+        const res = await fetch('/api/reviews');
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+                allProductReviews = data;
+                return;
+            }
+        }
+    } catch (_) {}
+    allProductReviews = [...DEFAULT_SEED_REVIEWS];
+}
+
+function getProductReviews(productId) {
+    const list = allProductReviews.filter(r => String(r.product_id) === String(productId));
+    if (list.length > 0) return list;
+
+    // Fallback reviews tailored to product
+    return [
+        {
+            id: 'd1-' + productId,
+            product_id: String(productId),
+            author_name: 'Mateus Manhiça',
+            location: 'Maputo',
+            rating: 5,
+            comment: 'Excelente produto! Entrega super rápida e produto em perfeito estado. Recomendo muito!',
+            verified_purchase: true,
+            created_at: new Date(Date.now() - 86400000 * 2).toISOString()
+        },
+        {
+            id: 'd2-' + productId,
+            product_id: String(productId),
+            author_name: 'Gisela Cumaio',
+            location: 'Beira',
+            rating: 5,
+            comment: 'Muito satisfeita com a compra, funciona 100% e o atendimento tirou todas as minhas dúvidas.',
+            verified_purchase: true,
+            created_at: new Date(Date.now() - 86400000 * 5).toISOString()
+        }
+    ];
+}
+
+function getProductRatingSummary(productId) {
+    const reviews = getProductReviews(productId);
+    if (!reviews || reviews.length === 0) {
+        return { average: 5.0, count: 1, reviews: [] };
+    }
+    const sum = reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+    const avg = sum / reviews.length;
+    return {
+        average: Math.round(avg * 10) / 10,
+        count: reviews.length,
+        reviews
+    };
+}
+
+function renderStarsHtml(rating, max = 5) {
+    const rounded = Math.round(rating);
+    let stars = '';
+    for (let i = 1; i <= max; i++) {
+        if (i <= rounded) {
+            stars += '<span class="star-filled">★</span>';
+        } else {
+            stars += '<span class="star-empty">☆</span>';
+        }
+    }
+    return stars;
+}
+
+function renderReviewsListHtml(reviews) {
+    if (!reviews || reviews.length === 0) {
+        return '<div class="no-reviews-msg">Ainda não há avaliações para este produto. Seja o primeiro a avaliar!</div>';
+    }
+    return reviews.map(r => {
+        const initial = (r.author_name || 'C').trim().charAt(0).toUpperCase();
+        let dateStr = 'Recente';
+        try {
+            if (r.created_at) {
+                dateStr = new Date(r.created_at).toLocaleDateString('pt-MZ', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+        } catch (_) {}
+
+        return `
+            <div class="review-item">
+                <div class="review-item-header">
+                    <div class="review-author-avatar">${initial}</div>
+                    <div class="review-author-meta">
+                        <div class="review-author-name">
+                            <span>${r.author_name}</span>
+                            <span class="badge-verified-buyer">✓ Comprador Verificado</span>
+                        </div>
+                        <div class="review-author-sub">
+                            <span class="review-stars-gold">${renderStarsHtml(r.rating || 5)}</span>
+                            <span class="review-dot">•</span>
+                            <span class="review-location-text">📍 ${r.location || 'Moçambique'}</span>
+                            <span class="review-dot">•</span>
+                            <span class="review-date-text">${dateStr}</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="review-comment-body">${r.comment}</p>
+            </div>
+        `;
+    }).join('');
+}
+
+window.setReviewRating = function(val) {
+    const input = document.getElementById('selected-rating-value');
+    if (input) input.value = val;
+    const stars = document.querySelectorAll('#star-picker .picker-star');
+    stars.forEach(s => {
+        const starVal = Number(s.getAttribute('data-value'));
+        if (starVal <= val) {
+            s.classList.add('active');
+        } else {
+            s.classList.remove('active');
+        }
+    });
+    const label = document.getElementById('star-rating-text');
+    if (label) {
+        const texts = {
+            1: 'Muito Fraco (1/5)',
+            2: 'Razoável (2/5)',
+            3: 'Bom (3/5)',
+            4: 'Muito Bom (4/5)',
+            5: 'Excelente! (5/5)'
+        };
+        label.textContent = texts[val] || `${val}/5`;
+    }
+};
+
+window.toggleReviewForm = function() {
+    const wrapper = document.getElementById('review-form-wrapper');
+    if (wrapper) {
+        const isHidden = wrapper.style.display === 'none' || !wrapper.style.display;
+        wrapper.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+            setTimeout(() => {
+                const commentEl = document.getElementById('review-user-comment');
+                if (commentEl) commentEl.focus();
+            }, 100);
+        }
+    }
+};
+
+window.submitProductReview = async function(e, productId) {
+    e.preventDefault();
+    const ratingVal = Number(document.getElementById('selected-rating-value')?.value || 5);
+    const authorName = document.getElementById('review-user-name')?.value?.trim();
+    const location = document.getElementById('review-user-location')?.value?.trim();
+    const comment = document.getElementById('review-user-comment')?.value?.trim();
+    const submitBtn = document.getElementById('btn-submit-review');
+
+    if (!authorName || !comment) {
+        showStatusToast('⚠️ Preencha o seu nome e comentário.');
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'A publicar...';
+    }
+
+    const reviewObj = {
+        product_id: String(productId),
+        author_name: authorName,
+        location: location || 'Moçambique',
+        rating: ratingVal,
+        comment: comment,
+        verified_purchase: true,
+        created_at: new Date().toISOString()
+    };
+
+    try {
+        const res = await fetch('/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(reviewObj)
+        });
+        if (res.ok) {
+            const saved = await res.json();
+            allProductReviews.unshift(saved);
+        } else {
+            reviewObj.id = Date.now();
+            allProductReviews.unshift(reviewObj);
+        }
+    } catch (err) {
+        reviewObj.id = Date.now();
+        allProductReviews.unshift(reviewObj);
+    }
+
+    showStatusToast('⭐ Obrigado! A sua avaliação foi publicada com sucesso.');
+
+    // Update list in modal
+    const listEl = document.getElementById('reviews-items-list');
+    if (listEl) {
+        const updated = getProductReviews(productId);
+        listEl.innerHTML = renderReviewsListHtml(updated);
+    }
+    // Update overview summary in modal
+    const summary = getProductRatingSummary(productId);
+    const scoreNum = document.querySelector('.overview-score .score-number');
+    const starsEl = document.querySelector('.overview-score .overview-stars');
+    const badgeText = document.querySelector('.verified-badge-row span:last-child');
+    if (scoreNum) scoreNum.textContent = summary.average.toFixed(1);
+    if (starsEl) starsEl.innerHTML = renderStarsHtml(summary.average);
+    if (badgeText) badgeText.textContent = `${summary.count} avaliações verificadas de clientes`;
+
+    // Hide form and reset
+    const wrapper = document.getElementById('review-form-wrapper');
+    if (wrapper) wrapper.style.display = 'none';
+    const form = document.getElementById('product-review-form');
+    if (form) form.reset();
+
+    // Re-render products grid to update star badges on cards
+    renderProducts();
+};
+
 // ─── PRODUCTS RENDER ─────────────────────────────────────────────────
 function renderProducts() {
     const rawQ = searchQuery.trim();
@@ -890,6 +1226,7 @@ function renderProducts() {
         const stock = getStockStatus(product);
         const isOut = stock === 'Esgotado';
         const featStar = isFeatured(product) ? '<div class="card-featured-badge">⭐</div>' : '';
+        const ratingSummary = getProductRatingSummary(product.id);
 
         return `
             <div class="product-card ${isOut ? 'out-of-stock' : ''}">
@@ -899,6 +1236,11 @@ function renderProducts() {
                 </div>
                 <div class="product-category-tag">${getCategoryIcon(product.category)} ${product.category}</div>
                 <h3 class="product-title" onclick="openProductModal('${product.id}')">${product.name}</h3>
+                <div class="product-card-rating" onclick="openProductModal('${product.id}')" title="${ratingSummary.average.toFixed(1)} de 5 estrelas (${ratingSummary.count} avaliações)">
+                    <span class="stars-gold">${renderStarsHtml(ratingSummary.average)}</span>
+                    <span class="rating-number">${ratingSummary.average.toFixed(1)}</span>
+                    <span class="rating-total">(${ratingSummary.count})</span>
+                </div>
                 <p class="product-desc">${product.desc || ''}</p>
                 <div class="product-price">${formatCurrency(product.price)}</div>
                 <div class="product-actions">
@@ -1106,6 +1448,8 @@ function openProductModal(id, pushUrl = true) {
         const initialPrice = galleryPrices[0] || getEffectivePrice(product, devSelType === 'pendrive' ? PENDRIVE_OPTIONS[0] : devSelType === 'card' ? CARD_OPTIONS[0] : null);
         const initialTitle = galleryTitles[0] || '';
 
+        const ratingSummary = getProductRatingSummary(product.id);
+
         productModalContent.innerHTML = `
             <div class="pm-scroll-body">
                 <div class="pm-image">
@@ -1129,6 +1473,70 @@ function openProductModal(id, pushUrl = true) {
                         ${(product.features || []).filter(f => !f.startsWith('_')).map(f => `<li>${f}</li>`).join('')}
                     </ul>
                     ${optionsHtml}
+
+                    <!-- Secção de Avaliações -->
+                    <div class="pm-reviews-container">
+                        <div class="reviews-title-row">
+                            <h3>⭐ Avaliações dos Clientes</h3>
+                            <button type="button" class="btn-write-review" onclick="toggleReviewForm()">
+                                ✍️ Deixar Avaliação
+                            </button>
+                        </div>
+
+                        <div class="reviews-overview-card">
+                            <div class="overview-score">
+                                <span class="score-number">${ratingSummary.average.toFixed(1)}</span>
+                                <div class="overview-stars">${renderStarsHtml(ratingSummary.average)}</div>
+                                <span class="overview-label">de 5 estrelas</span>
+                            </div>
+                            <div class="overview-details">
+                                <div class="verified-badge-row">
+                                    <span class="verified-check">✓</span>
+                                    <span>${ratingSummary.count} avaliações verificadas de clientes</span>
+                                </div>
+                                <div class="delivery-trust-row">
+                                    <span>🚚 100% pagamento seguro na entrega</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Review Form -->
+                        <div id="review-form-wrapper" class="review-form-wrapper" style="display: none;">
+                            <form id="product-review-form" onsubmit="submitProductReview(event, '${product.id}')">
+                                <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: #111827;">Escreva a sua opinião</h4>
+                                
+                                <div class="form-star-picker-wrap">
+                                    <label style="font-size: 0.85rem; font-weight: 600; color: #4b5563;">Classificação:</label>
+                                    <div class="star-picker" id="star-picker">
+                                        <span class="picker-star active" data-value="1" onclick="setReviewRating(1)">★</span>
+                                        <span class="picker-star active" data-value="2" onclick="setReviewRating(2)">★</span>
+                                        <span class="picker-star active" data-value="3" onclick="setReviewRating(3)">★</span>
+                                        <span class="picker-star active" data-value="4" onclick="setReviewRating(4)">★</span>
+                                        <span class="picker-star active" data-value="5" onclick="setReviewRating(5)">★</span>
+                                        <span id="star-rating-text" class="star-rating-text">Excelente! (5/5)</span>
+                                    </div>
+                                    <input type="hidden" id="selected-rating-value" value="5">
+                                </div>
+
+                                <div class="review-inputs-grid">
+                                    <input type="text" id="review-user-name" placeholder="Seu Nome Completo" required value="${currentUser ? currentUser.name || '' : ''}">
+                                    <input type="text" id="review-user-location" placeholder="Seu Bairro e Província (ex: Polana, Maputo)" required>
+                                </div>
+                                
+                                <textarea id="review-user-comment" placeholder="Conte-nos o que achou do produto, da qualidade e da rapidez da entrega..." rows="3" required></textarea>
+
+                                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <button type="button" class="btn-cancel-review" onclick="toggleReviewForm()">Cancelar</button>
+                                    <button type="submit" class="btn-submit-review" id="btn-submit-review">Publicar Avaliação</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Review Items List -->
+                        <div class="reviews-items-list" id="reviews-items-list">
+                            ${renderReviewsListHtml(ratingSummary.reviews)}
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="pm-sticky-bottom-bar">

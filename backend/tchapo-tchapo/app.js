@@ -493,135 +493,31 @@ let currentUser = null;
 
 // ─── MOZAMBIQUE LOCATIONS DATA ───────────────────────────────────────────
 const MZ_PROVINCES_DATA = [
-    {
-        name: 'Sofala',
-        capital: 'Beira',
-        bairros: [
-            'Macuti (Beira)', 'Ponta Gêa (Beira)', 'Maquinino (Beira)', 'Munhava (Beira)',
-            'Manga (Beira)', 'Estoril (Beira)', 'Chota (Beira)', 'Inhamízua (Beira)',
-            'Matacuane (Beira)', 'Macurungo (Beira)', 'Chaimite (Beira)', 'Maraza (Beira)',
-            'Chingussura (Beira)', 'Vaz (Beira)', 'Pioneiros (Beira)', 'Dondo', 'Nhamatanda', 'Búzi', 'Gorongosa'
-        ]
-    },
-    {
-        name: 'Maputo Cidade',
-        capital: 'Maputo',
-        bairros: [
-            'Polana Cimento', 'Central', 'Alto Maé', 'Malhangalene', 'Sommerschield',
-            'Coop', 'Maxaquene', 'Polana Caniço', 'Chamanculo', 'Mavalane',
-            'Aeroporto', 'Zimpeto', 'Hulene', 'Costa do Sol', 'Triunfo', 'Bairro do Jardim'
-        ]
-    },
-    {
-        name: 'Maputo Província',
-        capital: 'Matola',
-        bairros: [
-            'Matola C', 'Matola Rio', 'Matola F', 'Matola 700', 'Machava',
-            'Trevo', 'Malhampsene', 'Tsalala', 'Liberdade', 'Infulene',
-            'Boane', 'Marracuene', 'Manhiça', 'Namaacha'
-        ]
-    },
-    {
-        name: 'Nampula',
-        capital: 'Nampula',
-        bairros: [
-            'Central (Nampula)', 'Muatala', 'Muhala', 'Natikiri', 'Carrupeia',
-            'Namutequeliua', 'Marrere', 'Nacala Porto', 'Ilha de Moçambique', 'Angoche', 'Monapo'
-        ]
-    },
-    {
-        name: 'Zambézia',
-        capital: 'Quelimane',
-        bairros: [
-            'Central (Quelimane)', 'Sinacura', 'Chulemane', 'Torrone', 'Sagrada Família',
-            'Coalane', 'Madal', 'Mocuba', 'Gurúè', 'Milange'
-        ]
-    },
-    {
-        name: 'Tete',
-        capital: 'Tete',
-        bairros: [
-            'Francisco Manyanga', 'Josina Machel', 'Chingodzi', 'Matundo', 'Degue',
-            'Samora Machel', 'Moatize', 'Ulongué', 'Songo'
-        ]
-    },
-    {
-        name: 'Manica',
-        capital: 'Chimoio',
-        bairros: [
-            'Centro Hípico', 'Vila Nova', 'Chissui', 'Soalpo', 'Eduardo Mondlane',
-            'Nhamaonha', 'Manica', 'Gondola', 'Catandica'
-        ]
-    },
-    {
-        name: 'Inhambane',
-        capital: 'Inhambane',
-        bairros: [
-            'Balane', 'Chamane', 'Muele', 'Salela', 'Maxixe (Centro)',
-            'Rumbana', 'Vilankulo', 'Morrumbene', 'Massinga', 'Zavala'
-        ]
-    },
-    {
-        name: 'Gaza',
-        capital: 'Xai-Xai',
-        bairros: [
-            'Praia de Xai-Xai', 'Bairro 2', 'Bairro 3', 'Bairro 4', 'Patrice Lumumba',
-            'Chókwè', 'Bilene', 'Mandlakazi', 'Macarene'
-        ]
-    },
-    {
-        name: 'Cabo Delgado',
-        capital: 'Pemba',
-        bairros: [
-            'Wimbe', 'Alto Gingone', 'Natite', 'Cariacó', 'Paquitequete',
-            'Chiuba', 'Montepuez', 'Mueda', 'Ancuabe'
-        ]
-    },
-    {
-        name: 'Niassa',
-        capital: 'Lichinga',
-        bairros: [
-            'Chiuaula', 'Laucheringo', 'Sanala', 'Nomba', 'Cerâmica',
-            'Cuamba', 'Mandimba', 'Metangula'
-        ]
-    }
+    { name: 'Maputo' },
+    { name: 'Sofala' },
+    { name: 'Gaza' },
+    { name: 'Inhambane' },
+    { name: 'Manica' },
+    { name: 'Tete' },
+    { name: 'Zambézia' },
+    { name: 'Nampula' },
+    { name: 'Cabo Delgado' },
+    { name: 'Niassa' }
 ];
 
-function populateProvinceAndBairroSelects(provEl, bairroEl, defaultProv = 'Sofala', defaultBairro = '') {
-    if (!provEl || !bairroEl) return;
-    provEl.innerHTML = '<option value="" disabled>Selecione a Província...</option>';
+function populateProvinceAndBairroSelects(provEl, bairroEl, defaultProv = '', defaultBairro = '') {
+    if (!provEl) return;
+    provEl.innerHTML = '<option value="" disabled selected>Província...</option>';
     MZ_PROVINCES_DATA.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.name;
         opt.textContent = p.name;
-        if (p.name === defaultProv) opt.selected = true;
+        if (defaultProv && p.name === defaultProv) opt.selected = true;
         provEl.appendChild(opt);
     });
-
-    function updateBairros(selectedProv, selectedB) {
-        bairroEl.innerHTML = '<option value="" disabled selected>Selecione o Bairro / Cidade...</option>';
-        const provObj = MZ_PROVINCES_DATA.find(p => p.name === selectedProv);
-        if (provObj && Array.isArray(provObj.bairros)) {
-            provObj.bairros.forEach(b => {
-                const opt = document.createElement('option');
-                opt.value = b;
-                opt.textContent = b;
-                if (b === selectedB) opt.selected = true;
-                bairroEl.appendChild(opt);
-            });
-        }
-        const outroOpt = document.createElement('option');
-        outroOpt.value = 'Outro Bairro / Distrito';
-        outroOpt.textContent = 'Outro Bairro / Distrito';
-        if (selectedB === 'Outro Bairro / Distrito') outroOpt.selected = true;
-        bairroEl.appendChild(outroOpt);
+    if (bairroEl && bairroEl.tagName === 'INPUT' && defaultBairro) {
+        bairroEl.value = defaultBairro;
     }
-
-    provEl.addEventListener('change', () => {
-        updateBairros(provEl.value, '');
-    });
-
-    updateBairros(defaultProv, defaultBairro);
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────
@@ -1412,9 +1308,7 @@ function startQuickOrderModal(id, fromModal = false, customImg = null, customPri
                             <select id="qo-province" required style="padding: 0.65rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.9rem; background: #fff; font-family: inherit;">
                                 <option value="" disabled selected>Província...</option>
                             </select>
-                            <select id="qo-bairro" required style="padding: 0.65rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.9rem; background: #fff; font-family: inherit;">
-                                <option value="" disabled selected>Bairro / Cidade...</option>
-                            </select>
+                            <input type="text" id="qo-bairro" placeholder="Seu Bairro..." required style="padding: 0.65rem; border: 1.5px solid var(--gray-light); border-radius: 8px; font-size: 0.9rem; background: #fff; font-family: inherit;">
                         </div>
                         <input type="text" id="qo-address" placeholder="Morada e Ponto de Referência" required>
                         <select id="qo-time" required>
@@ -1454,7 +1348,7 @@ function startQuickOrderModal(id, fromModal = false, customImg = null, customPri
     `;
     const qForm = document.getElementById('quick-order-form');
     if (qForm) qForm.addEventListener('submit', handleQuickOrder);
-    populateProvinceAndBairroSelects(document.getElementById('qo-province'), document.getElementById('qo-bairro'), 'Sofala');
+    populateProvinceAndBairroSelects(document.getElementById('qo-province'), document.getElementById('qo-bairro'));
     const applyQoCouponBtn = document.getElementById('btn-apply-qo-coupon');
     if (applyQoCouponBtn) applyQoCouponBtn.addEventListener('click', applyQuickOrderCoupon);
     const timeSelect = document.getElementById('qo-time');
@@ -1520,8 +1414,8 @@ function handleQuickOrder(e) {
 
     const name     = nameEl.value.trim();
     const phone    = phoneEl.value.trim();
-    const province = provEl ? provEl.value : 'Sofala';
-    const bairro   = bairroEl.value;
+    const province = provEl ? provEl.value : '';
+    const bairro   = bairroEl ? bairroEl.value.trim() : '';
     const address  = addressEl.value.trim();
     const time     = timeEl.value;
     const payment  = paymentEl.value;
@@ -1542,7 +1436,7 @@ function handleQuickOrder(e) {
         return;
     }
     if (!bairro) {
-        showStatusToast('⚠️ Por favor, selecione o seu bairro.');
+        showStatusToast('⚠️ Por favor, insira o seu bairro.');
         bairroEl.focus();
         return;
     }
@@ -1621,7 +1515,7 @@ function handleQuickOrder(e) {
     const orderData = {
         customer_name: name, 
         phone, 
-        province: province || 'Sofala',
+        province: province || 'Maputo',
         bairro: fullBairro, 
         address, 
         time, 
@@ -1694,7 +1588,7 @@ function setupEventListeners() {
     document.getElementById('close-meus-pedidos').addEventListener('click', closeMeusPedidos);
     document.getElementById('meus-pedidos-overlay').addEventListener('click', closeMeusPedidos);
     document.getElementById('customer-time').addEventListener('change', updateCartUI);
-    populateProvinceAndBairroSelects(document.getElementById('customer-province'), document.getElementById('customer-bairro'), 'Sofala');
+    populateProvinceAndBairroSelects(document.getElementById('customer-province'), document.getElementById('customer-bairro'));
 
     const checkoutModal = document.getElementById('checkout-modal');
     const checkoutOverlay = document.getElementById('checkout-overlay');
@@ -1916,14 +1810,26 @@ window.handleContinueAsGuest = function() {
 function handleCheckout(e) {
     e.preventDefault();
 
-    const name     = document.getElementById('customer-name').value;
-    const phone    = document.getElementById('customer-phone').value;
+    const name     = (document.getElementById('customer-name')?.value || '').trim();
+    const phone    = (document.getElementById('customer-phone')?.value || '').trim();
     const provEl   = document.getElementById('customer-province');
-    const province = provEl ? provEl.value : 'Sofala';
-    const bairro   = document.getElementById('customer-bairro').value;
-    const address  = document.getElementById('customer-address').value;
-    const time     = document.getElementById('customer-time').value;
-    const payment  = document.getElementById('customer-payment').value;
+    const province = provEl ? provEl.value : '';
+    const bairroEl = document.getElementById('customer-bairro');
+    const bairro   = (bairroEl?.value || '').trim();
+    const address  = (document.getElementById('customer-address')?.value || '').trim();
+    const time     = document.getElementById('customer-time')?.value;
+    const payment  = document.getElementById('customer-payment')?.value;
+
+    if (provEl && !province) {
+        showStatusToast('⚠️ Por favor, selecione a sua província.');
+        provEl.focus();
+        return;
+    }
+    if (!bairro) {
+        showStatusToast('⚠️ Por favor, insira o seu bairro.');
+        if (bairroEl) bairroEl.focus();
+        return;
+    }
     
     let subtotal = cart.reduce((sum, item) => {
         const baseId = typeof item.id === 'string' && item.id.includes('-') ? Number(item.id.split('-')[0]) : item.id;
@@ -1941,7 +1847,7 @@ function handleCheckout(e) {
     const orderData = { 
         customer_name: name, 
         phone, 
-        province: province || 'Sofala',
+        province: province || 'Maputo',
         bairro: fullBairro, 
         address, 
         time, 

@@ -11,18 +11,12 @@ export const MZ_PROVINCES = [
         ]
     },
     {
-        name: 'Maputo Cidade',
-        capital: 'Maputo',
+        name: 'Maputo',
+        capital: 'Maputo / Matola',
         bairros: [
             'Polana Cimento', 'Central', 'Alto Maé', 'Malhangalene', 'Sommerschield',
             'Coop', 'Maxaquene', 'Polana Caniço', 'Chamanculo', 'Mavalane',
-            'Aeroporto', 'Zimpeto', 'Hulene', 'Costa do Sol', 'Triunfo', 'Bairro do Jardim'
-        ]
-    },
-    {
-        name: 'Maputo Província',
-        capital: 'Matola',
-        bairros: [
+            'Aeroporto', 'Zimpeto', 'Hulene', 'Costa do Sol', 'Triunfo', 'Bairro do Jardim',
             'Matola C', 'Matola Rio', 'Matola F', 'Matola 700', 'Machava',
             'Trevo', 'Malhampsene', 'Tsalala', 'Liberdade', 'Infulene',
             'Boane', 'Marracuene', 'Manhiça', 'Namaacha'

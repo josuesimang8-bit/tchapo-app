@@ -810,8 +810,8 @@ app.put('/api/orders/:id/status', async (req, res) => {
                 
             if (currentOrder) {
                 const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente';
-                const wasActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(currentOrder.status);
-                const isNowActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(status);
+                const wasActive = ['Aprovado', 'Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(currentOrder.status);
+                const isNowActive = ['Aprovado', 'Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(status);
                 const isNowPendente = status === 'Pendente';
                 const createdDate = new Date(currentOrder.created_at);
                 const createdMs = createdDate.getTime();
@@ -1194,12 +1194,12 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             .eq('driver_id', numId)
             .order('created_at', { ascending: false });
 
-        // Fetch unassigned orders waiting for a driver to accept (WITH PRIVACY: NO CUSTOMER NAME/PHONE)
+        // Fetch unassigned orders waiting for a driver to accept (APPROVED ORDERS ONLY - WITH PRIVACY)
         const { data: poolOrders } = await supabase
             .from('orders')
             .select('*')
             .is('driver_id', null)
-            .in('status', ['Pendente', 'Processando', 'Preparando'])
+            .in('status', ['Aprovado', 'Processando', 'Preparando'])
             .order('created_at', { ascending: false });
 
         const driverOrders = orders || [];
@@ -1342,7 +1342,7 @@ app.put('/api/orders/:id/accept', async (req, res) => {
         }
 
         // Set status to Com Entregador (or keep if already in transit)
-        const newStatus = ['Processando', 'Preparando'].includes(order.status)
+        const newStatus = ['Aprovado', 'Processando', 'Preparando'].includes(order.status)
             ? 'Com Entregador'
             : (order.status || 'Com Entregador');
 

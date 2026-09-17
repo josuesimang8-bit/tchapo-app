@@ -1904,27 +1904,33 @@ let trackingStatus = 'Pendente';
 
 const STATUS_STEPS = {
     'Pendente':      1,
+    'Aprovado':      1,
     'Processando':   1,
     'Preparando':    2,
     'Com Motorista': 3,
+    'Com Entregador': 3,
     'Entregue':      4,
     'Cancelado':     5,
 };
 
 const STATUS_LABELS = {
     'Pendente':      '📋 Pendente',
-    'Processando':   '📋 Processando',
+    'Aprovado':      '✅ Pedido Aprovado',
+    'Processando':   '🔄 A Processar',
     'Preparando':    '📦 A Preparar',
-    'Com Motorista': '🛵 Com Motorista',
+    'Com Motorista': '🛵 Com Entregador',
+    'Com Entregador': '🛵 Com Entregador',
     'Entregue':      '✅ Entregue',
     'Cancelado':     '❌ Cancelado',
 };
 
 const STATUS_COLORS = {
     'Pendente':      '#fef3c7',
+    'Aprovado':      '#dcfce7',
     'Processando':   '#dbeafe',
     'Preparando':    '#ede9fe',
     'Com Motorista': '#d1fae5',
+    'Com Entregador': '#d1fae5',
     'Entregue':      '#dcfce7',
     'Cancelado':     '#fee2e2',
 };

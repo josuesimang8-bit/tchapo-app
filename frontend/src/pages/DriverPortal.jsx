@@ -238,6 +238,13 @@ const formatTimer = (secs) => {
 export default function DriverPortal() {
     const API_URL = import.meta.env.VITE_API_URL || '';
 
+    const resolveImageUrl = (img) => {
+        if (!img || typeof img !== 'string') return null;
+        if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:')) return img;
+        const clean = img.startsWith('/') ? img : '/' + img;
+        return API_URL ? `${API_URL}${clean}` : clean;
+    };
+
     // Auth & Driver State
     const [authDriver, setAuthDriver] = useState(() => {
         try {
@@ -1753,9 +1760,49 @@ export default function DriverPortal() {
                                                                     </div>
 
                                                                     {order.items && order.items.length > 0 && (
-                                                                        <div style={{ marginBottom: '1rem', fontSize: '0.82rem', color: '#475569' }}>
-                                                                            <span style={{ fontWeight: 700, color: '#334151' }}>Itens: </span>
-                                                                            {order.items.map(it => `${it.quantity}x ${it.product_name}`).join(', ')}
+                                                                        <div style={{ marginBottom: '1.25rem' }}>
+                                                                            <div style={{ fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                                                <Icons.Package />
+                                                                                <span>Itens do Pedido ({order.items.reduce((s, it) => s + (it.quantity || 1), 0)})</span>
+                                                                            </div>
+                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                                                {order.items.map((it, idx) => {
+                                                                                    const imgUrl = resolveImageUrl(it.image);
+                                                                                    return (
+                                                                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                                                            <div style={{ width: '46px', height: '46px', minWidth: '46px', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                                                                                {imgUrl ? (
+                                                                                                    <img
+                                                                                                        src={imgUrl}
+                                                                                                        alt={it.product_name}
+                                                                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                                                        onError={(e) => {
+                                                                                                            e.currentTarget.style.display = 'none';
+                                                                                                            if (e.currentTarget.nextElementSibling) {
+                                                                                                                e.currentTarget.nextElementSibling.style.display = 'flex';
+                                                                                                            }
+                                                                                                        }}
+                                                                                                    />
+                                                                                                ) : null}
+                                                                                                <div style={{ display: imgUrl ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', width: '100%', height: '100%' }}>
+                                                                                                    <Icons.Package />
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                                                <div style={{ fontWeight: 700, fontSize: '0.86rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                                    {it.product_name}
+                                                                                                </div>
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+                                                                                                    <span style={{ background: '#e2e8f0', color: '#1e293b', padding: '1px 6px', borderRadius: '6px', fontWeight: 800 }}>
+                                                                                                        {it.quantity}x
+                                                                                                    </span>
+                                                                                                    {it.price ? <span style={{ fontWeight: 600 }}>{formatMZCurrency(it.price)}</span> : null}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
                                                                         </div>
                                                                     )}
 
@@ -1864,9 +1911,49 @@ export default function DriverPortal() {
                                                         </div>
 
                                                         {order.items && order.items.length > 0 && (
-                                                            <div style={{ marginBottom: '1.25rem', fontSize: '0.82rem', color: '#475569' }}>
-                                                                <span style={{ fontWeight: 700, color: '#334151' }}>Itens do Pedido: </span>
-                                                                {order.items.map(it => `${it.quantity}x ${it.product_name}`).join(', ')}
+                                                            <div style={{ marginBottom: '1.25rem' }}>
+                                                                <div style={{ fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                                    <Icons.Package />
+                                                                    <span>Itens do Pedido ({order.items.reduce((s, it) => s + (it.quantity || 1), 0)})</span>
+                                                                </div>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                                    {order.items.map((it, idx) => {
+                                                                        const imgUrl = resolveImageUrl(it.image);
+                                                                        return (
+                                                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                                                <div style={{ width: '46px', height: '46px', minWidth: '46px', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                                                                    {imgUrl ? (
+                                                                                        <img
+                                                                                            src={imgUrl}
+                                                                                            alt={it.product_name}
+                                                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                                            onError={(e) => {
+                                                                                                e.currentTarget.style.display = 'none';
+                                                                                                if (e.currentTarget.nextElementSibling) {
+                                                                                                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                                                                                                }
+                                                                                            }}
+                                                                                        />
+                                                                                    ) : null}
+                                                                                    <div style={{ display: imgUrl ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', width: '100%', height: '100%' }}>
+                                                                                        <Icons.Package />
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                                                    <div style={{ fontWeight: 700, fontSize: '0.86rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                        {it.product_name}
+                                                                                    </div>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+                                                                                        <span style={{ background: '#e2e8f0', color: '#1e293b', padding: '1px 6px', borderRadius: '6px', fontWeight: 800 }}>
+                                                                                            {it.quantity}x
+                                                                                        </span>
+                                                                                        {it.price ? <span style={{ fontWeight: 600 }}>{formatMZCurrency(it.price)}</span> : null}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
                                                             </div>
                                                         )}
 
@@ -2279,6 +2366,34 @@ export default function DriverPortal() {
                                 <span style={{ color: '#059669', fontWeight: 700 }}>Seu Ganho por Entrega:</span>
                                 <strong style={{ color: '#059669', fontSize: '0.95rem' }}>150 MT</strong>
                             </div>
+
+                            {confirmingOrder.items && confirmingOrder.items.length > 0 && (
+                                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.65rem', marginTop: '0.65rem' }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                        <Icons.Package />
+                                        <span>Itens da Entrega ({confirmingOrder.items.reduce((s, it) => s + (it.quantity || 1), 0)}):</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '130px', overflowY: 'auto' }}>
+                                        {confirmingOrder.items.map((it, idx) => {
+                                            const imgUrl = resolveImageUrl(it.image);
+                                            return (
+                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#fff', padding: '0.35rem 0.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                    <div style={{ width: '32px', height: '32px', minWidth: '32px', borderRadius: '6px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        {imgUrl ? (
+                                                            <img src={imgUrl} alt={it.product_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                                        ) : (
+                                                            <Icons.Package />
+                                                        )}
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0, fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {it.quantity}x {it.product_name}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ display: 'flex', gap: '0.85rem' }}>

@@ -1049,6 +1049,7 @@ function pad(n) { return String(n).padStart(2,'0'); }
 // ── HELPERS ──────────────────────────────────────────────────────────────
 const STATUS_COLORS = {
     'Pendente':      { bg:'#fef3c7', color:'#92400e' },
+    'Aprovado':      { bg:'#dcfce7', color:'#15803d' },
     'Processando':   { bg:'#dbeafe', color:'#1e40af' },
     'Preparando':    { bg:'#ede9fe', color:'#5b21b6' },
     'Com Entregador': { bg:'#d1fae5', color:'#065f46' },
@@ -1170,7 +1171,7 @@ async function loadOrders() {
 }
 
 function renderStats() {
-    const statuses = ['Pendente','Processando','Preparando','Com Entregador','Entregue'];
+    const statuses = ['Pendente','Aprovado','Processando','Preparando','Com Entregador','Entregue'];
     const bar = document.getElementById('stats-bar');
     bar.innerHTML = statuses.map(s => {
         const cnt = allOrders.filter(o => o.status === s || (s==='Pendente' && !o.status)).length;
@@ -1219,9 +1220,16 @@ function renderOrders() {
             timerHtml = `<span class="${isWarn?'timer-warn':'timer-ok'}" data-timer="true" data-timer-end="${o.timer_end_at || ''}" data-timer-rem="${remSecs}" data-status="${o.status}">⏱️ ${fmt} restantes</span>`;
         }
 
-        // Items
+        // Items with photos
         const items = o.order_items && o.order_items.length
-            ? o.order_items.map(i => `<div style="display:flex;gap:6px;align-items:center;margin-bottom:2px;"><span style="background:#f3f4f6;padding:2px 6px;border-radius:12px;font-weight:700;font-size:0.75rem;color:#4b5563;">${i.quantity}x</span><span style="font-weight:500;">${i.product_name}</span></div>`).join('')
+            ? o.order_items.map(i => {
+                const imgSource = i.image ? (i.image.startsWith('http') || i.image.startsWith('/') ? i.image : '/' + i.image) : null;
+                return `<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px;">
+                    ${imgSource ? `<img src="${imgSource}" style="width:24px;height:24px;border-radius:4px;object-fit:cover;border:1px solid #e2e8f0;flex-shrink:0;" onerror="this.style.display='none'">` : ''}
+                    <span style="background:#f3f4f6;padding:2px 6px;border-radius:12px;font-weight:700;font-size:0.75rem;color:#4b5563;">${i.quantity}x</span>
+                    <span style="font-weight:500;">${i.product_name}</span>
+                </div>`;
+            }).join('')
             : '<span style="color:#9ca3af;font-style:italic;">Nenhum item</span>';
 
         // Driver options
@@ -1253,6 +1261,7 @@ function renderOrders() {
                 <select class="status-select" style="background:${sc.bg};color:${sc.color};"
                     onchange="updateStatus(${o.id}, this.value)">
                     <option value="Pendente">📋 Pendente</option>
+                    <option value="Aprovado">✅ Aprovado (Enviar p/ Entregadores)</option>
                     <option value="Processando">🔄 Processando</option>
                     <option value="Preparando">📦 Preparando</option>
                     <option value="Com Entregador">🛵 Com Entregador</option>
@@ -1260,6 +1269,13 @@ function renderOrders() {
                     <option value="Perdido">🔴 Perdido (Multa 50%)</option>
                     <option value="Cancelado">❌ Cancelado</option>
                 </select>
+                ${(o.status === 'Pendente' || !o.status) ? `
+                    <div style="margin-top:5px;">
+                        <button onclick="quickApproveOrder(${o.id})" style="background:#16a34a;color:#fff;border:none;padding:5px 8px;border-radius:6px;font-weight:700;font-size:0.72rem;cursor:pointer;display:inline-flex;align-items:center;gap:4px;width:100%;justify-content:center;box-shadow:0 2px 4px rgba(22,163,74,0.25);" title="Aprovar e enviar para o Portal de Entregadores">
+                            ✅ Aprovar Pedido
+                        </button>
+                    </div>
+                ` : ''}
             </td>
             <td>
                 <div style="display:flex;gap:0.5rem;">
@@ -1276,6 +1292,12 @@ function renderOrders() {
     });
 
     tickTimers();
+}
+
+async function quickApproveOrder(id) {
+    if (!confirm(`Deseja aprovar o Pedido #${id} e disponibilizá-lo aos entregadores?`)) return;
+    await updateStatus(id, 'Aprovado');
+    toast(`✅ Pedido #${id} aprovado com sucesso! Já está visível no Portal de Entregadores.`);
 }
 
 async function updateStatus(id, status) {

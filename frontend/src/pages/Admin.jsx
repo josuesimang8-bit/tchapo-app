@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { MZ_PROVINCES, ALL_PROVINCES, DEFAULT_PROVINCE, getBairrosByProvince } from '../data/mozambiqueLocations';
 
 const STATUS_COLORS = {
     'Pendente':       { bg: '#fef3c7', color: '#92400e' },
@@ -106,6 +107,7 @@ export default function Admin() {
     const [editProdDeviceSel, setEditProdDeviceSel] = useState('none');
     const [editProdColorSel, setEditProdColorSel]   = useState('show');
     const [editProdStockStatus, setEditProdStockStatus] = useState('Em Stock');
+    const [editProdFeatured, setEditProdFeatured]       = useState(false);
     const [deleteProdToConfirm, setDeleteProdToConfirm] = useState(null);
 
     // --- Finance management state ---
@@ -192,7 +194,7 @@ export default function Admin() {
                     setToast('🔔 Alerta sonoro disparado!');
                 }
                 setTimeout(() => setToast(null), 4000);
-                playBeep();
+                playNotificationSound();
             }
         } catch (err) {
             alert('Erro no teste: ' + err.message);

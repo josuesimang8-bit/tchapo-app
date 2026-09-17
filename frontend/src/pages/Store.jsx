@@ -3,8 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 import { MZ_PROVINCES, ALL_PROVINCES, DEFAULT_PROVINCE, getBairrosByProvince } from '../data/mozambiqueLocations';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rkempjcqoefhdthvwewm.supabase.co';
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZW1wamNxb2VmaGR0aHZ3ZXdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NTEwNjIsImV4cCI6MjA5MzMyNzA2Mn0.NC38AzJUtZa7ZQ-T5AjFe_hyZGoPrasXPLJjsQ1rltI';
+
+let supabase = null;
+try {
+    if (SUPABASE_URL && SUPABASE_KEY) {
+        supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+} catch (e) {
+    console.warn('[Supabase] Init warning:', e);
+}
 
 const fallbackProducts = [
     {
@@ -821,6 +829,23 @@ export default function Store() {
     const [trackingStatus, setTrackingStatus] = useState('Pendente');
     const [trackingDriver, setTrackingDriver] = useState(null);
 
+    // Referral and promo states
+    const [activePromo, setActivePromo] = useState('delivery_payment'); // 'delivery_payment', 'delivery', 'referral', or null
+    const [referralInput, setReferralInput] = useState('');
+    const [appliedReferralCode, setAppliedReferralCode] = useState('');
+    const [referralError, setReferralError] = useState('');
+    const [validatingReferral, setValidatingReferral] = useState(false);
+    const [isReferralOpen, setIsReferralOpen] = useState(false);
+    const [referralData, setReferralData] = useState(null);
+    const [referralTxs, setReferralTxs] = useState([]);
+    const [referralWithdrawalsList, setReferralWithdrawalsList] = useState([]);
+    const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [withdrawPhone, setWithdrawPhone] = useState('');
+    const [withdrawMethod, setWithdrawMethod] = useState('M-Pesa');
+    const [withdrawLoading, setWithdrawLoading] = useState(false);
+    const [withdrawError, setWithdrawError] = useState('');
+    const [withdrawSuccess, setWithdrawSuccess] = useState('');
+
     // User activity heartbeat to report online status to admin
     useEffect(() => {
         if (currentUser) {
@@ -876,13 +901,6 @@ export default function Store() {
         };
     }, [activePromo, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, selectedProduct, quickOrderProduct, trackingOrder]);
 
-    // Referral states
-    const [activePromo, setActivePromo] = useState('delivery_payment'); // 'delivery_payment', 'delivery', 'referral', or null
-    const [referralInput, setReferralInput] = useState('');
-    const [appliedReferralCode, setAppliedReferralCode] = useState('');
-    const [referralError, setReferralError] = useState('');
-    const [validatingReferral, setValidatingReferral] = useState(false);
-
     const trackProductClick = async (productId) => {
         try {
             await fetch(`${import.meta.env.VITE_API_URL}/api/products/${productId}/click`, {
@@ -892,17 +910,6 @@ export default function Store() {
             console.error('Error tracking click:', err);
         }
     };
-
-    const [isReferralOpen, setIsReferralOpen] = useState(false);
-    const [referralData, setReferralData] = useState(null);
-    const [referralTxs, setReferralTxs] = useState([]);
-    const [referralWithdrawalsList, setReferralWithdrawalsList] = useState([]);
-    const [withdrawAmount, setWithdrawAmount] = useState('');
-    const [withdrawPhone, setWithdrawPhone] = useState('');
-    const [withdrawMethod, setWithdrawMethod] = useState('M-Pesa');
-    const [withdrawLoading, setWithdrawLoading] = useState(false);
-    const [withdrawError, setWithdrawError] = useState('');
-    const [withdrawSuccess, setWithdrawSuccess] = useState('');
 
     const fetchReferralData = async () => {
         if (!currentUser) return;
@@ -1150,13 +1157,14 @@ export default function Store() {
 
     // Handle Supabase Auth status
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!supabase?.auth) return;
+        supabase.auth.getSession().then(({ data: { session } = {} } = {}) => {
             setCurrentUser(session?.user || null);
-        });
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        }).catch(() => {});
+        const { data: { subscription } = {} } = supabase.auth.onAuthStateChange((event, session) => {
             setCurrentUser(session?.user || null);
-        });
-        return () => subscription.unsubscribe();
+        }) || {};
+        return () => subscription?.unsubscribe?.();
     }, []);
 
     // Autofill user details
@@ -1483,48 +1491,68 @@ export default function Store() {
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
         setLoginError('');
-        setLoginLoading(true);
-        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
-        if (error) {
-            let msg = error.message;
-            if (msg.includes("Email not confirmed")) {
-                msg = "A sua conta não foi confirmada. Verifique se o Supabase exige confirmação.";
-            }
-            setLoginError(msg);
-        } else {
-            setIsAuthOpen(false);
-            setLoginPassword('');
-            showToastMessage('Sessão iniciada com sucesso!');
+        if (!supabase?.auth) {
+            setLoginError('Autenticação temporariamente indisponível.');
+            return;
         }
-        setLoginLoading(false);
+        setLoginLoading(true);
+        try {
+            const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
+            if (error) {
+                let msg = error.message;
+                if (msg.includes("Email not confirmed")) {
+                    msg = "A sua conta não foi confirmada. Verifique se o Supabase exige confirmação.";
+                }
+                setLoginError(msg);
+            } else {
+                setIsAuthOpen(false);
+                setLoginPassword('');
+                showToastMessage('Sessão iniciada com sucesso!');
+            }
+        } catch (err) {
+            setLoginError('Erro ao iniciar sessão: ' + (err.message || ''));
+        } finally {
+            setLoginLoading(false);
+        }
     };
 
     const handleRegisterSubmit = async (e) => {
         e.preventDefault();
         setRegError('');
-        setRegLoading(true);
-        const { error } = await supabase.auth.signUp({
-            email: regEmail,
-            password: regPassword,
-            options: {
-                data: { full_name: regName, phone: regPhone }
-            }
-        });
-        if (error) {
-            setRegError(error.message);
-        } else {
-            setIsAuthOpen(false);
-            setRegName('');
-            setRegPhone('');
-            setRegEmail('');
-            setRegPassword('');
-            showToastMessage('Conta criada com sucesso!');
+        if (!supabase?.auth) {
+            setRegError('Autenticação temporariamente indisponível.');
+            return;
         }
-        setRegLoading(false);
+        setRegLoading(true);
+        try {
+            const { error } = await supabase.auth.signUp({
+                email: regEmail,
+                password: regPassword,
+                options: {
+                    data: { full_name: regName, phone: regPhone }
+                }
+            });
+            if (error) {
+                setRegError(error.message);
+            } else {
+                setIsAuthOpen(false);
+                setRegName('');
+                setRegPhone('');
+                setRegEmail('');
+                setRegPassword('');
+                showToastMessage('Conta criada com sucesso!');
+            }
+        } catch (err) {
+            setRegError('Erro ao criar conta: ' + (err.message || ''));
+        } finally {
+            setRegLoading(false);
+        }
     };
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        if (supabase?.auth) {
+            await supabase.auth.signOut().catch(() => {});
+        }
         showToastMessage('Sessão terminada.');
         setCheckoutForm(prev => ({ ...prev, name: '', phone: '' }));
         setQuickOrderForm(prev => ({ ...prev, name: '', phone: '' }));

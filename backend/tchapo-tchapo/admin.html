@@ -1104,7 +1104,6 @@ function refreshAll() {
     loadOrders();
     loadDrivers();
     loadProducts();
-    loadReviews();
     loadWithdrawals();
     loadUsers();
     loadFinanceEntries();
@@ -1447,17 +1446,6 @@ async function deleteDriver(id) {
 // ── PRODUCTS ─────────────────────────────────────────────────────────────
 let allProducts = [];
 
-let allAdminReviews = [];
-async function loadReviews() {
-    try {
-        const res = await fetch('/api/reviews');
-        if (res.ok) {
-            allAdminReviews = await res.json();
-            renderProducts();
-        }
-    } catch(e) {}
-}
-
 async function loadProducts() {
     try {
         const res = await fetch('/api/products/admin');
@@ -1470,25 +1458,18 @@ async function loadProducts() {
 function renderProducts() {
     const el = document.getElementById('products-list');
     if (!allProducts.length) { el.innerHTML = '<div class="empty">Nenhum produto registado.</div>'; return; }
-    el.innerHTML = allProducts.map(p => {
-        const pReviews = allAdminReviews.filter(r => String(r.product_id) === String(p.id));
-        const pCount = pReviews.length;
-        const pAvg = pCount > 0 ? (pReviews.reduce((a, b) => a + (Number(b.rating) || 5), 0) / pCount).toFixed(1) : null;
-        const reviewBadge = pCount > 0 ? `<span style="color:#f59e0b;font-weight:600;">⭐ ${pAvg} (${pCount} avaliações)</span>` : '';
-
-        return `
-            <div class="product-item">
-                ${p.image ? `<img class="product-img" src="${p.image}" alt="${p.name}">` : '<div class="product-img"></div>'}
-                <div style="flex:1;min-width:0;">
-                    <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-                    <div style="font-size:0.75rem;color:#6b7280;">${p.category} · ${fmtCur(p.price)} ${reviewBadge ? '· ' + reviewBadge : ''}</div>
-                </div>
-                <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-                    <button class="btn-pdf" onclick="openEditProduct(${p.id})">✏️ Editar</button>
-                    <button class="btn-delete" onclick="promptDeleteProduct(${p.id},'${p.name.replace(/'/g,'')}')">🗑️</button>
-                </div>
-            </div>`;
-    }).join('');
+    el.innerHTML = allProducts.map(p => `
+        <div class="product-item">
+            ${p.image ? `<img class="product-img" src="${p.image}" alt="${p.name}">` : '<div class="product-img"></div>'}
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                <div style="font-size:0.75rem;color:#6b7280;">${p.category} · ${fmtCur(p.price)}</div>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+                <button class="btn-pdf" onclick="openEditProduct(${p.id})">✏️ Editar</button>
+                <button class="btn-delete" onclick="promptDeleteProduct(${p.id},'${p.name.replace(/'/g,'')}')">🗑️</button>
+            </div>
+        </div>`).join('');
 }
 
 document.getElementById('form-add-product').addEventListener('submit', async (e) => {

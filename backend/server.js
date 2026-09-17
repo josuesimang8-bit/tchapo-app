@@ -1020,6 +1020,8 @@ app.get('/api/drivers/admin/all', async (req, res) => {
                 ...d,
                 ...meta,
                 is_online: isOnline,
+                is_blocked: Boolean(meta.pending_debt && meta.pending_debt.status !== 'Pago'),
+                pending_debt: meta.pending_debt || null,
                 total_delivered: deliveredOrders.length,
                 active_orders_count: activeOrders.length,
                 total_orders: driverOrders.length,
@@ -1588,6 +1590,49 @@ app.delete('/api/drivers/:id/warnings/:warningId', async (req, res) => {
         updateDriverMeta(id, { warnings: filtered });
         res.json({ success: true, remaining: filtered.length });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// POST Admin create new driver directly
+app.post('/api/drivers', async (req, res) => {
+    try {
+        const { name, phone, photo_url, vehicle_type, vehicle_plate, bairro, doc_type, doc_number, pin } = req.body;
+        if (!name || !phone) {
+            return res.status(400).json({ error: 'Nome e telefone são obrigatórios.' });
+        }
+
+        const { data: newDriver, error: insertErr } = await supabase
+            .from('drivers')
+            .insert([{
+                name: name.trim(),
+                phone: phone.trim(),
+                photo_url: photo_url || '/assets/default_avatar.png',
+                active: true
+            }])
+            .select()
+            .single();
+
+        if (insertErr) throw insertErr;
+
+        const meta = updateDriverMeta(newDriver.id, {
+            approval_status: 'Aprovado',
+            is_online: false,
+            last_seen_at: new Date().toISOString(),
+            doc_type: doc_type || 'BI',
+            doc_number: doc_number ? String(doc_number).trim() : '',
+            vehicle_type: vehicle_type || 'Mota',
+            vehicle_plate: vehicle_plate ? String(vehicle_plate).trim() : '',
+            bairro: bairro ? String(bairro).trim() : 'Beira',
+            pin: pin ? String(pin).trim() : '1234',
+            warnings: [],
+            earnings_rate_per_delivery: 150
+        });
+
+        res.status(201).json({ ...newDriver, ...meta });
+    } catch (err) {
+        console.error('Error creating driver via admin:', err);
         res.status(500).json({ error: err.message });
     }
 });

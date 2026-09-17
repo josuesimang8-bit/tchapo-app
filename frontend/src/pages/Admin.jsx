@@ -48,6 +48,8 @@ export default function Admin() {
 
     // Driver management states
     const [driverFilter, setDriverFilter]           = useState('all'); // 'all' | 'online' | 'pending' | 'approved' | 'suspended'
+    const [driverSubSection, setDriverSubSection]   = useState('fleet'); // 'fleet' | 'debts' | 'register'
+    const [driverSearchQuery, setDriverSearchQuery] = useState('');
     const [warningModalDriver, setWarningModalDriver] = useState(null);
     const [warningReason, setWarningReason]         = useState('');
     const [warningSeverity, setWarningSeverity]     = useState('Leve');
@@ -1550,542 +1552,978 @@ export default function Admin() {
                 </>
             )}
 
-            {activeTab === 'drivers' && (
-                <div style={{ padding: '2rem' }}>
-                    {/* Top Stats Overview */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                        gap: '1.25rem',
-                        marginBottom: '2rem'
-                    }}>
-                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
-                            <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>🛵 Total de Entregadores</div>
-                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', marginTop: '0.4rem' }}>{drivers.length}</div>
-                        </div>
-                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
-                            <div style={{ fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>🟢 Online Agora</div>
-                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#16a34a', marginTop: '0.4rem' }}>
-                                {drivers.filter(d => d.is_online).length}
-                            </div>
-                        </div>
-                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
-                            <div style={{ fontSize: '0.85rem', color: '#d97706', fontWeight: 600 }}>⏳ Pendentes de Aprovação</div>
-                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#d97706', marginTop: '0.4rem' }}>
-                                {drivers.filter(d => d.approval_status === 'Pendente').length}
-                            </div>
-                        </div>
-                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
-                            <div style={{ fontSize: '0.85rem', color: '#dc2626', fontWeight: 600 }}>⚠️ Advertências Emitidas</div>
-                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#dc2626', marginTop: '0.4rem' }}>
-                                {drivers.reduce((acc, d) => acc + (d.warnings ? d.warnings.length : 0), 0)}
-                            </div>
-                        </div>
-                        <div style={{ background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
-                            <div style={{ fontSize: '0.85rem', color: '#b91c1c', fontWeight: 600 }}>💳 Dívidas / Comissões Pendentes</div>
-                            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#b91c1c', marginTop: '0.4rem' }}>
-                                {drivers.filter(d => d.pending_debt).length}
-                            </div>
-                        </div>
-                    </div>
+            {activeTab === 'drivers' && (() => {
+                const pendingApprovalDrivers = drivers.filter(d => d.approval_status === 'Pendente');
+                const debtDrivers = drivers.filter(d => d.pending_debt && d.pending_debt.status !== 'Pago');
+                const onlineDrivers = drivers.filter(d => d.is_online);
+                const approvedDrivers = drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status);
+                const suspendedDrivers = drivers.filter(d => d.approval_status === 'Suspenso');
+                const totalWarnings = drivers.reduce((acc, d) => acc + (d.warnings ? d.warnings.length : 0), 0);
 
-                    {/* Pending Approvals Alert Banner & Queue */}
-                    {drivers.filter(d => d.approval_status === 'Pendente').length > 0 && (
-                        <div style={{
-                            background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                            border: '1.5px solid #fde68a',
-                            borderRadius: '16px',
-                            padding: '1.5rem',
-                            marginBottom: '2rem'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                    <span style={{ fontSize: '1.4rem' }}>⏳</span>
-                                    <h3 style={{ margin: 0, color: '#92400e', fontSize: '1.15rem', fontWeight: 800 }}>
-                                        Aprovações Pendentes ({drivers.filter(d => d.approval_status === 'Pendente').length})
-                                    </h3>
-                                </div>
-                                <span style={{ fontSize: '0.85rem', color: '#b45309', fontWeight: 600 }}>
-                                    Revise os documentos e aprove para liberar o acesso ao app
-                                </span>
+                const filteredDrivers = drivers
+                    .filter(d => {
+                        if (driverFilter === 'online') return d.is_online;
+                        if (driverFilter === 'pending') return d.approval_status === 'Pendente';
+                        if (driverFilter === 'approved') return d.approval_status === 'Aprovado' || !d.approval_status;
+                        if (driverFilter === 'suspended') return d.approval_status === 'Suspenso';
+                        if (driverFilter === 'debt') return Boolean(d.pending_debt && d.pending_debt.status !== 'Pago');
+                        return true;
+                    })
+                    .filter(d => {
+                        if (!driverSearchQuery.trim()) return true;
+                        const q = driverSearchQuery.toLowerCase();
+                        return (
+                            (d.name && d.name.toLowerCase().includes(q)) ||
+                            (d.phone && d.phone.includes(q)) ||
+                            (d.bairro && d.bairro.toLowerCase().includes(q)) ||
+                            (d.vehicle_type && d.vehicle_type.toLowerCase().includes(q)) ||
+                            (d.doc_number && d.doc_number.toLowerCase().includes(q)) ||
+                            String(d.id).includes(q)
+                        );
+                    });
+
+                return (
+                    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
+                        {/* 1. Header & Quick Actions */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem' }}>
+                            <div>
+                                <h2 style={{ margin: '0 0 0.25rem', color: '#0f172a', fontSize: '1.5rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                    <span>🛵 Gestão de Entregadores</span>
+                                </h2>
+                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.88rem' }}>
+                                    Acompanhe a frota ativa, valide documentos pendentes e confira os pagamentos de taxas e-Mola.
+                                </p>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
-                                {drivers.filter(d => d.approval_status === 'Pendente').map(d => (
-                                    <div key={d.id} style={{
-                                        background: '#fff',
-                                        borderRadius: '14px',
-                                        padding: '1.25rem',
-                                        boxShadow: '0 4px 6px rgba(0,0,0,0.03)',
-                                        border: '1px solid #fef08a',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'space-between'
-                                    }}>
-                                        <div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.85rem' }}>
-                                                <img
-                                                    src={d.photo_url || 'https://via.placeholder.com/60'}
-                                                    alt={d.name}
-                                                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', background: '#f1f5f9', border: '2px solid #e2e8f0' }}
-                                                />
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <h4 style={{ margin: 0, color: '#0f172a', fontWeight: 700, fontSize: '1rem' }}>{d.name}</h4>
-                                                    <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '2px' }}>
-                                                        📞 {d.phone} {d.bairro ? `• 📍 ${d.bairro}` : ''}
-                                                    </div>
-                                                    <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 600, marginTop: '2px' }}>
-                                                        🛵 {d.vehicle_type || 'Mota'} {d.vehicle_plate ? `(${d.vehicle_plate})` : ''}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Document Info */}
-                                            <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '10px', marginBottom: '1rem', border: '1px solid #e2e8f0' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#334155' }}>
-                                                    <span><strong>Documento:</strong> {d.doc_type || 'BI'}</span>
-                                                    <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{d.doc_number || 'Sem número'}</span>
-                                                </div>
-                                                {d.doc_photo_url && (
-                                                    <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <img
-                                                            src={d.doc_photo_url}
-                                                            alt="Doc"
-                                                            style={{ width: '45px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
-                                                            onClick={() => setDocPreviewUrl(d.doc_photo_url)}
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setDocPreviewUrl(d.doc_photo_url)}
-                                                            style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
-                                                        >
-                                                            🔍 Ampliar Foto do Doc
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <button
-                                                onClick={() => handleApproveDriver(d.id, 'Aprovado')}
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '0.6rem',
-                                                    background: '#16a34a',
-                                                    color: '#fff',
-                                                    border: 'none',
-                                                    borderRadius: '8px',
-                                                    fontWeight: 700,
-                                                    fontSize: '0.85rem',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                ✅ Aprovar
-                                            </button>
-                                            <button
-                                                onClick={() => handleApproveDriver(d.id, 'Recusado')}
-                                                style={{
-                                                    padding: '0.6rem 1rem',
-                                                    background: '#fee2e2',
-                                                    color: '#991b1b',
-                                                    border: 'none',
-                                                    borderRadius: '8px',
-                                                    fontWeight: 700,
-                                                    fontSize: '0.85rem',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                ❌ Recusar
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Filter Tabs */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        marginBottom: '1.5rem',
-                        overflowX: 'auto',
-                        paddingBottom: '0.5rem'
-                    }}>
-                        {[
-                            { id: 'all', label: `Todos (${drivers.length})` },
-                            { id: 'online', label: `🟢 Online (${drivers.filter(d => d.is_online).length})` },
-                            { id: 'pending', label: `⏳ Pendentes (${drivers.filter(d => d.approval_status === 'Pendente').length})` },
-                            { id: 'approved', label: `✅ Aprovados (${drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status).length})` },
-                            { id: 'suspended', label: `🔴 Suspensos (${drivers.filter(d => d.approval_status === 'Suspenso').length})` }
-                        ].map(f => (
-                            <button
-                                key={f.id}
-                                onClick={() => setDriverFilter(f.id)}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '999px',
-                                    border: 'none',
-                                    background: driverFilter === f.id ? '#1e293b' : '#fff',
-                                    color: driverFilter === f.id ? '#fff' : '#64748b',
-                                    fontWeight: 700,
-                                    fontSize: '0.85rem',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                                    transition: 'all 0.15s',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
-                                {f.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem', alignItems: 'start' }}>
-                        {/* Registered Drivers List */}
-                        <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                                <h3 style={{ margin: 0, color: '#111827', fontSize: '1.15rem', fontWeight: 800 }}>
-                                    🛵 Frota de Entregadores
-                                </h3>
+                            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
                                 <button
                                     onClick={fetchDrivers}
-                                    style={{ background: '#f1f5f9', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}
+                                    style={{
+                                        background: '#fff',
+                                        border: '1px solid #cbd5e1',
+                                        color: '#334151',
+                                        padding: '0.55rem 1rem',
+                                        borderRadius: '10px',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                    }}
                                 >
-                                    ↻ Atualizar
+                                    ↻ Atualizar Dados
+                                </button>
+                                <button
+                                    onClick={() => setDriverSubSection(prev => prev === 'register' ? 'fleet' : 'register')}
+                                    style={{
+                                        background: driverSubSection === 'register' ? '#1e293b' : '#f59e0b',
+                                        color: driverSubSection === 'register' ? '#fff' : '#111827',
+                                        border: 'none',
+                                        padding: '0.55rem 1.15rem',
+                                        borderRadius: '10px',
+                                        fontWeight: 800,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem',
+                                        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)'
+                                    }}
+                                >
+                                    {driverSubSection === 'register' ? '← Voltar para Frota' : '➕ Novo Cadastro'}
                                 </button>
                             </div>
+                        </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '680px', overflowY: 'auto' }}>
-                                {drivers
-                                    .filter(d => {
-                                        if (driverFilter === 'online') return d.is_online;
-                                        if (driverFilter === 'pending') return d.approval_status === 'Pendente';
-                                        if (driverFilter === 'approved') return d.approval_status === 'Aprovado' || !d.approval_status;
-                                        if (driverFilter === 'suspended') return d.approval_status === 'Suspenso';
-                                        return true;
-                                    })
-                                    .map(d => {
-                                        const status = d.approval_status || 'Aprovado';
-                                        const statusBadge = {
-                                            Aprovado: { bg: '#dcfce7', text: '#15803d', label: '✅ Aprovado' },
-                                            Pendente: { bg: '#fef3c7', text: '#b45309', label: '⏳ Pendente' },
-                                            Suspenso: { bg: '#fee2e2', text: '#b91c1c', label: '🔴 Suspenso' },
-                                            Recusado: { bg: '#f1f5f9', text: '#64748b', label: '❌ Recusado' }
-                                        }[status] || { bg: '#f1f5f9', text: '#64748b', label: status };
+                        {/* 2. Top Stats Overview Bar */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                            gap: '1.25rem',
+                            marginBottom: '2rem'
+                        }}>
+                            <div
+                                onClick={() => { setDriverSubSection('fleet'); setDriverFilter('all'); }}
+                                style={{
+                                    background: '#fff',
+                                    padding: '1.25rem 1.4rem',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+                                    border: driverFilter === 'all' && driverSubSection === 'fleet' ? '2px solid #0f172a' : '1px solid #e2e8f0',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s'
+                                }}
+                            >
+                                <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 700 }}>Total de Entregadores</div>
+                                <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', marginTop: '0.35rem' }}>{drivers.length}</div>
+                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>{approvedDrivers.length} aprovados</div>
+                            </div>
 
-                                        const totalEarn = d.total_earnings !== undefined
-                                            ? d.total_earnings
-                                            : (d.delivery_count || 0) * (d.earnings_rate_per_delivery || 150);
+                            <div
+                                onClick={() => { setDriverSubSection('fleet'); setDriverFilter('online'); }}
+                                style={{
+                                    background: '#fff',
+                                    padding: '1.25rem 1.4rem',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+                                    border: driverFilter === 'online' && driverSubSection === 'fleet' ? '2px solid #16a34a' : '1px solid #e2e8f0',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s'
+                                }}
+                            >
+                                <div style={{ fontSize: '0.82rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+                                    Online Agora
+                                </div>
+                                <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#16a34a', marginTop: '0.35rem' }}>
+                                    {onlineDrivers.length}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>Prontos na Beira</div>
+                            </div>
 
-                                        return (
-                                            <div key={d.id} style={{
-                                                background: '#f8fafc',
-                                                borderRadius: '14px',
-                                                padding: '1.25rem',
-                                                border: d.is_online ? '1.5px solid #86efac' : '1px solid #e2e8f0',
-                                                boxShadow: d.is_online ? '0 4px 12px rgba(34,197,94,0.1)' : 'none'
-                                            }}>
-                                                {/* Header info */}
-                                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.85rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                                                        <div style={{ position: 'relative' }}>
-                                                            <img
-                                                                src={d.photo_url || 'https://via.placeholder.com/56'}
-                                                                alt={d.name}
-                                                                style={{ width: '54px', height: '54px', borderRadius: '50%', objectFit: 'cover', background: '#e2e8f0' }}
-                                                            />
-                                                            <div style={{
-                                                                position: 'absolute',
-                                                                bottom: 0,
-                                                                right: 0,
-                                                                width: '14px',
-                                                                height: '14px',
-                                                                borderRadius: '50%',
-                                                                background: d.is_online ? '#22c55e' : '#94a3b8',
-                                                                border: '2px solid #fff'
-                                                            }} />
-                                                        </div>
+                            <div
+                                onClick={() => { setDriverSubSection('fleet'); setDriverFilter('pending'); }}
+                                style={{
+                                    background: pendingApprovalDrivers.length > 0 ? '#fffbeb' : '#fff',
+                                    padding: '1.25rem 1.4rem',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+                                    border: pendingApprovalDrivers.length > 0 ? '2px solid #fde68a' : '1px solid #e2e8f0',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s'
+                                }}
+                            >
+                                <div style={{ fontSize: '0.82rem', color: '#d97706', fontWeight: 700 }}>⏳ Pendentes de Aprovação</div>
+                                <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#d97706', marginTop: '0.35rem' }}>
+                                    {pendingApprovalDrivers.length}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#b45309', marginTop: '0.2rem' }}>Aguardando análise de BI</div>
+                            </div>
+
+                            <div
+                                onClick={() => { setDriverSubSection('debts'); }}
+                                style={{
+                                    background: debtDrivers.length > 0 ? '#fef2f2' : '#fff',
+                                    padding: '1.25rem 1.4rem',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+                                    border: debtDrivers.length > 0 ? '2px solid #fca5a5' : '1px solid #e2e8f0',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s'
+                                }}
+                            >
+                                <div style={{ fontSize: '0.82rem', color: '#dc2626', fontWeight: 700 }}>💳 Taxas / Comissões Pendentes</div>
+                                <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#dc2626', marginTop: '0.35rem' }}>
+                                    {debtDrivers.length}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.2rem' }}>
+                                    {debtDrivers.filter(d => d.pending_debt?.status === 'Aguardando Confirmação').length} comprovativos enviados
+                                </div>
+                            </div>
+
+                            <div style={{ background: '#fff', padding: '1.25rem 1.4rem', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0' }}>
+                                <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 700 }}>⚠️ Advertências Totais</div>
+                                <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#b45309', marginTop: '0.35rem' }}>
+                                    {totalWarnings}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>
+                                    {suspendedDrivers.length} entregadores suspensos
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. Section Navigation Bar */}
+                        <div style={{
+                            display: 'flex',
+                            gap: '0.5rem',
+                            borderBottom: '1px solid #e2e8f0',
+                            paddingBottom: '0.75rem',
+                            marginBottom: '1.75rem',
+                            alignItems: 'center',
+                            flexWrap: 'wrap'
+                        }}>
+                            <button
+                                onClick={() => setDriverSubSection('fleet')}
+                                style={{
+                                    background: driverSubSection === 'fleet' ? '#0f172a' : 'transparent',
+                                    color: driverSubSection === 'fleet' ? '#fff' : '#64748b',
+                                    border: 'none',
+                                    padding: '0.6rem 1.25rem',
+                                    borderRadius: '10px',
+                                    fontWeight: 700,
+                                    fontSize: '0.88rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem'
+                                }}
+                            >
+                                <span>🛵 Lista da Frota</span>
+                                <span style={{
+                                    background: driverSubSection === 'fleet' ? 'rgba(255,255,255,0.2)' : '#f1f5f9',
+                                    padding: '0.1rem 0.5rem',
+                                    borderRadius: '999px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800
+                                }}>
+                                    {drivers.length}
+                                </span>
+                            </button>
+
+                            <button
+                                onClick={() => setDriverSubSection('debts')}
+                                style={{
+                                    background: driverSubSection === 'debts' ? '#dc2626' : 'transparent',
+                                    color: driverSubSection === 'debts' ? '#fff' : '#dc2626',
+                                    border: driverSubSection === 'debts' ? 'none' : '1px solid #fecaca',
+                                    padding: '0.6rem 1.25rem',
+                                    borderRadius: '10px',
+                                    fontWeight: 800,
+                                    fontSize: '0.88rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.45rem'
+                                }}
+                            >
+                                <span>💳 Taxas & Dívidas (e-Mola)</span>
+                                {debtDrivers.length > 0 && (
+                                    <span style={{
+                                        background: driverSubSection === 'debts' ? '#fff' : '#dc2626',
+                                        color: driverSubSection === 'debts' ? '#dc2626' : '#fff',
+                                        padding: '0.1rem 0.5rem',
+                                        borderRadius: '999px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 900
+                                    }}>
+                                        {debtDrivers.length}
+                                    </span>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={() => setDriverSubSection('register')}
+                                style={{
+                                    background: driverSubSection === 'register' ? '#f59e0b' : 'transparent',
+                                    color: driverSubSection === 'register' ? '#111827' : '#64748b',
+                                    border: 'none',
+                                    padding: '0.6rem 1.25rem',
+                                    borderRadius: '10px',
+                                    fontWeight: 800,
+                                    fontSize: '0.88rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem'
+                                }}
+                            >
+                                <span>➕ Cadastrar Entregador</span>
+                            </button>
+                        </div>
+
+                        {/* ========================================================================= */}
+                        {/* SUB-SECTION 1: TAXAS & DÍVIDAS (E-MOLA 20% COMMISSION VERIFICATION)       */}
+                        {/* ========================================================================= */}
+                        {driverSubSection === 'debts' && (
+                            <div style={{ marginBottom: '2.5rem' }}>
+                                <div style={{ background: '#fff', borderRadius: '18px', padding: '1.75rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                        <div>
+                                            <h3 style={{ margin: '0 0 0.25rem', color: '#0f172a', fontSize: '1.2rem', fontWeight: 800 }}>
+                                                Validação de Repasse de Taxa (20%) — e-Mola 874110586
+                                            </h3>
+                                            <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
+                                                Após a entrega, o entregador tem até 2 horas para transferir os 20% da comissão para o e-Mola da empresa. Confirme abaixo para desbloquear.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {debtDrivers.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: '#f8fafc', borderRadius: '14px', border: '1.5px dashed #cbd5e1' }}>
+                                            <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>✅</div>
+                                            <h4 style={{ margin: '0 0 0.35rem', color: '#0f172a', fontSize: '1.1rem', fontWeight: 800 }}>
+                                                Nenhum entregador com taxa pendente!
+                                            </h4>
+                                            <p style={{ margin: 0, color: '#64748b', fontSize: '0.88rem' }}>
+                                                Todos os entregadores estão com as comissões regularizadas e contas livres para aceitar pedidos.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.25rem' }}>
+                                            {debtDrivers.map(d => {
+                                                const debt = d.pending_debt;
+                                                const isUnderReview = debt.status === 'Aguardando Confirmação';
+                                                const dueMs = debt.due_at ? new Date(debt.due_at).getTime() : 0;
+                                                const isOverdue = dueMs > 0 && Date.now() > dueMs;
+
+                                                return (
+                                                    <div key={d.id} style={{
+                                                        background: '#fff',
+                                                        borderRadius: '16px',
+                                                        padding: '1.5rem',
+                                                        border: isUnderReview ? '2px solid #10b981' : isOverdue ? '2px solid #ef4444' : '1.5px solid #fde68a',
+                                                        boxShadow: '0 6px 18px rgba(0,0,0,0.04)',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        justifyContent: 'space-between'
+                                                    }}>
                                                         <div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                                                <h4 style={{ margin: 0, color: '#0f172a', fontWeight: 700, fontSize: '1rem' }}>{d.name}</h4>
+                                                            {/* Card Top */}
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                                                 <span style={{
-                                                                    background: statusBadge.bg,
-                                                                    color: statusBadge.text,
-                                                                    padding: '0.15rem 0.5rem',
+                                                                    background: isUnderReview ? '#d1fae5' : isOverdue ? '#fee2e2' : '#fef3c7',
+                                                                    color: isUnderReview ? '#065f46' : isOverdue ? '#991b1b' : '#92400e',
+                                                                    fontWeight: 800,
+                                                                    fontSize: '0.75rem',
+                                                                    padding: '0.25rem 0.65rem',
                                                                     borderRadius: '999px',
-                                                                    fontSize: '0.72rem',
-                                                                    fontWeight: 700
+                                                                    textTransform: 'uppercase'
                                                                 }}>
-                                                                    {statusBadge.label}
+                                                                    {isUnderReview ? 'Comprovativo Enviado' : isOverdue ? 'Prazo 2h Expirado' : 'Aguardando Pagamento'}
+                                                                </span>
+
+                                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>
+                                                                    ID: #{d.id}
                                                                 </span>
                                                             </div>
-                                                            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
-                                                                <a
-                                                                    href={`https://wa.me/${(d.phone || '').replace(/\D/g, '')}`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    style={{ color: '#059669', textDecoration: 'none', fontWeight: 600 }}
-                                                                >
-                                                                    💬 {d.phone || 'Sem contacto'}
-                                                                </a>
-                                                                {d.bairro ? ` • 📍 ${d.bairro}` : ''}
+
+                                                            {/* Driver Bio */}
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '1.25rem' }}>
+                                                                <img
+                                                                    src={d.photo_url || '/assets/default_avatar.png'}
+                                                                    alt={d.name}
+                                                                    style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', background: '#f1f5f9', border: '2px solid #e2e8f0' }}
+                                                                />
+                                                                <div>
+                                                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>{d.name}</div>
+                                                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                                                        <a href={`https://wa.me/${(d.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" style={{ color: '#059669', textDecoration: 'none', fontWeight: 600 }}>
+                                                                            💬 {d.phone}
+                                                                        </a>
+                                                                        {d.bairro ? ` • ${d.bairro}` : ''}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Debt Breakdown Box */}
+                                                            <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '1rem', border: '1px solid #e2e8f0', marginBottom: '1.25rem' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.85rem' }}>
+                                                                    <span style={{ color: '#64748b' }}>Pedido de Origem:</span>
+                                                                    <strong>#{debt.order_id || '—'}</strong>
+                                                                </div>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.85rem' }}>
+                                                                    <span style={{ color: '#64748b' }}>Taxa da Empresa (20%):</span>
+                                                                    <strong style={{ color: '#dc2626', fontSize: '1.15rem', fontWeight: 900 }}>
+                                                                        {Number(debt.amount || 0).toLocaleString('pt-MZ')} MT
+                                                                    </strong>
+                                                                </div>
+                                                                {debt.payment_proof && (
+                                                                    <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '0.5rem 0.75rem', borderRadius: '8px', marginTop: '0.5rem', fontSize: '0.82rem', color: '#065f46' }}>
+                                                                        <strong>Código do e-Mola:</strong> {debt.payment_proof}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
-                                                    </div>
 
-                                                    <div style={{ textAlign: 'right' }}>
-                                                        <span style={{
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: 700,
-                                                            padding: '0.25rem 0.6rem',
-                                                            borderRadius: '999px',
-                                                            background: d.is_online ? '#dcfce7' : '#f1f5f9',
-                                                            color: d.is_online ? '#15803d' : '#64748b',
-                                                            display: 'inline-block'
-                                                        }}>
-                                                            {d.is_online ? '🟢 Online' : '⚪ Offline'}
-                                                        </span>
+                                                        {/* Action Button to Confirm and Unlock */}
+                                                        <button
+                                                            onClick={() => handleConfirmDebt(d.id)}
+                                                            style={{
+                                                                background: isUnderReview ? '#059669' : '#0f172a',
+                                                                color: '#fff',
+                                                                border: 'none',
+                                                                padding: '0.85rem',
+                                                                borderRadius: '12px',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.9rem',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                gap: '0.5rem',
+                                                                boxShadow: isUnderReview ? '0 4px 14px rgba(5, 150, 105, 0.3)' : 'none'
+                                                            }}
+                                                        >
+                                                            <span>✓ Confirmar Pagamento e Desbloquear</span>
+                                                        </button>
                                                     </div>
-                                                </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
-                                                {/* Stats Badges Grid */}
-                                                <div style={{
-                                                    display: 'grid',
-                                                    gridTemplateColumns: 'repeat(3, 1fr)',
-                                                    gap: '0.5rem',
+                        {/* ========================================================================= */}
+                        {/* SUB-SECTION 2: CADASTRO DE NOVO ENTREGADOR (EXPANDABLE/CLEAN)              */}
+                        {/* ========================================================================= */}
+                        {driverSubSection === 'register' && (
+                            <div style={{ background: '#fff', padding: '2.25rem', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', maxWidth: '780px', margin: '0 auto 2.5rem' }}>
+                                <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                                    <h3 style={{ margin: '0 0 0.35rem', color: '#0f172a', fontSize: '1.25rem', fontWeight: 900 }}>
+                                        👤 Registar e Aprovar Novo Entregador
+                                    </h3>
+                                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
+                                        Cadastre o entregador diretamente com aprovação imediata para começar a receber pedidos.
+                                    </p>
+                                </div>
+
+                                <form onSubmit={handleAddDriver} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                            Nome Completo do Entregador *
+                                        </label>
+                                        <input
+                                            type="text" value={newDriverName} required
+                                            onChange={(e) => setNewDriverName(e.target.value)}
+                                            placeholder="Ex: Carlos Alberto Macamo"
+                                            style={{ width: '100%', padding: '0.8rem 1rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', fontSize: '0.92rem' }}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                                Contacto WhatsApp (com ou sem 258) *
+                                            </label>
+                                            <input
+                                                type="text" value={newDriverPhone} required
+                                                onChange={(e) => setNewDriverPhone(e.target.value)}
+                                                placeholder="Ex: 841234567 ou 258841234567"
+                                                style={{ width: '100%', padding: '0.8rem 1rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', fontSize: '0.92rem' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                                Bairro Base na Beira
+                                            </label>
+                                            <input
+                                                type="text" value={newDriverBairro}
+                                                onChange={(e) => setNewDriverBairro(e.target.value)}
+                                                placeholder="Ex: Macuti, Ponta Gêa, Manga"
+                                                style={{ width: '100%', padding: '0.8rem 1rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', fontSize: '0.92rem' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                                Tipo de Veículo
+                                            </label>
+                                            <select
+                                                value={newDriverVehicleType}
+                                                onChange={(e) => setNewDriverVehicleType(e.target.value)}
+                                                style={{ width: '100%', padding: '0.8rem 1rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', background: '#fff', fontSize: '0.92rem' }}
+                                            >
+                                                <option value="Mota">🛵 Moto / Scooter</option>
+                                                <option value="Carro">🚗 Carro / Viatura</option>
+                                                <option value="Bicicleta">🚲 Bicicleta</option>
+                                                <option value="Carrinha">🚐 Carrinha / Van</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                                Tipo de Documento
+                                            </label>
+                                            <select
+                                                value={newDriverDocType}
+                                                onChange={(e) => setNewDriverDocType(e.target.value)}
+                                                style={{ width: '100%', padding: '0.8rem 1rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', background: '#fff', fontSize: '0.92rem' }}
+                                            >
+                                                <option value="BI">Bilhete de Identidade (BI)</option>
+                                                <option value="Carta de Condução">Carta de Condução</option>
+                                                <option value="DIRE">DIRE</option>
+                                                <option value="Passaporte">Passaporte</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                            Número do Documento
+                                        </label>
+                                        <input
+                                            type="text" value={newDriverDocNumber}
+                                            onChange={(e) => setNewDriverDocNumber(e.target.value)}
+                                            placeholder="Ex: 110100234567N"
+                                            style={{ width: '100%', padding: '0.8rem 1rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', fontSize: '0.92rem' }}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                                Foto de Perfil (Opcional)
+                                            </label>
+                                            <input
+                                                type="file" accept="image/*" id="driver-photo-input"
+                                                onChange={(e) => setNewDriverPhoto(e.target.files[0])}
+                                                style={{ width: '100%', padding: '0.5rem 0', fontSize: '0.85rem' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                                Foto do Documento (Opcional)
+                                            </label>
+                                            <input
+                                                type="file" accept="image/*" id="driver-docphoto-input"
+                                                onChange={(e) => setNewDriverDocPhoto(e.target.files[0])}
+                                                style={{ width: '100%', padding: '0.5rem 0', fontSize: '0.85rem' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDriverSubSection('fleet')}
+                                            style={{ flex: 1, padding: '0.95rem', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={uploading}
+                                            style={{
+                                                flex: 2,
+                                                padding: '0.95rem',
+                                                background: '#f59e0b',
+                                                color: '#111827',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                fontWeight: 800,
+                                                cursor: 'pointer',
+                                                fontSize: '0.95rem',
+                                                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.35)',
+                                                opacity: uploading ? 0.7 : 1
+                                            }}
+                                        >
+                                            {uploading ? 'A cadastrar entregador...' : '➕ Concluir Registo e Aprovar'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* ========================================================================= */}
+                        {/* SUB-SECTION 3: LISTA DA FROTA (CLEAN GRID, SEARCH & BADGES)                */}
+                        {/* ========================================================================= */}
+                        {driverSubSection === 'fleet' && (
+                            <div>
+                                {/* Pending Approvals Alert Banner */}
+                                {pendingApprovalDrivers.length > 0 && (
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                                        border: '1.5px solid #fde68a',
+                                        borderRadius: '18px',
+                                        padding: '1.5rem',
+                                        marginBottom: '2rem',
+                                        boxShadow: '0 4px 12px rgba(217, 119, 6, 0.08)'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                <span style={{ fontSize: '1.4rem' }}>⏳</span>
+                                                <h3 style={{ margin: 0, color: '#92400e', fontSize: '1.15rem', fontWeight: 800 }}>
+                                                    Cadastros Pendentes de Aprovação ({pendingApprovalDrivers.length})
+                                                </h3>
+                                            </div>
+                                            <span style={{ fontSize: '0.85rem', color: '#b45309', fontWeight: 600 }}>
+                                                Verifique os documentos e libere o acesso ao app
+                                            </span>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+                                            {pendingApprovalDrivers.map(d => (
+                                                <div key={d.id} style={{
                                                     background: '#fff',
-                                                    padding: '0.75rem',
-                                                    borderRadius: '10px',
-                                                    border: '1px solid #e2e8f0',
-                                                    marginBottom: '0.85rem',
-                                                    textAlign: 'center'
+                                                    borderRadius: '14px',
+                                                    padding: '1.25rem',
+                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.04)',
+                                                    border: '1px solid #fde68a',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    justifyContent: 'space-between'
                                                 }}>
                                                     <div>
-                                                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Entregas</div>
-                                                        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>{d.delivery_count || 0}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Faturamento</div>
-                                                        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#059669' }}>{Number(totalEarn).toLocaleString('pt-MZ')} MT</div>
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Advertências</div>
-                                                        <div style={{
-                                                            fontSize: '0.95rem',
-                                                            fontWeight: 800,
-                                                            color: (d.warnings && d.warnings.length > 0) ? '#dc2626' : '#64748b'
-                                                        }}>
-                                                            {d.warnings ? d.warnings.length : 0} ⚠️
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.85rem' }}>
+                                                            <img
+                                                                src={d.photo_url || '/assets/default_avatar.png'}
+                                                                alt={d.name}
+                                                                style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', background: '#f1f5f9', border: '2px solid #e2e8f0' }}
+                                                            />
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <h4 style={{ margin: 0, color: '#0f172a', fontWeight: 800, fontSize: '0.98rem' }}>{d.name}</h4>
+                                                                <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '2px' }}>
+                                                                    📞 {d.phone} {d.bairro ? `• 📍 ${d.bairro}` : ''}
+                                                                </div>
+                                                                <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>
+                                                                    🛵 {d.vehicle_type || 'Mota'} {d.vehicle_plate ? `(${d.vehicle_plate})` : ''}
+                                                                </div>
+                                                            </div>
                                                         </div>
+
+                                                        {/* Document Info */}
+                                                        <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '10px', marginBottom: '1rem', border: '1px solid #e2e8f0' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#334155' }}>
+                                                                <span><strong>Doc:</strong> {d.doc_type || 'BI'}</span>
+                                                                <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{d.doc_number || 'Sem número'}</span>
+                                                            </div>
+                                                            {d.doc_photo_url && (
+                                                                <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                    <img
+                                                                        src={d.doc_photo_url}
+                                                                        alt="Doc"
+                                                                        style={{ width: '45px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                                                                        onClick={() => setDocPreviewUrl(d.doc_photo_url)}
+                                                                    />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setDocPreviewUrl(d.doc_photo_url)}
+                                                                        style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                                                                    >
+                                                                        🔍 Ampliar Foto do Documento
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                        <button
+                                                            onClick={() => handleApproveDriver(d.id, 'Aprovado')}
+                                                            style={{ flex: 1, padding: '0.6rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+                                                        >
+                                                            ✓ Aprovar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleApproveDriver(d.id, 'Recusado')}
+                                                            style={{ padding: '0.6rem 1rem', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+                                                        >
+                                                            ✕ Recusar
+                                                        </button>
                                                     </div>
                                                 </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
-                                                {/* Document Info Row */}
-                                                {(d.doc_number || d.doc_photo_url || d.vehicle_type) && (
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: '#475569', marginBottom: '0.85rem' }}>
-                                                        <div>
-                                                            <span>🛵 {d.vehicle_type || 'Mota'}</span>
-                                                            {d.doc_number && <span style={{ marginLeft: '0.5rem' }}>• 📄 {d.doc_type || 'BI'}: <strong>{d.doc_number}</strong></span>}
+                                {/* Search Bar & Filter Pills */}
+                                <div style={{ background: '#fff', borderRadius: '16px', padding: '1rem 1.25rem', border: '1px solid #e2e8f0', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                                    {/* Search Input */}
+                                    <div style={{ flex: '1 1 260px', position: 'relative' }}>
+                                        <input
+                                            type="text"
+                                            value={driverSearchQuery}
+                                            onChange={(e) => setDriverSearchQuery(e.target.value)}
+                                            placeholder="Buscar por nome, telefone, bairro ou ID..."
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.65rem 1rem',
+                                                borderRadius: '10px',
+                                                border: '1.5px solid #cbd5e1',
+                                                fontSize: '0.88rem',
+                                                outline: 'none',
+                                                boxSizing: 'border-box'
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Filter Pills */}
+                                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                        {[
+                                            { id: 'all', label: `Todos (${drivers.length})` },
+                                            { id: 'online', label: `🟢 Online (${onlineDrivers.length})` },
+                                            { id: 'pending', label: `⏳ Pendentes (${pendingApprovalDrivers.length})` },
+                                            { id: 'approved', label: `✅ Aprovados (${approvedDrivers.length})` },
+                                            { id: 'debt', label: `💳 Com Dívida (${debtDrivers.length})` },
+                                            { id: 'suspended', label: `🔴 Suspensos (${suspendedDrivers.length})` }
+                                        ].map(f => (
+                                            <button
+                                                key={f.id}
+                                                onClick={() => setDriverFilter(f.id)}
+                                                style={{
+                                                    padding: '0.45rem 0.85rem',
+                                                    borderRadius: '8px',
+                                                    border: 'none',
+                                                    background: driverFilter === f.id ? '#0f172a' : '#f1f5f9',
+                                                    color: driverFilter === f.id ? '#fff' : '#475569',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.8rem',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.15s',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            >
+                                                {f.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Fleet Cards Grid */}
+                                {filteredDrivers.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '4rem 1rem', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔍</div>
+                                        <h4 style={{ margin: '0 0 0.35rem', color: '#0f172a', fontSize: '1.1rem', fontWeight: 800 }}>
+                                            Nenhum entregador encontrado
+                                        </h4>
+                                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
+                                            Tente ajustar os filtros ou a busca acima.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.25rem' }}>
+                                        {filteredDrivers.map(d => {
+                                            const status = d.approval_status || 'Aprovado';
+                                            const statusBadge = {
+                                                Aprovado: { bg: '#dcfce7', text: '#15803d', label: '✅ Aprovado' },
+                                                Pendente: { bg: '#fef3c7', text: '#b45309', label: '⏳ Pendente' },
+                                                Suspenso: { bg: '#fee2e2', text: '#b91c1c', label: '🔴 Suspenso' },
+                                                Recusado: { bg: '#f1f5f9', text: '#64748b', label: '❌ Recusado' }
+                                            }[status] || { bg: '#f1f5f9', text: '#64748b', label: status };
+
+                                            const totalEarn = d.total_earnings !== undefined
+                                                ? d.total_earnings
+                                                : (d.delivery_count || d.total_delivered || 0) * (d.earnings_rate_per_delivery || 150);
+
+                                            const hasPendingDebt = Boolean(d.pending_debt && d.pending_debt.status !== 'Pago');
+
+                                            return (
+                                                <div key={d.id} style={{
+                                                    background: '#fff',
+                                                    borderRadius: '16px',
+                                                    padding: '1.35rem',
+                                                    border: hasPendingDebt ? '2px solid #fca5a5' : d.is_online ? '1.5px solid #86efac' : '1px solid #e2e8f0',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    justifyContent: 'space-between',
+                                                    position: 'relative'
+                                                }}>
+                                                    <div>
+                                                        {/* Top Row: Avatar, Name & Online/Offline Pill */}
+                                                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.85rem' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                                                <div style={{ position: 'relative' }}>
+                                                                    <img
+                                                                        src={d.photo_url || '/assets/default_avatar.png'}
+                                                                        alt={d.name}
+                                                                        style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', background: '#f1f5f9', border: '2px solid #e2e8f0' }}
+                                                                    />
+                                                                    <div style={{
+                                                                        position: 'absolute',
+                                                                        bottom: 0,
+                                                                        right: 0,
+                                                                        width: '13px',
+                                                                        height: '13px',
+                                                                        borderRadius: '50%',
+                                                                        background: d.is_online ? '#16a34a' : '#94a3b8',
+                                                                        border: '2px solid #fff'
+                                                                    }} />
+                                                                </div>
+                                                                <div>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                                                                        <h4 style={{ margin: 0, color: '#0f172a', fontWeight: 800, fontSize: '0.98rem' }}>{d.name}</h4>
+                                                                        <span style={{
+                                                                            background: statusBadge.bg,
+                                                                            color: statusBadge.text,
+                                                                            padding: '0.12rem 0.45rem',
+                                                                            borderRadius: '999px',
+                                                                            fontSize: '0.7rem',
+                                                                            fontWeight: 800
+                                                                        }}>
+                                                                            {statusBadge.label}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+                                                                        <a
+                                                                            href={`https://wa.me/${(d.phone || '').replace(/\D/g, '')}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            style={{ color: '#059669', textDecoration: 'none', fontWeight: 700 }}
+                                                                        >
+                                                                            💬 {d.phone || 'Sem contacto'}
+                                                                        </a>
+                                                                        {d.bairro ? ` • 📍 ${d.bairro}` : ''}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div style={{ textAlign: 'right' }}>
+                                                                <span style={{
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: 800,
+                                                                    padding: '0.2rem 0.55rem',
+                                                                    borderRadius: '999px',
+                                                                    background: d.is_online ? '#dcfce7' : '#f1f5f9',
+                                                                    color: d.is_online ? '#15803d' : '#64748b',
+                                                                    display: 'inline-block'
+                                                                }}>
+                                                                    {d.is_online ? '🟢 Online' : '⚪ Offline'}
+                                                                </span>
+                                                                <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px', fontWeight: 700 }}>
+                                                                    ID: #{d.id}
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        {d.doc_photo_url && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setDocPreviewUrl(d.doc_photo_url)}
-                                                                style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 600, cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
-                                                            >
-                                                                🔍 Ver Documento
-                                                            </button>
+
+                                                        {/* Debt Notice Banner if blocked by debt */}
+                                                        {hasPendingDebt && (
+                                                            <div style={{
+                                                                background: '#fef2f2',
+                                                                border: '1px solid #fecaca',
+                                                                borderRadius: '10px',
+                                                                padding: '0.65rem 0.85rem',
+                                                                marginBottom: '0.85rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'space-between',
+                                                                fontSize: '0.8rem'
+                                                            }}>
+                                                                <div>
+                                                                    <strong style={{ color: '#b91c1c' }}>Taxa 20%: {d.pending_debt.amount} MT</strong>
+                                                                    <div style={{ fontSize: '0.72rem', color: '#991b1b' }}>
+                                                                        {d.pending_debt.status === 'Aguardando Confirmação' ? 'Comprovativo enviado' : 'Bloqueado no app'}
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleConfirmDebt(d.id)}
+                                                                    style={{
+                                                                        background: '#dc2626',
+                                                                        color: '#fff',
+                                                                        border: 'none',
+                                                                        padding: '0.35rem 0.75rem',
+                                                                        borderRadius: '6px',
+                                                                        fontWeight: 800,
+                                                                        fontSize: '0.75rem',
+                                                                        cursor: 'pointer'
+                                                                    }}
+                                                                >
+                                                                    Desbloquear
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Metrics 3-Col Box */}
+                                                        <div style={{
+                                                            display: 'grid',
+                                                            gridTemplateColumns: 'repeat(3, 1fr)',
+                                                            gap: '0.4rem',
+                                                            background: '#f8fafc',
+                                                            padding: '0.65rem',
+                                                            borderRadius: '10px',
+                                                            border: '1px solid #e2e8f0',
+                                                            marginBottom: '0.85rem',
+                                                            textAlign: 'center'
+                                                        }}>
+                                                            <div>
+                                                                <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>Entregas</div>
+                                                                <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a' }}>{d.total_delivered || d.delivery_count || 0}</div>
+                                                            </div>
+                                                            <div>
+                                                                <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>Ganhos</div>
+                                                                <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#059669' }}>{Number(totalEarn).toLocaleString('pt-MZ')} MT</div>
+                                                            </div>
+                                                            <div>
+                                                                <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>Advertências</div>
+                                                                <div style={{
+                                                                    fontSize: '0.95rem',
+                                                                    fontWeight: 900,
+                                                                    color: (d.warnings && d.warnings.length > 0) ? '#dc2626' : '#64748b'
+                                                                }}>
+                                                                    {d.warnings ? d.warnings.length : 0} ⚠️
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Vehicle & Document details */}
+                                                        {(d.doc_number || d.doc_photo_url || d.vehicle_type) && (
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: '#475569', marginBottom: '0.85rem' }}>
+                                                                <div>
+                                                                    <span>🛵 {d.vehicle_type || 'Mota'} {d.vehicle_plate ? `(${d.vehicle_plate})` : ''}</span>
+                                                                    {d.doc_number && <span style={{ marginLeft: '0.4rem' }}>• {d.doc_type || 'BI'}: <strong>{d.doc_number}</strong></span>}
+                                                                </div>
+                                                                {d.doc_photo_url && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setDocPreviewUrl(d.doc_photo_url)}
+                                                                        style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
+                                                                    >
+                                                                        🔍 Ver Doc
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
-                                                )}
 
-                                                {/* Action Buttons Row */}
-                                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
-                                                    {status === 'Pendente' && (
+                                                    {/* Card Actions Footer */}
+                                                    <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
+                                                        {status === 'Pendente' && (
+                                                            <button
+                                                                onClick={() => handleApproveDriver(d.id, 'Aprovado')}
+                                                                style={{ flex: 1, padding: '0.45rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                            >
+                                                                ✓ Aprovar
+                                                            </button>
+                                                        )}
+
                                                         <button
-                                                            onClick={() => handleApproveDriver(d.id, 'Aprovado')}
-                                                            style={{ flex: 1, padding: '0.45rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                            onClick={() => setWarningModalDriver(d)}
+                                                            style={{
+                                                                flex: 1,
+                                                                padding: '0.45rem 0.65rem',
+                                                                background: '#fef3c7',
+                                                                color: '#b45309',
+                                                                border: 'none',
+                                                                borderRadius: '8px',
+                                                                fontSize: '0.78rem',
+                                                                fontWeight: 700,
+                                                                cursor: 'pointer'
+                                                            }}
                                                         >
-                                                            ✅ Aprovar
+                                                            ⚠️ Advertir ({d.warnings ? d.warnings.length : 0})
                                                         </button>
-                                                    )}
-                                                    <button
-                                                        onClick={() => setWarningModalDriver(d)}
-                                                        style={{
-                                                            flex: 1,
-                                                            padding: '0.45rem 0.75rem',
-                                                            background: '#fef3c7',
-                                                            color: '#b45309',
-                                                            border: 'none',
-                                                            borderRadius: '8px',
-                                                            fontSize: '0.78rem',
-                                                            fontWeight: 700,
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        ⚠️ Advertir ({d.warnings ? d.warnings.length : 0})
-                                                    </button>
-                                                    {status === 'Suspenso' ? (
+
+                                                        {status === 'Suspenso' ? (
+                                                            <button
+                                                                onClick={() => handleApproveDriver(d.id, 'Aprovado')}
+                                                                style={{ padding: '0.45rem 0.75rem', background: '#dcfce7', color: '#15803d', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                            >
+                                                                Reativar
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleApproveDriver(d.id, 'Suspenso')}
+                                                                style={{ padding: '0.45rem 0.75rem', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                            >
+                                                                Suspender
+                                                            </button>
+                                                        )}
+
                                                         <button
-                                                            onClick={() => handleApproveDriver(d.id, 'Aprovado')}
-                                                            style={{ padding: '0.45rem 0.75rem', background: '#dcfce7', color: '#15803d', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                            onClick={() => handleDeleteDriver(d.id)}
+                                                            style={{ padding: '0.45rem 0.65rem', background: '#f1f5f9', color: '#ef4444', border: 'none', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer' }}
+                                                            title="Remover entregador permanentemente"
                                                         >
-                                                            ✅ Reativar
+                                                            🗑️
                                                         </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => handleApproveDriver(d.id, 'Suspenso')}
-                                                            style={{ padding: '0.45rem 0.75rem', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
-                                                        >
-                                                            🚫 Suspender
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        onClick={() => handleDeleteDriver(d.id)}
-                                                        style={{ padding: '0.45rem 0.75rem', background: '#f1f5f9', color: '#ef4444', border: 'none', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer' }}
-                                                        title="Remover entregador permanentemente"
-                                                    >
-                                                        🗑️
-                                                    </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
-                                {drivers.length === 0 && (
-                                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-                                        Nenhum entregador registado na plataforma.
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
-                        </div>
-
-                        {/* Register Driver Card */}
-                        <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                            <h3 style={{ margin: '0 0 1.5rem', color: '#111827', fontSize: '1.2rem', fontWeight: 800 }}>
-                                👤 Registar Novo Entregador
-                            </h3>
-                            <form onSubmit={handleAddDriver} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
-                                        Nome Completo *
-                                    </label>
-                                    <input
-                                        type="text" value={newDriverName} required
-                                        onChange={(e) => setNewDriverName(e.target.value)}
-                                        placeholder="Ex: Carlos Alberto Macamo"
-                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
-                                    />
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <div>
-                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
-                                            WhatsApp *
-                                        </label>
-                                        <input
-                                            type="text" value={newDriverPhone} required
-                                            onChange={(e) => setNewDriverPhone(e.target.value)}
-                                            placeholder="Ex: 258841234567"
-                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
-                                            Bairro Base
-                                        </label>
-                                        <input
-                                            type="text" value={newDriverBairro}
-                                            onChange={(e) => setNewDriverBairro(e.target.value)}
-                                            placeholder="Ex: Macuti, Beira"
-                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <div>
-                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
-                                            Tipo de Veículo
-                                        </label>
-                                        <select
-                                            value={newDriverVehicleType}
-                                            onChange={(e) => setNewDriverVehicleType(e.target.value)}
-                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none', background: '#fff' }}
-                                        >
-                                            <option value="Mota">🛵 Moto / Scooter</option>
-                                            <option value="Carro">🚗 Carro / Viatura</option>
-                                            <option value="Bicicleta">🚲 Bicicleta</option>
-                                            <option value="Carrinha">🚐 Carrinha / Van</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
-                                            Tipo de Documento
-                                        </label>
-                                        <select
-                                            value={newDriverDocType}
-                                            onChange={(e) => setNewDriverDocType(e.target.value)}
-                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none', background: '#fff' }}
-                                        >
-                                            <option value="BI">Bilhete de Identidade (BI)</option>
-                                            <option value="Carta de Condução">Carta de Condução</option>
-                                            <option value="DIRE">DIRE</option>
-                                            <option value="Passaporte">Passaporte</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
-                                        Número do Documento (ID)
-                                    </label>
-                                    <input
-                                        type="text" value={newDriverDocNumber}
-                                        onChange={(e) => setNewDriverDocNumber(e.target.value)}
-                                        placeholder="Ex: 110100234567N"
-                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', outline: 'none' }}
-                                    />
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <div>
-                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
-                                            Foto de Perfil
-                                        </label>
-                                        <input
-                                            type="file" accept="image/*" id="driver-photo-input"
-                                            onChange={(e) => setNewDriverPhoto(e.target.files[0])}
-                                            style={{ width: '100%', padding: '0.4rem 0', fontSize: '0.85rem' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem', color: '#374151' }}>
-                                            Foto do Documento (BI / Carta)
-                                        </label>
-                                        <input
-                                            type="file" accept="image/*" id="driver-docphoto-input"
-                                            onChange={(e) => setNewDriverDocPhoto(e.target.files[0])}
-                                            style={{ width: '100%', padding: '0.4rem 0', fontSize: '0.85rem' }}
-                                        />
-                                    </div>
-                                </div>
-
-                                <button type="submit" disabled={uploading} style={{
-                                    marginTop: '0.5rem', padding: '0.85rem', background: '#f59e0b',
-                                    color: '#fff', border: 'none', borderRadius: '10px',
-                                    fontWeight: 700, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                    transition: 'background 0.2s', opacity: uploading ? 0.7 : 1, fontSize: '0.95rem'
-                                }}>
-                                    {uploading ? 'A enviar dados...' : '➕ Cadastrar e Aprovar Entregador'}
-                                </button>
-                            </form>
-                        </div>
+                        )}
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {activeTab === 'products' && (
                 <div style={{ padding: '2rem' }}>

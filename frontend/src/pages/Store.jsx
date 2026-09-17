@@ -745,13 +745,6 @@ export default function Store() {
 
     const [products, setProducts] = useState(fallbackProducts);
     const [categories, setCategories] = useState(['Todos', 'Smartphones', 'Áudio', 'Wearables', 'Acessórios']);
-    const [selectedProvince, setSelectedProvince] = useState(() => {
-        return localStorage.getItem('tchapo_user_province') || DEFAULT_PROVINCE;
-    });
-    const [selectedBairro, setSelectedBairro] = useState(() => {
-        return localStorage.getItem('tchapo_user_bairro') || 'Macuti (Beira)';
-    });
-    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState('Todos');
     const [selectedDevice, setSelectedDevice] = useState('iPhone 15 Pro Max');
     const [selectedColor, setSelectedColor] = useState('Preto');
@@ -774,29 +767,10 @@ export default function Store() {
     const [toastMessage, setToastMessage] = useState(null);
 
     // Form inputs
-    const handleUpdateLocation = (prov, bai) => {
-        setSelectedProvince(prov);
-        setSelectedBairro(bai);
-        try {
-            localStorage.setItem('tchapo_user_province', prov);
-            localStorage.setItem('tchapo_user_bairro', bai);
-        } catch (_) {}
-        setCheckoutForm(prev => ({ ...prev, province: prov, bairro: bai }));
-        setQuickOrderForm(prev => ({ ...prev, province: prov, bairro: bai }));
-    };
-
-    const [checkoutForm, setCheckoutForm] = useState(() => {
-        const savedProv = localStorage.getItem('tchapo_user_province') || DEFAULT_PROVINCE;
-        const savedBai = localStorage.getItem('tchapo_user_bairro') || 'Macuti (Beira)';
-        return { name: '', phone: '', province: savedProv, bairro: savedBai, address: '', time: '', payment: '' };
-    });
+    const [checkoutForm, setCheckoutForm] = useState({ name: '', phone: '', province: DEFAULT_PROVINCE, bairro: '', address: '', time: '', payment: '' });
     const [isCartCheckoutModalOpen, setIsCartCheckoutModalOpen] = useState(false);
     const [quickOrderQty, setQuickOrderQty] = useState(1);
-    const [quickOrderForm, setQuickOrderForm] = useState(() => {
-        const savedProv = localStorage.getItem('tchapo_user_province') || DEFAULT_PROVINCE;
-        const savedBai = localStorage.getItem('tchapo_user_bairro') || 'Macuti (Beira)';
-        return { name: '', phone: '', province: savedProv, bairro: savedBai, address: '', time: '', payment: '' };
-    });
+    const [quickOrderForm, setQuickOrderForm] = useState({ name: '', phone: '', province: DEFAULT_PROVINCE, bairro: '', address: '', time: '', payment: '' });
     
     const [searchQuery, setSearchQuery] = useState('');
     // Price filter states
@@ -1711,36 +1685,11 @@ export default function Store() {
             {/* Navbar */}
             <header className="navbar">
                 <div className="nav-container">
-                    <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className="logo">
                         <span className="logo-icon">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         </span>
                         <span>Tchapo Tchapo</span>
-                        <button
-                            type="button"
-                            onClick={() => setIsLocationModalOpen(true)}
-                            className="delivery-badge"
-                            title="Clique para alterar a sua Província e Bairro"
-                            style={{
-                                marginLeft: '0.5rem',
-                                cursor: 'pointer',
-                                border: 'none',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.35rem',
-                                transition: 'all 0.2s',
-                                boxShadow: '0 2px 6px rgba(245, 158, 11, 0.25)'
-                            }}
-                        >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                                <circle cx="12" cy="10" r="3"/>
-                            </svg>
-                            <span>{selectedProvince}: {selectedBairro}</span>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="m6 9 6 6 6-6"/>
-                            </svg>
-                        </button>
                     </div>
                     <div className="nav-right">
                         <div className="auth-menu">
@@ -1785,100 +1734,6 @@ export default function Store() {
                         <a href="#catalog" className="btn-primary">Ver Produtos</a>
                     </div>
                 </section>
-
-                {/* Location Selector Bar for Nationwide Mozambique */}
-                <div style={{
-                    maxWidth: '1200px',
-                    margin: '0 auto 1.5rem',
-                    width: 'calc(100% - 3rem)',
-                    background: '#ffffff',
-                    border: '1.5px solid #e2e8f0',
-                    borderRadius: '16px',
-                    padding: '0.85rem 1.25rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '0.85rem',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                        <div style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '10px',
-                            background: '#fef3c7',
-                            color: '#d97706',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0
-                        }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                                <circle cx="12" cy="10" r="3"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                                Entregas Rápidas em Moçambique
-                            </div>
-                            <div style={{ fontSize: '0.92rem', color: '#0f172a', fontWeight: 800 }}>
-                                A entregar em: <span style={{ color: '#d97706' }}>{selectedProvince} — {selectedBairro}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                        <select
-                            value={selectedProvince}
-                            onChange={(e) => {
-                                const newP = e.target.value;
-                                const bList = getBairrosByProvince(newP);
-                                const newB = bList.length > 0 ? bList[0] : 'Outro Bairro';
-                                handleUpdateLocation(newP, newB);
-                            }}
-                            style={{
-                                padding: '0.55rem 0.85rem',
-                                borderRadius: '10px',
-                                border: '1.5px solid #cbd5e1',
-                                background: '#f8fafc',
-                                color: '#0f172a',
-                                fontWeight: 700,
-                                fontSize: '0.85rem',
-                                outline: 'none',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            {ALL_PROVINCES.map(p => (
-                                <option key={p} value={p}>Província: {p}</option>
-                            ))}
-                        </select>
-
-                        <select
-                            value={selectedBairro}
-                            onChange={(e) => {
-                                handleUpdateLocation(selectedProvince, e.target.value);
-                            }}
-                            style={{
-                                padding: '0.55rem 0.85rem',
-                                borderRadius: '10px',
-                                border: '1.5px solid #cbd5e1',
-                                background: '#f8fafc',
-                                color: '#0f172a',
-                                fontWeight: 700,
-                                fontSize: '0.85rem',
-                                outline: 'none',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            {getBairrosByProvince(selectedProvince).map(b => (
-                                <option key={b} value={b}>{b}</option>
-                            ))}
-                            <option value="Outro Bairro">Outro Bairro / Distrito</option>
-                        </select>
-                    </div>
-                </div>
 
                 {/* Catalog Container */}
                 <section id="catalog" className="products">
@@ -2058,107 +1913,6 @@ export default function Store() {
             <footer className="main-footer" style={{ textAlign: 'center', padding: '2rem', background: '#111827', color: '#fff' }}>
                 <p>&copy; 2026 Tchapo Tchapo. Todos os direitos reservados.</p>
             </footer>
-
-            {/* Location Change Modal */}
-            {isLocationModalOpen && (
-                <>
-                    <div className="modal-overlay active" onClick={() => setIsLocationModalOpen(false)}></div>
-                    <div className="product-modal active" style={{ maxWidth: '440px', padding: '1.75rem', borderRadius: '20px' }}>
-                        <button className="close-modal" onClick={() => setIsLocationModalOpen(false)}>&times;</button>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>Onde quer receber o pedido?</h3>
-                                <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>Selecione a sua província e bairro em Moçambique.</p>
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334151', marginBottom: '0.4rem' }}>
-                                    Província
-                                </label>
-                                <select
-                                    value={selectedProvince}
-                                    onChange={(e) => {
-                                        const newP = e.target.value;
-                                        const bList = getBairrosByProvince(newP);
-                                        const newB = bList.length > 0 ? bList[0] : 'Outro Bairro';
-                                        handleUpdateLocation(newP, newB);
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.75rem 1rem',
-                                        borderRadius: '10px',
-                                        border: '1.5px solid #cbd5e1',
-                                        fontSize: '0.92rem',
-                                        fontWeight: 600,
-                                        color: '#0f172a',
-                                        background: '#f8fafc',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    {ALL_PROVINCES.map(p => (
-                                        <option key={p} value={p}>{p}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334151', marginBottom: '0.4rem' }}>
-                                    Bairro ou Cidade
-                                </label>
-                                <select
-                                    value={selectedBairro}
-                                    onChange={(e) => {
-                                        handleUpdateLocation(selectedProvince, e.target.value);
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.75rem 1rem',
-                                        borderRadius: '10px',
-                                        border: '1.5px solid #cbd5e1',
-                                        fontSize: '0.92rem',
-                                        fontWeight: 600,
-                                        color: '#0f172a',
-                                        background: '#f8fafc',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    {getBairrosByProvince(selectedProvince).map(b => (
-                                        <option key={b} value={b}>{b}</option>
-                                    ))}
-                                    <option value="Outro Bairro">Outro Bairro / Distrito</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setIsLocationModalOpen(false)}
-                            style={{
-                                width: '100%',
-                                padding: '0.85rem',
-                                borderRadius: '12px',
-                                background: '#f59e0b',
-                                color: '#111827',
-                                border: 'none',
-                                fontWeight: 800,
-                                fontSize: '0.92rem',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
-                            }}
-                        >
-                            Confirmar Localização
-                        </button>
-                    </div>
-                </>
-            )}
 
             {/* Product Detail Modal */}
             {activeSelectedProduct && (

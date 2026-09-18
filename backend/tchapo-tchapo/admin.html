@@ -1330,6 +1330,30 @@
     </div>
 </div>
 
+<!-- Modal: Debt Payment Proof Viewer -->
+<div id="modal-debt-proof" class="modal-overlay" style="display: none; align-items: center; justify-content: center;">
+    <div class="modal-box" style="max-width: 600px; width: 92%; padding: 1.75rem; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem;">
+            <div>
+                <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🧾</span> Comprovativo de Pagamento
+                </h3>
+                <p id="modal-proof-subtitle" style="margin: 0.2rem 0 0; font-size: 0.82rem; color: #64748b;">Entregador: Nunes Magaço</p>
+            </div>
+            <button onclick="closeDebtProofModal()" style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #94a3af;">✕</button>
+        </div>
+        <div id="modal-proof-body" style="background: #f8fafc; border-radius: 12px; padding: 1.25rem; border: 1px solid #e2e8f0; text-align: center;">
+            <!-- Content filled dynamically -->
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
+            <button type="button" class="btn-cancel" onclick="closeDebtProofModal()">Fechar</button>
+            <div id="modal-proof-actions">
+                <!-- Direct confirm button -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────
 const ADMIN_PIN = '1234';
@@ -1834,15 +1858,23 @@ function filterAndRenderDrivers() {
 
             <!-- Debt Alert Pill (if driver owes 20% commission) -->
             ${d.pending_debt ? `
-            <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 0.65rem 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 0.65rem 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                 <div style="font-size: 0.8rem; color: #991b1b; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
                     <span>⚠️ Dívida Ativa:</span>
                     <span style="font-size: 0.92rem; color: #b91c1c;">${d.pending_debt.amount || 0} MT</span>
                     <span style="font-size: 0.72rem; color: #64748b; font-weight: normal;">(${d.pending_debt.status || 'Pendente'})</span>
                 </div>
-                <button onclick="confirmDriverDebt(${d.id}, '${d.name.replace(/'/g, "\\'")}', ${d.pending_debt.amount || 0})" style="background: #16a34a; color: #fff; border: none; padding: 0.35rem 0.7rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
-                    Confirmar Pago
-                </button>
+                <div style="display: flex; gap: 0.4rem; align-items: center;">
+                    ${d.pending_debt.payment_proof || d.pending_debt.payment_proof_url ? `
+                        <button onclick="openDebtProofModal(${d.id}, '${d.name.replace(/'/g, "\\'")}', ${d.pending_debt.amount || 0}, '${(d.pending_debt.payment_proof || '').replace(/'/g, "\\'")}', '${d.pending_debt.payment_proof_url || ''}', '${d.pending_debt.paid_submission_at || ''}')" 
+                                style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 0.35rem 0.65rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            🧾 Ver Comprovativo
+                        </button>
+                    ` : ''}
+                    <button onclick="confirmDriverDebt(${d.id}, '${d.name.replace(/'/g, "\\'")}', ${d.pending_debt.amount || 0})" style="background: #16a34a; color: #fff; border: none; padding: 0.35rem 0.7rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                        Confirmar Pago
+                    </button>
+                </div>
             </div>
             ` : ''}
 
@@ -1951,10 +1983,18 @@ function renderDebtsTable() {
                 <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Status: <strong>${d.status || 'Pendente'}</strong></div>
             </td>
             <td style="padding: 1rem 1.25rem;">
-                ${hasProof ? `
-                    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #065f46;">
-                        <div style="font-weight: 700;">✅ Comprovativo Anexado:</div>
-                        <div style="word-break: break-all; font-size: 0.75rem; margin-top: 2px;">${d.payment_proof}</div>
+                ${hasProof || d.payment_proof_url ? `
+                    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #065f46; display: flex; flex-direction: column; gap: 0.35rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 700;">✅ Comprovativo Anexado</span>
+                            <button onclick="openDebtProofModal(${item.driver_id}, '${item.driver_name.replace(/'/g, "\\'")}', ${d.amount || 0}, '${(d.payment_proof || '').replace(/'/g, "\\'")}', '${d.payment_proof_url || ''}', '${d.paid_submission_at || ''}')"
+                                    style="background: #065f46; color: #fff; border: none; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
+                                🔍 Abrir Comprovativo
+                            </button>
+                        </div>
+                        <div style="word-break: break-all; font-size: 0.75rem; font-family: monospace; background: #fff; padding: 0.25rem 0.4rem; border-radius: 4px; border: 1px solid #d1fae5;">
+                            ${d.payment_proof || (d.payment_proof_url ? 'Imagem anexada' : '—')}
+                        </div>
                     </div>
                 ` : `
                     <span style="color: #94a3af; font-size: 0.8rem; font-style: italic;">Aguardando envio pelo entregador...</span>
@@ -2038,6 +2078,69 @@ function openDriverDocModal(name, docType, docNumber, docPhotoUrl) {
 
 function closeDriverDocModal() {
     const modal = document.getElementById('modal-driver-doc');
+    if (modal) modal.style.display = 'none';
+}
+
+// ── Debt Payment Proof Modal Functions ──────────────────────────────────
+function openDebtProofModal(driverId, driverName, amount, proofText, proofUrl, submittedAt) {
+    const modal = document.getElementById('modal-debt-proof');
+    const subtitle = document.getElementById('modal-proof-subtitle');
+    const body = document.getElementById('modal-proof-body');
+    const actions = document.getElementById('modal-proof-actions');
+
+    if (!modal) return;
+
+    subtitle.textContent = `Entregador: ${driverName} • Valor: ${amount} MT`;
+
+    let timeFormatted = 'Data não disponível';
+    if (submittedAt) {
+        try {
+            timeFormatted = new Date(submittedAt).toLocaleString('pt-PT');
+        } catch(e) {}
+    }
+
+    let bodyHtml = `
+        <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+            <div style="background: #fff; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 0.78rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Código / Mensagem do e-Mola ou M-Pesa:</div>
+                <div style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-top: 4px; font-family: monospace; word-break: break-all;">
+                    ${proofText || 'Nenhum código de texto inserido'}
+                </div>
+                <div style="font-size: 0.75rem; color: #94a3af; margin-top: 6px;">Enviado em: <strong>${timeFormatted}</strong></div>
+            </div>
+    `;
+
+    if (proofUrl) {
+        bodyHtml += `
+            <div style="background: #fff; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 0.6rem; text-align: left;">
+                    📸 Imagem do Comprovativo / Talão:
+                </div>
+                <img src="${proofUrl}" alt="Comprovativo" style="max-width: 100%; max-height: 420px; border-radius: 8px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <div style="margin-top: 0.5rem;">
+                    <a href="${proofUrl}" target="_blank" style="color: #2563eb; font-size: 0.8rem; font-weight: 700; text-decoration: none;">
+                        🔍 Ver imagem em tamanho real
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    bodyHtml += `</div>`;
+    body.innerHTML = bodyHtml;
+
+    actions.innerHTML = `
+        <button onclick="confirmDriverDebt(${driverId}, '${driverName.replace(/'/g, "\\'")}', ${amount}); closeDebtProofModal();"
+                style="background: #16a34a; color: #fff; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(22,163,74,0.25);">
+            <span>✅</span> Validar e Desbloquear Entregador
+        </button>
+    `;
+
+    modal.style.display = 'flex';
+}
+
+function closeDebtProofModal() {
+    const modal = document.getElementById('modal-debt-proof');
     if (modal) modal.style.display = 'none';
 }
 

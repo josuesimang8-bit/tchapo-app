@@ -1405,8 +1405,8 @@ app.put('/api/orders/:id/reject', async (req, res) => {
 });
 
 
-// POST Driver submits debt payment proof
-app.post('/api/drivers/:id/pay-debt', async (req, res) => {
+// POST Driver submits debt payment proof (Supports both file upload and reference/code)
+app.post('/api/drivers/:id/pay-debt', upload.single('receipt'), async (req, res) => {
     try {
         const { id } = req.params;
         const { reference, notes } = req.body;
@@ -1417,10 +1417,17 @@ app.post('/api/drivers/:id/pay-debt', async (req, res) => {
             return res.status(400).json({ error: 'Nenhuma dívida pendente encontrada.' });
         }
 
+        let proofUrl = '';
+        if (req.file) {
+            const publicUrl = await uploadToCatbox(req.file) || await uploadToSupabaseStorage('drivers', req.file);
+            proofUrl = publicUrl || `/uploads/drivers/${req.file.filename}`;
+        }
+
         const updatedDebt = {
             ...meta.pending_debt,
             status: 'Aguardando Confirmação',
-            payment_proof: reference || notes || 'Comprovativo submetido',
+            payment_proof: reference || notes || (proofUrl ? 'Comprovativo de Imagem Anexado' : 'Comprovativo submetido'),
+            payment_proof_url: proofUrl || meta.pending_debt.payment_proof_url || null,
             paid_submission_at: new Date().toISOString()
         };
 
@@ -1431,7 +1438,7 @@ app.post('/api/drivers/:id/pay-debt', async (req, res) => {
         // Notify Admin via Ntfy
         sendPushNotification(
             `🛵 Pagamento de Comissão Submetido pelo Entregador!`,
-            `O entregador #${numId} submeteu ${updatedDebt.amount} MT ref: ${reference || 'N/A'}. Aceda ao admin para validar.`,
+            `O entregador #${numId} submeteu ${updatedDebt.amount} MT ref: ${reference || 'Anexo de Comprovativo'}. Aceda ao admin para validar.`,
             'admin'
         );
 

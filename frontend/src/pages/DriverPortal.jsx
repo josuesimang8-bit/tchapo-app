@@ -288,6 +288,8 @@ export default function DriverPortal() {
 
     // Debt Payment State (e-Mola White Screen)
     const [debtPaymentRef, setDebtPaymentRef] = useState('');
+    const [debtReceiptFile, setDebtReceiptFile] = useState(null);
+    const [debtReceiptPreview, setDebtReceiptPreview] = useState(null);
     const [submittingDebt, setSubmittingDebt] = useState(false);
     const [debtSecondsLeft, setDebtSecondsLeft] = useState(7200);
     const [copiedId, setCopiedId] = useState(false);
@@ -627,22 +629,31 @@ export default function DriverPortal() {
     // Driver Submits Debt Payment Proof
     const handleSubmitDebtPayment = async (e) => {
         e.preventDefault();
-        if (!debtPaymentRef.trim()) {
-            showToast('Por favor introduza o código de confirmação do e-Mola.', 'error');
+        if (!debtPaymentRef.trim() && !debtReceiptFile) {
+            showToast('Por favor introduza o código de confirmação ou anexe o comprovativo.', 'error');
             return;
         }
 
         setSubmittingDebt(true);
         try {
+            const fd = new FormData();
+            if (debtPaymentRef.trim()) {
+                fd.append('reference', debtPaymentRef.trim());
+            }
+            if (debtReceiptFile) {
+                fd.append('receipt', debtReceiptFile);
+            }
+
             const res = await fetch(`${API_URL}/api/drivers/${authDriver?.id}/pay-debt`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reference: debtPaymentRef.trim() })
+                body: fd
             });
             const data = await res.json();
             if (res.ok) {
                 showToast('Comprovativo submetido com sucesso! A administração irá validar.', 'success');
                 setDebtPaymentRef('');
+                setDebtReceiptFile(null);
+                setDebtReceiptPreview(null);
                 fetchDashboard(authDriver?.id);
             } else {
                 showToast(data.error || 'Erro ao submeter comprovativo.', 'error');
@@ -1260,14 +1271,13 @@ export default function DriverPortal() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <form onSubmit={handleSubmitDebtPayment} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                                    <form onSubmit={handleSubmitDebtPayment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                         <div style={{ textAlign: 'left' }}>
                                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334151', marginBottom: '0.35rem' }}>
-                                                Código da Mensagem de Confirmação do e-Mola:
+                                                Código da Mensagem de Confirmação do e-Mola / M-Pesa:
                                             </label>
                                             <input
                                                 type="text"
-                                                required
                                                 value={debtPaymentRef}
                                                 onChange={(e) => setDebtPaymentRef(e.target.value)}
                                                 placeholder="Ex: PP260915.1234.X09876 ou número do comprovativo"
@@ -1281,6 +1291,34 @@ export default function DriverPortal() {
                                                     boxSizing: 'border-box'
                                                 }}
                                             />
+                                        </div>
+
+                                        <div style={{ textAlign: 'left' }}>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334151', marginBottom: '0.35rem' }}>
+                                                📸 Anexar Foto / Captura de Ecrã do Comprovativo (Recomendado):
+                                            </label>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files[0];
+                                                    if (file) {
+                                                        setDebtReceiptFile(file);
+                                                        setDebtReceiptPreview(URL.createObjectURL(file));
+                                                    }
+                                                }}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.6rem 0',
+                                                    fontSize: '0.88rem'
+                                                }}
+                                            />
+                                            {debtReceiptPreview && (
+                                                <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+                                                    <img src={debtReceiptPreview} alt="Pré-visualização do Comprovativo" 
+                                                         style={{ maxHeight: '180px', borderRadius: '8px', border: '1px solid #cbd5e1', objectFit: 'contain' }} />
+                                                </div>
+                                            )}
                                         </div>
 
                                         <button

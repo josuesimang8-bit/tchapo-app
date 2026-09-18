@@ -1204,13 +1204,14 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
 
         const driverOrders = orders || [];
         
-        // MASK CUSTOMER DATA for available orders before acceptance
+        // MASK CUSTOMER DATA for available orders before acceptance (ONLY PROVINCE & BAIRRO SHOWN)
         const availableOrders = (poolOrders || []).map(order => {
             const formatted = formatOrderResponse(order);
             return {
                 ...formatted,
                 customer_name: 'Cliente Tchapo Tchapo (Disponível após aceitar)',
                 customer_phone: null,
+                address: null, // Oculto antes de aceitar - apenas província e bairro visíveis
                 is_masked: true
             };
         });

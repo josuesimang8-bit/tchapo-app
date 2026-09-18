@@ -245,6 +245,25 @@ export default function DriverPortal() {
         return API_URL ? `${API_URL}${clean}` : clean;
     };
 
+    const extractOrderLocation = (order) => {
+        if (!order) return { province: 'Maputo', bairro: 'Centro' };
+        let prov = order.province || '';
+        let bai = order.bairro || '';
+        
+        if (bai && bai.includes('(') && bai.includes(')')) {
+            const match = bai.match(/^(.*?)\s*\((.*?)\)$/);
+            if (match) {
+                bai = match[1].trim();
+                if (!prov) prov = match[2].trim();
+            }
+        }
+        
+        return {
+            province: prov || 'Maputo',
+            bairro: bai || 'Centro'
+        };
+    };
+
     // Auth & Driver State
     const [authDriver, setAuthDriver] = useState(() => {
         try {
@@ -1748,16 +1767,26 @@ export default function DriverPortal() {
                                                                         </span>
                                                                     </div>
 
-                                                                    <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.88rem' }}>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 800, marginBottom: '0.35rem' }}>
-                                                                            <Icons.MapPin />
-                                                                            <span>Bairro: {order.bairro || 'Beira (Zona Central)'}</span>
-                                                                        </div>
-                                                                        <div style={{ color: '#64748b', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                                                            <Icons.ShieldCheck />
-                                                                            <span>Nome e contacto do cliente protegidos até aceitação.</span>
-                                                                        </div>
-                                                                    </div>
+                                                                    {(() => {
+                                                                        const loc = extractOrderLocation(order);
+                                                                        return (
+                                                                            <div style={{ background: '#f8fafc', padding: '1rem 1.15rem', borderRadius: '14px', border: '1.5px solid #e2e8f0', marginBottom: '1.15rem' }}>
+                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '0.75rem' }}>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a', fontSize: '0.92rem' }}>
+                                                                                        <Icons.MapPin />
+                                                                                        <span>Província: <strong style={{ color: '#1e40af', fontWeight: 800 }}>{loc.province}</strong></span>
+                                                                                    </div>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a', fontSize: '0.92rem', paddingLeft: '1.55rem' }}>
+                                                                                        <span>Bairro: <strong style={{ color: '#0f172a', fontWeight: 800 }}>{loc.bairro}</strong></span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div style={{ color: '#64748b', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderTop: '1px dashed #e2e8f0', paddingTop: '0.55rem' }}>
+                                                                                    <Icons.ShieldCheck />
+                                                                                    <span>Apenas província e bairro visíveis. Endereço exato, nome e telefone liberados após aceitação.</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })()}
 
                                                                     {order.items && order.items.length > 0 && (
                                                                         <div style={{ marginBottom: '1.25rem' }}>
@@ -2362,10 +2391,21 @@ export default function DriverPortal() {
                                 <span style={{ color: '#64748b' }}>Pedido:</span>
                                 <strong>#{confirmingOrder.id}</strong>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                                <span style={{ color: '#64748b' }}>Bairro de Entrega:</span>
-                                <strong>{confirmingOrder.bairro || 'Beira'}</strong>
-                            </div>
+                            {(() => {
+                                const confLoc = extractOrderLocation(confirmingOrder);
+                                return (
+                                    <>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                            <span style={{ color: '#64748b' }}>Província:</span>
+                                            <strong style={{ color: '#1e40af' }}>{confLoc.province}</strong>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                            <span style={{ color: '#64748b' }}>Bairro de Entrega:</span>
+                                            <strong>{confLoc.bairro}</strong>
+                                        </div>
+                                    </>
+                                );
+                            })()}
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                                 <span style={{ color: '#64748b' }}>Valor da Mercadoria:</span>
                                 <strong>{formatMZCurrency(confirmingOrder.total)}</strong>

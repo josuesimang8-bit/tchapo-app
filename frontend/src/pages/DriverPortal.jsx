@@ -304,8 +304,6 @@ export default function DriverPortal() {
     const [regPhone, setRegPhone] = useState('');
     const [regProvince, setRegProvince] = useState(DEFAULT_PROVINCE);
     const [regBairro, setRegBairro] = useState('Macuti (Beira)');
-    const [regVehicleType, setRegVehicleType] = useState('Mota');
-    const [regVehiclePlate, setRegVehiclePlate] = useState('');
     const [regDocType, setRegDocType] = useState('BI');
     const [regDocNumber, setRegDocNumber] = useState('');
     const [regPin, setRegPin] = useState('');
@@ -502,8 +500,6 @@ export default function DriverPortal() {
             formData.append('name', regName.trim());
             formData.append('phone', regPhone.trim());
             formData.append('bairro', `${regProvince} - ${regBairro}`.trim());
-            formData.append('vehicle_type', regVehicleType);
-            formData.append('vehicle_plate', regVehiclePlate.trim());
             formData.append('doc_type', regDocType);
             formData.append('doc_number', regDocNumber.trim());
             formData.append('pin', regPin.trim() || '1234');
@@ -2318,10 +2314,6 @@ export default function DriverPortal() {
                                         <strong>{authDriver.bairro || 'Beira'}</strong>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: '1px solid #f1f5f9' }}>
-                                        <span style={{ color: '#64748b' }}>Tipo de Veículo:</span>
-                                        <strong>{authDriver.vehicle_type || 'Mota'} {authDriver.vehicle_plate ? `(${authDriver.vehicle_plate})` : ''}</strong>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: '1px solid #f1f5f9' }}>
                                         <span style={{ color: '#64748b' }}>Documento:</span>
                                         <strong>{authDriver.doc_type || 'BI'} • {authDriver.doc_number || 'Sem número'}</strong>
                                     </div>
@@ -2656,7 +2648,7 @@ export default function DriverPortal() {
                                     fontWeight: 700
                                 }}>2</span>
                                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: regStep === 2 ? '#0f172a' : '#64748b' }}>
-                                    Veículo & Documentos
+                                    Documentação
                                 </span>
                             </div>
                         </div>
@@ -2938,87 +2930,16 @@ export default function DriverPortal() {
                                             transition: 'background 0.15s'
                                         }}
                                     >
-                                        <span>Continuar para Veículo & Documentos</span>
+                                        <span>Continuar para Documentação</span>
                                         <Icons.ChevronRight />
                                     </button>
                                 </div>
                             )}
 
-                            {/* STEP 2: Vehicle & ID Document */}
+                            {/* STEP 2: ID Document */}
                             {regStep === 2 && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
                                     
-                                    {/* Visual Vehicle Selector */}
-                                    <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
-                                            Tipo de Veículo de Entrega *
-                                        </label>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
-                                            {[
-                                                { type: 'Mota', label: 'Moto', icon: <Icons.Bike />, desc: 'Mais Rápido' },
-                                                { type: 'Bicicleta', label: 'Bicicleta', icon: <Icons.Navigation />, desc: 'Económico' },
-                                                { type: 'Carro', label: 'Carro', icon: <Icons.Car />, desc: 'Volume Médio' },
-                                                { type: 'Carrinha', label: 'Carrinha', icon: <Icons.Truck />, desc: 'Carga Pesada' }
-                                            ].map(item => {
-                                                const isSelected = regVehicleType === item.type;
-                                                return (
-                                                    <div
-                                                        key={item.type}
-                                                        onClick={() => setRegVehicleType(item.type)}
-                                                        style={{
-                                                            border: isSelected ? '2px solid #f59e0b' : '1.5px solid #e2e8f0',
-                                                            background: isSelected ? '#fffbeb' : '#ffffff',
-                                                            borderRadius: '12px',
-                                                            padding: '0.75rem 0.5rem',
-                                                            display: 'flex',
-                                                            flexDirection: 'column',
-                                                            alignItems: 'center',
-                                                            gap: '0.35rem',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.15s'
-                                                        }}
-                                                    >
-                                                        <div style={{ color: isSelected ? '#d97706' : '#64748b' }}>
-                                                            {item.icon}
-                                                        </div>
-                                                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: isSelected ? '#92400e' : '#334155' }}>
-                                                            {item.label}
-                                                        </span>
-                                                        <span style={{ fontSize: '0.65rem', color: isSelected ? '#b45309' : '#94a3b8', fontWeight: 600 }}>
-                                                            {item.desc}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* Vehicle Plate (Optional) */}
-                                    <div>
-                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
-                                            Matrícula do Veículo <span style={{ fontWeight: 400, color: '#64748b' }}>(Opcional para bicicleta)</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={regVehiclePlate}
-                                            onChange={(e) => setRegVehiclePlate(e.target.value)}
-                                            placeholder="Ex: ABE-894-MC"
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.8rem 1rem',
-                                                borderRadius: '12px',
-                                                border: '1.5px solid #e2e8f0',
-                                                fontSize: '0.92rem',
-                                                color: '#0f172a',
-                                                outline: 'none',
-                                                background: '#fdfdfd',
-                                                boxSizing: 'border-box'
-                                            }}
-                                            onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
-                                            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                                        />
-                                    </div>
-
                                     {/* Document Type & Number */}
                                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '1rem' }}>
                                         <div>

@@ -628,22 +628,7 @@
                                     <input class="form-input" id="d-bairro" type="text" required placeholder="Ex: Macuti, Ponta Gêa, Polana...">
                                 </div>
 
-                                <!-- Tipo de Veículo -->
-                                <div class="form-field">
-                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Tipo de Veículo *</label>
-                                    <select class="form-input" id="d-vehicle-type" required>
-                                        <option value="Mota" selected>🛵 Mota / Scooter</option>
-                                        <option value="Bicicleta">🚲 Bicicleta</option>
-                                        <option value="Carro">🚗 Carro / Viatura</option>
-                                        <option value="A Pé">🚶 A Pé</option>
-                                    </select>
-                                </div>
 
-                                <!-- Matrícula do Veículo -->
-                                <div class="form-field">
-                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Matrícula do Veículo (opcional)</label>
-                                    <input class="form-input" id="d-vehicle-plate" type="text" placeholder="Ex: AB 123 MC">
-                                </div>
 
                                 <!-- Tipo de Documento -->
                                 <div class="form-field">
@@ -1792,8 +1777,7 @@ function filterAndRenderDrivers() {
             const matchBairro = (d.bairro || '').toLowerCase().includes(searchVal);
             const matchProvince = (d.province || '').toLowerCase().includes(searchVal);
             const matchDoc = (d.doc_number || '').toLowerCase().includes(searchVal);
-            const matchPlate = (d.vehicle_plate || '').toLowerCase().includes(searchVal);
-            return matchName || matchPhone || matchBairro || matchProvince || matchDoc || matchPlate;
+            return matchName || matchPhone || matchBairro || matchProvince || matchDoc;
         }
         return true;
     });
@@ -1878,23 +1862,19 @@ function filterAndRenderDrivers() {
             </div>
             ` : ''}
 
-            <!-- Details Section: Location, Vehicle, Documents, Metrics -->
+            <!-- Details Section: Location, Documents, PIN -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; font-size: 0.8rem; background: #f8fafc; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0;">
                 <div>
                     <span style="color: #64748b;">📍 Localização:</span><br>
                     <strong style="color: #1e293b;">${d.province || 'Sofala'} • ${d.bairro || 'Beira'}</strong>
                 </div>
                 <div>
-                    <span style="color: #64748b;">🛵 Veículo:</span><br>
-                    <strong style="color: #1e293b;">${d.vehicle_type || 'Mota'}${d.vehicle_plate ? ` (${d.vehicle_plate})` : ''}</strong>
-                </div>
-                <div>
                     <span style="color: #64748b;">📄 Documento (${d.doc_type || 'BI'}):</span><br>
                     <strong style="color: #1e293b;">${d.doc_number || 'Não informado'}</strong>
                 </div>
-                <div>
-                    <span style="color: #64748b;">🔑 PIN Portal:</span><br>
-                    <strong style="color: #0f172a; letter-spacing: 1px;">${d.pin || '1234'}</strong>
+                <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 0.4rem; margin-top: 0.2rem;">
+                    <span style="color: #64748b;">🔑 PIN Portal de Acesso:</span>
+                    <strong style="color: #0f172a; letter-spacing: 2px; font-size: 0.9rem; background: #fff; padding: 0.15rem 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;">${d.pin || '1234'}</strong>
                 </div>
             </div>
 
@@ -2217,8 +2197,6 @@ document.getElementById('form-add-driver')?.addEventListener('submit', async (e)
             phone: document.getElementById('d-phone').value.trim(),
             province: document.getElementById('d-province')?.value || 'Sofala',
             bairro: document.getElementById('d-bairro').value.trim(),
-            vehicle_type: document.getElementById('d-vehicle-type')?.value || 'Mota',
-            vehicle_plate: document.getElementById('d-vehicle-plate')?.value.trim() || '',
             doc_type: document.getElementById('d-doc-type')?.value || 'BI',
             doc_number: document.getElementById('d-doc-number')?.value.trim() || '',
             pin: document.getElementById('d-pin')?.value.trim() || '1234',

@@ -2084,6 +2084,25 @@ app.patch('/api/products/:id/status', async (req, res) => {
     }
 });
 
+// POST bulk toggle product active status (activate all or deactivate all)
+app.post('/api/products/bulk-status', async (req, res) => {
+    try {
+        const { active } = req.body;
+        const isAct = (active === true || active === 'true');
+        
+        const { data, error } = await supabase
+            .from('products')
+            .update({ active: isAct })
+            .neq('id', 0)
+            .select('id');
+            
+        if (error) throw error;
+        res.json({ success: true, count: data ? data.length : 0, active: isAct });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // DELETE product
 app.delete('/api/products/:id', async (req, res) => {
     try {

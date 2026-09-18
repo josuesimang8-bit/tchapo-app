@@ -1102,6 +1102,35 @@ export default function Admin() {
         }
     };
 
+    const handleBulkToggleActive = async (targetActive) => {
+        const msg = targetActive 
+            ? 'Tem certeza que deseja ATIVAR todos os produtos no catálogo da loja?' 
+            : 'Tem certeza que deseja DESATIVAR todos os produtos? Eles ficarão ocultos para todos os clientes na loja até serem reativados.';
+        if (!window.confirm(msg)) return;
+
+        // Optimistic update
+        setProducts(prev => prev.map(p => ({ ...p, active: targetActive })));
+        try {
+            const res = await fetch(import.meta.env.VITE_API_URL + '/api/products/bulk-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: targetActive })
+            });
+            if (res.ok) {
+                fetchProducts();
+                setToast(targetActive ? '🟢 Todos os produtos foram ativados com sucesso!' : '⚪ Todos os produtos foram desativados com sucesso!');
+                setTimeout(() => setToast(null), 3000);
+            } else {
+                fetchProducts();
+                alert('Erro ao atualizar produtos em massa.');
+            }
+        } catch (err) {
+            console.error('Erro em ação em massa:', err);
+            fetchProducts();
+            alert('Falha de conexão ao atualizar produtos.');
+        }
+    };
+
     const deleteProduct = async (id) => {
         try {
             const res = await fetch(import.meta.env.VITE_API_URL + `/api/products/${id}`, {
@@ -2913,44 +2942,76 @@ export default function Admin() {
                                         />
                                     </div>
 
-                                    {/* Filter Tabs: Todos, Ativos, Desativados */}
-                                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => setProdFilterTab('all')}
-                                            style={{
-                                                padding: '0.45rem 0.85rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                                                fontSize: '0.8rem', fontWeight: 700,
-                                                background: prodFilterTab === 'all' ? '#111827' : '#f3f4f6',
-                                                color: prodFilterTab === 'all' ? '#fff' : '#4b5563'
-                                            }}
-                                        >
-                                            Todos ({products.length})
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setProdFilterTab('active')}
-                                            style={{
-                                                padding: '0.45rem 0.85rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                                                fontSize: '0.8rem', fontWeight: 700,
-                                                background: prodFilterTab === 'active' ? '#15803d' : '#f0fdf4',
-                                                color: prodFilterTab === 'active' ? '#fff' : '#15803d'
-                                            }}
-                                        >
-                                            🟢 Ativos ({activeCount})
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setProdFilterTab('inactive')}
-                                            style={{
-                                                padding: '0.45rem 0.85rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                                                fontSize: '0.8rem', fontWeight: 700,
-                                                background: prodFilterTab === 'inactive' ? '#991b1b' : '#fef2f2',
-                                                color: prodFilterTab === 'inactive' ? '#fff' : '#991b1b'
-                                            }}
-                                        >
-                                            ⚪ Desativados ({inactiveCount})
-                                        </button>
+                                    {/* Filter Tabs & Bulk Actions */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setProdFilterTab('all')}
+                                                style={{
+                                                    padding: '0.45rem 0.85rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                                    fontSize: '0.8rem', fontWeight: 700,
+                                                    background: prodFilterTab === 'all' ? '#111827' : '#f3f4f6',
+                                                    color: prodFilterTab === 'all' ? '#fff' : '#4b5563'
+                                                }}
+                                            >
+                                                Todos ({products.length})
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setProdFilterTab('active')}
+                                                style={{
+                                                    padding: '0.45rem 0.85rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                                    fontSize: '0.8rem', fontWeight: 700,
+                                                    background: prodFilterTab === 'active' ? '#15803d' : '#f0fdf4',
+                                                    color: prodFilterTab === 'active' ? '#fff' : '#15803d'
+                                                }}
+                                            >
+                                                🟢 Ativos ({activeCount})
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setProdFilterTab('inactive')}
+                                                style={{
+                                                    padding: '0.45rem 0.85rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                                    fontSize: '0.8rem', fontWeight: 700,
+                                                    background: prodFilterTab === 'inactive' ? '#991b1b' : '#fef2f2',
+                                                    color: prodFilterTab === 'inactive' ? '#fff' : '#991b1b'
+                                                }}
+                                            >
+                                                ⚪ Desativados ({inactiveCount})
+                                            </button>
+                                        </div>
+
+                                        {/* Bulk Actions */}
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleBulkToggleActive(false)}
+                                                style={{
+                                                    padding: '0.45rem 0.85rem', borderRadius: '8px', border: '1.5px solid #fecaca',
+                                                    cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
+                                                    background: '#fef2f2', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                                    transition: 'all 0.15s'
+                                                }}
+                                                title="Desativar e ocultar todos os produtos da loja"
+                                            >
+                                                <span>⚪ Desativar Todos</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleBulkToggleActive(true)}
+                                                style={{
+                                                    padding: '0.45rem 0.85rem', borderRadius: '8px', border: '1.5px solid #86efac',
+                                                    cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
+                                                    background: '#f0fdf4', color: '#15803d', display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                                    transition: 'all 0.15s'
+                                                }}
+                                                title="Ativar e exibir todos os produtos na loja"
+                                            >
+                                                <span>🟢 Ativar Todos</span>
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '580px', overflowY: 'auto' }}>

@@ -243,6 +243,37 @@
             .cards-area { padding: 1rem; }
             .header-left p { display: none; }
         }
+
+        /* Driver Management Module Styles */
+        .driver-subtab-btn {
+            padding: 0.6rem 1.25rem; border-radius: 10px; font-weight: 700; font-size: 0.85rem;
+            cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #475569;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .driver-subtab-btn:hover { background: #f8fafc; color: #1e293b; }
+        .driver-subtab-btn.active { background: #0f172a; color: #fff; border-color: #0f172a; box-shadow: 0 4px 12px rgba(15,23,42,0.15); }
+        .driver-filter-pill {
+            padding: 0.4rem 0.85rem; border-radius: 999px; font-weight: 600; font-size: 0.8rem;
+            cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #64748b;
+            transition: all 0.2s;
+        }
+        .driver-filter-pill:hover { background: #f1f5f9; color: #0f172a; }
+        .driver-filter-pill.active { background: #f59e0b; color: #fff; border-color: #f59e0b; font-weight: 700; }
+        .driver-card-full {
+            background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 1.25rem;
+            display: flex; flex-direction: column; gap: 1rem; transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .driver-card-full:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
+        .driver-badge {
+            display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.6rem;
+            border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+        }
+        .driver-badge-approved { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .driver-badge-pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .driver-badge-suspended { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .driver-badge-debt { background: #fef2f2; color: #dc2626; border: 1px solid #f87171; animation: pulse 2s infinite; }
+
         /* Finance Module Styles */
         .finance-header {
             display: flex; justify-content: space-between; align-items: center;
@@ -408,33 +439,266 @@
 
         <!-- ── DRIVERS ── -->
         <div id="panel-drivers" class="tab-panel">
-            <div class="cards-area">
-                <!-- Register Driver -->
-                <div class="card">
-                    <h3>👥 Registar Novo Entregador</h3>
-                    <form id="form-add-driver" style="display:flex;flex-direction:column;gap:1.25rem;">
-                        <div class="form-field">
-                            <label>Nome Completo</label>
-                            <input class="form-input" id="d-name" type="text" required placeholder="Ex: Carlos Alberto">
-                        </div>
-                        <div class="form-field">
-                            <label>Contacto WhatsApp (com indicativo)</label>
-                            <input class="form-input" id="d-phone" type="text" required placeholder="Ex: 258841234567">
-                        </div>
-                        <div class="form-field">
-                            <label>Foto de Perfil</label>
-                            <input class="form-input" id="d-photo" type="file" accept="image/*" style="padding:0.4rem 0;">
-                        </div>
-                        <button type="submit" class="btn-yellow" id="btn-add-driver">Adicionar Entregador</button>
-                    </form>
-                </div>
-                <!-- Drivers List -->
-                <div class="card">
-                    <h3>🛵 Entregadores Registados</h3>
-                    <div id="drivers-list" style="display:flex;flex-direction:column;gap:1rem;max-height:420px;overflow-y:auto;">
-                        <div class="empty">⏳ A carregar...</div>
+            <div style="padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 1400px; margin: 0 auto;">
+                
+                <!-- Drivers Header & Live Fleet Counter -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2 style="font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 0.6rem;">
+                            🛵 Gestão Completa da Frota de Entregadores
+                        </h2>
+                        <p style="margin: 0.25rem 0 0; color: #64748b; font-size: 0.88rem;">
+                            Controlo de motoristas, aprovações de cadastro, monitorização ao vivo e liquidação de comissões (20%).
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <button class="btn-yellow" onclick="switchDriverSubTab('add')" style="padding: 0.6rem 1.1rem; font-size: 0.85rem; font-weight: 700; border-radius: 10px; display: flex; align-items: center; gap: 0.4rem;">
+                            <span>➕</span> Novo Entregador
+                        </button>
+                        <button onclick="loadDrivers(); loadDebts();" title="Atualizar dados" style="background: #fff; border: 1px solid #e2e8f0; padding: 0.6rem 0.9rem; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #475569;">
+                            🔄 Atualizar
+                        </button>
                     </div>
                 </div>
+
+                <!-- Stats Bar -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="width: 46px; height: 46px; border-radius: 12px; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                            🛵
+                        </div>
+                        <div>
+                            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Total Entregadores</div>
+                            <div id="stat-driver-total" style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">0</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="width: 46px; height: 46px; border-radius: 12px; background: #ecfdf5; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                            🟢
+                        </div>
+                        <div>
+                            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Online Agora</div>
+                            <div id="stat-driver-online" style="font-size: 1.5rem; font-weight: 800; color: #16a34a;">0</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;" onclick="setDriverStatusFilter('Pendente'); switchDriverSubTab('fleet');">
+                        <div style="width: 46px; height: 46px; border-radius: 12px; background: #fffbeb; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                            ⏳
+                        </div>
+                        <div>
+                            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Aguardando Aprovação</div>
+                            <div id="stat-driver-pending" style="font-size: 1.5rem; font-weight: 800; color: #d97706;">0</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;" onclick="switchDriverSubTab('debts')">
+                        <div style="width: 46px; height: 46px; border-radius: 12px; background: #fef2f2; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                            💰
+                        </div>
+                        <div>
+                            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Comissões a Cobrar</div>
+                            <div id="stat-driver-debts" style="font-size: 1.5rem; font-weight: 800; color: #dc2626;">0 MT</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-tabs Navigation -->
+                <div style="display: flex; gap: 0.75rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; flex-wrap: wrap;">
+                    <button class="driver-subtab-btn active" id="btn-driver-tab-fleet" onclick="switchDriverSubTab('fleet')">
+                        🛵 Frota de Entregadores (<span id="tab-cnt-fleet">0</span>)
+                    </button>
+                    <button class="driver-subtab-btn" id="btn-driver-tab-debts" onclick="switchDriverSubTab('debts')">
+                        💰 Taxas & Comissões Pendentes (<span id="tab-cnt-debts">0</span>)
+                    </button>
+                    <button class="driver-subtab-btn" id="btn-driver-tab-add" onclick="switchDriverSubTab('add')">
+                        ➕ Registar Novo Entregador
+                    </button>
+                </div>
+
+                <!-- ════════ VIEW 1: FLEET GRID ════════ -->
+                <div id="driver-view-fleet" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <!-- Filter and Search Bar -->
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <div style="position: relative; flex: 1; min-width: 260px; max-width: 420px;">
+                            <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3af; font-size: 0.95rem;">🔍</span>
+                            <input id="driver-search-input" type="text" placeholder="Pesquisar por nome, telefone, província, bairro, BI..." 
+                                   oninput="filterAndRenderDrivers()"
+                                   style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.88rem; outline: none; background: #f8fafc; font-family: inherit;">
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-right: 0.25rem;">Filtrar:</span>
+                            <button class="driver-filter-pill active" onclick="setDriverStatusFilter('all')" data-filter="all">Todos</button>
+                            <button class="driver-filter-pill" onclick="setDriverStatusFilter('online')" data-filter="online">🟢 Online</button>
+                            <button class="driver-filter-pill" onclick="setDriverStatusFilter('Pendente')" data-filter="Pendente">⏳ Pendentes</button>
+                            <button class="driver-filter-pill" onclick="setDriverStatusFilter('Aprovado')" data-filter="Aprovado">✅ Aprovados</button>
+                            <button class="driver-filter-pill" onclick="setDriverStatusFilter('Suspenso')" data-filter="Suspenso">🚫 Suspensos</button>
+                            <button class="driver-filter-pill" onclick="setDriverStatusFilter('debt')" data-filter="debt">💰 Com Dívida</button>
+                        </div>
+                    </div>
+
+                    <!-- Drivers Grid -->
+                    <div id="drivers-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.25rem;">
+                        <div class="empty" style="grid-column: 1 / -1;">⏳ A carregar entregadores...</div>
+                    </div>
+                </div>
+
+                <!-- ════════ VIEW 2: DEBTS / COMMISSIONS ════════ -->
+                <div id="driver-view-debts" style="display: none; flex-direction: column; gap: 1.25rem;">
+                    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; padding: 1.25rem; display: flex; align-items: flex-start; gap: 1rem;">
+                        <div style="font-size: 1.8rem;">💡</div>
+                        <div>
+                            <h4 style="margin: 0 0 0.25rem; color: #92400e; font-size: 0.95rem; font-weight: 800;">Como funciona a Comissão da Plataforma (20%)</h4>
+                            <p style="margin: 0; color: #b45309; font-size: 0.85rem; line-height: 1.4;">
+                                Em pagamentos na entrega (dinheiro), o cliente paga o valor total ao motorista. O motorista tem <strong>2 horas</strong> para transferir a taxa de 20% da plataforma via M-Pesa / E-Mola e anexar o comprovativo. Se o prazo expirar sem pagamento, o sistema bloqueia automaticamente a conta para novos pedidos. Quando validar o pagamento, clique em <strong>"Confirmar e Desbloquear"</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
+                            <thead>
+                                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">
+                                    <th style="padding: 1rem 1.25rem;">Entregador</th>
+                                    <th style="padding: 1rem 1.25rem;">Valor a Repassar</th>
+                                    <th style="padding: 1rem 1.25rem;">Tempo Restante / Estado</th>
+                                    <th style="padding: 1rem 1.25rem;">Comprovativo / Ref</th>
+                                    <th style="padding: 1rem 1.25rem; text-align: right;">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="driver-debts-tbody">
+                                <tr>
+                                    <td colspan="5" class="empty">⏳ A verificar repasses pendentes...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ════════ VIEW 3: COMPREHENSIVE ADD DRIVER ════════ -->
+                <div id="driver-view-add" style="display: none;">
+                    <div style="background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 2rem; max-width: 860px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 1.25rem; margin-bottom: 1.5rem;">
+                            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 0.5rem;">
+                                📝 Formulário Completo de Cadastro de Entregador
+                            </h3>
+                            <p style="margin: 0.25rem 0 0; color: #64748b; font-size: 0.85rem;">
+                                Preencha os dados e documentação do entregador. O perfil ficará automaticamente ativo e pronto para entregas.
+                            </p>
+                        </div>
+
+                        <form id="form-add-driver" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+                                
+                                <!-- Nome Completo -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Nome Completo *</label>
+                                    <input class="form-input" id="d-name" type="text" required placeholder="Ex: Carlos Alberto Macamo">
+                                </div>
+
+                                <!-- WhatsApp Contact -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Contacto WhatsApp (com 258) *</label>
+                                    <input class="form-input" id="d-phone" type="text" required placeholder="Ex: 258841234567">
+                                </div>
+
+                                <!-- Província -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Província de Atuação *</label>
+                                    <select class="form-input" id="d-province" required>
+                                        <option value="Maputo Cidade">Maputo Cidade</option>
+                                        <option value="Maputo Província">Maputo Província</option>
+                                        <option value="Sofala" selected>Sofala (Beira)</option>
+                                        <option value="Manica">Manica</option>
+                                        <option value="Nampula">Nampula</option>
+                                        <option value="Zambézia">Zambézia</option>
+                                        <option value="Tete">Tete</option>
+                                        <option value="Inhambane">Inhambane</option>
+                                        <option value="Gaza">Gaza</option>
+                                        <option value="Cabo Delgado">Cabo Delgado</option>
+                                        <option value="Niassa">Niassa</option>
+                                    </select>
+                                </div>
+
+                                <!-- Bairro / Localidade -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Bairro / Zona Principal *</label>
+                                    <input class="form-input" id="d-bairro" type="text" required placeholder="Ex: Macuti, Ponta Gêa, Polana...">
+                                </div>
+
+                                <!-- Tipo de Veículo -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Tipo de Veículo *</label>
+                                    <select class="form-input" id="d-vehicle-type" required>
+                                        <option value="Mota" selected>🛵 Mota / Scooter</option>
+                                        <option value="Bicicleta">🚲 Bicicleta</option>
+                                        <option value="Carro">🚗 Carro / Viatura</option>
+                                        <option value="A Pé">🚶 A Pé</option>
+                                    </select>
+                                </div>
+
+                                <!-- Matrícula do Veículo -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Matrícula do Veículo (opcional)</label>
+                                    <input class="form-input" id="d-vehicle-plate" type="text" placeholder="Ex: AB 123 MC">
+                                </div>
+
+                                <!-- Tipo de Documento -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Tipo de Documento</label>
+                                    <select class="form-input" id="d-doc-type">
+                                        <option value="BI" selected>Bilhete de Identidade (BI)</option>
+                                        <option value="DIRE">DIRE</option>
+                                        <option value="Carta de Condução">Carta de Condução</option>
+                                        <option value="Passaporte">Passaporte</option>
+                                    </select>
+                                </div>
+
+                                <!-- Número do Documento -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Número do Documento</label>
+                                    <input class="form-input" id="d-doc-number" type="text" placeholder="Ex: 110200345678A">
+                                </div>
+
+                                <!-- PIN de Acesso Portal -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">PIN de Acesso do Motorista (4 dígitos)</label>
+                                    <input class="form-input" id="d-pin" type="text" maxlength="6" value="1234" placeholder="Ex: 1234">
+                                </div>
+
+                                <!-- Tarifa por Entrega Base -->
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Tarifa Base de Entrega (MT)</label>
+                                    <input class="form-input" id="d-earnings-rate" type="number" value="150" placeholder="150">
+                                </div>
+                            </div>
+
+                            <!-- Uploads Section -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">📸 Foto de Perfil (Avatar)</label>
+                                    <input class="form-input" id="d-photo" type="file" accept="image/*" style="padding: 0.4rem 0;">
+                                    <span style="font-size: 0.75rem; color: #64748b;">Foto clara do rosto do condutor.</span>
+                                </div>
+                                <div class="form-field">
+                                    <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">📄 Foto do Documento / BI</label>
+                                    <input class="form-input" id="d-doc-photo" type="file" accept="image/*" style="padding: 0.4rem 0;">
+                                    <span style="font-size: 0.75rem; color: #64748b;">Frente do BI ou Carta de Condução legível.</span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.5rem;">
+                                <button type="button" class="btn-cancel" onclick="switchDriverSubTab('fleet')">Cancelar</button>
+                                <button type="submit" class="btn-yellow" id="btn-add-driver" style="padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 700;">
+                                    Cadastrar Entregador
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -1002,6 +1266,70 @@
     </div>
 </div>
 
+<!-- Modal: Driver Document / BI Viewer -->
+<div id="modal-driver-doc" class="modal-overlay" style="display: none; align-items: center; justify-content: center;">
+    <div class="modal-box" style="max-width: 620px; width: 92%; padding: 1.5rem; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem;">
+            <div>
+                <h3 id="modal-doc-title" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">📄 Documento de Identificação</h3>
+                <p id="modal-doc-subtitle" style="margin: 0.2rem 0 0; font-size: 0.82rem; color: #64748b;">Verificação de documento oficial do condutor</p>
+            </div>
+            <button onclick="closeDriverDocModal()" style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #94a3af;">✕</button>
+        </div>
+        <div id="modal-doc-body" style="text-align: center; background: #f8fafc; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0; min-height: 260px; display: flex; align-items: center; justify-content: center;">
+            <!-- Document Image or Placeholder -->
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+            <button type="button" class="btn-cancel" onclick="closeDriverDocModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Driver Warning Form -->
+<div id="modal-driver-warning" class="modal-overlay" style="display: none; align-items: center; justify-content: center;">
+    <div class="modal-box" style="max-width: 480px; width: 92%; padding: 2rem; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem;">
+            <div>
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #b91c1c;">⚠️ Emitir Advertência</h3>
+                <p id="modal-warning-driver-name" style="margin: 0.2rem 0 0; font-size: 0.82rem; color: #64748b;">Entregador: Carlos Alberto</p>
+            </div>
+            <button onclick="closeDriverWarningModal()" style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #94a3af;">✕</button>
+        </div>
+        <form id="form-driver-warning" onsubmit="submitDriverWarning(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+            <input type="hidden" id="warn-driver-id">
+            <div class="form-field">
+                <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.3rem;">Motivo da Infração *</label>
+                <select class="form-input" id="warn-reason" required>
+                    <option value="Atraso grave sem justificativa">Atraso grave sem justificativa</option>
+                    <option value="Dívida de taxa/comissão não regularizada no prazo">Dívida de taxa/comissão não regularizada no prazo</option>
+                    <option value="Conduta inadequada ou reclamação de cliente">Conduta inadequada ou reclamação de cliente</option>
+                    <option value="Desistência de corrida após aceite">Desistência de corrida após aceite</option>
+                    <option value="Danificação de encomenda/produto">Danificação de encomenda/produto</option>
+                    <option value="Outro">Outro motivo</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.3rem;">Gravidade *</label>
+                <select class="form-input" id="warn-severity" required>
+                    <option value="Leve">🟡 Leve (Aviso informativo)</option>
+                    <option value="Média" selected>🟠 Média (Notificação formal)</option>
+                    <option value="Grave">🔴 Grave (Risco de suspensão imediata)</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.3rem;">Notas Adicionais (opcional)</label>
+                <textarea class="form-textarea" id="warn-notes" rows="3" placeholder="Detalhes do ocorrido para registo de auditoria..."></textarea>
+            </div>
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem;">
+                <button type="button" class="btn-cancel" onclick="closeDriverWarningModal()">Cancelar</button>
+                <button type="submit" class="btn-danger" style="background: #dc2626; padding: 0.65rem 1.25rem;">
+                    Registar Advertência
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────
 const ADMIN_PIN = '1234';
@@ -1104,6 +1432,7 @@ function refreshAll() {
     const tab = document.querySelector('.nav-tab.active')?.id?.replace('nav-','') || 'orders';
     loadOrders();
     loadDrivers();
+    loadDebts();
     loadProducts();
     loadWithdrawals();
     loadUsers();
@@ -1342,70 +1671,323 @@ async function deleteOrder(id) {
     toast('Pedido apagado com sucesso.');
 }
 
-// ── DRIVERS ──────────────────────────────────────────────────────────────
+// ── DRIVERS MANAGEMENT MODULE ───────────────────────────────────────────
+let currentDriverFilter = 'all';
+let allDebts = [];
+
 async function loadDrivers() {
     try {
         const res = await fetch('/api/drivers/admin/all');
         if (!res.ok) return;
         allDrivers = await res.json();
-        renderDrivers();
-    } catch(e) {}
+        updateDriverStats();
+        filterAndRenderDrivers();
+    } catch(e) {
+        console.error('Error loading drivers:', e);
+    }
 }
 
-function renderDrivers() {
+async function loadDebts() {
+    try {
+        const res = await fetch('/api/drivers/admin/debts');
+        if (!res.ok) return;
+        allDebts = await res.json();
+        renderDebtsTable();
+        updateDriverStats();
+    } catch(e) {
+        console.error('Error loading debts:', e);
+    }
+}
+
+function updateDriverStats() {
+    const total = allDrivers.length;
+    const online = allDrivers.filter(d => d.is_online).length;
+    const pending = allDrivers.filter(d => d.approval_status === 'Pendente').length;
+    const totalDebtAmount = allDebts.reduce((sum, item) => sum + (Number(item.debt?.amount) || 0), 0);
+
+    const elTotal = document.getElementById('stat-driver-total');
+    const elOnline = document.getElementById('stat-driver-online');
+    const elPending = document.getElementById('stat-driver-pending');
+    const elDebts = document.getElementById('stat-driver-debts');
+    const tabFleet = document.getElementById('tab-cnt-fleet');
+    const tabDebts = document.getElementById('tab-cnt-debts');
+
+    if (elTotal) elTotal.textContent = total;
+    if (elOnline) elOnline.textContent = online;
+    if (elPending) elPending.textContent = pending;
+    if (elDebts) elDebts.textContent = `${totalDebtAmount.toLocaleString()} MT`;
+    if (tabFleet) tabFleet.textContent = total;
+    if (tabDebts) tabDebts.textContent = allDebts.length;
+}
+
+function switchDriverSubTab(tab) {
+    const vFleet = document.getElementById('driver-view-fleet');
+    const vDebts = document.getElementById('driver-view-debts');
+    const vAdd = document.getElementById('driver-view-add');
+    const bFleet = document.getElementById('btn-driver-tab-fleet');
+    const bDebts = document.getElementById('btn-driver-tab-debts');
+    const bAdd = document.getElementById('btn-driver-tab-add');
+
+    if (vFleet) vFleet.style.display = (tab === 'fleet') ? 'flex' : 'none';
+    if (vDebts) vDebts.style.display = (tab === 'debts') ? 'flex' : 'none';
+    if (vAdd) vAdd.style.display = (tab === 'add') ? 'block' : 'none';
+
+    if (bFleet) bFleet.classList.toggle('active', tab === 'fleet');
+    if (bDebts) bDebts.classList.toggle('active', tab === 'debts');
+    if (bAdd) bAdd.classList.toggle('active', tab === 'add');
+
+    if (tab === 'debts') loadDebts();
+    if (tab === 'fleet') loadDrivers();
+}
+
+function setDriverStatusFilter(filter) {
+    currentDriverFilter = filter;
+    document.querySelectorAll('.driver-filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+    filterAndRenderDrivers();
+}
+
+function filterAndRenderDrivers() {
+    const searchVal = (document.getElementById('driver-search-input')?.value || '').toLowerCase().trim();
     const el = document.getElementById('drivers-list');
-    if (!allDrivers.length) { el.innerHTML = '<div class="empty">Nenhum entregador cadastrado.</div>'; return; }
-    el.innerHTML = allDrivers.map(d => {
-        const isOnline = d.is_online;
+    if (!el) return;
+
+    let filtered = allDrivers.filter(d => {
+        // Status filter
+        if (currentDriverFilter === 'online' && !d.is_online) return false;
+        if (currentDriverFilter === 'Pendente' && d.approval_status !== 'Pendente') return false;
+        if (currentDriverFilter === 'Aprovado' && d.approval_status !== 'Aprovado') return false;
+        if (currentDriverFilter === 'Suspenso' && d.approval_status !== 'Suspenso') return false;
+        if (currentDriverFilter === 'debt' && !d.pending_debt) return false;
+
+        // Search text
+        if (searchVal) {
+            const matchName = (d.name || '').toLowerCase().includes(searchVal);
+            const matchPhone = (d.phone || '').toLowerCase().includes(searchVal);
+            const matchBairro = (d.bairro || '').toLowerCase().includes(searchVal);
+            const matchProvince = (d.province || '').toLowerCase().includes(searchVal);
+            const matchDoc = (d.doc_number || '').toLowerCase().includes(searchVal);
+            const matchPlate = (d.vehicle_plate || '').toLowerCase().includes(searchVal);
+            return matchName || matchPhone || matchBairro || matchProvince || matchDoc || matchPlate;
+        }
+        return true;
+    });
+
+    if (!filtered.length) {
+        el.innerHTML = '<div class="empty" style="grid-column:1/-1;">Nenhum entregador encontrado com os filtros selecionados.</div>';
+        return;
+    }
+
+    el.innerHTML = filtered.map(d => {
+        const isOnline = Boolean(d.is_online);
         const status = d.approval_status || 'Aprovado';
         const isPending = status === 'Pendente';
         const isSuspended = status === 'Suspenso';
-        
+        const isBlocked = Boolean(d.is_blocked || (d.pending_debt && d.pending_debt.status !== 'Pago'));
+        const cleanPhone = (d.phone || '').replace(/\D/g, '');
+        const hasDocPhoto = Boolean(d.doc_photo_url);
+        const avatarImg = d.photo_url || '/assets/default_avatar.png';
+
+        // Badge determination
+        let badgeClass = 'driver-badge-approved';
+        let badgeLabel = '✅ Aprovado';
+        if (isPending) {
+            badgeClass = 'driver-badge-pending';
+            badgeLabel = '⏳ Pendente';
+        } else if (isSuspended) {
+            badgeClass = 'driver-badge-suspended';
+            badgeLabel = '🚫 Suspenso';
+        }
+
         return `
-        <div class="driver-card" style="display:flex;flex-direction:column;gap:0.75rem;padding:1rem;background:#f8fafc;border-radius:12px;border:1px solid ${isOnline ? '#86efac' : '#e2e8f0'};margin-bottom:0.75rem;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-                <div style="display:flex;align-items:center;gap:0.75rem;">
-                    <div style="position:relative;">
-                        <img class="driver-img" src="${d.photo_url||'https://via.placeholder.com/50'}" alt="${d.name}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
-                        <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:${isOnline?'#22c55e':'#94a3b8'};border:2px solid #fff;"></div>
+        <div class="driver-card-full" id="driver-card-${d.id}">
+            <!-- Card Header: Avatar, Name, Status, Online indicator -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
+                <div style="display: flex; gap: 0.85rem; align-items: center;">
+                    <div style="position: relative; flex-shrink: 0;">
+                        <img src="${avatarImg}" alt="${d.name}" onerror="this.src='/assets/default_avatar.png'"
+                             style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid ${isOnline ? '#22c55e' : '#cbd5e1'};">
+                        <span style="position: absolute; bottom: 1px; right: 1px; width: 13px; height: 13px; border-radius: 50%; background: ${isOnline ? '#22c55e' : '#94a3af'}; border: 2px solid #fff;" title="${isOnline ? 'Online' : 'Offline'}"></span>
                     </div>
                     <div>
-                        <div style="display:flex;align-items:center;gap:0.4rem;">
-                            <h4 style="margin:0;color:#111827;font-weight:700;font-size:0.95rem;">${d.name}</h4>
-                            <span style="font-size:0.7rem;font-weight:700;padding:0.1rem 0.4rem;border-radius:999px;background:${isPending?'#fef3c7':isSuspended?'#fee2e2':'#dcfce7'};color:${isPending?'#b45309':isSuspended?'#b91c1c':'#15803d'};">
-                                ${status}
-                            </span>
+                        <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+                            <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #0f172a;">${d.name}</h4>
+                            <span class="driver-badge ${badgeClass}">${badgeLabel}</span>
                         </div>
-                        <p style="margin:2px 0 0;color:#6b7280;font-size:0.8rem;">
-                            📲 <a href="https://wa.me/${(d.phone||'').replace(/\D/g,'')}" target="_blank" style="color:#059669;text-decoration:none;font-weight:600;">${d.phone||'—'}</a>
-                            ${d.bairro ? ` • 📍 ${d.bairro}` : ''}
-                        </p>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                            <a href="https://wa.me/${cleanPhone}" target="_blank" style="color: #059669; font-weight: 700; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;" title="Conversar no WhatsApp">
+                                💬 ${d.phone || 'Sem WhatsApp'}
+                            </a>
+                            <span style="color: #cbd5e1;">•</span>
+                            <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">ID #${d.id}</span>
+                        </div>
                     </div>
                 </div>
-                <span style="font-size:0.75rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:999px;background:${isOnline?'#dcfce7':'#f1f5f9'};color:${isOnline?'#15803d':'#64748b'};">
-                    ${isOnline ? '🟢 Online' : '⚪ Offline'}
-                </span>
+
+                <div style="text-align: right;">
+                    <span style="font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px; background: ${isOnline ? '#dcfce7' : '#f1f5f9'}; color: ${isOnline ? '#15803d' : '#64748b'}; border: 1px solid ${isOnline ? '#bbf7d0' : '#e2e8f0'};">
+                        ${isOnline ? '🟢 Online' : '⚪ Offline'}
+                    </span>
+                </div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;background:#fff;padding:0.5rem 0.75rem;border-radius:8px;border:1px solid #e2e8f0;">
-                <div>🛵 ${d.vehicle_type||'Mota'} ${d.doc_number ? `• 📄 ${d.doc_type||'BI'}: <strong>${d.doc_number}</strong>` : ''}</div>
-                <div style="color:#059669;font-weight:700;">📦 ${d.delivery_count||0} entregas</div>
+            <!-- Debt Alert Pill (if driver owes 20% commission) -->
+            ${d.pending_debt ? `
+            <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 0.65rem 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.8rem; color: #991b1b; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>⚠️ Dívida Ativa:</span>
+                    <span style="font-size: 0.92rem; color: #b91c1c;">${d.pending_debt.amount || 0} MT</span>
+                    <span style="font-size: 0.72rem; color: #64748b; font-weight: normal;">(${d.pending_debt.status || 'Pendente'})</span>
+                </div>
+                <button onclick="confirmDriverDebt(${d.id}, '${d.name.replace(/'/g, "\\'")}', ${d.pending_debt.amount || 0})" style="background: #16a34a; color: #fff; border: none; padding: 0.35rem 0.7rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                    Confirmar Pago
+                </button>
+            </div>
+            ` : ''}
+
+            <!-- Details Section: Location, Vehicle, Documents, Metrics -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; font-size: 0.8rem; background: #f8fafc; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <div>
+                    <span style="color: #64748b;">📍 Localização:</span><br>
+                    <strong style="color: #1e293b;">${d.province || 'Sofala'} • ${d.bairro || 'Beira'}</strong>
+                </div>
+                <div>
+                    <span style="color: #64748b;">🛵 Veículo:</span><br>
+                    <strong style="color: #1e293b;">${d.vehicle_type || 'Mota'}${d.vehicle_plate ? ` (${d.vehicle_plate})` : ''}</strong>
+                </div>
+                <div>
+                    <span style="color: #64748b;">📄 Documento (${d.doc_type || 'BI'}):</span><br>
+                    <strong style="color: #1e293b;">${d.doc_number || 'Não informado'}</strong>
+                </div>
+                <div>
+                    <span style="color: #64748b;">🔑 PIN Portal:</span><br>
+                    <strong style="color: #0f172a; letter-spacing: 1px;">${d.pin || '1234'}</strong>
+                </div>
             </div>
 
-            <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+            <!-- Stats Mini Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 0.4rem 0.5rem; border-top: 1px solid #f1f5f9; color: #475569;">
+                <div>📦 Entregas Concluídas: <strong style="color: #059669;">${d.total_delivered || 0}</strong></div>
+                <div>⚠️ Advertências: <strong style="color: ${(d.warnings_count || 0) > 0 ? '#dc2626' : '#64748b'};">${d.warnings_count || 0}</strong></div>
+            </div>
+
+            <!-- Actions Row -->
+            <div style="display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center; flex-wrap: wrap; pt: 0.25rem;">
+                <button onclick="openDriverDocModal('${d.name.replace(/'/g, "\\'")}', '${d.doc_type || 'BI'}', '${d.doc_number || ''}', '${d.doc_photo_url || ''}')" 
+                        style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.4rem 0.7rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;" title="Visualizar documento / BI">
+                    🔍 Ver ${d.doc_type || 'BI'}
+                </button>
+
+                <button onclick="openDriverWarningModal(${d.id}, '${d.name.replace(/'/g, "\\'")}')" 
+                        style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 0.4rem 0.65rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;" title="Emitir Advertência Disciplinar">
+                    ⚠️ Advertência
+                </button>
+
                 ${isPending ? `
-                    <button style="background:#16a34a;color:#fff;border:none;padding:0.35rem 0.75rem;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;" onclick="approveDriver(${d.id},'Aprovado')">✅ Aprovar</button>
-                    <button style="background:#fee2e2;color:#991b1b;border:none;padding:0.35rem 0.75rem;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;" onclick="approveDriver(${d.id},'Recusado')">❌ Recusar</button>
-                ` : ''}
-                ${isSuspended ? `
-                    <button style="background:#dcfce7;color:#15803d;border:none;padding:0.35rem 0.75rem;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;" onclick="approveDriver(${d.id},'Aprovado')">✅ Reativar</button>
+                    <button onclick="approveDriver(${d.id}, 'Aprovado')" style="background: #16a34a; color: #fff; border: none; padding: 0.4rem 0.75rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                        ✅ Aprovar
+                    </button>
+                    <button onclick="approveDriver(${d.id}, 'Recusado')" style="background: #fee2e2; color: #991b1b; border: none; padding: 0.4rem 0.75rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                        ❌ Recusar
+                    </button>
+                ` : isSuspended ? `
+                    <button onclick="approveDriver(${d.id}, 'Aprovado')" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; padding: 0.4rem 0.75rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                        ✅ Reativar
+                    </button>
                 ` : `
-                    <button style="background:#fee2e2;color:#b91c1c;border:none;padding:0.35rem 0.75rem;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;" onclick="approveDriver(${d.id},'Suspenso')">🚫 Suspender</button>
+                    <button onclick="approveDriver(${d.id}, 'Suspenso')" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 0.4rem 0.65rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                        🚫 Suspender
+                    </button>
                 `}
-                <button class="btn-trash" onclick="deleteDriver(${d.id})" title="Remover" style="padding:0.35rem 0.5rem;">🗑️</button>
+
+                <button onclick="deleteDriver(${d.id})" class="btn-trash" style="padding: 0.4rem 0.6rem; border-radius: 7px; font-size: 0.8rem;" title="Remover Entregador">🗑️</button>
             </div>
-        </div>`;
+        </div>
+        `;
     }).join('');
+}
+
+function renderDebtsTable() {
+    const tbody = document.getElementById('driver-debts-tbody');
+    if (!tbody) return;
+
+    if (!allDebts.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty" style="padding: 2.5rem; color: #15803d; font-weight: 700;">✅ Nenhuma comissão pendente no momento! Todas as contas estão regulares.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = allDebts.map(item => {
+        const d = item.debt || {};
+        const isOverdue = item.is_overdue;
+        const remSecs = item.remaining_secs || 0;
+        const rm = Math.floor(remSecs / 60);
+        const rs = remSecs % 60;
+        const timeStr = `${pad(rm)}:${pad(rs)}`;
+        const hasProof = Boolean(d.payment_proof);
+
+        return `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 1rem 1.25rem;">
+                <div style="font-weight: 700; color: #0f172a;">${item.driver_name}</div>
+                <div style="font-size: 0.78rem; color: #64748b;">
+                    📲 <a href="https://wa.me/${(item.driver_phone||'').replace(/\D/g,'')}" target="_blank" style="color:#059669;text-decoration:none;">${item.driver_phone}</a>
+                </div>
+            </td>
+            <td style="padding: 1rem 1.25rem;">
+                <strong style="color: #dc2626; font-size: 1rem;">${d.amount || 0} MT</strong>
+                <div style="font-size: 0.72rem; color: #64748b;">20% de comissão de entrega</div>
+            </td>
+            <td style="padding: 1rem 1.25rem;">
+                ${isOverdue ? `
+                    <span style="background: #fee2e2; color: #b91c1c; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid #fca5a5;">
+                        🚨 EXPIRADO (Bloqueado)
+                    </span>
+                ` : `
+                    <span style="background: #fef3c7; color: #b45309; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid #fde68a;">
+                        ⏱️ ${timeStr} restantes
+                    </span>
+                `}
+                <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Status: <strong>${d.status || 'Pendente'}</strong></div>
+            </td>
+            <td style="padding: 1rem 1.25rem;">
+                ${hasProof ? `
+                    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #065f46;">
+                        <div style="font-weight: 700;">✅ Comprovativo Anexado:</div>
+                        <div style="word-break: break-all; font-size: 0.75rem; margin-top: 2px;">${d.payment_proof}</div>
+                    </div>
+                ` : `
+                    <span style="color: #94a3af; font-size: 0.8rem; font-style: italic;">Aguardando envio pelo entregador...</span>
+                `}
+            </td>
+            <td style="padding: 1rem 1.25rem; text-align: right;">
+                <button onclick="confirmDriverDebt(${item.driver_id}, '${item.driver_name.replace(/'/g, "\\'")}', ${d.amount || 0})"
+                        style="background: #16a34a; color: #fff; border: none; padding: 0.55rem 1rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 2px 4px rgba(22,163,74,0.2);">
+                    <span>✅</span> Confirmar e Desbloquear
+                </button>
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+async function confirmDriverDebt(driverId, name, amount) {
+    if (!confirm(`Confirmar que recebeu ${amount} MT de taxa do entregador ${name} e desbloquear a sua conta?`)) return;
+    try {
+        const res = await fetch(`/api/drivers/${driverId}/confirm-debt`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Erro ao confirmar dívida');
+        }
+        toast(`✅ Pagamento de ${amount} MT confirmado! ${name} foi desbloqueado com sucesso.`);
+        loadDebts();
+        loadDrivers();
+    } catch(err) {
+        alert('Erro ao confirmar liquidação: ' + err.message);
+    }
 }
 
 async function approveDriver(id, status) {
@@ -1417,42 +1999,158 @@ async function approveDriver(id, status) {
         });
         if (res.ok) {
             loadDrivers();
-            toast(status === 'Aprovado' ? '✅ Entregador aprovado!' : `Entregador marcado como ${status}`);
+            toast(status === 'Aprovado' ? '✅ Entregador aprovado para corridas!' : `Entregador marcado como ${status}`);
         }
     } catch (err) {
-        alert('Erro ao atualizar entregador: ' + err.message);
+        alert('Erro ao atualizar estado do entregador: ' + err.message);
     }
 }
 
-document.getElementById('form-add-driver').addEventListener('submit', async (e) => {
+// ── Document Modal Functions ─────────────────────────────────────────────
+function openDriverDocModal(name, docType, docNumber, docPhotoUrl) {
+    const modal = document.getElementById('modal-driver-doc');
+    const title = document.getElementById('modal-doc-title');
+    const subtitle = document.getElementById('modal-doc-subtitle');
+    const body = document.getElementById('modal-doc-body');
+
+    title.textContent = `📄 ${docType}: ${docNumber || 'Sem número'}`;
+    subtitle.textContent = `Entregador: ${name}`;
+
+    if (docPhotoUrl) {
+        body.innerHTML = `
+            <div style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
+                <img src="${docPhotoUrl}" alt="Documento do Entregador" style="max-width: 100%; max-height: 480px; border-radius: 8px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                <a href="${docPhotoUrl}" target="_blank" style="color: #2563eb; font-size: 0.82rem; font-weight: 700; text-decoration: none;">🔍 Abrir imagem em tamanho original</a>
+            </div>
+        `;
+    } else {
+        body.innerHTML = `
+            <div style="padding: 2rem; color: #64748b;">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📄</div>
+                <h4 style="margin: 0; color: #334155;">Nenhuma foto de documento anexada</h4>
+                <p style="margin: 0.35rem 0 0; font-size: 0.82rem;">O número de registo é: <strong>${docNumber || 'Não preenchido'}</strong></p>
+            </div>
+        `;
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeDriverDocModal() {
+    const modal = document.getElementById('modal-driver-doc');
+    if (modal) modal.style.display = 'none';
+}
+
+// ── Disciplinary Warning Modal Functions ───────────────────────────────────
+function openDriverWarningModal(id, name) {
+    const modal = document.getElementById('modal-driver-warning');
+    document.getElementById('warn-driver-id').value = id;
+    document.getElementById('modal-warning-driver-name').textContent = `Entregador: ${name} (ID #${id})`;
+    document.getElementById('form-driver-warning').reset();
+    modal.style.display = 'flex';
+}
+
+function closeDriverWarningModal() {
+    const modal = document.getElementById('modal-driver-warning');
+    if (modal) modal.style.display = 'none';
+}
+
+async function submitDriverWarning(e) {
+    e.preventDefault();
+    const id = document.getElementById('warn-driver-id').value;
+    const reason = document.getElementById('warn-reason').value;
+    const severity = document.getElementById('warn-severity').value;
+    const notes = document.getElementById('warn-notes').value;
+
+    try {
+        const res = await fetch(`/api/drivers/${id}/warnings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason, severity, notes })
+        });
+        if (!res.ok) throw new Error('Erro ao registar advertência.');
+        toast(`⚠️ Advertência registada com sucesso para o entregador #${id}.`);
+        closeDriverWarningModal();
+        loadDrivers();
+    } catch(err) {
+        alert(err.message);
+    }
+}
+
+// ── Form Add Driver ──────────────────────────────────────────────────────
+document.getElementById('form-add-driver')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btn-add-driver');
-    btn.textContent = 'A carregar...'; btn.disabled = true;
-    let photoUrl = '';
-    const file = document.getElementById('d-photo').files[0];
-    if (file) {
-        const fd = new FormData(); fd.append('photo', file);
-        const r = await fetch('/api/drivers/upload', { method:'POST', body:fd });
-        if (r.ok) { const d = await r.json(); photoUrl = d.photo_url; }
+    btn.textContent = 'A processar cadastro...';
+    btn.disabled = true;
+
+    try {
+        let photoUrl = '';
+        const photoFile = document.getElementById('d-photo')?.files[0];
+        if (photoFile) {
+            const fd = new FormData();
+            fd.append('photo', photoFile);
+            const r = await fetch('/api/drivers/upload', { method: 'POST', body: fd });
+            if (r.ok) {
+                const data = await r.json();
+                photoUrl = data.photo_url || '';
+            }
+        }
+
+        let docPhotoUrl = '';
+        const docFile = document.getElementById('d-doc-photo')?.files[0];
+        if (docFile) {
+            const fd = new FormData();
+            fd.append('photo', docFile);
+            const r = await fetch('/api/drivers/upload', { method: 'POST', body: fd });
+            if (r.ok) {
+                const data = await r.json();
+                docPhotoUrl = data.photo_url || '';
+            }
+        }
+
+        const payload = {
+            name: document.getElementById('d-name').value.trim(),
+            phone: document.getElementById('d-phone').value.trim(),
+            province: document.getElementById('d-province')?.value || 'Sofala',
+            bairro: document.getElementById('d-bairro').value.trim(),
+            vehicle_type: document.getElementById('d-vehicle-type')?.value || 'Mota',
+            vehicle_plate: document.getElementById('d-vehicle-plate')?.value.trim() || '',
+            doc_type: document.getElementById('d-doc-type')?.value || 'BI',
+            doc_number: document.getElementById('d-doc-number')?.value.trim() || '',
+            pin: document.getElementById('d-pin')?.value.trim() || '1234',
+            earnings_rate_per_delivery: Number(document.getElementById('d-earnings-rate')?.value) || 150,
+            photo_url: photoUrl,
+            doc_photo_url: docPhotoUrl
+        };
+
+        const res = await fetch('/api/drivers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Erro ao cadastrar entregador');
+        }
+
+        e.target.reset();
+        toast('🎉 Entregador registado com sucesso! Já está pronto para entregas.');
+        switchDriverSubTab('fleet');
+        loadDrivers();
+    } catch(err) {
+        alert('Falha ao registar: ' + err.message);
+    } finally {
+        btn.textContent = 'Cadastrar Entregador';
+        btn.disabled = false;
     }
-    await fetch('/api/drivers', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ name: document.getElementById('d-name').value, phone: document.getElementById('d-phone').value, photo_url: photoUrl })
-    });
-    e.target.reset();
-    btn.textContent = 'Adicionar Entregador'; btn.disabled = false;
-    loadDrivers(); toast('Entregador adicionado com sucesso!');
 });
 
-async function toggleDriver(id, active) {
-    await fetch(`/api/drivers/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ active }) });
-    loadDrivers();
-}
-
 async function deleteDriver(id) {
-    if (!confirm('Tem a certeza de que deseja remover este entregador?')) return;
+    if (!confirm('Tem a certeza de que deseja remover permanentemente este entregador do sistema?')) return;
     try {
-        const res = await fetch(`/api/drivers/${id}`, { method:'DELETE' });
+        const res = await fetch(`/api/drivers/${id}`, { method: 'DELETE' });
         if (!res.ok) {
             const data = await res.json();
             throw new Error(data.error || 'Erro ao remover entregador');

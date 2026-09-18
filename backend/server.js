@@ -1610,7 +1610,7 @@ app.delete('/api/drivers/:id/warnings/:warningId', async (req, res) => {
 // POST Admin create new driver directly
 app.post('/api/drivers', async (req, res) => {
     try {
-        const { name, phone, photo_url, vehicle_type, vehicle_plate, bairro, doc_type, doc_number, pin } = req.body;
+        const { name, phone, photo_url, vehicle_type, vehicle_plate, bairro, province, doc_type, doc_number, doc_photo_url, pin } = req.body;
         if (!name || !phone) {
             return res.status(400).json({ error: 'Nome e telefone são obrigatórios.' });
         }
@@ -1634,8 +1634,10 @@ app.post('/api/drivers', async (req, res) => {
             last_seen_at: new Date().toISOString(),
             doc_type: doc_type || 'BI',
             doc_number: doc_number ? String(doc_number).trim() : '',
+            doc_photo_url: doc_photo_url || '',
             vehicle_type: vehicle_type || 'Mota',
             vehicle_plate: vehicle_plate ? String(vehicle_plate).trim() : '',
+            province: province ? String(province).trim() : 'Sofala',
             bairro: bairro ? String(bairro).trim() : 'Beira',
             pin: pin ? String(pin).trim() : '1234',
             warnings: [],
@@ -1669,7 +1671,7 @@ app.post('/api/drivers/upload', upload.single('photo'), async (req, res) => {
 app.put('/api/drivers/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, phone, photo_url, active, vehicle_type, vehicle_plate, bairro, pin, earnings_rate_per_delivery } = req.body;
+        const { name, phone, photo_url, active, vehicle_type, vehicle_plate, bairro, province, pin, earnings_rate_per_delivery, doc_type, doc_number, doc_photo_url } = req.body;
         
         const updates = {};
         if (name !== undefined) updates.name = name;
@@ -1693,6 +1695,10 @@ app.put('/api/drivers/:id', async (req, res) => {
         if (vehicle_type !== undefined) metaUpdates.vehicle_type = vehicle_type;
         if (vehicle_plate !== undefined) metaUpdates.vehicle_plate = vehicle_plate;
         if (bairro !== undefined) metaUpdates.bairro = bairro;
+        if (province !== undefined) metaUpdates.province = province;
+        if (doc_type !== undefined) metaUpdates.doc_type = doc_type;
+        if (doc_number !== undefined) metaUpdates.doc_number = doc_number;
+        if (doc_photo_url !== undefined) metaUpdates.doc_photo_url = doc_photo_url;
         if (pin !== undefined) metaUpdates.pin = pin;
         if (earnings_rate_per_delivery !== undefined) metaUpdates.earnings_rate_per_delivery = Number(earnings_rate_per_delivery);
 

@@ -319,6 +319,7 @@ export default function DriverPortal() {
     const [regPhone, setRegPhone] = useState('');
     const [regProvince, setRegProvince] = useState(DEFAULT_PROVINCE);
     const [regBairro, setRegBairro] = useState('Macuti (Beira)');
+    const [regBairroManual, setRegBairroManual] = useState(false);
     const [regDocType, setRegDocType] = useState('BI');
     const [regDocNumber, setRegDocNumber] = useState('');
     const [regPin, setRegPin] = useState('');
@@ -528,6 +529,11 @@ export default function DriverPortal() {
         }
         if (!regPin.trim() || regPin.trim().length !== 4) {
             showToast('Defina um PIN de segurança com 4 dígitos.', 'error');
+            setRegStep(1);
+            return;
+        }
+        if (!regBairro.trim()) {
+            showToast('Por favor introduza o nome do seu bairro.', 'error');
             setRegStep(1);
             return;
         }
@@ -2747,7 +2753,7 @@ export default function DriverPortal() {
                             <div style={{ flex: 1, height: '2px', background: regStep === 2 ? '#0f172a' : '#e2e8f0' }} />
                             <div
                                 onClick={() => {
-                                    if (photoFile && regName.trim() && regPhone.trim() && regPin.trim().length === 4) {
+                                    if (photoFile && regName.trim() && regPhone.trim() && regPin.trim().length === 4 && regBairro.trim()) {
                                         setRegStep(2);
                                     } else if (!photoFile) {
                                         showToast('Carregue a sua fotografia de perfil antes de avançar.', 'error');
@@ -2755,13 +2761,15 @@ export default function DriverPortal() {
                                         showToast('Preencha o nome e contacto antes de avançar.', 'error');
                                     } else if (!regPin.trim() || regPin.trim().length !== 4) {
                                         showToast('Defina o PIN de 4 dígitos antes de avançar.', 'error');
+                                    } else if (!regBairro.trim()) {
+                                        showToast('Introduza o nome do bairro antes de avançar.', 'error');
                                     }
                                 }}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '0.5rem',
-                                    cursor: (photoFile && regName.trim() && regPhone.trim() && regPin.trim().length === 4) ? 'pointer' : 'default',
+                                    cursor: (photoFile && regName.trim() && regPhone.trim() && regPin.trim().length === 4 && regBairro.trim()) ? 'pointer' : 'default',
                                     opacity: regStep === 2 ? 1 : 0.6
                                 }}
                             >
@@ -2937,18 +2945,25 @@ export default function DriverPortal() {
                                         </div>
 
                                         <div>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
-                                                <Icons.MapPin />
-                                                <span>Localização Base (Moçambique) *</span>
+                                            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                    <Icons.MapPin />
+                                                    <span>Localização (Província & Bairro) *</span>
+                                                </div>
+                                                <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 700 }}>
+                                                    {regBairroManual ? 'Digitação Manual' : 'Lista Rápida'}
+                                                </span>
                                             </label>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.5rem' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', marginBottom: regBairroManual ? '0.5rem' : 0 }}>
                                                 <select
                                                     value={regProvince}
                                                     onChange={(e) => {
                                                         const p = e.target.value;
                                                         setRegProvince(p);
-                                                        const bList = getBairrosByProvince(p);
-                                                        if (bList.length > 0) setRegBairro(bList[0]);
+                                                        if (!regBairroManual) {
+                                                            const bList = getBairrosByProvince(p);
+                                                            if (bList.length > 0) setRegBairro(bList[0]);
+                                                        }
                                                     }}
                                                     style={{
                                                         width: '100%',
@@ -2967,28 +2982,84 @@ export default function DriverPortal() {
                                                         <option key={prov} value={prov}>{prov}</option>
                                                     ))}
                                                 </select>
-                                                <select
-                                                    value={regBairro}
-                                                    onChange={(e) => setRegBairro(e.target.value)}
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '0.8rem 0.6rem',
-                                                        borderRadius: '12px',
-                                                        border: '1.5px solid #e2e8f0',
-                                                        fontSize: '0.86rem',
-                                                        color: '#0f172a',
-                                                        outline: 'none',
-                                                        background: '#fdfdfd',
-                                                        boxSizing: 'border-box',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    {getBairrosByProvince(regProvince).map(b => (
-                                                        <option key={b} value={b}>{b}</option>
-                                                    ))}
-                                                    <option value="Outro Bairro">Outro Bairro</option>
-                                                </select>
+
+                                                {!regBairroManual ? (
+                                                    <select
+                                                        value={regBairro}
+                                                        onChange={(e) => {
+                                                            if (e.target.value === '__custom__') {
+                                                                setRegBairroManual(true);
+                                                                setRegBairro('');
+                                                            } else {
+                                                                setRegBairro(e.target.value);
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '0.8rem 0.6rem',
+                                                            borderRadius: '12px',
+                                                            border: '1.5px solid #e2e8f0',
+                                                            fontSize: '0.86rem',
+                                                            color: '#0f172a',
+                                                            outline: 'none',
+                                                            background: '#fdfdfd',
+                                                            boxSizing: 'border-box',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        {getBairrosByProvince(regProvince).map(b => (
+                                                            <option key={b} value={b}>{b}</option>
+                                                        ))}
+                                                        <option value="__custom__">✏️ Digitar Outro Bairro...</option>
+                                                    </select>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setRegBairroManual(false);
+                                                            const bList = getBairrosByProvince(regProvince);
+                                                            if (bList.length > 0) setRegBairro(bList[0]);
+                                                        }}
+                                                        style={{
+                                                            background: '#f1f5f9',
+                                                            border: '1px solid #cbd5e1',
+                                                            borderRadius: '12px',
+                                                            color: '#475569',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 700,
+                                                            cursor: 'pointer',
+                                                            padding: '0.8rem 0.6rem'
+                                                        }}
+                                                    >
+                                                        ⬅️ Escolher da lista
+                                                    </button>
+                                                )}
                                             </div>
+
+                                            {/* Manual input for Bairro when typing manually */}
+                                            {regBairroManual && (
+                                                <div style={{ marginTop: '0.4rem' }}>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        value={regBairro}
+                                                        onChange={(e) => setRegBairro(e.target.value)}
+                                                        placeholder="Digite o nome do seu bairro (Ex: Chamanculo, Matola Rio...)"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '0.8rem 1rem',
+                                                            borderRadius: '12px',
+                                                            border: '1.5px solid #f59e0b',
+                                                            fontSize: '0.92rem',
+                                                            color: '#0f172a',
+                                                            outline: 'none',
+                                                            background: '#fff',
+                                                            boxSizing: 'border-box'
+                                                        }}
+                                                        autoFocus
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -3043,6 +3114,10 @@ export default function DriverPortal() {
                                             }
                                             if (!regPin.trim() || regPin.length < 4) {
                                                 showToast('Defina um PIN de 4 dígitos para segurança da sua conta.', 'error');
+                                                return;
+                                            }
+                                            if (!regBairro.trim()) {
+                                                showToast('Por favor introduza o nome do seu bairro.', 'error');
                                                 return;
                                             }
                                             setRegStep(2);

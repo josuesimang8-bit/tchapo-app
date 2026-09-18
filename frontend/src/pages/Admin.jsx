@@ -56,11 +56,13 @@ export default function Admin() {
     const [warningSeverity, setWarningSeverity]     = useState('Leve');
     const [warningNotes, setWarningNotes]           = useState('');
     const [docPreviewUrl, setDocPreviewUrl]         = useState(null);
+    const [detailsModalDriver, setDetailsModalDriver] = useState(null);
     const [newDriverName, setNewDriverName]         = useState('');
     const [newDriverPhone, setNewDriverPhone]       = useState('');
     const [newDriverVehicleType, setNewDriverVehicleType] = useState('Mota');
     const [newDriverProvince, setNewDriverProvince] = useState(DEFAULT_PROVINCE);
     const [newDriverBairro, setNewDriverBairro]     = useState('Macuti (Beira)');
+    const [newDriverBairroManual, setNewDriverBairroManual] = useState(false);
     const [newDriverDocType, setNewDriverDocType]   = useState('BI');
     const [newDriverDocNumber, setNewDriverDocNumber] = useState('');
     const [newDriverPhoto, setNewDriverPhoto]       = useState(null);
@@ -789,13 +791,20 @@ export default function Admin() {
                 body: JSON.stringify({
                     name: newDriverName,
                     phone: newDriverPhone,
-                    photo_url: photoUrl
+                    photo_url: photoUrl,
+                    vehicle_type: newDriverVehicleType || 'Mota',
+                    province: newDriverProvince || 'Sofala',
+                    bairro: `${newDriverProvince} - ${newDriverBairro}`.trim(),
+                    doc_type: newDriverDocType || 'BI',
+                    doc_number: newDriverDocNumber || ''
                 })
             });
             if (res.ok) {
                 setNewDriverName('');
                 setNewDriverPhone('');
                 setNewDriverPhoto(null);
+                setNewDriverDocNumber('');
+                setDriverSubSection('fleet');
                 
                 // Reset file input element
                 const fileInput = document.getElementById('driver-photo-input');
@@ -2000,17 +2009,22 @@ export default function Admin() {
                                             />
                                         </div>
                                         <div>
-                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                                Província e Bairro (Moçambique) *
+                                            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                                <span>Província e Bairro (Moçambique) *</span>
+                                                <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 700 }}>
+                                                    {newDriverBairroManual ? 'Digitação Manual' : 'Lista Rápida'}
+                                                </span>
                                             </label>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: newDriverBairroManual ? '0.5rem' : 0 }}>
                                                 <select
                                                     value={newDriverProvince}
                                                     onChange={(e) => {
                                                         const p = e.target.value;
                                                         setNewDriverProvince(p);
-                                                        const bl = getBairrosByProvince(p);
-                                                        if (bl.length > 0) setNewDriverBairro(bl[0]);
+                                                        if (!newDriverBairroManual) {
+                                                            const bl = getBairrosByProvince(p);
+                                                            if (bl.length > 0) setNewDriverBairro(bl[0]);
+                                                        }
                                                     }}
                                                     style={{ width: '100%', padding: '0.8rem 0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', fontSize: '0.86rem' }}
                                                 >
@@ -2018,17 +2032,61 @@ export default function Admin() {
                                                         <option key={pr} value={pr}>{pr}</option>
                                                     ))}
                                                 </select>
-                                                <select
+
+                                                {!newDriverBairroManual ? (
+                                                    <select
+                                                        value={newDriverBairro}
+                                                        onChange={(e) => {
+                                                            if (e.target.value === '__custom__') {
+                                                                setNewDriverBairroManual(true);
+                                                                setNewDriverBairro('');
+                                                            } else {
+                                                                setNewDriverBairro(e.target.value);
+                                                            }
+                                                        }}
+                                                        style={{ width: '100%', padding: '0.8rem 0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', fontSize: '0.86rem' }}
+                                                    >
+                                                        {getBairrosByProvince(newDriverProvince).map(b => (
+                                                            <option key={b} value={b}>{b}</option>
+                                                        ))}
+                                                        <option value="__custom__">✏️ Digitar Outro Bairro...</option>
+                                                    </select>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setNewDriverBairroManual(false);
+                                                            const bl = getBairrosByProvince(newDriverProvince);
+                                                            if (bl.length > 0) setNewDriverBairro(bl[0]);
+                                                        }}
+                                                        style={{
+                                                            background: '#f1f5f9',
+                                                            border: '1.5px solid #cbd5e1',
+                                                            borderRadius: '10px',
+                                                            color: '#475569',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 700,
+                                                            cursor: 'pointer',
+                                                            padding: '0.8rem 0.5rem'
+                                                        }}
+                                                    >
+                                                        ⬅️ Lista
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Manual input for Bairro in admin form */}
+                                            {newDriverBairroManual && (
+                                                <input
+                                                    type="text"
+                                                    required
                                                     value={newDriverBairro}
                                                     onChange={(e) => setNewDriverBairro(e.target.value)}
-                                                    style={{ width: '100%', padding: '0.8rem 0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', fontSize: '0.86rem' }}
-                                                >
-                                                    {getBairrosByProvince(newDriverProvince).map(b => (
-                                                        <option key={b} value={b}>{b}</option>
-                                                    ))}
-                                                    <option value="Outro Bairro">Outro Bairro</option>
-                                                </select>
-                                            </div>
+                                                    placeholder="Digite o nome do bairro..."
+                                                    style={{ width: '100%', padding: '0.75rem 0.9rem', border: '1.5px solid #f59e0b', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', fontSize: '0.88rem' }}
+                                                    autoFocus
+                                                />
+                                            )}
                                         </div>
                                     </div>
 
@@ -2214,6 +2272,30 @@ export default function Admin() {
                                                                 </div>
                                                             )}
                                                         </div>
+                                                    </div>
+
+                                                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDetailsModalDriver(d)}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.6rem',
+                                                                background: '#eff6ff',
+                                                                color: '#1d4ed8',
+                                                                border: '1.5px solid #bfdbfe',
+                                                                borderRadius: '8px',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.84rem',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                gap: '0.4rem'
+                                                            }}
+                                                        >
+                                                            <span>📋 Ver Todos os Dados do Cadastro</span>
+                                                        </button>
                                                     </div>
 
                                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -2487,6 +2569,29 @@ export default function Admin() {
 
                                                     {/* Card Actions Footer */}
                                                     <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDetailsModalDriver(d)}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.45rem',
+                                                                background: '#eff6ff',
+                                                                color: '#1d4ed8',
+                                                                border: '1px solid #bfdbfe',
+                                                                borderRadius: '8px',
+                                                                fontSize: '0.78rem',
+                                                                fontWeight: 800,
+                                                                cursor: 'pointer',
+                                                                marginBottom: '0.35rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                gap: '0.35rem'
+                                                            }}
+                                                        >
+                                                            <span>📋 Ver Cadastro Completo</span>
+                                                        </button>
+
                                                         {status === 'Pendente' && (
                                                             <button
                                                                 onClick={() => handleApproveDriver(d.id, 'Aprovado')}
@@ -4100,6 +4205,341 @@ export default function Admin() {
                         />
                         <div style={{ color: '#fff', marginTop: '1rem', fontSize: '0.9rem', fontWeight: 600 }}>
                             Documento de Identificação do Entregador
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* FULL DRIVER REGISTRATION DETAILS MODAL */}
+            {detailsModalDriver && (
+                <div
+                    onClick={() => setDetailsModalDriver(null)}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.85)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 99998, backdropFilter: 'blur(6px)', padding: '1.25rem'
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: '#fff',
+                            borderRadius: '20px',
+                            maxWidth: '680px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+                            overflow: 'hidden',
+                            border: '1px solid #e2e8f0'
+                        }}
+                    >
+                        {/* Modal Header */}
+                        <div style={{
+                            padding: '1.25rem 1.75rem',
+                            borderBottom: '1px solid #e2e8f0',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: '#f8fafc'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                <img
+                                    src={detailsModalDriver.photo_url || '/assets/default_avatar.png'}
+                                    alt={detailsModalDriver.name}
+                                    style={{
+                                        width: '48px',
+                                        height: '48px',
+                                        borderRadius: '50%',
+                                        objectFit: 'cover',
+                                        border: '2px solid #e2e8f0'
+                                    }}
+                                />
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#0f172a' }}>
+                                        {detailsModalDriver.name}
+                                    </h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                                        <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>
+                                            ID: #{detailsModalDriver.id}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '0.72rem',
+                                            fontWeight: 800,
+                                            padding: '0.15rem 0.6rem',
+                                            borderRadius: '999px',
+                                            textTransform: 'uppercase',
+                                            background: detailsModalDriver.approval_status === 'Aprovado' ? '#dcfce7' : detailsModalDriver.approval_status === 'Pendente' ? '#fef3c7' : '#fee2e2',
+                                            color: detailsModalDriver.approval_status === 'Aprovado' ? '#15803d' : detailsModalDriver.approval_status === 'Pendente' ? '#b45309' : '#991b1b'
+                                        }}>
+                                            {detailsModalDriver.approval_status || 'Pendente'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setDetailsModalDriver(null)}
+                                style={{
+                                    background: '#f1f5f9',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '34px',
+                                    height: '34px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    fontSize: '1rem',
+                                    color: '#475569',
+                                    fontWeight: 700
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Modal Scrollable Content */}
+                        <div style={{ padding: '1.5rem 1.75rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+                            {/* Section: Photos (Profile & Document) */}
+                            <div>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.5px' }}>
+                                    📷 Fotografias do Cadastro
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                                    {/* Profile Photo */}
+                                    <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '0.6rem' }}>
+                                            Fotografia de Perfil (Rosto)
+                                        </div>
+                                        <img
+                                            src={detailsModalDriver.photo_url || '/assets/default_avatar.png'}
+                                            alt="Perfil"
+                                            style={{
+                                                width: '120px',
+                                                height: '120px',
+                                                borderRadius: '50%',
+                                                objectFit: 'cover',
+                                                margin: '0 auto',
+                                                border: '3px solid #fff',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                cursor: 'pointer'
+                                            }}
+                                            onClick={() => setDocPreviewUrl(detailsModalDriver.photo_url || '/assets/default_avatar.png')}
+                                        />
+                                        <div style={{ marginTop: '0.6rem' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setDocPreviewUrl(detailsModalDriver.photo_url || '/assets/default_avatar.png')}
+                                                style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                            >
+                                                🔍 Ver Foto de Rosto
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Document Photo */}
+                                    <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '0.6rem' }}>
+                                            Fotografia do Documento ({detailsModalDriver.doc_type || 'BI'})
+                                        </div>
+                                        {detailsModalDriver.doc_photo_url ? (
+                                            <>
+                                                <img
+                                                    src={detailsModalDriver.doc_photo_url}
+                                                    alt="Documento"
+                                                    style={{
+                                                        width: '100%',
+                                                        maxHeight: '120px',
+                                                        objectFit: 'contain',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid #cbd5e1',
+                                                        background: '#fff',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    onClick={() => setDocPreviewUrl(detailsModalDriver.doc_photo_url)}
+                                                />
+                                                <div style={{ marginTop: '0.6rem' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setDocPreviewUrl(detailsModalDriver.doc_photo_url)}
+                                                        style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                    >
+                                                        🔍 Ampliar Documento
+                                                    </button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div style={{ padding: '2rem 1rem', color: '#94a3b8', fontSize: '0.82rem', fontStyle: 'italic' }}>
+                                                Nenhuma foto de documento anexada.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section: Dados Pessoais & Contacto */}
+                            <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.85rem', letterSpacing: '0.5px' }}>
+                                    👤 Dados Pessoais & Contacto
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem', fontSize: '0.88rem' }}>
+                                    <div>
+                                        <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>Nome Completo:</div>
+                                        <strong style={{ color: '#0f172a' }}>{detailsModalDriver.name}</strong>
+                                    </div>
+                                    <div>
+                                        <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>Contacto Telefónico / WhatsApp:</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '2px' }}>
+                                            <strong style={{ color: '#0f172a' }}>{detailsModalDriver.phone}</strong>
+                                            <a
+                                                href={`https://wa.me/258${String(detailsModalDriver.phone).replace(/\D/g, '').replace(/^258/, '')}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                style={{ color: '#059669', fontWeight: 800, fontSize: '0.75rem', textDecoration: 'none', background: '#dcfce7', padding: '0.15rem 0.45rem', borderRadius: '4px' }}
+                                            >
+                                                Abrir WhatsApp
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>Localização / Bairro de Atuação:</div>
+                                        <strong style={{ color: '#1e40af' }}>📍 {detailsModalDriver.bairro || 'Não informado'}</strong>
+                                    </div>
+                                    <div>
+                                        <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>PIN de Acesso (Segurança):</div>
+                                        <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#b45309', background: '#fef3c7', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+                                            {detailsModalDriver.pin || '1234'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section: Identificação & Documentos */}
+                            <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.85rem', letterSpacing: '0.5px' }}>
+                                    📑 Documentação Oficial
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem', fontSize: '0.88rem' }}>
+                                    <div>
+                                        <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>Tipo de Documento:</div>
+                                        <strong style={{ color: '#0f172a' }}>{detailsModalDriver.doc_type || 'BI'}</strong>
+                                    </div>
+                                    <div>
+                                        <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>Número do Documento:</div>
+                                        <strong style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '0.95rem' }}>
+                                            {detailsModalDriver.doc_number || 'Sem número registado'}
+                                        </strong>
+                                    </div>
+                                    <div>
+                                        <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>Data do Cadastro:</div>
+                                        <strong style={{ color: '#0f172a' }}>
+                                            {detailsModalDriver.created_at ? new Date(detailsModalDriver.created_at).toLocaleString('pt-MZ') : 'Registo recente'}
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section: Estatísticas & Advertências */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
+                                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.85rem', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Total Entregas</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a' }}>{detailsModalDriver.total_delivered || 0}</div>
+                                </div>
+                                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.85rem', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Total Ganho</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#059669' }}>{Number(detailsModalDriver.total_earnings || 0).toLocaleString('pt-MZ')} MT</div>
+                                </div>
+                                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.85rem', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Advertências</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 900, color: (detailsModalDriver.warnings && detailsModalDriver.warnings.length > 0) ? '#dc2626' : '#64748b' }}>
+                                        {detailsModalDriver.warnings ? detailsModalDriver.warnings.length : 0}
+                                    </div>
+                                </div>
+                                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.85rem', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Status Online</div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: detailsModalDriver.is_online ? '#10b981' : '#94a3b8', marginTop: '0.2rem' }}>
+                                        {detailsModalDriver.is_online ? '● Online' : '○ Offline'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer Actions */}
+                        <div style={{
+                            padding: '1.25rem 1.75rem',
+                            borderTop: '1px solid #e2e8f0',
+                            background: '#f8fafc',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            flexWrap: 'wrap'
+                        }}>
+                            <button
+                                type="button"
+                                onClick={() => setDetailsModalDriver(null)}
+                                style={{
+                                    padding: '0.75rem 1.25rem',
+                                    borderRadius: '10px',
+                                    border: '1px solid #cbd5e1',
+                                    background: '#fff',
+                                    color: '#475569',
+                                    fontWeight: 700,
+                                    fontSize: '0.88rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Fechar
+                            </button>
+
+                            <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                {detailsModalDriver.approval_status !== 'Aprovado' && (
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            await handleApproveDriver(detailsModalDriver.id, 'Aprovado');
+                                            setDetailsModalDriver(prev => prev ? { ...prev, approval_status: 'Aprovado' } : null);
+                                        }}
+                                        style={{
+                                            padding: '0.75rem 1.4rem',
+                                            borderRadius: '10px',
+                                            border: 'none',
+                                            background: '#16a34a',
+                                            color: '#fff',
+                                            fontWeight: 800,
+                                            fontSize: '0.88rem',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        ✓ Aprovar Entregador
+                                    </button>
+                                )}
+
+                                {detailsModalDriver.approval_status !== 'Recusado' && (
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            await handleApproveDriver(detailsModalDriver.id, 'Recusado');
+                                            setDetailsModalDriver(prev => prev ? { ...prev, approval_status: 'Recusado' } : null);
+                                        }}
+                                        style={{
+                                            padding: '0.75rem 1.2rem',
+                                            borderRadius: '10px',
+                                            border: 'none',
+                                            background: '#fee2e2',
+                                            color: '#991b1b',
+                                            fontWeight: 700,
+                                            fontSize: '0.88rem',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        ✕ Recusar
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

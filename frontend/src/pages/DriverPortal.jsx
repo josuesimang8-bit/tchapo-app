@@ -1761,16 +1761,16 @@ export default function DriverPortal() {
 
                                                                     {order.items && order.items.length > 0 && (
                                                                         <div style={{ marginBottom: '1.25rem' }}>
-                                                                            <div style={{ fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                                            <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                                                                 <Icons.Package />
                                                                                 <span>Itens do Pedido ({order.items.reduce((s, it) => s + (it.quantity || 1), 0)})</span>
                                                                             </div>
-                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                                                                                 {order.items.map((it, idx) => {
                                                                                     const imgUrl = resolveImageUrl(it.image);
                                                                                     return (
-                                                                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                                                                            <div style={{ width: '46px', height: '46px', minWidth: '46px', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                                                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.95rem', background: '#ffffff', padding: '0.75rem 0.95rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+                                                                                            <div style={{ width: '84px', height: '84px', minWidth: '84px', borderRadius: '14px', overflow: 'hidden', background: '#f8fafc', border: '1.5px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 }}>
                                                                                                 {imgUrl ? (
                                                                                                     <img
                                                                                                         src={imgUrl}
@@ -1789,14 +1789,18 @@ export default function DriverPortal() {
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                                                                                <div style={{ fontWeight: 700, fontSize: '0.86rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                                <div style={{ fontWeight: 800, fontSize: '0.96rem', color: '#0f172a', lineHeight: 1.35, marginBottom: '0.45rem' }}>
                                                                                                     {it.product_name}
                                                                                                 </div>
-                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
-                                                                                                    <span style={{ background: '#e2e8f0', color: '#1e293b', padding: '1px 6px', borderRadius: '6px', fontWeight: 800 }}>
-                                                                                                        {it.quantity}x
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                                                                                    <span style={{ background: '#0f172a', color: '#ffffff', padding: '3px 9px', borderRadius: '8px', fontWeight: 800, fontSize: '0.8rem' }}>
+                                                                                                        {it.quantity}x unidades
                                                                                                     </span>
-                                                                                                    {it.price ? <span style={{ fontWeight: 600 }}>{formatMZCurrency(it.price)}</span> : null}
+                                                                                                    {it.price ? (
+                                                                                                        <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#059669' }}>
+                                                                                                            {formatMZCurrency(it.price)}
+                                                                                                        </span>
+                                                                                                    ) : null}
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
@@ -1912,16 +1916,16 @@ export default function DriverPortal() {
 
                                                         {order.items && order.items.length > 0 && (
                                                             <div style={{ marginBottom: '1.25rem' }}>
-                                                                <div style={{ fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                                <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                                                     <Icons.Package />
                                                                     <span>Itens do Pedido ({order.items.reduce((s, it) => s + (it.quantity || 1), 0)})</span>
                                                                 </div>
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                                                                     {order.items.map((it, idx) => {
                                                                         const imgUrl = resolveImageUrl(it.image);
                                                                         return (
-                                                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                                                                <div style={{ width: '46px', height: '46px', minWidth: '46px', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.95rem', background: '#ffffff', padding: '0.75rem 0.95rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+                                                                                <div style={{ width: '84px', height: '84px', minWidth: '84px', borderRadius: '14px', overflow: 'hidden', background: '#f8fafc', border: '1.5px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 }}>
                                                                                     {imgUrl ? (
                                                                                         <img
                                                                                             src={imgUrl}
@@ -1940,14 +1944,18 @@ export default function DriverPortal() {
                                                                                     </div>
                                                                                 </div>
                                                                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                                                                    <div style={{ fontWeight: 700, fontSize: '0.86rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                    <div style={{ fontWeight: 800, fontSize: '0.96rem', color: '#0f172a', lineHeight: 1.35, marginBottom: '0.45rem' }}>
                                                                                         {it.product_name}
                                                                                     </div>
-                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
-                                                                                        <span style={{ background: '#e2e8f0', color: '#1e293b', padding: '1px 6px', borderRadius: '6px', fontWeight: 800 }}>
-                                                                                            {it.quantity}x
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                                                                        <span style={{ background: '#0f172a', color: '#ffffff', padding: '3px 9px', borderRadius: '8px', fontWeight: 800, fontSize: '0.8rem' }}>
+                                                                                            {it.quantity}x unidades
                                                                                         </span>
-                                                                                        {it.price ? <span style={{ fontWeight: 600 }}>{formatMZCurrency(it.price)}</span> : null}
+                                                                                        {it.price ? (
+                                                                                            <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#059669' }}>
+                                                                                                {formatMZCurrency(it.price)}
+                                                                                            </span>
+                                                                                        ) : null}
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -2373,20 +2381,25 @@ export default function DriverPortal() {
                                         <Icons.Package />
                                         <span>Itens da Entrega ({confirmingOrder.items.reduce((s, it) => s + (it.quantity || 1), 0)}):</span>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '130px', overflowY: 'auto' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '160px', overflowY: 'auto' }}>
                                         {confirmingOrder.items.map((it, idx) => {
                                             const imgUrl = resolveImageUrl(it.image);
                                             return (
-                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#fff', padding: '0.35rem 0.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                                    <div style={{ width: '32px', height: '32px', minWidth: '32px', borderRadius: '6px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', padding: '0.5rem 0.65rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                                    <div style={{ width: '52px', height: '52px', minWidth: '52px', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                                         {imgUrl ? (
                                                             <img src={imgUrl} alt={it.product_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                                         ) : (
                                                             <Icons.Package />
                                                         )}
                                                     </div>
-                                                    <div style={{ flex: 1, minWidth: 0, fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {it.quantity}x {it.product_name}
+                                                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                                                        <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {it.product_name}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>
+                                                            Qtd: {it.quantity}x
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );

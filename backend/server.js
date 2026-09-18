@@ -491,6 +491,69 @@ const supabaseUrl = process.env.SUPABASE_URL || 'https://rkempjcqoefhdthvwewm.su
 const supabaseKey = process.env.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+async function uploadToSupabaseStorage(bucketName, file) {
+    try {
+        if (!file || !file.path) return null;
+        const fileExt = path.extname(file.originalname);
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${fileExt}`;
+        const fileBuffer = fs.readFileSync(file.path);
+
+        const { data, error } = await supabase.storage
+            .from(bucketName)
+            .upload(fileName, fileBuffer, {
+                contentType: file.mimetype,
+                upsert: true
+            });
+
+        if (error) {
+            console.error(`Supabase storage upload error for bucket ${bucketName}:`, error.message);
+            return null;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(fileName);
+
+        return publicUrlData?.publicUrl || null;
+    } catch (err) {
+        console.error(`Error uploading to Supabase storage (${bucketName}):`, err.message);
+        return null;
+    }
+}
+
+async function uploadToCatbox(file) {
+    try {
+        if (!file || !file.path || !fs.existsSync(file.path)) return null;
+        const formData = new FormData();
+        formData.append('reqtype', 'fileupload');
+        
+        const fileBuffer = fs.readFileSync(file.path);
+        const blob = new Blob([fileBuffer], { type: file.mimetype });
+        formData.append('fileToUpload', blob, file.filename || file.originalname || 'upload.jpg');
+
+        const response = await fetch('https://catbox.moe/user/api.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            console.error(`Catbox upload HTTP error for ${file.filename}:`, response.statusText);
+            return null;
+        }
+
+        const text = await response.text();
+        const url = text.trim();
+        
+        if (url && url.startsWith('http')) {
+            return url;
+        }
+        return null;
+    } catch (err) {
+        console.error(`Failed to upload to Catbox ${file?.filename}:`, err.message);
+        return null;
+    }
+}
+
 function formatOrderResponse(order) {
     if (!order) return order;
     let itemsArray = [];

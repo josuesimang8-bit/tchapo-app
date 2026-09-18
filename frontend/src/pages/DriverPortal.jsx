@@ -214,6 +214,20 @@ const Icons = {
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
+    ),
+    Eye: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+    ),
+    EyeOff: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+            <line x1="2" y1="2" x2="22" y2="22"/>
+        </svg>
     )
 };
 
@@ -297,6 +311,7 @@ export default function DriverPortal() {
     // Login Form State
     const [loginPhone, setLoginPhone] = useState('');
     const [loginPin, setLoginPin] = useState('');
+    const [showLoginPin, setShowLoginPin] = useState(false);
     const [loginLoading, setLoginLoading] = useState(false);
 
     // Register Form State
@@ -1108,239 +1123,291 @@ export default function DriverPortal() {
 
                         {/* ========================================================================= */}
                         {/* TELA BRANCA DE PAGAMENTO DE TAXA APÓS ENTREGA (SOLICITADA PELO UTILIZADOR) */}
+                        {/* Cobertura total do site (Fixed Full-Screen Blocking Overlay) */}
                         {/* ========================================================================= */}
                         {isDebtBlocked && (
                             <div style={{
+                                position: 'fixed',
+                                inset: 0,
+                                zIndex: 999999,
                                 background: '#ffffff',
-                                borderRadius: '26px',
-                                padding: '3rem 2.5rem',
-                                color: '#0f172a',
-                                marginBottom: '2.5rem',
-                                border: '2px solid #e2e8f0',
-                                boxShadow: '0 25px 60px rgba(0,0,0,0.12)',
-                                textAlign: 'center',
-                                maxWidth: '720px',
-                                marginInline: 'auto'
+                                overflowY: 'auto',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'flex-start',
+                                padding: '1.5rem 1rem 3rem',
+                                boxSizing: 'border-box'
                             }}>
-                                {/* Badge de Estado */}
                                 <div style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.45rem',
-                                    background: debtSecondsLeft === 0 ? '#fee2e2' : '#fef3c7',
-                                    color: debtSecondsLeft === 0 ? '#b91c1c' : '#b45309',
-                                    padding: '0.4rem 1rem',
-                                    borderRadius: '999px',
-                                    fontSize: '0.82rem',
-                                    fontWeight: 800,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.5px',
-                                    marginBottom: '1.25rem'
+                                    width: '100%',
+                                    maxWidth: '620px',
+                                    margin: 'auto 0',
+                                    textAlign: 'center',
+                                    padding: '1rem 0'
                                 }}>
-                                    <Icons.AlertTriangle />
-                                    <span>{debtSecondsLeft === 0 ? 'Prazo de 2 Horas Esgotado' : 'Pagamento de Taxa Obrigatório'}</span>
-                                </div>
-
-                                <h2 style={{ fontSize: '2rem', fontWeight: 900, margin: '0 0 0.5rem', color: '#0f172a' }}>
-                                    Produto Entregue com Sucesso!
-                                </h2>
-                                <p style={{ fontSize: '0.98rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 2rem' }}>
-                                    A plataforma está temporariamente indisponível para novos pedidos até que efetue o pagamento da taxa para a empresa.
-                                </p>
-
-                                {/* BOX BRANCA DESTACADA COM OS DADOS EXATOS SOLICITADOS */}
-                                <div style={{
-                                    background: '#f8fafc',
-                                    borderRadius: '20px',
-                                    padding: '2rem',
-                                    border: '2px solid #f1f5f9',
-                                    marginBottom: '2rem',
-                                    textAlign: 'left'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1.5px solid #e2e8f0' }}>
-                                        <span style={{ fontSize: '1rem', color: '#475569', fontWeight: 700 }}>Valor a pagar:</span>
-                                        <strong style={{ fontSize: '1.75rem', fontWeight: 900, color: '#dc2626' }}>
-                                            {formatMZCurrency(pendingDebt.amount)}
-                                        </strong>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                        <span style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Para o e-Mola:</span>
-                                        <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', letterSpacing: '0.5px' }}>
-                                            874110586
-                                        </strong>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1.5px solid #e2e8f0' }}>
-                                        <span style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Titular:</span>
-                                        <strong style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                                            Massiquine Simango
-                                        </strong>
-                                    </div>
-
-                                    {/* No conteúdo adicione o seu ID */}
+                                    {/* Top Brand Pill & Logout Link */}
                                     <div style={{
-                                        background: '#fef3c7',
-                                        border: '1.5px solid #fde68a',
-                                        borderRadius: '14px',
-                                        padding: '1rem 1.25rem',
                                         display: 'flex',
-                                        justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        flexWrap: 'wrap',
-                                        gap: '0.5rem'
+                                        justifyContent: 'space-between',
+                                        marginBottom: '1.5rem',
+                                        paddingBottom: '1rem',
+                                        borderBottom: '1px solid #f1f5f9'
                                     }}>
-                                        <div>
-                                            <div style={{ fontSize: '0.8rem', color: '#b45309', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                No conteúdo da transferência adicione:
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <img src="/assets/logo_original.png" alt="Logo" style={{ width: '22px', height: '22px', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
                                             </div>
-                                            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#92400e', marginTop: '2px' }}>
-                                                ID: {authDriver.id}
-                                            </div>
+                                            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>Tchapo Tchapo Entregador</span>
                                         </div>
-
                                         <button
                                             type="button"
-                                            onClick={() => copyToClipboard(String(authDriver.id))}
+                                            onClick={handleLogout}
                                             style={{
-                                                background: '#fff',
-                                                border: '1px solid #f59e0b',
-                                                color: '#b45309',
-                                                padding: '0.45rem 0.9rem',
+                                                background: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                color: '#64748b',
+                                                padding: '0.4rem 0.85rem',
                                                 borderRadius: '8px',
-                                                fontSize: '0.82rem',
-                                                fontWeight: 800,
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700,
                                                 cursor: 'pointer',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '0.4rem'
+                                                gap: '0.35rem'
                                             }}
                                         >
-                                            <Icons.Copy />
-                                            <span>{copiedId ? 'Copiado!' : 'Copiar ID'}</span>
+                                            <Icons.LogOut />
+                                            <span>Sair da Conta</span>
                                         </button>
                                     </div>
-                                </div>
 
-                                {/* CRONÓMETRO DE 2 HORAS POR BAIXO */}
-                                <div style={{
-                                    background: '#f1f5f9',
-                                    borderRadius: '18px',
-                                    padding: '1.25rem',
-                                    marginBottom: '2rem',
-                                    textAlign: 'center',
-                                    border: debtSecondsLeft === 0 ? '2px solid #ef4444' : '1px solid #cbd5e1'
-                                }}>
-                                    <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.35rem' }}>
-                                        Tempo Restante para Pagamento (Prazo: 2 Horas)
-                                    </div>
+                                    {/* Badge de Estado */}
                                     <div style={{
-                                        fontSize: '2.5rem',
-                                        fontWeight: 900,
-                                        fontFamily: 'monospace',
-                                        color: debtSecondsLeft === 0 ? '#ef4444' : debtSecondsLeft < 1800 ? '#dc2626' : '#059669',
-                                        letterSpacing: '2px'
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.45rem',
+                                        background: debtSecondsLeft === 0 ? '#fee2e2' : '#fef3c7',
+                                        color: debtSecondsLeft === 0 ? '#b91c1c' : '#b45309',
+                                        padding: '0.45rem 1.1rem',
+                                        borderRadius: '999px',
+                                        fontSize: '0.82rem',
+                                        fontWeight: 800,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px',
+                                        marginBottom: '1rem'
                                     }}>
-                                        {formatTimer(debtSecondsLeft)}
+                                        <Icons.AlertTriangle />
+                                        <span>{debtSecondsLeft === 0 ? 'Prazo de 2 Horas Esgotado' : 'Taxa da Plataforma Obrigatória'}</span>
                                     </div>
-                                    <div style={{ fontSize: '0.82rem', color: debtSecondsLeft === 0 ? '#b91c1c' : '#64748b', marginTop: '0.25rem', fontWeight: 600 }}>
-                                        {debtSecondsLeft === 0
-                                            ? '⚠️ Prazo esgotado! Advertência registada na conta. Regularize imediatamente.'
-                                            : 'A dívida deve ser paga em até 2 horas, caso contrário poderá receber uma advertência.'}
-                                    </div>
-                                </div>
 
-                                {/* FORMULÁRIO DE CONFIRMAÇÃO DO E-MOLA */}
-                                {pendingDebt.status === 'Aguardando Confirmação' ? (
+                                    <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.1rem)', fontWeight: 900, margin: '0 0 0.5rem', color: '#0f172a', letterSpacing: '-0.5px' }}>
+                                        Produto Entregue com Sucesso!
+                                    </h2>
+                                    <p style={{ fontSize: 'clamp(0.88rem, 2.5vw, 0.98rem)', color: '#64748b', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
+                                        A plataforma está temporariamente indisponível para novos pedidos até que efetue o pagamento da taxa para a empresa.
+                                    </p>
+
+                                    {/* BOX BRANCA DESTACADA COM OS DADOS EXATOS SOLICITADOS */}
                                     <div style={{
-                                        background: '#ecfdf5',
-                                        border: '1.5px solid #10b981',
-                                        padding: '1.25rem',
-                                        borderRadius: '16px',
-                                        color: '#065f46'
+                                        background: '#f8fafc',
+                                        borderRadius: '20px',
+                                        padding: '1.5rem',
+                                        border: '2px solid #e2e8f0',
+                                        marginBottom: '1.5rem',
+                                        textAlign: 'left',
+                                        boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
                                     }}>
-                                        <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '0.25rem' }}>
-                                            Comprovativo Submetido com Sucesso!
-                                        </div>
-                                        <div style={{ fontSize: '0.88rem' }}>
-                                            Código: <strong>{pendingDebt.payment_proof}</strong>. A administração da Tchapo Tchapo está a validar o pagamento para desbloquear a sua conta em instantes.
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <form onSubmit={handleSubmitDebtPayment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        <div style={{ textAlign: 'left' }}>
-                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334151', marginBottom: '0.35rem' }}>
-                                                Código da Mensagem de Confirmação do e-Mola / M-Pesa:
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={debtPaymentRef}
-                                                onChange={(e) => setDebtPaymentRef(e.target.value)}
-                                                placeholder="Ex: PP260915.1234.X09876 ou número do comprovativo"
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.85rem 1rem',
-                                                    borderRadius: '12px',
-                                                    border: '1.5px solid #cbd5e1',
-                                                    fontSize: '0.95rem',
-                                                    outline: 'none',
-                                                    boxSizing: 'border-box'
-                                                }}
-                                            />
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.85rem', borderBottom: '1.5px solid #e2e8f0' }}>
+                                            <span style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 700 }}>Valor a pagar:</span>
+                                            <strong style={{ fontSize: 'clamp(1.4rem, 3.5vw, 1.85rem)', fontWeight: 900, color: '#dc2626' }}>
+                                                {formatMZCurrency(pendingDebt.amount)}
+                                            </strong>
                                         </div>
 
-                                        <div style={{ textAlign: 'left' }}>
-                                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334151', marginBottom: '0.35rem' }}>
-                                                📸 Anexar Foto / Captura de Ecrã do Comprovativo (Recomendado):
-                                            </label>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => {
-                                                    const file = e.target.files[0];
-                                                    if (file) {
-                                                        setDebtReceiptFile(file);
-                                                        setDebtReceiptPreview(URL.createObjectURL(file));
-                                                    }
-                                                }}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.6rem 0',
-                                                    fontSize: '0.88rem'
-                                                }}
-                                            />
-                                            {debtReceiptPreview && (
-                                                <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
-                                                    <img src={debtReceiptPreview} alt="Pré-visualização do Comprovativo" 
-                                                         style={{ maxHeight: '180px', borderRadius: '8px', border: '1px solid #cbd5e1', objectFit: 'contain' }} />
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+                                            <span style={{ fontSize: '0.92rem', color: '#475569', fontWeight: 600 }}>Para o e-Mola:</span>
+                                            <strong style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', letterSpacing: '0.5px' }}>
+                                                874110586
+                                            </strong>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.85rem', borderBottom: '1.5px solid #e2e8f0' }}>
+                                            <span style={{ fontSize: '0.92rem', color: '#475569', fontWeight: 600 }}>Titular:</span>
+                                            <strong style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                                                Massiquine Simango
+                                            </strong>
+                                        </div>
+
+                                        {/* No conteúdo adicione o seu ID */}
+                                        <div style={{
+                                            background: '#fef3c7',
+                                            border: '1.5px solid #fde68a',
+                                            borderRadius: '14px',
+                                            padding: '0.85rem 1rem',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            flexWrap: 'wrap',
+                                            gap: '0.5rem'
+                                        }}>
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                    No conteúdo da transferência adicione:
                                                 </div>
-                                            )}
-                                        </div>
+                                                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#92400e', marginTop: '2px' }}>
+                                                    ID: {authDriver.id}
+                                                </div>
+                                            </div>
 
-                                        <button
-                                            type="submit"
-                                            disabled={submittingDebt}
-                                            style={{
-                                                background: '#059669',
-                                                color: '#fff',
-                                                border: 'none',
-                                                padding: '0.95rem',
-                                                borderRadius: '12px',
-                                                fontWeight: 800,
-                                                fontSize: '1rem',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '0.5rem',
-                                                boxShadow: '0 6px 18px rgba(5, 150, 105, 0.25)'
-                                            }}
-                                        >
-                                            <Icons.CheckCircle />
-                                            <span>{submittingDebt ? 'A enviar confirmação...' : 'Submeter Confirmação de Pagamento'}</span>
-                                        </button>
-                                    </form>
-                                )}
+                                            <button
+                                                type="button"
+                                                onClick={() => copyToClipboard(String(authDriver.id))}
+                                                style={{
+                                                    background: '#fff',
+                                                    border: '1px solid #f59e0b',
+                                                    color: '#b45309',
+                                                    padding: '0.45rem 0.9rem',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.82rem',
+                                                    fontWeight: 800,
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.4rem'
+                                                }}
+                                            >
+                                                <Icons.Copy />
+                                                <span>{copiedId ? 'Copiado!' : 'Copiar ID'}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* CRONÓMETRO DE 2 HORAS POR BAIXO */}
+                                    <div style={{
+                                        background: '#f1f5f9',
+                                        borderRadius: '18px',
+                                        padding: '1.15rem',
+                                        marginBottom: '1.5rem',
+                                        textAlign: 'center',
+                                        border: debtSecondsLeft === 0 ? '2px solid #ef4444' : '1px solid #cbd5e1'
+                                    }}>
+                                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.35rem' }}>
+                                            Tempo Restante para Pagamento (Prazo: 2 Horas)
+                                        </div>
+                                        <div style={{
+                                            fontSize: 'clamp(2rem, 5vw, 2.5rem)',
+                                            fontWeight: 900,
+                                            fontFamily: 'monospace',
+                                            color: debtSecondsLeft === 0 ? '#ef4444' : debtSecondsLeft < 1800 ? '#dc2626' : '#059669',
+                                            letterSpacing: '2px'
+                                        }}>
+                                            {formatTimer(debtSecondsLeft)}
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: debtSecondsLeft === 0 ? '#b91c1c' : '#64748b', marginTop: '0.25rem', fontWeight: 600 }}>
+                                            {debtSecondsLeft === 0
+                                                ? '⚠️ Prazo esgotado! Advertência registada na conta. Regularize imediatamente.'
+                                                : 'A taxa deve ser paga em até 2 horas para manter a conta ativa.'}
+                                        </div>
+                                    </div>
+
+                                    {/* FORMULÁRIO DE CONFIRMAÇÃO DO E-MOLA */}
+                                    {pendingDebt.status === 'Aguardando Confirmação' ? (
+                                        <div style={{
+                                            background: '#ecfdf5',
+                                            border: '1.5px solid #10b981',
+                                            padding: '1.25rem',
+                                            borderRadius: '16px',
+                                            color: '#065f46',
+                                            textAlign: 'center'
+                                        }}>
+                                            <div style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                                                <Icons.CheckCircle />
+                                                <span>Comprovativo Submetido!</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
+                                                Ref: <strong>{pendingDebt.payment_proof}</strong>. A administração da Tchapo Tchapo está a validar para desbloquear a sua conta em instantes.
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <form onSubmit={handleSubmitDebtPayment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            <div style={{ textAlign: 'left' }}>
+                                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334151', marginBottom: '0.4rem' }}>
+                                                    Código da Mensagem do e-Mola / M-Pesa:
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={debtPaymentRef}
+                                                    onChange={(e) => setDebtPaymentRef(e.target.value)}
+                                                    placeholder="Ex: PP260915.1234.X09876 ou nº comprovativo"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.85rem 1rem',
+                                                        borderRadius: '12px',
+                                                        border: '1.5px solid #cbd5e1',
+                                                        fontSize: '0.95rem',
+                                                        outline: 'none',
+                                                        boxSizing: 'border-box'
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div style={{ textAlign: 'left' }}>
+                                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334151', marginBottom: '0.4rem' }}>
+                                                    📸 Anexar Foto / Captura do Comprovativo (Recomendado):
+                                                </label>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files[0];
+                                                        if (file) {
+                                                            setDebtReceiptFile(file);
+                                                            setDebtReceiptPreview(URL.createObjectURL(file));
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.5rem 0',
+                                                        fontSize: '0.88rem'
+                                                    }}
+                                                />
+                                                {debtReceiptPreview && (
+                                                    <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+                                                        <img src={debtReceiptPreview} alt="Pré-visualização do Comprovativo" 
+                                                             style={{ maxHeight: '160px', borderRadius: '8px', border: '1px solid #cbd5e1', objectFit: 'contain' }} />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                disabled={submittingDebt}
+                                                style={{
+                                                    background: '#059669',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    padding: '1rem',
+                                                    borderRadius: '12px',
+                                                    fontWeight: 800,
+                                                    fontSize: '1rem',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '0.5rem',
+                                                    boxShadow: '0 6px 18px rgba(5, 150, 105, 0.25)',
+                                                    transition: 'opacity 0.2s',
+                                                    opacity: submittingDebt ? 0.7 : 1
+                                                }}
+                                            >
+                                                <Icons.CheckCircle />
+                                                <span>{submittingDebt ? 'A enviar confirmação...' : 'Submeter Confirmação de Pagamento'}</span>
+                                            </button>
+                                        </form>
+                                    )}
+                                </div>
                             </div>
                         )}
 
@@ -2777,7 +2844,7 @@ export default function DriverPortal() {
                                     </div>
 
                                     {/* WhatsApp & Bairro */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
                                         <div>
                                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
                                                 <Icons.WhatsApp />
@@ -2811,7 +2878,7 @@ export default function DriverPortal() {
                                                 <Icons.MapPin />
                                                 <span>Localização Base (Moçambique) *</span>
                                             </label>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.5rem' }}>
                                                 <select
                                                     value={regProvince}
                                                     onChange={(e) => {
@@ -2941,7 +3008,7 @@ export default function DriverPortal() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
                                     
                                     {/* Document Type & Number */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '1rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
                                         <div>
                                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
                                                 <Icons.IdCard />
@@ -3145,98 +3212,245 @@ export default function DriverPortal() {
                 </div>
             )}
 
-            {/* MODAL 2: Login Modal */}
+            {/* MODAL 2: Enhanced Modern & Mobile-Friendly Driver Login Modal */}
             {isLoginModalOpen && (
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(15, 23, 42, 0.75)',
+                    background: 'rgba(15, 23, 42, 0.8)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     zIndex: 99999,
-                    backdropFilter: 'blur(5px)',
-                    padding: '1.5rem'
+                    backdropFilter: 'blur(8px)',
+                    padding: '1rem',
+                    boxSizing: 'border-box'
                 }}>
                     <div style={{
-                        background: '#fff',
+                        background: '#ffffff',
                         borderRadius: '24px',
-                        padding: '2.25rem',
-                        maxWidth: '420px',
+                        padding: 'clamp(1.5rem, 5vw, 2.25rem)',
+                        maxWidth: '440px',
                         width: '100%',
-                        boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-                        border: '1px solid #e2e8f0'
+                        boxShadow: '0 25px 60px -15px rgba(0,0,0,0.35)',
+                        border: '1px solid #e2e8f0',
+                        boxSizing: 'border-box',
+                        animation: 'fadeInUp 0.2s ease-out'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900, color: '#0f172a' }}>
-                                    Entrar no Portal
-                                </h3>
-                                <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                                    Aceda ao seu painel com telefone e PIN.
-                                </p>
+                        {/* Header with Logo Badge and Close */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    width: '42px',
+                                    height: '42px',
+                                    borderRadius: '12px',
+                                    background: '#f59e0b',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <img src="/assets/logo_original.png" alt="Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px' }}>
+                                        Entrar no Portal
+                                    </h3>
+                                    <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                                        Portal Oficial do Entregador
+                                    </p>
+                                </div>
                             </div>
-                            <button onClick={() => setIsLoginModalOpen(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsLoginModalOpen(false);
+                                    setShowLoginPin(false);
+                                }}
+                                style={{
+                                    background: '#f1f5f9',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '36px',
+                                    height: '36px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#64748b',
+                                    transition: 'background 0.15s'
+                                }}
+                            >
                                 <Icons.Close />
                             </button>
                         </div>
 
-                        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+                            {/* Phone Input */}
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                    Telefone Registado *
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.45rem', fontWeight: 700, fontSize: '0.85rem', color: '#1e293b' }}>
+                                    <Icons.WhatsApp />
+                                    <span>Telemóvel / Celular *</span>
                                 </label>
-                                <input
-                                    type="text" required
-                                    value={loginPhone}
-                                    onChange={(e) => setLoginPhone(e.target.value)}
-                                    placeholder="Ex: 258841234567 ou 841234567"
-                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="tel"
+                                        required
+                                        autoFocus
+                                        value={loginPhone}
+                                        onChange={(e) => setLoginPhone(e.target.value)}
+                                        placeholder="Ex: 84XXXXXXX ou 87XXXXXXX"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.85rem 1rem',
+                                            borderRadius: '12px',
+                                            border: '1.5px solid #cbd5e1',
+                                            outline: 'none',
+                                            boxSizing: 'border-box',
+                                            fontSize: '0.98rem',
+                                            color: '#0f172a',
+                                            background: '#f8fafc',
+                                            transition: 'all 0.15s'
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.borderColor = '#f59e0b';
+                                            e.target.style.background = '#ffffff';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.target.style.borderColor = '#cbd5e1';
+                                            e.target.style.background = '#f8fafc';
+                                        }}
+                                    />
+                                </div>
+                                <span style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                                    Número registado no seu cadastro de entregador
+                                </span>
                             </div>
 
+                            {/* PIN Input with Show/Hide Toggle */}
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                    PIN de Acesso *
-                                </label>
-                                <input
-                                    type="password" maxLength="6" required
-                                    value={loginPin}
-                                    onChange={(e) => setLoginPin(e.target.value)}
-                                    placeholder="••••"
-                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }}
-                                />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700, fontSize: '0.85rem', color: '#1e293b' }}>
+                                        <Icons.Lock />
+                                        <span>PIN de Acesso *</span>
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowLoginPin(prev => !prev)}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#64748b',
+                                            fontSize: '0.76rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.25rem',
+                                            padding: 0
+                                        }}
+                                    >
+                                        {showLoginPin ? <Icons.EyeOff /> : <Icons.Eye />}
+                                        <span>{showLoginPin ? 'Ocultar' : 'Ver PIN'}</span>
+                                    </button>
+                                </div>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type={showLoginPin ? 'text' : 'password'}
+                                        maxLength="6"
+                                        required
+                                        value={loginPin}
+                                        onChange={(e) => setLoginPin(e.target.value)}
+                                        placeholder="Código PIN (Ex: 1234)"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.85rem 1rem',
+                                            borderRadius: '12px',
+                                            border: '1.5px solid #cbd5e1',
+                                            outline: 'none',
+                                            boxSizing: 'border-box',
+                                            fontSize: '1.1rem',
+                                            letterSpacing: showLoginPin ? '2px' : '4px',
+                                            color: '#0f172a',
+                                            background: '#f8fafc',
+                                            transition: 'all 0.15s'
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.borderColor = '#f59e0b';
+                                            e.target.style.background = '#ffffff';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.target.style.borderColor = '#cbd5e1';
+                                            e.target.style.background = '#f8fafc';
+                                        }}
+                                    />
+                                </div>
                             </div>
 
+                            {/* Submit Button */}
                             <button
                                 type="submit"
                                 disabled={loginLoading}
                                 style={{
+                                    marginTop: '0.5rem',
                                     background: '#f59e0b',
                                     color: '#111827',
                                     border: 'none',
-                                    padding: '0.85rem',
+                                    padding: '0.95rem',
                                     borderRadius: '12px',
-                                    fontWeight: 800,
-                                    fontSize: '0.95rem',
+                                    fontWeight: 900,
+                                    fontSize: '1rem',
                                     cursor: 'pointer',
                                     opacity: loginLoading ? 0.7 : 1,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: '0.5rem',
-                                    boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)'
+                                    boxShadow: '0 6px 18px rgba(245, 158, 11, 0.35)',
+                                    transition: 'transform 0.1s'
                                 }}
                             >
                                 <Icons.LogIn />
-                                <span>{loginLoading ? 'A verificar...' : 'Entrar no Painel'}</span>
+                                <span>{loginLoading ? 'A verificar credenciais...' : 'Entrar no Painel'}</span>
                             </button>
 
-                            <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.82rem', color: '#64748b' }}>
-                                Ainda não tem conta?{' '}
-                                <button type="button" onClick={() => { setIsLoginModalOpen(false); setIsRegisterModalOpen(true); }} style={{ background: 'none', border: 'none', color: '#d97706', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
-                                    Cadastre-se aqui
-                                </button>
+                            {/* Footer links: Register + Help */}
+                            <div style={{
+                                borderTop: '1px solid #f1f5f9',
+                                paddingTop: '1rem',
+                                marginTop: '0.25rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.6rem',
+                                textAlign: 'center',
+                                fontSize: '0.84rem',
+                                color: '#64748b'
+                            }}>
+                                <div>
+                                    Ainda não é entregador cadastrado?{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsLoginModalOpen(false);
+                                            setIsRegisterModalOpen(true);
+                                        }}
+                                        style={{ background: 'none', border: 'none', color: '#d97706', fontWeight: 800, cursor: 'pointer', padding: 0 }}
+                                    >
+                                        Cadastre-se aqui
+                                    </button>
+                                </div>
+
+                                <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                                    Esqueceu o PIN ou precisa de ajuda?{' '}
+                                    <a
+                                        href="https://wa.me/258841234567?text=Ola%20Tchapo%20Tchapo,%20preciso%20de%20ajuda%20para%20aceder%20a%20minha%20conta%20de%20entregador."
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{ color: '#059669', fontWeight: 700, textDecoration: 'none' }}
+                                    >
+                                        Falar no WhatsApp
+                                    </a>
+                                </div>
                             </div>
                         </form>
                     </div>

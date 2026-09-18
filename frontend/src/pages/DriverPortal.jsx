@@ -486,9 +486,18 @@ export default function DriverPortal() {
                 return;
             }
             saveSession(data);
-            setIsOnline(Boolean(data.is_online));
+            setIsOnline(data.approval_status === 'Aprovado' ? Boolean(data.is_online) : false);
             setIsLoginModalOpen(false);
-            showToast(`Bem-vindo de volta, ${data.name}!`, 'success');
+
+            if (data.approval_status === 'Pendente') {
+                showToast(`Olá ${data.name}! A sua conta ainda está em análise pela equipa da Tchapo Tchapo.`, 'info');
+            } else if (data.approval_status === 'Recusado') {
+                showToast(`A sua candidatura de entregador não foi aprovada pelo Administrador.`, 'error');
+            } else if (data.approval_status === 'Suspenso') {
+                showToast(`A sua conta de entregador encontra-se suspensa temporariamente.`, 'error');
+            } else {
+                showToast(`Bem-vindo de volta, ${data.name}!`, 'success');
+            }
             fetchDashboard(data.id);
         } catch (err) {
             showToast('Falha na comunicação com o servidor.', 'error');
@@ -500,12 +509,36 @@ export default function DriverPortal() {
     // Handle Register
     const handleRegister = async (e) => {
         e.preventDefault();
-        if (!regName.trim() || !regPhone.trim()) {
-            showToast('Por favor preencha o seu nome e telefone.', 'error');
+
+        // Strict verification of all fields
+        if (!photoFile) {
+            showToast('A fotografia de perfil (rosto) é obrigatória para identificação.', 'error');
+            setRegStep(1);
+            return;
+        }
+        if (!regName.trim()) {
+            showToast('Por favor introduza o seu nome completo.', 'error');
+            setRegStep(1);
+            return;
+        }
+        if (!regPhone.trim()) {
+            showToast('Por favor introduza o seu número de telefone / WhatsApp.', 'error');
+            setRegStep(1);
+            return;
+        }
+        if (!regPin.trim() || regPin.trim().length !== 4) {
+            showToast('Defina um PIN de segurança com 4 dígitos.', 'error');
+            setRegStep(1);
             return;
         }
         if (!regDocNumber.trim()) {
-            showToast('Por favor introduza o número do seu documento.', 'error');
+            showToast('Por favor introduza o número do seu documento de identificação.', 'error');
+            setRegStep(2);
+            return;
+        }
+        if (!docPhotoFile) {
+            showToast('A fotografia do documento de identificação (BI / Carta) é obrigatória.', 'error');
+            setRegStep(2);
             return;
         }
 
@@ -517,10 +550,9 @@ export default function DriverPortal() {
             formData.append('bairro', `${regProvince} - ${regBairro}`.trim());
             formData.append('doc_type', regDocType);
             formData.append('doc_number', regDocNumber.trim());
-            formData.append('pin', regPin.trim() || '1234');
-
-            if (photoFile) formData.append('photo', photoFile);
-            if (docPhotoFile) formData.append('doc_photo', docPhotoFile);
+            formData.append('pin', regPin.trim());
+            formData.append('photo', photoFile);
+            formData.append('doc_photo', docPhotoFile);
 
             const res = await fetch(`${API_URL}/api/drivers/register`, {
                 method: 'POST',
@@ -534,8 +566,10 @@ export default function DriverPortal() {
             }
 
             saveSession(data);
+            setIsOnline(false);
             setIsRegisterModalOpen(false);
-            showToast('Registo submetido com sucesso! A sua conta está pendente de aprovação.', 'success');
+            showToast('Registo submetido com sucesso! A sua conta está sob análise pelo Administrador.', 'success');
+            fetchDashboard(data.id);
         } catch (err) {
             showToast('Erro de conexão ao registar entregador.', 'error');
         } finally {
@@ -880,7 +914,22 @@ export default function DriverPortal() {
                                         style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', background: '#374151' }}
                                     />
                                     <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>{authDriver.name}</span>
-                                    <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700 }}>ID: {authDriver.id}</span>
+                                    {authDriver.approval_status === 'Aprovado' ? (
+                                        <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700 }}>ID: {authDriver.id}</span>
+                                    ) : (
+                                        <span style={{
+                                            background: authDriver.approval_status === 'Recusado' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
+                                            color: authDriver.approval_status === 'Recusado' ? '#f87171' : '#fbbf24',
+                                            padding: '0.15rem 0.5rem',
+                                            borderRadius: '6px',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 800,
+                                            letterSpacing: '0.4px',
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            {authDriver.approval_status === 'Pendente' ? 'Em Análise' : authDriver.approval_status}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <button
@@ -1107,7 +1156,13 @@ export default function DriverPortal() {
                             Olá, <strong>{authDriver.name}</strong>! O seu cadastro de entregador foi recebido com sucesso e os seus documentos estão a ser analisados pela equipa da Tchapo Tchapo.
                         </p>
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                            <button onClick={() => fetchDashboard(authDriver.id)} style={{ background: '#f59e0b', color: '#111827', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}>
+                            <button
+                                onClick={async () => {
+                                    await fetchDashboard(authDriver.id);
+                                    showToast('Estado verificado com sucesso.', 'info');
+                                }}
+                                style={{ background: '#f59e0b', color: '#111827', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
+                            >
                                 Verificar Estado
                             </button>
                             <button onClick={handleLogout} style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.75rem 1.25rem', borderRadius: '10px', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
@@ -2692,13 +2747,21 @@ export default function DriverPortal() {
                             <div style={{ flex: 1, height: '2px', background: regStep === 2 ? '#0f172a' : '#e2e8f0' }} />
                             <div
                                 onClick={() => {
-                                    if (regName.trim() && regPhone.trim()) setRegStep(2);
+                                    if (photoFile && regName.trim() && regPhone.trim() && regPin.trim().length === 4) {
+                                        setRegStep(2);
+                                    } else if (!photoFile) {
+                                        showToast('Carregue a sua fotografia de perfil antes de avançar.', 'error');
+                                    } else if (!regName.trim() || !regPhone.trim()) {
+                                        showToast('Preencha o nome e contacto antes de avançar.', 'error');
+                                    } else if (!regPin.trim() || regPin.trim().length !== 4) {
+                                        showToast('Defina o PIN de 4 dígitos antes de avançar.', 'error');
+                                    }
                                 }}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '0.5rem',
-                                    cursor: regName.trim() && regPhone.trim() ? 'pointer' : 'default',
+                                    cursor: (photoFile && regName.trim() && regPhone.trim() && regPin.trim().length === 4) ? 'pointer' : 'default',
                                     opacity: regStep === 2 ? 1 : 0.6
                                 }}
                             >
@@ -2779,27 +2842,27 @@ export default function DriverPortal() {
                                         </div>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.2rem' }}>
-                                                Foto de Perfil (Rosto)
+                                                Foto de Perfil (Rosto) *
                                             </div>
                                             <p style={{ margin: '0 0 0.6rem', fontSize: '0.76rem', color: '#64748b' }}>
-                                                Foto nítida para identificação perante clientes em Moçambique.
+                                                Foto nítida e obrigatória para identificação perante clientes em Moçambique.
                                             </p>
                                             <label style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 gap: '0.4rem',
                                                 background: '#ffffff',
-                                                border: '1px solid #cbd5e1',
+                                                border: photoFile ? '1.5px solid #10b981' : '1.5px dashed #cbd5e1',
                                                 padding: '0.45rem 0.9rem',
                                                 borderRadius: '8px',
                                                 fontSize: '0.8rem',
                                                 fontWeight: 600,
-                                                color: '#334155',
+                                                color: photoFile ? '#059669' : '#334155',
                                                 cursor: 'pointer',
                                                 boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                                             }}>
                                                 <Icons.UploadCloud />
-                                                <span>{photoFile ? 'Alterar Fotografia' : 'Carregar Fotografia'}</span>
+                                                <span>{photoFile ? 'Foto Carregada (Alterar)' : 'Carregar Fotografia *'}</span>
                                                 <input
                                                     type="file"
                                                     accept="image/*"
@@ -2966,6 +3029,10 @@ export default function DriverPortal() {
                                     <button
                                         type="button"
                                         onClick={() => {
+                                            if (!photoFile) {
+                                                showToast('A fotografia de perfil (rosto) é obrigatória para verificação.', 'error');
+                                                return;
+                                            }
                                             if (!regName.trim()) {
                                                 showToast('Por favor introduza o seu nome completo.', 'error');
                                                 return;

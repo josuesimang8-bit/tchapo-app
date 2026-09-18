@@ -1116,38 +1116,54 @@ app.post('/api/drivers/register', upload.fields([
     { name: 'doc_photo', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        const { name, phone, bairro, vehicle_type, vehicle_plate, doc_type, doc_number, pin } = req.body;
+        const { name, phone, bairro, doc_type, doc_number, pin } = req.body;
 
-        if (!name || !phone) {
-            return res.status(400).json({ error: 'Nome e telefone são obrigatórios.' });
+        // Strict validation: ALL fields and photos are strictly mandatory
+        if (!name || !String(name).trim()) {
+            return res.status(400).json({ error: 'O nome completo é obrigatório.' });
+        }
+        if (!phone || !String(phone).trim()) {
+            return res.status(400).json({ error: 'O número de celular / WhatsApp é obrigatório.' });
+        }
+        if (!bairro || !String(bairro).trim()) {
+            return res.status(400).json({ error: 'A localização (província e bairro) é obrigatória.' });
+        }
+        if (!doc_type || !String(doc_type).trim()) {
+            return res.status(400).json({ error: 'O tipo de documento de identificação é obrigatório.' });
+        }
+        if (!doc_number || !String(doc_number).trim()) {
+            return res.status(400).json({ error: 'O número do documento é obrigatório.' });
+        }
+        if (!pin || String(pin).trim().length !== 4) {
+            return res.status(400).json({ error: 'O PIN de acesso deve conter exatamente 4 dígitos.' });
+        }
+        if (!req.files || !req.files['photo'] || !req.files['photo'][0]) {
+            return res.status(400).json({ error: 'A fotografia de perfil (rosto) é obrigatória.' });
+        }
+        if (!req.files['doc_photo'] || !req.files['doc_photo'][0]) {
+            return res.status(400).json({ error: 'A fotografia do documento (BI / Carta) é obrigatória.' });
         }
 
         const normalizedPhone = normalizeDriverPhone(phone);
 
         // Upload Profile Photo
-        let photoUrl = '/assets/default_avatar.png';
-        if (req.files && req.files['photo'] && req.files['photo'][0]) {
-            const photoFile = req.files['photo'][0];
-            const publicUrl = await uploadToCatbox(photoFile) || await uploadToSupabaseStorage('drivers', photoFile);
-            photoUrl = publicUrl || `/uploads/drivers/${photoFile.filename}`;
-        }
+        const photoFile = req.files['photo'][0];
+        const publicPhotoUrl = await uploadToCatbox(photoFile) || await uploadToSupabaseStorage('drivers', photoFile);
+        const photoUrl = publicPhotoUrl || `/uploads/drivers/${photoFile.filename}`;
 
         // Upload Document Photo
-        let docPhotoUrl = '';
-        if (req.files && req.files['doc_photo'] && req.files['doc_photo'][0]) {
-            const docFile = req.files['doc_photo'][0];
-            const publicDocUrl = await uploadToCatbox(docFile) || await uploadToSupabaseStorage('drivers', docFile);
-            docPhotoUrl = publicDocUrl || `/uploads/drivers/${docFile.filename}`;
-        }
+        const docFile = req.files['doc_photo'][0];
+        const publicDocUrl = await uploadToCatbox(docFile) || await uploadToSupabaseStorage('drivers', docFile);
+        const docPhotoUrl = publicDocUrl || `/uploads/drivers/${docFile.filename}`;
 
-        // Insert into Supabase drivers table
+        // Insert into Supabase drivers table as INACTIVE until Admin approves
         const { data: newDriver, error: insertErr } = await supabase
             .from('drivers')
             .insert([{
                 name: name.trim(),
                 phone: phone.trim(),
                 photo_url: photoUrl,
-                active: true
+                active: false // Inactive until approved by Admin
             }])
             .select()
             .single();
@@ -1159,13 +1175,11 @@ app.post('/api/drivers/register', upload.fields([
             approval_status: 'Pendente',
             is_online: false,
             last_seen_at: new Date().toISOString(),
-            doc_type: doc_type || 'BI',
-            doc_number: doc_number ? String(doc_number).trim() : '',
+            doc_type: doc_type.trim(),
+            doc_number: String(doc_number).trim(),
             doc_photo_url: docPhotoUrl,
-            vehicle_type: vehicle_type || 'Mota',
-            vehicle_plate: vehicle_plate ? String(vehicle_plate).trim() : '',
-            bairro: bairro ? String(bairro).trim() : 'Beira',
-            pin: pin ? String(pin).trim() : '1234',
+            bairro: String(bairro).trim(),
+            pin: String(pin).trim(),
             warnings: [],
             earnings_rate_per_delivery: 150
         });
@@ -1174,7 +1188,7 @@ app.post('/api/drivers/register', upload.fields([
         try {
             sendNtfyAlert({
                 title: '🛵 Novo Cadastro de Entregador!',
-                message: `${name} cadastrou-se como entregador (${vehicle_type || 'Mota'} - ${bairro || 'Beira'}). Documento: ${doc_type || 'BI'} ${doc_number || ''}. Aguarda aprovação.`
+                message: `${name} cadastrou-se como entregador (${bairro}). Documento: ${doc_type} ${doc_number}. Aguarda aprovação.`
             });
         } catch (_) {}
 
@@ -1621,13 +1635,26 @@ app.put('/api/drivers/:id/approval', async (req, res) => {
             return res.status(400).json({ error: 'Estado de aprovação inválido.' });
         }
 
+        const isApproved = approval_status === 'Aprovado';
+
+        // Update Supabase active flag accordingly
+        try {
+            await supabase
+                .from('drivers')
+                .update({ active: isApproved })
+                .eq('id', id);
+        } catch (dbErr) {
+            console.warn('Could not update Supabase driver active column:', dbErr.message);
+        }
+
         const updatedMeta = updateDriverMeta(id, {
             approval_status,
             approval_notes: notes || '',
-            approval_updated_at: new Date().toISOString()
+            approval_updated_at: new Date().toISOString(),
+            is_online: isApproved ? undefined : false // force offline if not approved
         });
 
-        res.json({ success: true, driver_id: id, approval_status: updatedMeta.approval_status });
+        res.json({ success: true, driver_id: id, approval_status: updatedMeta.approval_status, active: isApproved });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

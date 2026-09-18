@@ -59,10 +59,8 @@ export default function Admin() {
     const [detailsModalDriver, setDetailsModalDriver] = useState(null);
     const [newDriverName, setNewDriverName]         = useState('');
     const [newDriverPhone, setNewDriverPhone]       = useState('');
-    const [newDriverVehicleType, setNewDriverVehicleType] = useState('Mota');
     const [newDriverProvince, setNewDriverProvince] = useState(DEFAULT_PROVINCE);
-    const [newDriverBairro, setNewDriverBairro]     = useState('Macuti (Beira)');
-    const [newDriverBairroManual, setNewDriverBairroManual] = useState(false);
+    const [newDriverBairro, setNewDriverBairro]     = useState('');
     const [newDriverDocType, setNewDriverDocType]   = useState('BI');
     const [newDriverDocNumber, setNewDriverDocNumber] = useState('');
     const [newDriverPhoto, setNewDriverPhoto]       = useState(null);
@@ -792,7 +790,6 @@ export default function Admin() {
                     name: newDriverName,
                     phone: newDriverPhone,
                     photo_url: photoUrl,
-                    vehicle_type: newDriverVehicleType || 'Mota',
                     province: newDriverProvince || 'Sofala',
                     bairro: `${newDriverProvince} - ${newDriverBairro}`.trim(),
                     doc_type: newDriverDocType || 'BI',
@@ -802,6 +799,7 @@ export default function Admin() {
             if (res.ok) {
                 setNewDriverName('');
                 setNewDriverPhone('');
+                setNewDriverBairro('');
                 setNewDriverPhoto(null);
                 setNewDriverDocNumber('');
                 setDriverSubSection('fleet');
@@ -1494,10 +1492,38 @@ export default function Admin() {
                                                         <option value="">Nenhum Entregador</option>
                                                         {drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status).map(d => (
                                                             <option key={d.id} value={d.id}>
-                                                                {d.is_online ? '🟢' : '⚪'} {d.name} {d.vehicle_type ? `(${d.vehicle_type})` : ''}
+                                                                {d.is_online ? '🟢' : '⚪'} {d.name}
                                                             </option>
                                                         ))}
                                                     </select>
+                                                    {order.driver_id && (() => {
+                                                        const assigned = drivers.find(d => String(d.id) === String(order.driver_id));
+                                                        if (!assigned) return null;
+                                                        return (
+                                                            <div style={{ marginTop: '5px' }}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setDetailsModalDriver(assigned)}
+                                                                    style={{
+                                                                        background: '#2563eb',
+                                                                        color: '#ffffff',
+                                                                        border: 'none',
+                                                                        borderRadius: '6px',
+                                                                        padding: '0.25rem 0.6rem',
+                                                                        fontSize: '0.74rem',
+                                                                        fontWeight: 800,
+                                                                        cursor: 'pointer',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '3px',
+                                                                        boxShadow: '0 2px 5px rgba(37, 99, 235, 0.25)'
+                                                                    }}
+                                                                >
+                                                                    👁️ Ver Todos os Dados
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td style={{ padding: '1rem 1.25rem' }}>
                                                     <select
@@ -1939,6 +1965,31 @@ export default function Admin() {
                                                             </div>
                                                         </div>
 
+                                                        {/* Action Buttons */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDetailsModalDriver(d)}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.75rem 1rem',
+                                                                background: '#2563eb',
+                                                                color: '#ffffff',
+                                                                border: 'none',
+                                                                borderRadius: '12px',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.88rem',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                gap: '0.45rem',
+                                                                marginBottom: '0.65rem',
+                                                                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+                                                            }}
+                                                        >
+                                                            <span>👁️ Ver Todos os Dados</span>
+                                                        </button>
+
                                                         {/* Action Button to Confirm and Unlock */}
                                                         <button
                                                             onClick={() => handleConfirmDebt(d.id)}
@@ -2009,104 +2060,33 @@ export default function Admin() {
                                             />
                                         </div>
                                         <div>
-                                            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                                <span>Província e Bairro (Moçambique) *</span>
-                                                <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 700 }}>
-                                                    {newDriverBairroManual ? 'Digitação Manual' : 'Lista Rápida'}
-                                                </span>
+                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
+                                                Província e Bairro (Moçambique) *
                                             </label>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: newDriverBairroManual ? '0.5rem' : 0 }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                                                 <select
                                                     value={newDriverProvince}
-                                                    onChange={(e) => {
-                                                        const p = e.target.value;
-                                                        setNewDriverProvince(p);
-                                                        if (!newDriverBairroManual) {
-                                                            const bl = getBairrosByProvince(p);
-                                                            if (bl.length > 0) setNewDriverBairro(bl[0]);
-                                                        }
-                                                    }}
-                                                    style={{ width: '100%', padding: '0.8rem 0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', fontSize: '0.86rem' }}
+                                                    onChange={(e) => setNewDriverProvince(e.target.value)}
+                                                    style={{ width: '100%', padding: '0.8rem 0.6rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', fontSize: '0.86rem' }}
                                                 >
                                                     {ALL_PROVINCES.map(pr => (
                                                         <option key={pr} value={pr}>{pr}</option>
                                                     ))}
                                                 </select>
 
-                                                {!newDriverBairroManual ? (
-                                                    <select
-                                                        value={newDriverBairro}
-                                                        onChange={(e) => {
-                                                            if (e.target.value === '__custom__') {
-                                                                setNewDriverBairroManual(true);
-                                                                setNewDriverBairro('');
-                                                            } else {
-                                                                setNewDriverBairro(e.target.value);
-                                                            }
-                                                        }}
-                                                        style={{ width: '100%', padding: '0.8rem 0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', fontSize: '0.86rem' }}
-                                                    >
-                                                        {getBairrosByProvince(newDriverProvince).map(b => (
-                                                            <option key={b} value={b}>{b}</option>
-                                                        ))}
-                                                        <option value="__custom__">✏️ Digitar Outro Bairro...</option>
-                                                    </select>
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setNewDriverBairroManual(false);
-                                                            const bl = getBairrosByProvince(newDriverProvince);
-                                                            if (bl.length > 0) setNewDriverBairro(bl[0]);
-                                                        }}
-                                                        style={{
-                                                            background: '#f1f5f9',
-                                                            border: '1.5px solid #cbd5e1',
-                                                            borderRadius: '10px',
-                                                            color: '#475569',
-                                                            fontSize: '0.8rem',
-                                                            fontWeight: 700,
-                                                            cursor: 'pointer',
-                                                            padding: '0.8rem 0.5rem'
-                                                        }}
-                                                    >
-                                                        ⬅️ Lista
-                                                    </button>
-                                                )}
-                                            </div>
-
-                                            {/* Manual input for Bairro in admin form */}
-                                            {newDriverBairroManual && (
                                                 <input
                                                     type="text"
                                                     required
                                                     value={newDriverBairro}
                                                     onChange={(e) => setNewDriverBairro(e.target.value)}
-                                                    placeholder="Digite o nome do bairro..."
-                                                    style={{ width: '100%', padding: '0.75rem 0.9rem', border: '1.5px solid #f59e0b', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', fontSize: '0.88rem' }}
-                                                    autoFocus
+                                                    placeholder="Digite o Bairro *"
+                                                    style={{ width: '100%', padding: '0.8rem 0.8rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', fontSize: '0.86rem', boxSizing: 'border-box' }}
                                                 />
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-                                        <div>
-                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
-                                                Tipo de Veículo
-                                            </label>
-                                            <select
-                                                value={newDriverVehicleType}
-                                                onChange={(e) => setNewDriverVehicleType(e.target.value)}
-                                                style={{ width: '100%', padding: '0.8rem 1rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', boxSizing: 'border-box', outline: 'none', background: '#fff', fontSize: '0.92rem' }}
-                                            >
-                                                <option value="Mota">🛵 Moto / Scooter</option>
-                                                <option value="Carro">🚗 Carro / Viatura</option>
-                                                <option value="Bicicleta">🚲 Bicicleta</option>
-                                                <option value="Carrinha">🚐 Carrinha / Van</option>
-                                            </select>
-                                        </div>
-
                                         <div>
                                             <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: '#334151' }}>
                                                 Tipo de Documento
@@ -2242,9 +2222,26 @@ export default function Admin() {
                                                                 <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '2px' }}>
                                                                     📞 {d.phone} {d.bairro ? `• 📍 ${d.bairro}` : ''}
                                                                 </div>
-                                                                <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>
-                                                                    🛵 {d.vehicle_type || 'Mota'} {d.vehicle_plate ? `(${d.vehicle_plate})` : ''}
-                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setDetailsModalDriver(d)}
+                                                                    style={{
+                                                                        marginTop: '4px',
+                                                                        background: '#eff6ff',
+                                                                        color: '#1d4ed8',
+                                                                        border: '1px solid #bfdbfe',
+                                                                        borderRadius: '6px',
+                                                                        padding: '0.2rem 0.55rem',
+                                                                        fontSize: '0.74rem',
+                                                                        fontWeight: 800,
+                                                                        cursor: 'pointer',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '3px'
+                                                                    }}
+                                                                >
+                                                                    👁️ Ver Dados
+                                                                </button>
                                                             </div>
                                                         </div>
 
@@ -2280,21 +2277,22 @@ export default function Admin() {
                                                             onClick={() => setDetailsModalDriver(d)}
                                                             style={{
                                                                 width: '100%',
-                                                                padding: '0.6rem',
-                                                                background: '#eff6ff',
-                                                                color: '#1d4ed8',
-                                                                border: '1.5px solid #bfdbfe',
-                                                                borderRadius: '8px',
+                                                                padding: '0.75rem 1rem',
+                                                                background: '#2563eb',
+                                                                color: '#ffffff',
+                                                                border: 'none',
+                                                                borderRadius: '10px',
                                                                 fontWeight: 800,
-                                                                fontSize: '0.84rem',
+                                                                fontSize: '0.92rem',
                                                                 cursor: 'pointer',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center',
-                                                                gap: '0.4rem'
+                                                                gap: '0.45rem',
+                                                                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
                                                             }}
                                                         >
-                                                            <span>📋 Ver Todos os Dados do Cadastro</span>
+                                                            <span>👁️ Ver Todos os Dados</span>
                                                         </button>
                                                     </div>
 
@@ -2475,6 +2473,26 @@ export default function Admin() {
                                                                 <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px', fontWeight: 700 }}>
                                                                     ID: #{d.id}
                                                                 </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setDetailsModalDriver(d)}
+                                                                    style={{
+                                                                        marginTop: '4px',
+                                                                        background: '#eff6ff',
+                                                                        color: '#1d4ed8',
+                                                                        border: '1px solid #bfdbfe',
+                                                                        borderRadius: '6px',
+                                                                        padding: '0.2rem 0.55rem',
+                                                                        fontSize: '0.74rem',
+                                                                        fontWeight: 800,
+                                                                        cursor: 'pointer',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '3px'
+                                                                    }}
+                                                                >
+                                                                    👁️ Ver Dados
+                                                                </button>
                                                             </div>
                                                         </div>
 
@@ -2547,12 +2565,11 @@ export default function Admin() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Vehicle & Document details */}
-                                                        {(d.doc_number || d.doc_photo_url || d.vehicle_type) && (
+                                                        {/* Document details (no vehicle) */}
+                                                        {(d.doc_number || d.doc_photo_url) && (
                                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: '#475569', marginBottom: '0.85rem' }}>
                                                                 <div>
-                                                                    <span>🛵 {d.vehicle_type || 'Mota'} {d.vehicle_plate ? `(${d.vehicle_plate})` : ''}</span>
-                                                                    {d.doc_number && <span style={{ marginLeft: '0.4rem' }}>• {d.doc_type || 'BI'}: <strong>{d.doc_number}</strong></span>}
+                                                                    {d.doc_number && <span>{d.doc_type || 'BI'}: <strong>{d.doc_number}</strong></span>}
                                                                 </div>
                                                                 {d.doc_photo_url && (
                                                                     <button
@@ -2560,7 +2577,7 @@ export default function Admin() {
                                                                         onClick={() => setDocPreviewUrl(d.doc_photo_url)}
                                                                         style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
                                                                     >
-                                                                        🔍 Ver Doc
+                                                                        🔍 Ver Foto do Documento
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -2574,22 +2591,23 @@ export default function Admin() {
                                                             onClick={() => setDetailsModalDriver(d)}
                                                             style={{
                                                                 width: '100%',
-                                                                padding: '0.45rem',
-                                                                background: '#eff6ff',
-                                                                color: '#1d4ed8',
-                                                                border: '1px solid #bfdbfe',
-                                                                borderRadius: '8px',
-                                                                fontSize: '0.78rem',
+                                                                padding: '0.75rem 1rem',
+                                                                background: '#2563eb',
+                                                                color: '#ffffff',
+                                                                border: 'none',
+                                                                borderRadius: '10px',
+                                                                fontSize: '0.92rem',
                                                                 fontWeight: 800,
                                                                 cursor: 'pointer',
-                                                                marginBottom: '0.35rem',
+                                                                marginBottom: '0.5rem',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center',
-                                                                gap: '0.35rem'
+                                                                gap: '0.45rem',
+                                                                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
                                                             }}
                                                         >
-                                                            <span>📋 Ver Cadastro Completo</span>
+                                                            <span>👁️ Ver Todos os Dados</span>
                                                         </button>
 
                                                         {status === 'Pendente' && (

@@ -318,8 +318,7 @@ export default function DriverPortal() {
     const [regName, setRegName] = useState('');
     const [regPhone, setRegPhone] = useState('');
     const [regProvince, setRegProvince] = useState(DEFAULT_PROVINCE);
-    const [regBairro, setRegBairro] = useState('Macuti (Beira)');
-    const [regBairroManual, setRegBairroManual] = useState(false);
+    const [regBairro, setRegBairro] = useState('');
     const [regDocType, setRegDocType] = useState('BI');
     const [regDocNumber, setRegDocNumber] = useState('');
     const [regPin, setRegPin] = useState('');
@@ -2945,26 +2944,16 @@ export default function DriverPortal() {
                                         </div>
 
                                         <div>
-                                            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                                     <Icons.MapPin />
                                                     <span>Localização (Província & Bairro) *</span>
                                                 </div>
-                                                <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 700 }}>
-                                                    {regBairroManual ? 'Digitação Manual' : 'Lista Rápida'}
-                                                </span>
                                             </label>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', marginBottom: regBairroManual ? '0.5rem' : 0 }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
                                                 <select
                                                     value={regProvince}
-                                                    onChange={(e) => {
-                                                        const p = e.target.value;
-                                                        setRegProvince(p);
-                                                        if (!regBairroManual) {
-                                                            const bList = getBairrosByProvince(p);
-                                                            if (bList.length > 0) setRegBairro(bList[0]);
-                                                        }
-                                                    }}
+                                                    onChange={(e) => setRegProvince(e.target.value)}
                                                     style={{
                                                         width: '100%',
                                                         padding: '0.8rem 0.6rem',
@@ -2983,83 +2972,27 @@ export default function DriverPortal() {
                                                     ))}
                                                 </select>
 
-                                                {!regBairroManual ? (
-                                                    <select
-                                                        value={regBairro}
-                                                        onChange={(e) => {
-                                                            if (e.target.value === '__custom__') {
-                                                                setRegBairroManual(true);
-                                                                setRegBairro('');
-                                                            } else {
-                                                                setRegBairro(e.target.value);
-                                                            }
-                                                        }}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.8rem 0.6rem',
-                                                            borderRadius: '12px',
-                                                            border: '1.5px solid #e2e8f0',
-                                                            fontSize: '0.86rem',
-                                                            color: '#0f172a',
-                                                            outline: 'none',
-                                                            background: '#fdfdfd',
-                                                            boxSizing: 'border-box',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        {getBairrosByProvince(regProvince).map(b => (
-                                                            <option key={b} value={b}>{b}</option>
-                                                        ))}
-                                                        <option value="__custom__">✏️ Digitar Outro Bairro...</option>
-                                                    </select>
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setRegBairroManual(false);
-                                                            const bList = getBairrosByProvince(regProvince);
-                                                            if (bList.length > 0) setRegBairro(bList[0]);
-                                                        }}
-                                                        style={{
-                                                            background: '#f1f5f9',
-                                                            border: '1px solid #cbd5e1',
-                                                            borderRadius: '12px',
-                                                            color: '#475569',
-                                                            fontSize: '0.8rem',
-                                                            fontWeight: 700,
-                                                            cursor: 'pointer',
-                                                            padding: '0.8rem 0.6rem'
-                                                        }}
-                                                    >
-                                                        ⬅️ Escolher da lista
-                                                    </button>
-                                                )}
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={regBairro}
+                                                    onChange={(e) => setRegBairro(e.target.value)}
+                                                    placeholder="Digite o seu Bairro *"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.8rem 0.85rem',
+                                                        borderRadius: '12px',
+                                                        border: '1.5px solid #e2e8f0',
+                                                        fontSize: '0.88rem',
+                                                        color: '#0f172a',
+                                                        outline: 'none',
+                                                        background: '#fdfdfd',
+                                                        boxSizing: 'border-box'
+                                                    }}
+                                                    onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
+                                                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                                />
                                             </div>
-
-                                            {/* Manual input for Bairro when typing manually */}
-                                            {regBairroManual && (
-                                                <div style={{ marginTop: '0.4rem' }}>
-                                                    <input
-                                                        type="text"
-                                                        required
-                                                        value={regBairro}
-                                                        onChange={(e) => setRegBairro(e.target.value)}
-                                                        placeholder="Digite o nome do seu bairro (Ex: Chamanculo, Matola Rio...)"
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.8rem 1rem',
-                                                            borderRadius: '12px',
-                                                            border: '1.5px solid #f59e0b',
-                                                            fontSize: '0.92rem',
-                                                            color: '#0f172a',
-                                                            outline: 'none',
-                                                            background: '#fff',
-                                                            boxSizing: 'border-box'
-                                                        }}
-                                                        autoFocus
-                                                    />
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
 

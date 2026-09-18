@@ -2,7 +2,7 @@
   "7": {
     "approval_status": "Aprovado",
     "is_online": false,
-    "last_seen_at": "2026-09-18T01:15:54.566Z",
+    "last_seen_at": "2026-09-18T11:19:46.017Z",
     "doc_type": "BI",
     "doc_number": "",
     "doc_photo_url": "",
@@ -40,9 +40,9 @@
     ]
   },
   "9": {
-    "approval_status": "Pendente",
+    "approval_status": "Recusado",
     "is_online": false,
-    "last_seen_at": "2026-09-18T10:17:44.162Z",
+    "last_seen_at": "2026-09-18T11:19:25.535Z",
     "doc_type": "BI",
     "doc_number": "4353534345",
     "doc_photo_url": "https://files.catbox.moe/m1i7d7.png",
@@ -51,6 +51,8 @@
     "bairro": "Inhambane - Balane",
     "pin": "1234",
     "warnings": [],
-    "earnings_rate_per_delivery": 150
+    "earnings_rate_per_delivery": 150,
+    "approval_notes": "",
+    "approval_updated_at": "2026-09-18T10:53:40.274Z"
   }
 }

@@ -1011,8 +1011,9 @@ export default function Store() {
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.length > 0) {
-                        setProducts(data);
-                        setCategories(['Todos', ...new Set(data.map(p => p.category))]);
+                        const activeList = data.filter(p => p.active !== false);
+                        setProducts(activeList);
+                        setCategories(['Todos', ...new Set(activeList.map(p => p.category))]);
                     }
                 }
             } catch (err) {
@@ -1073,7 +1074,7 @@ export default function Store() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const prodParam = urlParams.get('p') || urlParams.get('produto');
                 if (prodParam) {
-                    const target = products.find(p => p.id == prodParam);
+                    const target = products.find(p => p.id == prodParam && p.active !== false);
                     if (target) {
                         setSelectedProduct(target);
                         setHasCheckedDirectLink(true);
@@ -1637,9 +1638,10 @@ export default function Store() {
     const activeQuickOrderProduct = quickOrderProduct || null;
 
     const filteredProducts = (() => {
+        const baseProducts = products.filter(p => p.active !== false);
         const rawQ = searchQuery.trim();
         if (rawQ) {
-            const list = products.map(p => {
+            const list = baseProducts.map(p => {
                 const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;
                 const matchesPriceMin = priceMin <= 0 || p.price >= priceMin;
                 const matchesPriceMax = priceMax <= 0 || p.price <= priceMax;
@@ -1653,7 +1655,7 @@ export default function Store() {
             list.sort((a, b) => b.score - a.score);
             return list.map(item => item.product);
         } else {
-            return products.filter(p => {
+            return baseProducts.filter(p => {
                 const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;
                 const matchesPriceMin = priceMin <= 0 || p.price >= priceMin;
                 const matchesPriceMax = priceMax <= 0 || p.price <= priceMax;

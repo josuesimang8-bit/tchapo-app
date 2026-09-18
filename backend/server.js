@@ -2047,11 +2047,32 @@ app.put('/api/products/:id', async (req, res) => {
         if (image !== undefined) updates.image = image;
         if (desc !== undefined) updates.desc = desc;
         if (features !== undefined) updates.features = Array.isArray(features) ? features : [];
-        if (active !== undefined) updates.active = active;
+        if (active !== undefined) updates.active = (active === true || active === 'true');
         
         const { data, error } = await supabase
             .from('products')
             .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+            
+        if (error) throw error;
+        res.json(fixImageUrls(req, data));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PATCH toggle product active status
+app.patch('/api/products/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { active } = req.body;
+        const isAct = (active === true || active === 'true');
+        
+        const { data, error } = await supabase
+            .from('products')
+            .update({ active: isAct })
             .eq('id', id)
             .select()
             .single();

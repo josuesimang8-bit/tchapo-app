@@ -92,6 +92,7 @@ export default function Admin() {
     const [newProdColorSel, setNewProdColorSel]   = useState('show');
     const [newProdStockStatus, setNewProdStockStatus] = useState('Em Stock');
     const [newProdFeatured, setNewProdFeatured]   = useState(false);
+    const [newProdActive, setNewProdActive]       = useState(true);
 
     // Edit Product modal state
     const [editingProduct, setEditingProduct] = useState(null);
@@ -108,7 +109,12 @@ export default function Admin() {
     const [editProdColorSel, setEditProdColorSel]   = useState('show');
     const [editProdStockStatus, setEditProdStockStatus] = useState('Em Stock');
     const [editProdFeatured, setEditProdFeatured]       = useState(false);
+    const [editProdActive, setEditProdActive]           = useState(true);
     const [deleteProdToConfirm, setDeleteProdToConfirm] = useState(null);
+
+    // Product Inventory list filter states
+    const [prodSearchTerm, setProdSearchTerm] = useState('');
+    const [prodFilterTab, setProdFilterTab]   = useState('all'); // 'all' | 'active' | 'inactive'
 
     // --- Finance management state ---
     const [financeEntries, setFinanceEntries] = useState([]);
@@ -919,7 +925,7 @@ export default function Admin() {
                     image: photoUrl || 'assets/default_product.png',
                     desc: newProdDesc,
                     features: featuresArray,
-                    active: true
+                    active: newProdActive
                 })
             });
             if (res.ok) {
@@ -933,6 +939,7 @@ export default function Admin() {
                 setNewProdDeviceSel('none');
                 setNewProdStockStatus('Em Stock');
                 setNewProdFeatured(false);
+                setNewProdActive(true);
                 
                 const fileInput = document.getElementById('product-photo-input');
                 if (fileInput) fileInput.value = '';
@@ -952,6 +959,7 @@ export default function Admin() {
         setEditingProduct(product);
         setEditProdName(product.name);
         setEditProdPrice(product.price.toString());
+        setEditProdActive(product.active !== false);
         
         const isKnown = ['Smartphones', 'Áudio', 'Wearables', 'Acessórios'].includes(product.category);
         if (isKnown) {
@@ -1040,7 +1048,8 @@ export default function Admin() {
                     category: finalCategory || 'Acessórios',
                     image: photoUrl,
                     desc: editProdDesc,
-                    features: featuresArray
+                    features: featuresArray,
+                    active: editProdActive
                 })
             });
             if (res.ok) {
@@ -1056,6 +1065,7 @@ export default function Admin() {
                 setEditProdDeviceSel('none');
                 setEditProdStockStatus('Em Stock');
                 setEditProdFeatured(false);
+                setEditProdActive(true);
                 
                 fetchProducts();
                 setToast('Produto atualizado com sucesso!');
@@ -1069,19 +1079,26 @@ export default function Admin() {
     };
 
     const toggleProductActive = async (product) => {
+        const nextActive = product.active === false ? true : false;
+        // Optimistic local state update
+        setProducts(prev => prev.map(p => p.id === product.id ? { ...p, active: nextActive } : p));
         try {
             const res = await fetch(import.meta.env.VITE_API_URL + `/api/products/${product.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ active: !product.active })
+                body: JSON.stringify({ active: nextActive })
             });
             if (res.ok) {
                 fetchProducts();
-                setToast(`Produto ${!product.active ? 'ativado' : 'desativado'} com sucesso!`);
-                setTimeout(() => setToast(null), 2000);
+                setToast(`Produto "${product.name}" ${nextActive ? '🟢 ATIVADO' : '⚪ DESATIVADO'} com sucesso!`);
+                setTimeout(() => setToast(null), 2500);
+            } else {
+                fetchProducts();
+                alert('Erro ao atualizar estado do produto.');
             }
         } catch (err) {
             console.error('Erro ao alternar estado do produto:', err);
+            fetchProducts();
         }
     };
 
@@ -2816,17 +2833,38 @@ export default function Admin() {
                                             <option value="Esgotado">❌ Esgotado</option>
                                         </select>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '0.75rem' }}>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={newProdFeatured}
-                                                onChange={(e) => setNewProdFeatured(e.target.checked)}
-                                                style={{ width: '18px', height: '18px', accentColor: '#f59e0b', cursor: 'pointer' }}
-                                            />
-                                            ⭐ Produto em Destaque
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
+                                            👁️ Visibilidade na Loja
                                         </label>
+                                        <select
+                                            value={newProdActive ? 'true' : 'false'}
+                                            onChange={(e) => setNewProdActive(e.target.value === 'true')}
+                                            style={{
+                                                width: '100%', padding: '0.75rem',
+                                                border: newProdActive ? '1.5px solid #86efac' : '1.5px solid #fca5a5',
+                                                borderRadius: '8px', boxSizing: 'border-box', outline: 'none',
+                                                background: newProdActive ? '#f0fdf4' : '#fef2f2',
+                                                fontWeight: 700,
+                                                color: newProdActive ? '#15803d' : '#991b1b'
+                                            }}
+                                        >
+                                            <option value="true">🟢 Ativo (Visível na loja)</option>
+                                            <option value="false">⚪ Desativado (Oculto)</option>
+                                        </select>
                                     </div>
+                                </div>
+
+                                <div style={{ marginTop: '0.25rem' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={newProdFeatured}
+                                            onChange={(e) => setNewProdFeatured(e.target.checked)}
+                                            style={{ width: '18px', height: '18px', accentColor: '#f59e0b', cursor: 'pointer' }}
+                                        />
+                                        ⭐ Produto em Destaque
+                                    </label>
                                 </div>
 
                                 <button type="submit" disabled={uploadingProd} style={{
@@ -2841,71 +2879,182 @@ export default function Admin() {
                         </div>
 
                         {/* Lista de Inventário de Produtos */}
-                        <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-                            <h3 style={{ margin: '0 0 1.5rem', color: '#111827' }}>📦 Inventário de Produtos</h3>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '580px', overflowY: 'auto' }}>
-                                {products.map(p => (
-                                    <div key={p.id} style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '1rem', background: '#f9fafb', borderRadius: '12px',
-                                        border: '1px solid #f3f4f6', gap: '1rem'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-                                            <img
-                                                src={p.image || 'https://via.placeholder.com/60'}
-                                                alt={p.name}
-                                                style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover', background: '#e5e7eb', flexShrink: 0 }}
-                                            />
-                                            <div style={{ minWidth: 0, flex: 1 }}>
-                                                <h4 style={{ margin: 0, color: '#111827', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{p.name}</h4>
-                                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '4px', alignItems: 'center' }}>
-                                                    <span style={{ background: '#e5e7eb', color: '#374151', padding: '1px 6px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>{p.category}</span>
-                                                    <span style={{ color: '#111827', fontWeight: 700, fontSize: '0.85rem' }}>{Number(p.price).toLocaleString('pt-MZ')} MT</span>
+                        {(() => {
+                            const activeCount = products.filter(p => p.active !== false).length;
+                            const inactiveCount = products.filter(p => p.active === false).length;
+                            const displayedProducts = products.filter(p => {
+                                if (prodFilterTab === 'active' && p.active === false) return false;
+                                if (prodFilterTab === 'inactive' && p.active !== false) return false;
+                                if (prodSearchTerm.trim()) {
+                                    const q = prodSearchTerm.toLowerCase();
+                                    const matchesName = p.name && p.name.toLowerCase().includes(q);
+                                    const matchesCat = p.category && p.category.toLowerCase().includes(q);
+                                    return matchesName || matchesCat;
+                                }
+                                return true;
+                            });
+
+                            return (
+                                <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                        <div>
+                                            <h3 style={{ margin: '0 0 0.25rem', color: '#111827', fontSize: '1.2rem', fontWeight: 800 }}>📦 Inventário de Produtos</h3>
+                                            <p style={{ margin: 0, color: '#6b7280', fontSize: '0.82rem' }}>
+                                                Gerencie e ative/desative produtos para visualização na loja.
+                                            </p>
+                                        </div>
+                                        
+                                        <input
+                                            type="text"
+                                            value={prodSearchTerm}
+                                            onChange={(e) => setProdSearchTerm(e.target.value)}
+                                            placeholder="Buscar produto ou categoria..."
+                                            style={{ padding: '0.55rem 0.85rem', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '0.82rem', outline: 'none', width: '220px' }}
+                                        />
+                                    </div>
+
+                                    {/* Filter Tabs: Todos, Ativos, Desativados */}
+                                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setProdFilterTab('all')}
+                                            style={{
+                                                padding: '0.45rem 0.85rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                                fontSize: '0.8rem', fontWeight: 700,
+                                                background: prodFilterTab === 'all' ? '#111827' : '#f3f4f6',
+                                                color: prodFilterTab === 'all' ? '#fff' : '#4b5563'
+                                            }}
+                                        >
+                                            Todos ({products.length})
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setProdFilterTab('active')}
+                                            style={{
+                                                padding: '0.45rem 0.85rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                                fontSize: '0.8rem', fontWeight: 700,
+                                                background: prodFilterTab === 'active' ? '#15803d' : '#f0fdf4',
+                                                color: prodFilterTab === 'active' ? '#fff' : '#15803d'
+                                            }}
+                                        >
+                                            🟢 Ativos ({activeCount})
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setProdFilterTab('inactive')}
+                                            style={{
+                                                padding: '0.45rem 0.85rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                                fontSize: '0.8rem', fontWeight: 700,
+                                                background: prodFilterTab === 'inactive' ? '#991b1b' : '#fef2f2',
+                                                color: prodFilterTab === 'inactive' ? '#fff' : '#991b1b'
+                                            }}
+                                        >
+                                            ⚪ Desativados ({inactiveCount})
+                                        </button>
+                                    </div>
+
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '580px', overflowY: 'auto' }}>
+                                        {displayedProducts.map(p => {
+                                            const isActive = p.active !== false;
+                                            return (
+                                                <div key={p.id} style={{
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                    padding: '1rem',
+                                                    background: isActive ? '#f9fafb' : '#f8fafc',
+                                                    borderRadius: '12px',
+                                                    border: isActive ? '1px solid #f3f4f6' : '1.5px dashed #cbd5e1',
+                                                    opacity: isActive ? 1 : 0.82,
+                                                    gap: '1rem',
+                                                    transition: 'all 0.15s'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
+                                                        <img
+                                                            src={p.image || 'https://via.placeholder.com/60'}
+                                                            alt={p.name}
+                                                            style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover', background: '#e5e7eb', flexShrink: 0 }}
+                                                        />
+                                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                                <h4 style={{ margin: 0, color: '#111827', fontWeight: 700, fontSize: '0.95rem', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                                                    {p.name}
+                                                                </h4>
+                                                                <span style={{
+                                                                    background: isActive ? '#dcfce7' : '#fee2e2',
+                                                                    color: isActive ? '#15803d' : '#991b1b',
+                                                                    padding: '0.12rem 0.5rem',
+                                                                    borderRadius: '999px',
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: 800
+                                                                }}>
+                                                                    {isActive ? '🟢 Ativo' : '⚪ Desativado (Oculto)'}
+                                                                </span>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '5px', alignItems: 'center' }}>
+                                                                <span style={{ background: '#e5e7eb', color: '#374151', padding: '1px 6px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 600 }}>{p.category}</span>
+                                                                <span style={{ color: '#111827', fontWeight: 800, fontSize: '0.88rem' }}>{Number(p.price).toLocaleString('pt-MZ')} MT</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
+                                                        {/* Single-click Activate/Deactivate Option */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleProductActive(p)}
+                                                            style={{
+                                                                border: isActive ? '1.5px solid #fecaca' : '1.5px solid #86efac',
+                                                                padding: '0.45rem 0.85rem',
+                                                                borderRadius: '8px',
+                                                                fontSize: '0.78rem',
+                                                                fontWeight: 800,
+                                                                cursor: 'pointer',
+                                                                background: isActive ? '#fef2f2' : '#f0fdf4',
+                                                                color: isActive ? '#b91c1c' : '#15803d',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.35rem',
+                                                                transition: 'all 0.15s'
+                                                            }}
+                                                            title={isActive ? 'Desativar este produto da loja' : 'Ativar este produto para aparecer na loja'}
+                                                        >
+                                                            <span>{isActive ? '⚪ Desativar' : '🟢 Ativar'}</span>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => startEditingProduct(p)}
+                                                            style={{
+                                                                border: '1px solid #d1d5db', background: '#fff', color: '#374151',
+                                                                padding: '0.45rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
+                                                                fontSize: '0.78rem', fontWeight: 700
+                                                            }}
+                                                        >
+                                                            ✏️ Editar
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDeleteProdToConfirm(p)}
+                                                            style={{
+                                                                border: 'none', background: 'transparent', color: '#ef4444',
+                                                                cursor: 'pointer', fontSize: '1.15rem', padding: '0.3rem'
+                                                            }}
+                                                            title="Remover produto"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
                                                 </div>
+                                            );
+                                        })}
+                                        {displayedProducts.length === 0 && (
+                                            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af', background: '#f9fafb', borderRadius: '12px' }}>
+                                                Nenhum produto encontrado com este filtro.
                                             </div>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-                                            <button
-                                                onClick={() => toggleProductActive(p)}
-                                                style={{
-                                                    border: 'none', padding: '0.4rem 0.8rem', borderRadius: '20px',
-                                                    fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                                                    background: p.active ? '#d1fae5' : '#fee2e2',
-                                                    color: p.active ? '#065f46' : '#991b1b'
-                                                }}
-                                            >
-                                                {p.active ? 'Ativo 🟢' : 'Inativo 🔴'}
-                                            </button>
-                                            <button
-                                                onClick={() => startEditingProduct(p)}
-                                                style={{
-                                                    border: 'none', background: '#e5e7eb', color: '#374151',
-                                                    padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
-                                                    fontSize: '0.75rem', fontWeight: 600
-                                                }}
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                onClick={() => setDeleteProdToConfirm(p)}
-                                                style={{
-                                                    border: 'none', background: 'transparent', color: '#ef4444',
-                                                    cursor: 'pointer', fontSize: '1.2rem'
-                                                }}
-                                                title="Remover produto"
-                                            >
-                                                🗑️
-                                            </button>
-                                        </div>
+                                        )}
                                     </div>
-                                ))}
-                                {products.length === 0 && (
-                                    <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
-                                        Nenhum produto cadastrado no inventário.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
@@ -3729,17 +3878,38 @@ export default function Admin() {
                                         <option value="Esgotado">❌ Esgotado</option>
                                     </select>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '0.75rem' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={editProdFeatured}
-                                            onChange={(e) => setEditProdFeatured(e.target.checked)}
-                                            style={{ width: '18px', height: '18px', accentColor: '#f59e0b', cursor: 'pointer' }}
-                                        />
-                                        ⭐ Produto em Destaque
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
+                                        👁️ Visibilidade na Loja
                                     </label>
+                                    <select
+                                        value={editProdActive ? 'true' : 'false'}
+                                        onChange={(e) => setEditProdActive(e.target.value === 'true')}
+                                        style={{
+                                            width: '100%', padding: '0.75rem',
+                                            border: editProdActive ? '1.5px solid #86efac' : '1.5px solid #fca5a5',
+                                            borderRadius: '8px', boxSizing: 'border-box', outline: 'none',
+                                            background: editProdActive ? '#f0fdf4' : '#fef2f2',
+                                            fontWeight: 700,
+                                            color: editProdActive ? '#15803d' : '#991b1b'
+                                        }}
+                                    >
+                                        <option value="true">🟢 Ativo (Visível na loja)</option>
+                                        <option value="false">⚪ Desativado (Oculto)</option>
+                                    </select>
                                 </div>
+                            </div>
+
+                            <div style={{ marginTop: '0.25rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={editProdFeatured}
+                                        onChange={(e) => setEditProdFeatured(e.target.checked)}
+                                        style={{ width: '18px', height: '18px', accentColor: '#f59e0b', cursor: 'pointer' }}
+                                    />
+                                    ⭐ Produto em Destaque
+                                </label>
                             </div>
 
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>

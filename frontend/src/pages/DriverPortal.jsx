@@ -327,7 +327,7 @@ export default function DriverPortal() {
     const [docPhotoFile, setDocPhotoFile] = useState(null);
     const [docPhotoPreview, setDocPhotoPreview] = useState(null);
     const [regLoading, setRegLoading] = useState(false);
-    const [regStep, setRegStep] = useState(1); // 1: Perfil & Contacto | 2: Veículo & Documentos
+    const [regStep, setRegStep] = useState(1); // 1: Perfil & Contacto | 2: Documentos | 3: Lista de Levantamento
 
     // Availability State
     const [isOnline, setIsOnline] = useState(false);
@@ -506,7 +506,7 @@ export default function DriverPortal() {
         }
     };
 
-    // Handle Register
+    // Handle Register - Validate and show price list
     const handleRegister = async (e) => {
         e.preventDefault();
 
@@ -547,6 +547,12 @@ export default function DriverPortal() {
             return;
         }
 
+        // All valid — show price list (Step 3)
+        setRegStep(3);
+    };
+
+    // Final Submit - Actually send registration to API
+    const handleFinalSubmit = async () => {
         setRegLoading(true);
         try {
             const formData = new FormData();
@@ -573,6 +579,7 @@ export default function DriverPortal() {
             saveSession(data);
             setIsOnline(false);
             setIsRegisterModalOpen(false);
+            setRegStep(1);
             showToast('Registo submetido com sucesso! A sua conta está sob análise pelo Administrador.', 'success');
             fetchDashboard(data.id);
         } catch (err) {
@@ -2788,6 +2795,32 @@ export default function DriverPortal() {
                                     Documentação
                                 </span>
                             </div>
+                            <div style={{ flex: 1, height: '2px', background: regStep === 3 ? '#0f172a' : '#e2e8f0' }} />
+                            <div
+                                onClick={() => { if (regStep === 3) setRegStep(3); }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    opacity: regStep === 3 ? 1 : 0.6
+                                }}
+                            >
+                                <span style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    background: regStep === 3 ? '#0f172a' : '#cbd5e1',
+                                    color: '#fff',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700
+                                }}>3</span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: regStep === 3 ? '#0f172a' : '#64748b' }}>
+                                    Levantamento
+                                </span>
+                            </div>
                         </div>
 
                         {/* Modal Body / Scrollable Form */}
@@ -3256,7 +3289,8 @@ export default function DriverPortal() {
                                         </button>
 
                                         <button
-                                            type="submit"
+                                            type="button"
+                                            onClick={handleRegister}
                                             disabled={regLoading}
                                             style={{
                                                 flex: 2,
@@ -3268,7 +3302,6 @@ export default function DriverPortal() {
                                                 fontWeight: 800,
                                                 fontSize: '0.95rem',
                                                 cursor: 'pointer',
-                                                opacity: regLoading ? 0.7 : 1,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -3277,7 +3310,174 @@ export default function DriverPortal() {
                                             }}
                                         >
                                             <Icons.CheckCircle />
-                                            <span>{regLoading ? 'A enviar candidatura...' : 'Concluir & Submeter'}</span>
+                                            <span>Avançar</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {regStep === 3 && (
+                                <div style={{ padding: '1.25rem 1.75rem 1.5rem', overflowY: 'auto', maxHeight: '62vh' }}>
+                                    {/* Warning Banner */}
+                                    <div style={{
+                                        background: '#fef3c7',
+                                        border: '1.5px solid #fbbf24',
+                                        borderRadius: '12px',
+                                        padding: '0.85rem 1rem',
+                                        marginBottom: '1.25rem',
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: '0.65rem'
+                                    }}>
+                                        <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⚠️</span>
+                                        <div>
+                                            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#92400e', marginBottom: '0.2rem' }}>
+                                                Atenção — Preços de Levantamento
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#a16207', lineHeight: 1.5 }}>
+                                                A lista abaixo mostra os preços padrão de levantamento dos produtos na loja. Estes preços podem sofrer alterações de acordo com as mudanças do mercado.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <h4 style={{ margin: '0 0 0.85rem', fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
+                                        📋 Lista de Levantamento da Loja
+                                    </h4>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                                        {[
+                                            { name: 'Fita LED', price: 250 },
+                                            { name: 'Protector de Ecrã', price: 50 },
+                                            { name: 'Capa Silicone', price: 150 },
+                                            { name: 'Coluna Pequena', price: 150 },
+                                            { name: 'Mouse com Fio', price: 150 },
+                                            { name: 'Carregador de Carro', price: 100 },
+                                            { name: 'Airpods Original', price: 450 },
+                                            { name: 'JBL Pequeno', price: 150 },
+                                            { name: 'JBL Headset', price: 350 },
+                                            { name: 'Mouse Gamer', price: 200 },
+                                            { name: 'Cabo Carregador 4-em-1', price: 50 },
+                                            { name: 'MagSafe', price: 800 },
+                                            { name: 'Ventoinha Portátil', price: 100 },
+                                            { name: 'Airpods U40', price: 250 },
+                                            { name: 'Flash Drive 32GB', price: 190 },
+                                            { name: 'Router WiFi', price: 150 },
+                                            { name: 'Auriculares com Fio', price: 35 },
+                                            { name: 'Teclado Gamer + Mouse', price: 800 },
+                                            { name: 'Power Bank 10.000mAh', price: 650 },
+                                            { name: 'Chaleira Elétrica', price: 250 },
+                                            { name: 'Video Maker', price: 950 },
+                                            { name: 'Capas para Telemóvel', price: 100 },
+                                            { name: 'LCD de Android', price: 1500 },
+                                            { name: 'Game Stick', price: 1000 },
+                                            { name: 'Câmera de Vigilância', price: 1000 },
+                                            { name: 'Gamepad', price: 1500 },
+                                            { name: 'Auriculares de Pescoço', price: 200 },
+                                            { name: 'Controle Remoto de TV', price: 150 },
+                                            { name: 'Pilhas Duracell Pequenas', price: 50 },
+                                            { name: 'Home Theater / Coluna', price: 2500 },
+                                            { name: 'Microfone Lapela', price: 500 },
+                                            { name: 'Airpods Pro 2 (Cópia)', price: 250 },
+                                            { name: 'Nokia Mini BM10', price: 800 },
+                                            { name: 'Bateria Nokia 1110', price: 35 },
+                                            { name: 'Extensão Grande', price: 100 },
+                                            { name: 'Ventosas', price: 100 },
+                                            { name: 'Protector de Smartwatch', price: 200 },
+                                            { name: 'Ventoinha Mesa', price: 800 },
+                                            { name: 'JBL Live Flex', price: 250 },
+                                            { name: 'P47 Headphone', price: 150 },
+                                            { name: 'Earbuds M10', price: 250 },
+                                            { name: 'Tsunami (Suplemento)', price: 20 },
+                                            { name: 'Bálsamo Labial', price: 30 },
+                                            { name: 'Removedor de Amarelado Dental', price: 95 },
+                                            { name: 'Spray Oral', price: 150 },
+                                            { name: 'Clareador de Dentes', price: 100 },
+                                            { name: 'Máquina de Aquecer Cera', price: 350 },
+                                            { name: 'Chás de Emagrecimento', price: 200 },
+                                            { name: 'Cantil Cold Keeping', price: 580 },
+                                            { name: 'Perfume para Carro', price: 85 },
+                                            { name: 'Vaselina para Lábio', price: 20 },
+                                            { name: 'Secador de Unhas', price: 950 },
+                                            { name: 'Gilete Fusion', price: 500 },
+                                            { name: 'Creme de Pé', price: 75 },
+                                            { name: 'Creme de Pé de Banana', price: 100 },
+                                            { name: 'Creme Pé Rasga Manta', price: 155 },
+                                            { name: 'Creme Anti-Stretch', price: 200 },
+                                            { name: 'Stretch Mark Cream', price: 120 },
+                                            { name: 'Creme Peito', price: 150 },
+                                            { name: 'Óleo Aumentar Quadril', price: 250 },
+                                            { name: 'Creme Bunda', price: 200 },
+                                            { name: 'Levantador de Quadril', price: 180 },
+                                            { name: 'Gel Antibacteriano Íntimo', price: 100 },
+                                            { name: 'Creme para Emagrecer', price: 250 },
+                                            { name: 'Sixpense', price: 200 },
+                                            { name: 'Creme Emagrecer Vermelho', price: 180 },
+                                            { name: 'Protetores Solares', price: 130 },
+                                        ].map((item, idx) => (
+                                            <div key={idx} style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                padding: '0.55rem 0.75rem',
+                                                background: idx % 2 === 0 ? '#f8fafc' : '#ffffff',
+                                                borderBottom: '1px solid #f1f5f9',
+                                                borderRadius: idx === 0 ? '8px 8px 0 0' : undefined
+                                            }}>
+                                                <span style={{ fontSize: '0.82rem', color: '#334155', fontWeight: 600 }}>{item.name}</span>
+                                                <span style={{ fontSize: '0.82rem', color: '#0f172a', fontWeight: 800, whiteSpace: 'nowrap' }}>{item.price.toLocaleString('pt-MZ')} MT</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Buttons: Back and Agree */}
+                                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', position: 'sticky', bottom: 0, background: '#fff', paddingTop: '0.75rem' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRegStep(2)}
+                                            style={{
+                                                flex: 1,
+                                                background: '#f1f5f9',
+                                                color: '#475569',
+                                                border: '1px solid #cbd5e1',
+                                                padding: '0.9rem',
+                                                borderRadius: '12px',
+                                                fontWeight: 700,
+                                                fontSize: '0.88rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.4rem'
+                                            }}
+                                        >
+                                            <Icons.ChevronLeft />
+                                            <span>Voltar</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleFinalSubmit}
+                                            disabled={regLoading}
+                                            style={{
+                                                flex: 2,
+                                                background: '#059669',
+                                                color: '#ffffff',
+                                                border: 'none',
+                                                padding: '0.9rem',
+                                                borderRadius: '12px',
+                                                fontWeight: 800,
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                opacity: regLoading ? 0.7 : 1,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)'
+                                            }}
+                                        >
+                                            <Icons.CheckCircle />
+                                            <span>{regLoading ? 'A enviar candidatura...' : 'Eu concordo com a lista de levantamento da loja e quero continuar'}</span>
                                         </button>
                                     </div>
                                 </div>

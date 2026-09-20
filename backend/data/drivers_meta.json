@@ -2,7 +2,7 @@
   "7": {
     "approval_status": "Aprovado",
     "is_online": false,
-    "last_seen_at": "2026-09-19T01:50:15.228Z",
+    "last_seen_at": "2026-09-20T01:33:41.816Z",
     "doc_type": "BI",
     "doc_number": "",
     "doc_photo_url": "",
@@ -54,5 +54,19 @@
     "earnings_rate_per_delivery": 150,
     "approval_notes": "",
     "approval_updated_at": "2026-09-18T10:53:40.274Z"
+  },
+  "10": {
+    "approval_status": "Pendente",
+    "is_online": false,
+    "last_seen_at": "2026-09-20T01:33:38.019Z",
+    "doc_type": "BI",
+    "doc_number": "98879899",
+    "doc_photo_url": "/uploads/drivers/1789866356411.png",
+    "vehicle_type": "Mota",
+    "vehicle_plate": "",
+    "bairro": "Sofala - bbbh",
+    "pin": "1234",
+    "warnings": [],
+    "earnings_rate_per_delivery": 150
   }
 }

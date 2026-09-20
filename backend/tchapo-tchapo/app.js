@@ -1313,10 +1313,9 @@ function startQuickOrderModal(id, fromModal = false, customImg = null, customPri
                         <input type="text" id="qo-address" placeholder="Morada e Ponto de Referência" required>
                         <select id="qo-time" required>
                             <option value="" disabled selected>Horário de Entrega...</option>
-                            <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
                             <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
-                            <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
-                            <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
+                            <option value="Das 13:00 às 18:00">Das 13:00 às 18:00</option>
+                            <option value="Entrega Rápida (+100 MT)">⚡ Entrega Rápida (+100 MT)</option>
                         </select>
                         <select id="qo-payment" required>
                             <option value="" disabled selected>Método de Pagamento...</option>
@@ -1374,7 +1373,7 @@ function updateQuickOrderPrice() {
     let discount = appliedCoupon ? Math.round(subtotal * 0.1) : 0;
     let total = subtotal - discount;
     const timeSelect = document.getElementById('qo-time');
-    const isImediato = timeSelect && timeSelect.value.startsWith('Imediato');
+    const isRapida = timeSelect && (timeSelect.value.includes('Entrega Rápida') || timeSelect.value.startsWith('Imediato'));
     
     const priceEl = document.getElementById('qo-display-price');
     if (priceEl) {
@@ -1384,9 +1383,9 @@ function updateQuickOrderPrice() {
             displayHtml += `<span style="font-size:0.85rem;color:#10b981;font-weight:normal;">Desconto (10%): -${formatCurrency(discount)}</span><br>`;
         }
         
-        if (isImediato) {
-            total += 200;
-            displayHtml += `<strong>Total: ${formatCurrency(total)}</strong> <br><span style="font-size:0.75rem;color:#10b981;font-weight:normal;">(inclui +200 MT taxa urgente)</span>`;
+        if (isRapida) {
+            total += 100;
+            displayHtml += `<strong>Total: ${formatCurrency(total)}</strong> <br><span style="font-size:0.75rem;color:#10b981;font-weight:normal;">(inclui +100 MT taxa entrega rápida)</span>`;
         } else {
             displayHtml += `<strong>Total: ${formatCurrency(total)}</strong>`;
         }
@@ -1507,8 +1506,8 @@ function handleQuickOrder(e) {
     let subtotal = quickOrderProduct.price * qoQty;
     let discount = appliedCoupon ? Math.round(subtotal * 0.1) : 0;
     let total = subtotal - discount;
-    if (time.startsWith('Imediato')) {
-        total += 200;
+    if (time && (time.includes('Entrega Rápida') || time.startsWith('Imediato'))) {
+        total += 100;
     }
 
     const fullBairro = (province && !bairro.includes(province)) ? `${bairro} (${province})` : bairro;
@@ -1774,15 +1773,15 @@ function updateCartUI() {
 
         let total = subtotal - discount;
         const timeSelect = document.getElementById('customer-time');
-        const isImediato = timeSelect && timeSelect.value.startsWith('Imediato');
+        const isRapida = timeSelect && (timeSelect.value.includes('Entrega Rápida') || timeSelect.value.startsWith('Imediato'));
         
         if (cartSubtotalEl) {
             cartSubtotalEl.textContent = formatCurrency(subtotal);
         }
 
-        if (isImediato) {
-            total += 200;
-            totalAmountEl.innerHTML = `${formatCurrency(total)} <br><span style="font-size:0.8rem;color:#10b981;font-weight:normal;">(inclui +200 MT taxa urgente)</span>`;
+        if (isRapida) {
+            total += 100;
+            totalAmountEl.innerHTML = `${formatCurrency(total)} <br><span style="font-size:0.8rem;color:#10b981;font-weight:normal;">(inclui +100 MT taxa entrega rápida)</span>`;
         } else {
             totalAmountEl.textContent = formatCurrency(total);
         }
@@ -1839,8 +1838,8 @@ function handleCheckout(e) {
     }, 0);
     let discount = appliedCoupon ? Math.round(subtotal * appliedCoupon.discountPercent) : 0;
     let total = subtotal - discount;
-    if (time.startsWith('Imediato')) {
-        total += 200;
+    if (time && (time.includes('Entrega Rápida') || time.startsWith('Imediato'))) {
+        total += 100;
     }
 
     const fullBairro = (province && !bairro.includes(province)) ? `${bairro} (${province})` : bairro;

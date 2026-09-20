@@ -375,15 +375,27 @@ app.get('/admin', (req, res) => {
 });
 
 // Rota para o Portal de Entregadores (React build se existir)
+const getDriverIndex = () => {
+    const localDistIndex = path.join(__dirname, 'frontend_dist', 'index.html');
+    if (fs.existsSync(localDistIndex)) return localDistIndex;
+    const parentDistIndex = path.join(__dirname, '../frontend/dist/index.html');
+    if (fs.existsSync(parentDistIndex)) return parentDistIndex;
+    return null;
+};
+
 app.get(['/drivers', '/drivers/*'], (req, res) => {
-    const frontendDistIndex = path.join(__dirname, '../frontend/dist/index.html');
-    if (fs.existsSync(frontendDistIndex)) {
-        res.sendFile(frontendDistIndex);
+    const driverIndex = getDriverIndex();
+    if (driverIndex) {
+        res.sendFile(driverIndex);
     } else {
         res.redirect('/');
     }
 });
-app.use('/assets', express.static(path.join(__dirname, '../frontend/dist/assets')));
+if (fs.existsSync(path.join(__dirname, 'frontend_dist', 'assets'))) {
+    app.use('/assets', express.static(path.join(__dirname, 'frontend_dist', 'assets')));
+} else {
+    app.use('/assets', express.static(path.join(__dirname, '../frontend/dist/assets')));
+}
 
 // Ping / Health check endpoint for Keep-Alive & Uptime monitoring
 app.get('/api/ping', (req, res) => {

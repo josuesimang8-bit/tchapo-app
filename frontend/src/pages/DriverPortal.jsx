@@ -3361,7 +3361,7 @@ export default function DriverPortal() {
                                             { name: 'Ventoinha Portátil', price: 200 },
                                             { name: 'Pro 2 (Airpods U40)', price: 250 },
                                             { name: 'Pendrive USB (32GB)', price: 190 },
-                                            { name: 'Router Wifi', price: 150 },
+                                            { name: 'Router Wifi', price: 1800 },
                                             { name: 'Auriculares com Fio', price: 80 },
                                             { name: 'Combo: Mouse Teclado', price: 900 },
                                             { name: 'Power Bank 10000 Volts', price: 800 },

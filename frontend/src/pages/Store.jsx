@@ -1308,7 +1308,7 @@ export default function Store() {
 
         const itemsTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         const referralDiscount = appliedReferralCode ? (itemsTotal * 0.1) : 0;
-        const shippingFee = checkoutForm.time.startsWith('Imediato') ? 200 : 0;
+        const shippingFee = (checkoutForm.time && (checkoutForm.time.includes('Entrega Rápida') || checkoutForm.time.includes('Imediato'))) ? 100 : 0;
         const total = itemsTotal - referralDiscount + shippingFee;
 
         const orderData = {
@@ -1410,7 +1410,7 @@ export default function Store() {
         const unitPrice = getEffectivePrice(currentQoProduct, finalDevice);
         const itemsTotal = unitPrice * quickOrderQty;
         const referralDiscount = appliedReferralCode ? (itemsTotal * 0.1) : 0;
-        const shippingFee = quickOrderForm.time.startsWith('Imediato') ? 200 : 0;
+        const shippingFee = (quickOrderForm.time && (quickOrderForm.time.includes('Entrega Rápida') || quickOrderForm.time.includes('Imediato'))) ? 100 : 0;
         const total = itemsTotal - referralDiscount + shippingFee;
         
         const finalName = hasDeviceSel 
@@ -1673,12 +1673,12 @@ export default function Store() {
         const price = liveItem ? liveItem.price : item.price;
         return sum + (price * item.quantity);
     }, 0);
-    const cartShippingFee = checkoutForm.time.startsWith('Imediato') ? 200 : 0;
+    const cartShippingFee = (checkoutForm.time && (checkoutForm.time.includes('Entrega Rápida') || checkoutForm.time.includes('Imediato'))) ? 100 : 0;
     const cartReferralDiscount = appliedReferralCode ? (cartItemsTotal * 0.1) : 0;
     const cartTotal = cartItemsTotal - cartReferralDiscount + cartShippingFee;
 
     const quickOrderItemsTotal = (activeQuickOrderProduct ? activeQuickOrderProduct.price : 0) * quickOrderQty;
-    const quickOrderShippingFee = quickOrderForm.time.startsWith('Imediato') ? 200 : 0;
+    const quickOrderShippingFee = (quickOrderForm.time && (quickOrderForm.time.includes('Entrega Rápida') || quickOrderForm.time.includes('Imediato'))) ? 100 : 0;
     const quickOrderReferralDiscount = appliedReferralCode ? (quickOrderItemsTotal * 0.1) : 0;
     const quickOrderTotal = quickOrderItemsTotal - quickOrderReferralDiscount + quickOrderShippingFee;
 
@@ -2178,8 +2178,8 @@ export default function Store() {
                                 <span>Total:</span>
                                 <span>{formatCurrency(cartTotal)}</span>
                             </div>
-                            {checkoutForm.time.startsWith('Imediato') && (
-                                <span style={{ fontSize: '0.8rem', color: '#10b981', alignSelf: 'flex-end', fontWeight: 'normal' }}>(inclui +200 MT taxa urgente)</span>
+                            {(checkoutForm.time.includes('Entrega Rápida') || checkoutForm.time.startsWith('Imediato')) && (
+                                <span style={{ fontSize: '0.8rem', color: '#10b981', alignSelf: 'flex-end', fontWeight: 'normal' }}>(inclui +100 MT taxa entrega rápida)</span>
                             )}
                         </div>
 
@@ -2269,10 +2269,9 @@ export default function Store() {
                                     onChange={e => setCheckoutForm({ ...checkoutForm, time: e.target.value })}
                                 >
                                     <option value="" disabled>Horário de Entrega...</option>
-                                    <option value="Imediato (Até 2h) (+200 MT)">Imediato (Até 2h) (+200 MT)</option>
                                     <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
-                                    <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
-                                    <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
+                                    <option value="Das 13:00 às 18:00">Das 13:00 às 18:00</option>
+                                    <option value="Entrega Rápida (+100 MT)">⚡ Entrega Rápida (+100 MT)</option>
                                 </select>
                                 <select
                                     value={checkoutForm.payment}
@@ -2432,8 +2431,8 @@ export default function Store() {
                                             </span>
                                         )}
                                         <span>{formatCurrency(quickOrderTotal)}</span>
-                                        {quickOrderForm.time.startsWith('Imediato') && (
-                                            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 'normal' }}>(inclui +200 MT taxa urgente)</span>
+                                        {(quickOrderForm.time.includes('Entrega Rápida') || quickOrderForm.time.startsWith('Imediato')) && (
+                                            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 'normal' }}>(inclui +100 MT taxa entrega rápida)</span>
                                         )}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
@@ -2504,10 +2503,9 @@ export default function Store() {
                                             onChange={e => setQuickOrderForm({ ...quickOrderForm, time: e.target.value })}
                                         >
                                             <option value="" disabled>Horário de Entrega...</option>
-                                            <option value="Imediato (Até 2h) (+200 MT)">⚡ Imediato (Até 2h) (+200 MT)</option>
                                             <option value="Das 08:00 às 12:00">Das 08:00 às 12:00</option>
-                                            <option value="Das 12:00 às 16:00">Das 12:00 às 16:00</option>
-                                            <option value="Das 16:00 às 20:00">Das 16:00 às 20:00</option>
+                                            <option value="Das 13:00 às 18:00">Das 13:00 às 18:00</option>
+                                            <option value="Entrega Rápida (+100 MT)">⚡ Entrega Rápida (+100 MT)</option>
                                         </select>
                                         <select
                                             value={quickOrderForm.payment}

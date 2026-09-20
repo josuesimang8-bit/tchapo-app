@@ -228,6 +228,15 @@ const Icons = {
             <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
             <line x1="2" y1="2" x2="22" y2="22"/>
         </svg>
+    ),
+    FileText: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
     )
 };
 
@@ -2090,6 +2099,25 @@ export default function DriverPortal() {
                                                                         </span>
                                                                     </div>
 
+                                                                    {order.time && (
+                                                                        <div style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '0.45rem',
+                                                                            background: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '#fee2e2' : '#eff6ff',
+                                                                            color: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '#b91c1c' : '#1d4ed8',
+                                                                            border: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '1px solid #fca5a5' : '1px solid #bfdbfe',
+                                                                            padding: '0.35rem 0.85rem',
+                                                                            borderRadius: '999px',
+                                                                            fontSize: '0.82rem',
+                                                                            fontWeight: 800,
+                                                                            marginBottom: '0.85rem'
+                                                                        }}>
+                                                                            <Icons.Clock />
+                                                                            <span>Horário de Entrega: {order.time}</span>
+                                                                        </div>
+                                                                    )}
+
                                                                     {(() => {
                                                                         const loc = extractOrderLocation(order);
                                                                         return (
@@ -2285,6 +2313,25 @@ export default function DriverPortal() {
                                                             </span>
                                                         </div>
 
+                                                        {order.time && (
+                                                            <div style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.45rem',
+                                                                background: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '#fee2e2' : '#eff6ff',
+                                                                color: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '#b91c1c' : '#1d4ed8',
+                                                                border: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '1px solid #fca5a5' : '1px solid #bfdbfe',
+                                                                padding: '0.35rem 0.85rem',
+                                                                borderRadius: '999px',
+                                                                fontSize: '0.82rem',
+                                                                fontWeight: 800,
+                                                                marginBottom: '0.85rem'
+                                                            }}>
+                                                                <Icons.Clock />
+                                                                <span>Horário de Entrega: {order.time}</span>
+                                                            </div>
+                                                        )}
+
                                                         <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.88rem' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 800, marginBottom: '0.45rem' }}>
                                                                 <Icons.MapPin />
@@ -2380,6 +2427,30 @@ export default function DriverPortal() {
                                                         )}
 
                                                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                            <a
+                                                                href={`${API_URL}/api/orders/${order.id}/pdf`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{
+                                                                    flex: 1,
+                                                                    background: '#0f172a',
+                                                                    color: '#fff',
+                                                                    textDecoration: 'none',
+                                                                    padding: '0.8rem',
+                                                                    borderRadius: '10px',
+                                                                    fontWeight: 800,
+                                                                    fontSize: '0.85rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    gap: '0.45rem',
+                                                                    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.18)'
+                                                                }}
+                                                            >
+                                                                <Icons.FileText />
+                                                                <span>Baixar Fatura (PDF)</span>
+                                                            </a>
+
                                                             {order.customer_phone && (
                                                                 <a
                                                                     href={`https://wa.me/${String(order.customer_phone).replace(/\D/g, '')}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20entregador%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
@@ -2467,13 +2538,35 @@ export default function DriverPortal() {
                                                                 📍 {d.address || d.bairro || 'Beira'} • {d.created_at ? new Date(d.created_at).toLocaleDateString('pt-MZ') : ''}
                                                             </div>
                                                         </div>
-                                                        <div style={{ textAlign: 'right' }}>
+                                                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
                                                             <div style={{ fontWeight: 900, color: '#059669', fontSize: '1rem' }}>
                                                                 {formatMZCurrency(d.total)}
                                                             </div>
-                                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', padding: '0.15rem 0.55rem', borderRadius: '999px' }}>
-                                                                Entregue (+150 MT)
-                                                            </span>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                                <a
+                                                                    href={`${API_URL}/api/orders/${d.id}/pdf`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    style={{
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 800,
+                                                                        color: '#0f172a',
+                                                                        background: '#e2e8f0',
+                                                                        padding: '0.2rem 0.6rem',
+                                                                        borderRadius: '999px',
+                                                                        textDecoration: 'none',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.25rem'
+                                                                    }}
+                                                                >
+                                                                    <Icons.FileText />
+                                                                    <span>Fatura PDF</span>
+                                                                </a>
+                                                                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', padding: '0.2rem 0.6rem', borderRadius: '999px' }}>
+                                                                    Entregue (+150 MT)
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -2811,6 +2904,14 @@ export default function DriverPortal() {
                                         </>
                                     );
                                 })()}
+                                {confirmingOrder.time && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                        <span style={{ color: '#64748b' }}>Horário de Entrega:</span>
+                                        <strong style={{ color: (confirmingOrder.time.includes('Rápida') || confirmingOrder.time.includes('Imediato')) ? '#dc2626' : '#1e40af' }}>
+                                            {confirmingOrder.time}
+                                        </strong>
+                                    </div>
+                                )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                                     <span style={{ color: '#64748b' }}>Valor a Cobrar do Cliente:</span>
                                     <strong style={{ color: '#0f172a' }}>{formatMZCurrency(confirmingOrder.total)}</strong>

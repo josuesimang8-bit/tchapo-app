@@ -249,6 +249,161 @@ const formatTimer = (secs) => {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
+// Pickup prices list allowed by the store
+const STORE_PICKUP_PRICES = [
+    { name: 'Fita Led RGB 5 metros', price: 250 },
+    { name: 'Protetor de Vidro', price: 50 },
+    { name: 'Capas de Silicone', price: 100 },
+    { name: 'Bluetooth Speaker', price: 250 },
+    { name: 'Mouse com Fio', price: 250 },
+    { name: 'Carregador para Carro', price: 200 },
+    { name: 'AirPods Pro', price: 500 },
+    { name: 'JBL Bluetooth Speaker', price: 8000 },
+    { name: 'JBL Headphone', price: 700 },
+    { name: 'Mouse Gamer Com Fio', price: 400 },
+    { name: 'Cabo Carregador 4 em 1', price: 100 },
+    { name: 'Carregador Magsafe Para iPhone', price: 800 },
+    { name: 'Ventoinha Portátil', price: 200 },
+    { name: 'Pro 2 (Airpods U40)', price: 250 },
+    { name: 'Pendrive USB (32GB)', price: 190 },
+    { name: 'Router Wifi', price: 1800 },
+    { name: 'Auriculares com Fio', price: 80 },
+    { name: 'Combo: Mouse Teclado', price: 900 },
+    { name: 'Power Bank 10000 Volts', price: 800 },
+    { name: 'Chaleira Elétrica', price: 300 },
+    { name: 'Video Maker', price: 1000 },
+    { name: 'Capas Transparentes Magnéticas', price: 200 },
+    { name: 'LCD para Celulares Androides', price: 1100 },
+    { name: 'Game Stick', price: 1200 },
+    { name: 'Câmera de Vigilância', price: 1100 },
+    { name: 'Gamepad V8', price: 1100 },
+    { name: 'Auriculares com Fio para Pescoço', price: 180 },
+    { name: 'Remote Universal', price: 150 },
+    { name: 'Pilhas Duracell', price: 50 },
+    { name: 'Colunas Bluetooth (Home Theater)', price: 2500 },
+    { name: 'Microfone (Lapela)', price: 500 },
+    { name: 'Pro 2 (Cópia)', price: 200 },
+    { name: 'Nokia Mini BM10', price: 1000 },
+    { name: 'Bateria Nokia', price: 50 },
+    { name: 'Extensor 4 ports', price: 150 },
+    { name: 'Ventosas', price: 250 },
+    { name: 'Protetor de SmartWatch', price: 350 },
+    { name: 'Ventoinha', price: 900 },
+    { name: 'JBL Live Flex', price: 350 },
+    { name: 'Carregador Magsafe Para iPhone (Cabo)', price: 500 },
+    { name: 'P47 Headphone', price: 200 },
+    { name: 'Earbuds M10 NEWEST', price: 300 },
+    { name: 'Tsunami', price: 20 },
+    { name: 'Balsám', price: 30 },
+    { name: 'Pasta Removedora de mancha de fumaça', price: 95 },
+    { name: 'Sprey Bucal Oral', price: 150 },
+    { name: 'Pasta de Dentes Clareadora de Carvão', price: 100 },
+    { name: 'Aquecedor de Cera Roll On Depilador', price: 350 },
+    { name: 'Chá de Emagrecimento', price: 200 },
+    { name: 'Cantil Cold Keeping Cup', price: 580 },
+    { name: 'Perfume para Carro', price: 85 },
+    { name: 'Vaselina para Lábios', price: 20 },
+    { name: 'Secador de Unhas', price: 950 },
+    { name: 'Gillette Fusion 5', price: 500 },
+    { name: 'Creme de Pé', price: 75 },
+    { name: 'Creme de Pé (Extrato de Banana)', price: 100 },
+    { name: 'Creme de Pé (Anti-Rachaduras)', price: 155 },
+    { name: 'Creme de Estrias', price: 200 },
+    { name: 'Creme de Estrias (Stretch Mark)', price: 120 },
+    { name: 'Creme de Peitos', price: 150 },
+    { name: 'Oléo para Alargamento de Ancas', price: 250 },
+    { name: 'Creme Elevador de Quadril', price: 200 },
+    { name: 'Firmante de Quadril', price: 180 },
+    { name: 'Gel antibacteriano intimo', price: 100 },
+    { name: 'Creme Corporal de Emagrecimento', price: 250 },
+    { name: 'Creme para Abdómen (Six Pack)', price: 200 },
+    { name: 'Creme Corporal de Emagrecimento (Red)', price: 180 },
+    { name: 'Protetor Solar', price: 130 }
+];
+
+const normalizeForMatch = (str) => {
+    if (!str) return '';
+    return str.toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+const findPickupItem = (productName) => {
+    if (!productName) return null;
+    const cleanName = normalizeForMatch(productName);
+    
+    // 1. Exact match
+    const exact = STORE_PICKUP_PRICES.find(p => normalizeForMatch(p.name) === cleanName);
+    if (exact) return exact;
+
+    // 2. Substring match
+    const sub = STORE_PICKUP_PRICES.find(p => {
+        const cleanP = normalizeForMatch(p.name);
+        return cleanName.includes(cleanP) || cleanP.includes(cleanName);
+    });
+    if (sub) return sub;
+
+    // 3. Significant word match
+    const words = cleanName.split(' ').filter(w => w.length > 2);
+    let bestMatch = null;
+    let maxMatchedWords = 0;
+    for (const p of STORE_PICKUP_PRICES) {
+        const pWords = normalizeForMatch(p.name).split(' ').filter(w => w.length > 2);
+        const common = words.filter(w => pWords.includes(w));
+        if (common.length > maxMatchedWords) {
+            maxMatchedWords = common.length;
+            bestMatch = p;
+        }
+    }
+    if (bestMatch && maxMatchedWords >= 1) return bestMatch;
+    return null;
+};
+
+const calcOrderPickupAndProfit = (order) => {
+    if (!order) return { pickupTotal: 0, orderTotal: 0, estimatedProfit: 150, hasMatchedAny: false, itemsWithPickup: [] };
+    
+    let totalPickup = 0;
+    let hasMatchedAny = false;
+    const items = order.items || [];
+    
+    const itemsWithPickup = items.map(it => {
+        const match = findPickupItem(it.product_name || it.name);
+        const qty = it.quantity || 1;
+        const pickupUnit = match ? match.price : null;
+        if (pickupUnit !== null) {
+            totalPickup += pickupUnit * qty;
+            hasMatchedAny = true;
+        }
+        return {
+            ...it,
+            pickupPrice: pickupUnit,
+            pickupTotal: pickupUnit !== null ? pickupUnit * qty : null,
+            matchedName: match ? match.name : (it.product_name || it.name || 'Produto')
+        };
+    });
+
+    const orderTotal = Number(order.total) || 0;
+    let estimatedProfit = 0;
+
+    if (hasMatchedAny && totalPickup > 0) {
+        estimatedProfit = Math.max(0, orderTotal - totalPickup);
+    } else {
+        estimatedProfit = 150;
+    }
+
+    return {
+        pickupTotal: totalPickup,
+        orderTotal,
+        estimatedProfit,
+        hasMatchedAny,
+        itemsWithPickup
+    };
+};
+
 export default function DriverPortal() {
     const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -1989,15 +2144,24 @@ export default function DriverPortal() {
                                                                                                 <div style={{ fontWeight: 800, fontSize: '0.96rem', color: '#0f172a', lineHeight: 1.35, marginBottom: '0.45rem' }}>
                                                                                                     {it.product_name}
                                                                                                 </div>
-                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                                                                     <span style={{ background: '#0f172a', color: '#ffffff', padding: '3px 9px', borderRadius: '8px', fontWeight: 800, fontSize: '0.8rem' }}>
                                                                                                         {it.quantity}x unidades
                                                                                                     </span>
                                                                                                     {it.price ? (
-                                                                                                        <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#059669' }}>
-                                                                                                            {formatMZCurrency(it.price)}
+                                                                                                        <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#64748b' }}>
+                                                                                                            Venda: {formatMZCurrency(it.price)}
                                                                                                         </span>
                                                                                                     ) : null}
+                                                                                                    {(() => {
+                                                                                                        const pickupItem = findPickupItem(it.product_name);
+                                                                                                        if (!pickupItem) return null;
+                                                                                                        return (
+                                                                                                            <span style={{ background: '#fef3c7', color: '#b45309', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem' }}>
+                                                                                                                Levantamento: {formatMZCurrency(pickupItem.price)}
+                                                                                                            </span>
+                                                                                                        );
+                                                                                                    })()}
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
@@ -2007,16 +2171,42 @@ export default function DriverPortal() {
                                                                         </div>
                                                                     )}
 
-                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', marginBottom: '1.25rem', fontSize: '0.88rem' }}>
-                                                                        <div>
-                                                                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Cobrar do Cliente:</div>
-                                                                            <strong style={{ color: '#0f172a', fontSize: '1rem' }}>{formatMZCurrency(order.total)}</strong>
-                                                                        </div>
-                                                                        <div style={{ textAlign: 'right' }}>
-                                                                            <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 700 }}>Seu Ganho:</div>
-                                                                            <strong style={{ color: '#059669', fontSize: '1rem' }}>150 MT</strong>
-                                                                        </div>
-                                                                    </div>
+                                                                    {(() => {
+                                                                        const pInfo = calcOrderPickupAndProfit(order);
+                                                                        return (
+                                                                            <div style={{
+                                                                                background: '#f8fafc',
+                                                                                borderRadius: '14px',
+                                                                                border: '1.5px solid #e2e8f0',
+                                                                                padding: '0.85rem 1rem',
+                                                                                marginBottom: '1.25rem'
+                                                                            }}>
+                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                                                                                    <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>Cobrar do Cliente:</span>
+                                                                                    <strong style={{ color: '#0f172a', fontSize: '0.98rem' }}>{formatMZCurrency(order.total)}</strong>
+                                                                                </div>
+                                                                                {pInfo.pickupTotal > 0 && (
+                                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                                                                                        <span style={{ fontSize: '0.82rem', color: '#b45309', fontWeight: 600 }}>Levantamento na Loja:</span>
+                                                                                        <strong style={{ color: '#b45309', fontSize: '0.95rem' }}>{formatMZCurrency(pInfo.pickupTotal)}</strong>
+                                                                                    </div>
+                                                                                )}
+                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', marginTop: '0.2rem' }}>
+                                                                                    <span style={{ fontSize: '0.86rem', color: '#059669', fontWeight: 800 }}>Seu Lucro Estimado:</span>
+                                                                                    <span style={{
+                                                                                        background: '#dcfce7',
+                                                                                        color: '#15803d',
+                                                                                        padding: '0.25rem 0.65rem',
+                                                                                        borderRadius: '8px',
+                                                                                        fontWeight: 900,
+                                                                                        fontSize: '1rem'
+                                                                                    }}>
+                                                                                        +{formatMZCurrency(pInfo.estimatedProfit)}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })()}
                                                                 </div>
 
                                                                 <button
@@ -2106,9 +2296,27 @@ export default function DriverPortal() {
                                                             <div style={{ color: '#475569', marginBottom: '0.35rem' }}>
                                                                 Contacto: <strong>{order.customer_phone || 'Sem número'}</strong>
                                                             </div>
-                                                            <div style={{ color: '#059669', fontWeight: 800, fontSize: '0.95rem' }}>
-                                                                Total a Cobrar: {formatMZCurrency(order.total)}
-                                                            </div>
+                                                            {(() => {
+                                                                const actPickup = calcOrderPickupAndProfit(order);
+                                                                return (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.45rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.45rem' }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                            <span style={{ color: '#475569', fontSize: '0.84rem' }}>Cobrar do Cliente:</span>
+                                                                            <strong style={{ color: '#0f172a', fontWeight: 800 }}>{formatMZCurrency(order.total)}</strong>
+                                                                        </div>
+                                                                        {actPickup.pickupTotal > 0 && (
+                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                                <span style={{ color: '#b45309', fontSize: '0.84rem' }}>Levantamento na Loja:</span>
+                                                                                <strong style={{ color: '#b45309', fontWeight: 800 }}>{formatMZCurrency(actPickup.pickupTotal)}</strong>
+                                                                            </div>
+                                                                        )}
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                            <span style={{ color: '#059669', fontSize: '0.84rem', fontWeight: 700 }}>Seu Lucro Estimado:</span>
+                                                                            <strong style={{ color: '#059669', fontWeight: 900, fontSize: '0.98rem' }}>+{formatMZCurrency(actPickup.estimatedProfit)}</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })()}
                                                         </div>
 
                                                         {order.items && order.items.length > 0 && (
@@ -2144,15 +2352,24 @@ export default function DriverPortal() {
                                                                                     <div style={{ fontWeight: 800, fontSize: '0.96rem', color: '#0f172a', lineHeight: 1.35, marginBottom: '0.45rem' }}>
                                                                                         {it.product_name}
                                                                                     </div>
-                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                                                         <span style={{ background: '#0f172a', color: '#ffffff', padding: '3px 9px', borderRadius: '8px', fontWeight: 800, fontSize: '0.8rem' }}>
                                                                                             {it.quantity}x unidades
                                                                                         </span>
                                                                                         {it.price ? (
-                                                                                            <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#059669' }}>
-                                                                                                {formatMZCurrency(it.price)}
+                                                                                            <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#64748b' }}>
+                                                                                                Venda: {formatMZCurrency(it.price)}
                                                                                             </span>
                                                                                         ) : null}
+                                                                                        {(() => {
+                                                                                            const pItem = findPickupItem(it.product_name);
+                                                                                            if (!pItem) return null;
+                                                                                            return (
+                                                                                                <span style={{ background: '#fef3c7', color: '#b45309', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem' }}>
+                                                                                                    Levantamento: {formatMZCurrency(pItem.price)}
+                                                                                                </span>
+                                                                                            );
+                                                                                        })()}
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -2481,168 +2698,219 @@ export default function DriverPortal() {
             </main>
 
             {/* STRICT CONFIRMATION MODAL ("NÃO SE DEVE VOLTAR ATRÁS") */}
-            {confirmingOrder && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(15, 23, 42, 0.85)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 999999,
-                    backdropFilter: 'blur(8px)',
-                    padding: '1.5rem'
-                }}>
+            {confirmingOrder && (() => {
+                const confPickup = calcOrderPickupAndProfit(confirmingOrder);
+                return (
                     <div style={{
-                        background: '#fff',
-                        borderRadius: '24px',
-                        padding: '2.25rem',
-                        maxWidth: '520px',
-                        width: '100%',
-                        boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
-                        border: '2px solid #f59e0b',
-                        textAlign: 'center'
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(15, 23, 42, 0.85)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 999999,
+                        backdropFilter: 'blur(8px)',
+                        padding: '1.5rem'
                     }}>
-                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
-                            <Icons.AlertTriangle />
-                        </div>
-
-                        <span style={{
-                            background: '#fee2e2',
-                            color: '#b91c1c',
-                            fontWeight: 900,
-                            fontSize: '0.78rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.8px',
-                            padding: '0.3rem 0.85rem',
-                            borderRadius: '999px',
-                            display: 'inline-block',
-                            marginBottom: '0.75rem'
-                        }}>
-                            Compromisso Irrevogável
-                        </span>
-
-                        <h3 style={{ margin: '0 0 0.85rem', fontSize: '1.45rem', fontWeight: 900, color: '#0f172a' }}>
-                            Tem Certeza em Aceitar Este Pedido?
-                        </h3>
-
                         <div style={{
-                            background: '#fff7ed',
-                            border: '1.5px solid #fdba74',
-                            borderRadius: '14px',
-                            padding: '1.15rem',
-                            textAlign: 'left',
-                            marginBottom: '1.5rem'
+                            background: '#fff',
+                            borderRadius: '24px',
+                            padding: '2.25rem',
+                            maxWidth: '540px',
+                            width: '100%',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+                            border: '2px solid #f59e0b',
+                            textAlign: 'center',
+                            maxHeight: '92vh',
+                            overflowY: 'auto'
                         }}>
-                            <p style={{ margin: '0 0 0.65rem', fontSize: '0.9rem', color: '#9a3412', fontWeight: 800, lineHeight: 1.5 }}>
-                                ⚠️ ATENÇÃO: Quando aceita o pedido, NÃO É PERMITIDO VOLTAR ATRÁS nem cancelar a entrega!
-                            </p>
-                            <p style={{ margin: 0, fontSize: '0.84rem', color: '#7c2d12', lineHeight: 1.5 }}>
-                                A partir deste momento, todos os outros pedidos ficarão indisponíveis até concluir esta entrega e efetuar o pagamento da taxa para a plataforma.
-                            </p>
-                        </div>
-
-                        <div style={{
-                            background: '#f8fafc',
-                            padding: '0.95rem 1.25rem',
-                            borderRadius: '12px',
-                            border: '1px solid #e2e8f0',
-                            textAlign: 'left',
-                            marginBottom: '1.75rem',
-                            fontSize: '0.88rem'
-                        }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                                <span style={{ color: '#64748b' }}>Pedido:</span>
-                                <strong>#{confirmingOrder.id}</strong>
-                            </div>
-                            {(() => {
-                                const confLoc = extractOrderLocation(confirmingOrder);
-                                return (
-                                    <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                                            <span style={{ color: '#64748b' }}>Província:</span>
-                                            <strong style={{ color: '#1e40af' }}>{confLoc.province}</strong>
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                                            <span style={{ color: '#64748b' }}>Bairro de Entrega:</span>
-                                            <strong>{confLoc.bairro}</strong>
-                                        </div>
-                                    </>
-                                );
-                            })()}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                                <span style={{ color: '#64748b' }}>Valor da Mercadoria:</span>
-                                <strong>{formatMZCurrency(confirmingOrder.total)}</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem' }}>
-                                <span style={{ color: '#059669', fontWeight: 700 }}>Seu Ganho por Entrega:</span>
-                                <strong style={{ color: '#059669', fontSize: '0.95rem' }}>150 MT</strong>
+                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+                                <Icons.AlertTriangle />
                             </div>
 
-                            {confirmingOrder.items && confirmingOrder.items.length > 0 && (
-                                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.65rem', marginTop: '0.65rem' }}>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                        <Icons.Package />
-                                        <span>Itens da Entrega ({confirmingOrder.items.reduce((s, it) => s + (it.quantity || 1), 0)}):</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '160px', overflowY: 'auto' }}>
-                                        {confirmingOrder.items.map((it, idx) => {
-                                            const imgUrl = resolveImageUrl(it.image);
-                                            return (
-                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', padding: '0.5rem 0.65rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                                                    <div style={{ width: '52px', height: '52px', minWidth: '52px', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                                        {imgUrl ? (
-                                                            <img src={imgUrl} alt={it.product_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                                        ) : (
-                                                            <Icons.Package />
-                                                        )}
-                                                    </div>
-                                                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                                        <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {it.product_name}
-                                                        </div>
-                                                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>
-                                                            Qtd: {it.quantity}x
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                            <span style={{
+                                background: '#fee2e2',
+                                color: '#b91c1c',
+                                fontWeight: 900,
+                                fontSize: '0.78rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.8px',
+                                padding: '0.3rem 0.85rem',
+                                borderRadius: '999px',
+                                display: 'inline-block',
+                                marginBottom: '0.75rem'
+                            }}>
+                                Compromisso Irrevogável
+                            </span>
+
+                            <h3 style={{ margin: '0 0 0.85rem', fontSize: '1.45rem', fontWeight: 900, color: '#0f172a' }}>
+                                Confirmação de Levantamento & Entrega
+                            </h3>
+
+                            {/* WARNING & EXPLICIT PICKUP AGREEMENT */}
+                            <div style={{
+                                background: '#fff7ed',
+                                border: '1.5px solid #fdba74',
+                                borderRadius: '14px',
+                                padding: '1.15rem',
+                                textAlign: 'left',
+                                marginBottom: '1.35rem'
+                            }}>
+                                <div style={{ fontSize: '0.88rem', color: '#9a3412', fontWeight: 800, lineHeight: 1.45, marginBottom: '0.55rem' }}>
+                                    ⚠️ TERMO DE LEVANTAMENTO DO PRODUTO:
                                 </div>
-                            )}
-                        </div>
+                                <div style={{ fontSize: '0.85rem', color: '#7c2d12', lineHeight: 1.5, marginBottom: '0.65rem' }}>
+                                    {confPickup.itemsWithPickup && confPickup.itemsWithPickup.length > 0 ? (
+                                        <div>
+                                            Ao aceitar, você concorda e aceita expressamente que irá levantar na loja:
+                                            <ul style={{ margin: '0.4rem 0 0.5rem', paddingLeft: '1.25rem' }}>
+                                                {confPickup.itemsWithPickup.map((it, idx) => (
+                                                    <li key={idx} style={{ marginBottom: '0.3rem' }}>
+                                                        <strong>{it.product_name}</strong> ({it.quantity || 1}x) por{' '}
+                                                        <span style={{ color: '#b45309', fontWeight: 800 }}>
+                                                            {it.pickupPrice ? `${formatMZCurrency(it.pickupPrice)} cada` : 'preço de levantamento da loja'}
+                                                        </span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ) : (
+                                        <span>Ao aceitar este pedido, você concorda que irá levantar o produto na loja pelo preço acordado.</span>
+                                    )}
+                                </div>
+                                <div style={{ fontSize: '0.82rem', color: '#9a3412', fontWeight: 700, lineHeight: 1.4, borderTop: '1px dashed #fdba74', paddingTop: '0.45rem' }}>
+                                    🚫 Quando aceita o pedido, NÃO É PERMITIDO VOLTAR ATRÁS nem cancelar a entrega.
+                                </div>
+                            </div>
 
-                        <div style={{ display: 'flex', gap: '0.85rem' }}>
-                            <button
-                                onClick={() => setConfirmingOrder(null)}
-                                style={{ flex: 1, background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '0.85rem', borderRadius: '12px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
-                            >
-                                Cancelar / Voltar
-                            </button>
+                            <div style={{
+                                background: '#f8fafc',
+                                padding: '0.95rem 1.25rem',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                textAlign: 'left',
+                                marginBottom: '1.75rem',
+                                fontSize: '0.88rem'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                    <span style={{ color: '#64748b' }}>Pedido:</span>
+                                    <strong>#{confirmingOrder.id}</strong>
+                                </div>
+                                {(() => {
+                                    const confLoc = extractOrderLocation(confirmingOrder);
+                                    return (
+                                        <>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                                <span style={{ color: '#64748b' }}>Província:</span>
+                                                <strong style={{ color: '#1e40af' }}>{confLoc.province}</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                                <span style={{ color: '#64748b' }}>Bairro de Entrega:</span>
+                                                <strong>{confLoc.bairro}</strong>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                    <span style={{ color: '#64748b' }}>Valor a Cobrar do Cliente:</span>
+                                    <strong style={{ color: '#0f172a' }}>{formatMZCurrency(confirmingOrder.total)}</strong>
+                                </div>
+                                {confPickup.pickupTotal > 0 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                        <span style={{ color: '#b45309', fontWeight: 600 }}>Preço de Levantamento (Loja):</span>
+                                        <strong style={{ color: '#b45309' }}>{formatMZCurrency(confPickup.pickupTotal)}</strong>
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', marginTop: '0.2rem' }}>
+                                    <span style={{ color: '#059669', fontWeight: 800 }}>Seu Lucro Estimado:</span>
+                                    <span style={{
+                                        background: '#dcfce7',
+                                        color: '#15803d',
+                                        padding: '0.2rem 0.6rem',
+                                        borderRadius: '8px',
+                                        fontWeight: 900,
+                                        fontSize: '0.98rem'
+                                    }}>
+                                        +{formatMZCurrency(confPickup.estimatedProfit)}
+                                    </span>
+                                </div>
 
-                            <button
-                                onClick={handleConfirmAcceptOrder}
-                                disabled={acceptingId === confirmingOrder.id}
-                                style={{
-                                    flex: 1.4,
-                                    background: '#059669',
-                                    color: '#fff',
-                                    border: 'none',
-                                    padding: '0.85rem',
-                                    borderRadius: '12px',
-                                    fontWeight: 800,
-                                    fontSize: '0.92rem',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)'
-                                }}
-                            >
-                                {acceptingId === confirmingOrder.id ? 'A processar...' : 'Sim, Tenho Certeza e Aceito'}
-                            </button>
+                                {confPickup.itemsWithPickup && confPickup.itemsWithPickup.length > 0 && (
+                                    <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.65rem', marginTop: '0.65rem' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                            <Icons.Package />
+                                            <span>Itens da Entrega ({confPickup.itemsWithPickup.reduce((s, it) => s + (it.quantity || 1), 0)}):</span>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '160px', overflowY: 'auto' }}>
+                                            {confPickup.itemsWithPickup.map((it, idx) => {
+                                                const imgUrl = resolveImageUrl(it.image);
+                                                return (
+                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', padding: '0.5rem 0.65rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                                        <div style={{ width: '52px', height: '52px', minWidth: '52px', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                            {imgUrl ? (
+                                                                <img src={imgUrl} alt={it.product_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                                            ) : (
+                                                                <Icons.Package />
+                                                            )}
+                                                        </div>
+                                                        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                                                            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                {it.product_name}
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginTop: '2px' }}>
+                                                                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>
+                                                                    Qtd: {it.quantity || 1}x
+                                                                </span>
+                                                                {it.pickupPrice ? (
+                                                                    <span style={{ fontSize: '0.76rem', background: '#fef3c7', color: '#b45309', padding: '1px 6px', borderRadius: '6px', fontWeight: 700 }}>
+                                                                        Levantamento: {formatMZCurrency(it.pickupPrice)}
+                                                                    </span>
+                                                                ) : null}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.85rem' }}>
+                                <button
+                                    onClick={() => setConfirmingOrder(null)}
+                                    style={{ flex: 1, background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '0.85rem', borderRadius: '12px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+                                >
+                                    Cancelar / Voltar
+                                </button>
+
+                                <button
+                                    onClick={handleConfirmAcceptOrder}
+                                    disabled={acceptingId === confirmingOrder.id}
+                                    style={{
+                                        flex: 1.4,
+                                        background: '#059669',
+                                        color: '#fff',
+                                        border: 'none',
+                                        padding: '0.85rem',
+                                        borderRadius: '12px',
+                                        fontWeight: 800,
+                                        fontSize: '0.92rem',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)'
+                                    }}
+                                >
+                                    {acceptingId === confirmingOrder.id 
+                                        ? 'A processar...' 
+                                        : confPickup.pickupTotal > 0 
+                                            ? `Sim, Aceito Levantar (${formatMZCurrency(confPickup.pickupTotal)}) e Entregar` 
+                                            : 'Sim, Tenho Certeza e Aceito'}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* MODAL 1: Modern Entregador Registration Modal */}
             {isRegisterModalOpen && (
@@ -3345,76 +3613,7 @@ export default function DriverPortal() {
                                     </h4>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                                        {[
-                                            { name: 'Fita Led RGB 5 metros', price: 250 },
-                                            { name: 'Protetor de Vidro', price: 50 },
-                                            { name: 'Capas de Silicone', price: 100 },
-                                            { name: 'Bluetooth Speaker', price: 250 },
-                                            { name: 'Mouse com Fio', price: 250 },
-                                            { name: 'Carregador para Carro', price: 200 },
-                                            { name: 'AirPods Pro', price: 500 },
-                                            { name: 'JBL Bluetooth Speaker', price: 8000 },
-                                            { name: 'JBL Headphone', price: 700 },
-                                            { name: 'Mouse Gamer Com Fio', price: 400 },
-                                            { name: 'Cabo Carregador 4 em 1', price: 100 },
-                                            { name: 'Carregador Magsafe Para iPhone', price: 800 },
-                                            { name: 'Ventoinha Portátil', price: 200 },
-                                            { name: 'Pro 2 (Airpods U40)', price: 250 },
-                                            { name: 'Pendrive USB (32GB)', price: 190 },
-                                            { name: 'Router Wifi', price: 1800 },
-                                            { name: 'Auriculares com Fio', price: 80 },
-                                            { name: 'Combo: Mouse Teclado', price: 900 },
-                                            { name: 'Power Bank 10000 Volts', price: 800 },
-                                            { name: 'Chaleira Elétrica', price: 300 },
-                                            { name: 'Video Maker', price: 1000 },
-                                            { name: 'Capas Transparentes Magnéticas', price: 200 },
-                                            { name: 'LCD para Celulares Androides', price: 1100 },
-                                            { name: 'Game Stick', price: 1200 },
-                                            { name: 'Câmera de Vigilância', price: 1100 },
-                                            { name: 'Gamepad V8', price: 1100 },
-                                            { name: 'Auriculares com Fio para Pescoço', price: 180 },
-                                            { name: 'Remote Universal', price: 150 },
-                                            { name: 'Pilhas Duracell', price: 50 },
-                                            { name: 'Colunas Bluetooth (Home Theater)', price: 2500 },
-                                            { name: 'Microfone (Lapela)', price: 500 },
-                                            { name: 'Pro 2 (Cópia)', price: 200 },
-                                            { name: 'Nokia Mini BM10', price: 1000 },
-                                            { name: 'Bateria Nokia', price: 50 },
-                                            { name: 'Extensor 4 ports', price: 150 },
-                                            { name: 'Ventosas', price: 250 },
-                                            { name: 'Protetor de SmartWatch', price: 350 },
-                                            { name: 'Ventoinha', price: 900 },
-                                            { name: 'JBL Live Flex', price: 350 },
-                                            { name: 'Carregador Magsafe Para iPhone (Cabo)', price: 500 },
-                                            { name: 'P47 Headphone', price: 200 },
-                                            { name: 'Earbuds M10 NEWEST', price: 300 },
-                                            { name: 'Tsunami', price: 20 },
-                                            { name: 'Balsám', price: 30 },
-                                            { name: 'Pasta Removedora de mancha de fumaça', price: 95 },
-                                            { name: 'Sprey Bucal Oral', price: 150 },
-                                            { name: 'Pasta de Dentes Clareadora de Carvão', price: 100 },
-                                            { name: 'Aquecedor de Cera Roll On Depilador', price: 350 },
-                                            { name: 'Chá de Emagrecimento', price: 200 },
-                                            { name: 'Cantil Cold Keeping Cup', price: 580 },
-                                            { name: 'Perfume para Carro', price: 85 },
-                                            { name: 'Vaselina para Lábios', price: 20 },
-                                            { name: 'Secador de Unhas', price: 950 },
-                                            { name: 'Gillette Fusion 5', price: 500 },
-                                            { name: 'Creme de Pé', price: 75 },
-                                            { name: 'Creme de Pé (Extrato de Banana)', price: 100 },
-                                            { name: 'Creme de Pé (Anti-Rachaduras)', price: 155 },
-                                            { name: 'Creme de Estrias', price: 200 },
-                                            { name: 'Creme de Estrias (Stretch Mark)', price: 120 },
-                                            { name: 'Creme de Peitos', price: 150 },
-                                            { name: 'Oléo para Alargamento de Ancas', price: 250 },
-                                            { name: 'Creme Elevador de Quadril', price: 200 },
-                                            { name: 'Firmante de Quadril', price: 180 },
-                                            { name: 'Gel antibacteriano intimo', price: 100 },
-                                            { name: 'Creme Corporal de Emagrecimento', price: 250 },
-                                            { name: 'Creme para Abdómen (Six Pack)', price: 200 },
-                                            { name: 'Creme Corporal de Emagrecimento (Red)', price: 180 },
-                                            { name: 'Protetor Solar', price: 130 },
-                                        ].map((item, idx) => (
+                                        {STORE_PICKUP_PRICES.map((item, idx) => (
                                             <div key={idx} style={{
                                                 display: 'flex',
                                                 justifyContent: 'space-between',

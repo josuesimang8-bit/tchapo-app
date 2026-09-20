@@ -566,6 +566,150 @@ async function uploadToCatbox(file) {
     }
 }
 
+// Pickup prices allowed by the store
+const STORE_PICKUP_PRICES = [
+    { name: 'Fita Led RGB 5 metros', price: 250 },
+    { name: 'Protetor de Vidro', price: 50 },
+    { name: 'Capas de Silicone', price: 100 },
+    { name: 'Bluetooth Speaker', price: 250 },
+    { name: 'Mouse com Fio', price: 250 },
+    { name: 'Carregador para Carro', price: 200 },
+    { name: 'AirPods Pro', price: 500 },
+    { name: 'JBL Bluetooth Speaker', price: 8000 },
+    { name: 'JBL Headphone', price: 700 },
+    { name: 'Mouse Gamer Com Fio', price: 400 },
+    { name: 'Cabo Carregador 4 em 1', price: 100 },
+    { name: 'Carregador Magsafe Para iPhone', price: 800 },
+    { name: 'Ventoinha Portátil', price: 200 },
+    { name: 'Pro 2 (Airpods U40)', price: 250 },
+    { name: 'Pendrive USB (32GB)', price: 190 },
+    { name: 'Router Wifi', price: 1800 },
+    { name: 'Auriculares com Fio', price: 80 },
+    { name: 'Combo: Mouse Teclado', price: 900 },
+    { name: 'Power Bank 10000 Volts', price: 800 },
+    { name: 'Chaleira Elétrica', price: 300 },
+    { name: 'Video Maker', price: 1000 },
+    { name: 'Capas Transparentes Magnéticas', price: 200 },
+    { name: 'LCD para Celulares Androides', price: 1100 },
+    { name: 'Game Stick', price: 1200 },
+    { name: 'Câmera de Vigilância', price: 1100 },
+    { name: 'Gamepad V8', price: 1100 },
+    { name: 'Auriculares com Fio para Pescoço', price: 180 },
+    { name: 'Remote Universal', price: 150 },
+    { name: 'Pilhas Duracell', price: 50 },
+    { name: 'Colunas Bluetooth (Home Theater)', price: 2500 },
+    { name: 'Microfone (Lapela)', price: 500 },
+    { name: 'Pro 2 (Cópia)', price: 200 },
+    { name: 'Nokia Mini BM10', price: 1000 },
+    { name: 'Bateria Nokia', price: 50 },
+    { name: 'Extensor 4 ports', price: 150 },
+    { name: 'Ventosas', price: 250 },
+    { name: 'Protetor de SmartWatch', price: 350 },
+    { name: 'Ventoinha', price: 900 },
+    { name: 'JBL Live Flex', price: 350 },
+    { name: 'Carregador Magsafe Para iPhone (Cabo)', price: 500 },
+    { name: 'P47 Headphone', price: 200 },
+    { name: 'Earbuds M10 NEWEST', price: 300 },
+    { name: 'Tsunami', price: 20 },
+    { name: 'Balsám', price: 30 },
+    { name: 'Pasta Removedora de mancha de fumaça', price: 95 },
+    { name: 'Sprey Bucal Oral', price: 150 },
+    { name: 'Pasta de Dentes Clareadora de Carvão', price: 100 },
+    { name: 'Aquecedor de Cera Roll On Depilador', price: 350 },
+    { name: 'Chá de Emagrecimento', price: 200 },
+    { name: 'Cantil Cold Keeping Cup', price: 580 },
+    { name: 'Perfume para Carro', price: 85 },
+    { name: 'Vaselina para Lábios', price: 20 },
+    { name: 'Secador de Unhas', price: 950 },
+    { name: 'Gillette Fusion 5', price: 500 },
+    { name: 'Creme de Pé', price: 75 },
+    { name: 'Creme de Pé (Extrato de Banana)', price: 100 },
+    { name: 'Creme de Pé (Anti-Rachaduras)', price: 155 },
+    { name: 'Creme de Estrias', price: 200 },
+    { name: 'Creme de Estrias (Stretch Mark)', price: 120 },
+    { name: 'Creme de Peitos', price: 150 },
+    { name: 'Oléo para Alargamento de Ancas', price: 250 },
+    { name: 'Creme Elevador de Quadril', price: 200 },
+    { name: 'Firmante de Quadril', price: 180 },
+    { name: 'Gel antibacteriano intimo', price: 100 },
+    { name: 'Creme Corporal de Emagrecimento', price: 250 },
+    { name: 'Creme para Abdómen (Six Pack)', price: 200 },
+    { name: 'Creme Corporal de Emagrecimento (Red)', price: 180 },
+    { name: 'Protetor Solar', price: 130 }
+];
+
+function normalizeForPickup(str) {
+    if (!str) return '';
+    return str.toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function findPickupPrice(name) {
+    if (!name) return null;
+    const clean = normalizeForPickup(name);
+    const exact = STORE_PICKUP_PRICES.find(p => normalizeForPickup(p.name) === clean);
+    if (exact) return exact.price;
+    const sub = STORE_PICKUP_PRICES.find(p => {
+        const cp = normalizeForPickup(p.name);
+        return clean.includes(cp) || cp.includes(clean);
+    });
+    if (sub) return sub.price;
+    const words = clean.split(' ').filter(w => w.length > 2);
+    let best = null, maxW = 0;
+    for (const p of STORE_PICKUP_PRICES) {
+        const pw = normalizeForPickup(p.name).split(' ').filter(w => w.length > 2);
+        const common = words.filter(w => pw.includes(w));
+        if (common.length > maxW) {
+            maxW = common.length;
+            best = p;
+        }
+    }
+    return (best && maxW >= 1) ? best.price : null;
+}
+
+function calculateOrderProfitAndFee(order) {
+    let items = [];
+    if (order.items) {
+        try {
+            items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+        } catch (_) {
+            items = [];
+        }
+    }
+    let totalPickup = 0;
+    let hasMatched = false;
+    for (const it of items) {
+        const pPrice = findPickupPrice(it.product_name || it.name);
+        const qty = it.quantity || 1;
+        if (pPrice !== null) {
+            totalPickup += pPrice * qty;
+            hasMatched = true;
+        }
+    }
+    const orderTotal = Number(order.total) || 0;
+    let estimatedProfit = 0;
+    if (hasMatched && totalPickup > 0) {
+        estimatedProfit = Math.max(0, orderTotal - totalPickup);
+    } else {
+        estimatedProfit = 150;
+    }
+    // Taxa da plataforma: exatamente 15% do lucro estimado (mínimo 20 MT)
+    const platformFee = Math.max(20, Math.round(estimatedProfit * 0.15));
+    const driverNetProfit = Math.max(0, estimatedProfit - platformFee);
+    return {
+        pickupTotal: totalPickup,
+        orderTotal,
+        estimatedProfit,
+        platformFee,
+        driverNetProfit
+    };
+}
+
 function formatOrderResponse(order) {
     if (!order) return order;
     let itemsArray = [];
@@ -590,7 +734,10 @@ function formatOrderResponse(order) {
     let timer_end_at = null;
     let timer_remaining_secs = 14400;
 
-    if (!order.status || order.status === 'Pendente') {
+    // Pedido aprovado pelo admin sem motorista atribuído continua pendente (timer pausado)
+    const isPaused = !order.status || order.status === 'Pendente' || (order.status === 'Aprovado' && !order.driver_id);
+
+    if (isPaused) {
         // Paused state
         if (createdDate.getFullYear() === 1970) {
             // Epoch marker: remaining seconds frozen at pause time
@@ -604,7 +751,7 @@ function formatOrderResponse(order) {
         timer_remaining_secs = 0;
         timer_end_at = null;
     } else {
-        // Active: Processando, Preparando, Com Motorista
+        // Active: Processando, Preparando, Com Motorista, Com Entregador, ou Aprovado com motorista já atribuído
         timer_remaining_secs = Math.max(0, 14400 - Math.floor((nowMs - createdMs) / 1000));
         timer_end_at = new Date(createdMs + 14400 * 1000).toISOString();
     }
@@ -879,15 +1026,15 @@ app.put('/api/orders/:id/status', async (req, res) => {
         if (status !== undefined) {
             const { data: currentOrder } = await supabase
                 .from('orders')
-                .select('status, created_at')
+                .select('status, created_at, driver_id')
                 .eq('id', id)
                 .single();
                 
             if (currentOrder) {
-                const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente';
-                const wasActive = ['Aprovado', 'Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(currentOrder.status);
-                const isNowActive = ['Aprovado', 'Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(status);
-                const isNowPendente = status === 'Pendente';
+                const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente' || (currentOrder.status === 'Aprovado' && !currentOrder.driver_id);
+                const willHaveDriver = driver_id !== undefined ? Boolean(driver_id) : Boolean(currentOrder.driver_id);
+                const isNowActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(status) || (status === 'Aprovado' && willHaveDriver);
+                const isNowPendente = status === 'Pendente' || (status === 'Aprovado' && !willHaveDriver);
                 const createdDate = new Date(currentOrder.created_at);
                 const createdMs = createdDate.getTime();
                 const nowMs = Date.now();
@@ -897,8 +1044,6 @@ app.put('/api/orders/:id/status', async (req, res) => {
                     if (createdDate.getFullYear() === 1970) {
                         // Was paused with frozen remaining seconds encoded in epoch marker
                         const remainingSecs = Math.floor(createdMs / 1000);
-                        // Set created_at so that 4h - (now - created_at) = remainingSecs
-                        // created_at = now - (14400 - remainingSecs)
                         updates.created_at = new Date(nowMs - (14400 - remainingSecs) * 1000).toISOString();
                     } else {
                         // First activation: start fresh 4h timer
@@ -921,14 +1066,13 @@ app.put('/api/orders/:id/status', async (req, res) => {
 
         if (error) throw error;
 
-        // If marked as Entregue, generate 20% debt for the assigned driver
+        // If marked as Entregue, generate 15% debt based on estimated profit for the assigned driver
         if (status === 'Entregue' && data) {
             const assignedDriverId = data.driver_id || driver_id;
             if (assignedDriverId) {
                 const numDId = Number(assignedDriverId);
                 const orderTotal = Number(data.total) || 150;
-                // Exactly 20% commission of the order total
-                const commissionAmount = Math.max(30, Math.round(orderTotal * 0.20));
+                const { estimatedProfit, platformFee, driverNetProfit } = calculateOrderProfitAndFee(data);
                 const now = new Date();
                 const dueAt = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours countdown
 
@@ -936,13 +1080,15 @@ app.put('/api/orders/:id/status', async (req, res) => {
                     id: 'DEBT-' + Date.now(),
                     order_id: data.id,
                     order_total: orderTotal,
-                    amount: commissionAmount,
-                    percentage: 20,
+                    profit: estimatedProfit,
+                    amount: platformFee,
+                    percentage: 15,
                     created_at: now.toISOString(),
                     due_at: dueAt.toISOString(),
                     status: 'Pendente',
                     payment_proof: null,
-                    overdue_warned: false
+                    overdue_warned: false,
+                    notes: `Taxa de 15% sobre o lucro estimado de ${estimatedProfit} MT (Lucro Líquido do Entregador: ${driverNetProfit} MT)`
                 };
 
                 updateDriverMeta(numDId, {
@@ -951,7 +1097,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
                     is_online: false
                 });
 
-                console.log(`[DEBT] Created 20% commission debt of ${commissionAmount} MT for driver #${numDId} on order #${data.id}. Due at: ${dueAt.toISOString()}`);
+                console.log(`[DEBT] Created 15% profit-based debt of ${platformFee} MT for driver #${numDId} on order #${data.id} (Profit: ${estimatedProfit} MT). Due at: ${dueAt.toISOString()}`);
             }
 
             if (data.referral_code) {
@@ -1440,7 +1586,8 @@ app.put('/api/orders/:id/accept', async (req, res) => {
             .from('orders')
             .update({
                 driver_id: numDriverId,
-                status: newStatus
+                status: newStatus,
+                created_at: new Date().toISOString()
             })
             .eq('id', id)
             .select()

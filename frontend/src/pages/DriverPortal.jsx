@@ -404,10 +404,16 @@ const calcOrderPickupAndProfit = (order) => {
         estimatedProfit = 150;
     }
 
+    // Taxa da plataforma: exatamente 15% do lucro estimado (mínimo 20 MT)
+    const platformFee = Math.max(20, Math.round(estimatedProfit * 0.15));
+    const driverNetProfit = Math.max(0, estimatedProfit - platformFee);
+
     return {
         pickupTotal: totalPickup,
         orderTotal,
         estimatedProfit,
+        platformFee,
+        driverNetProfit,
         hasMatchedAny,
         itemsWithPickup
     };
@@ -1350,7 +1356,7 @@ export default function DriverPortal() {
 
                 {/* VIEW 3: Approved Driver Portal Dashboard */}
                 {authDriver && authDriver.approval_status === 'Aprovado' && (
-                    <div>
+                    <div style={{ paddingBottom: '95px' }}>
 
                         {/* ========================================================================= */}
                         {/* TELA BRANCA DE PAGAMENTO DE TAXA APÓS ENTREGA (SOLICITADA PELO UTILIZADOR) */}
@@ -1451,7 +1457,14 @@ export default function DriverPortal() {
                                         boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
                                     }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.85rem', borderBottom: '1.5px solid #e2e8f0' }}>
-                                            <span style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 700 }}>Valor a pagar:</span>
+                                            <div>
+                                                <div style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 700 }}>Taxa da Plataforma (15% do Lucro):</div>
+                                                {pendingDebt.profit && (
+                                                    <div style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 700, marginTop: '2px' }}>
+                                                        Lucro obtido no pedido: +{formatMZCurrency(pendingDebt.profit)}
+                                                    </div>
+                                                )}
+                                            </div>
                                             <strong style={{ fontSize: 'clamp(1.4rem, 3.5vw, 1.85rem)', fontWeight: 900, color: '#dc2626' }}>
                                                 {formatMZCurrency(pendingDebt.amount)}
                                             </strong>
@@ -2071,14 +2084,14 @@ export default function DriverPortal() {
                                                         </p>
                                                     </div>
                                                 ) : (
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.25rem' }}>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
                                                         {availableOrders.map(order => (
                                                             <div key={order.id} style={{
                                                                 background: '#fff',
-                                                                borderRadius: '20px',
-                                                                padding: '1.5rem',
-                                                                border: '1.5px solid #fde68a',
-                                                                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.08)',
+                                                                borderRadius: '22px',
+                                                                padding: '1.35rem',
+                                                                border: '1.5px solid #e2e8f0',
+                                                                boxShadow: '0 4px 20px -2px rgba(0,0,0,0.06)',
                                                                 display: 'flex',
                                                                 flexDirection: 'column',
                                                                 justifyContent: 'space-between'
@@ -2203,33 +2216,52 @@ export default function DriverPortal() {
                                                                         const pInfo = calcOrderPickupAndProfit(order);
                                                                         return (
                                                                             <div style={{
-                                                                                background: '#f8fafc',
-                                                                                borderRadius: '14px',
+                                                                                background: 'linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%)',
+                                                                                borderRadius: '16px',
                                                                                 border: '1.5px solid #e2e8f0',
                                                                                 padding: '0.85rem 1rem',
-                                                                                marginBottom: '1.25rem'
+                                                                                marginBottom: '1.15rem'
                                                                             }}>
-                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                                                                                     <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>Cobrar do Cliente:</span>
-                                                                                    <strong style={{ color: '#0f172a', fontSize: '0.98rem' }}>{formatMZCurrency(order.total)}</strong>
+                                                                                    <strong style={{ color: '#0f172a', fontSize: '0.95rem', fontWeight: 800 }}>{formatMZCurrency(order.total)}</strong>
                                                                                 </div>
                                                                                 {pInfo.pickupTotal > 0 && (
-                                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                                                                                         <span style={{ fontSize: '0.82rem', color: '#b45309', fontWeight: 600 }}>Levantamento na Loja:</span>
-                                                                                        <strong style={{ color: '#b45309', fontSize: '0.95rem' }}>{formatMZCurrency(pInfo.pickupTotal)}</strong>
+                                                                                        <strong style={{ color: '#b45309', fontSize: '0.92rem', fontWeight: 800 }}>{formatMZCurrency(pInfo.pickupTotal)}</strong>
                                                                                     </div>
                                                                                 )}
-                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', marginTop: '0.2rem' }}>
-                                                                                    <span style={{ fontSize: '0.86rem', color: '#059669', fontWeight: 800 }}>Seu Lucro Estimado:</span>
+                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                                                                                    <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 600 }}>Lucro Estimado Bruto:</span>
+                                                                                    <strong style={{ color: '#334155', fontSize: '0.92rem', fontWeight: 800 }}>+{formatMZCurrency(pInfo.estimatedProfit)}</strong>
+                                                                                </div>
+                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                                                                                    <span style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 600 }}>Taxa da Plataforma (15%):</span>
+                                                                                    <strong style={{ color: '#dc2626', fontSize: '0.88rem', fontWeight: 800 }}>-{formatMZCurrency(pInfo.platformFee)}</strong>
+                                                                                </div>
+                                                                                <div style={{
+                                                                                    display: 'flex',
+                                                                                    justifyContent: 'space-between',
+                                                                                    alignItems: 'center',
+                                                                                    borderTop: '1.5px dashed #cbd5e1',
+                                                                                    paddingTop: '0.55rem',
+                                                                                    marginTop: '0.3rem'
+                                                                                }}>
+                                                                                    <div>
+                                                                                        <div style={{ fontSize: '0.86rem', color: '#059669', fontWeight: 900 }}>Seu Lucro Líquido:</div>
+                                                                                        <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Direto no seu bolso</div>
+                                                                                    </div>
                                                                                     <span style={{
-                                                                                        background: '#dcfce7',
-                                                                                        color: '#15803d',
-                                                                                        padding: '0.25rem 0.65rem',
-                                                                                        borderRadius: '8px',
+                                                                                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                                                                        color: '#ffffff',
+                                                                                        padding: '0.35rem 0.85rem',
+                                                                                        borderRadius: '12px',
                                                                                         fontWeight: 900,
-                                                                                        fontSize: '1rem'
+                                                                                        fontSize: '1.05rem',
+                                                                                        boxShadow: '0 2px 8px rgba(5,150,105,0.25)'
                                                                                     }}>
-                                                                                        +{formatMZCurrency(pInfo.estimatedProfit)}
+                                                                                        +{formatMZCurrency(pInfo.driverNetProfit)}
                                                                                     </span>
                                                                                 </div>
                                                                             </div>
@@ -2237,27 +2269,34 @@ export default function DriverPortal() {
                                                                     })()}
                                                                 </div>
 
-                                                                <button
-                                                                    onClick={() => promptAcceptOrder(order)}
-                                                                    style={{
-                                                                        background: '#059669',
-                                                                        color: '#fff',
-                                                                        border: 'none',
-                                                                        padding: '0.85rem',
-                                                                        borderRadius: '12px',
-                                                                        fontWeight: 800,
-                                                                        fontSize: '0.95rem',
-                                                                        cursor: 'pointer',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        gap: '0.5rem',
-                                                                        boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)'
-                                                                    }}
-                                                                >
-                                                                    <Icons.CheckCircle />
-                                                                    <span>Aceitar este Pedido</span>
-                                                                </button>
+                                                                {(() => {
+                                                                    const pInfo = calcOrderPickupAndProfit(order);
+                                                                    return (
+                                                                        <button
+                                                                            onClick={() => promptAcceptOrder(order)}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                                                                                color: '#fff',
+                                                                                border: 'none',
+                                                                                padding: '0.92rem 1rem',
+                                                                                borderRadius: '16px',
+                                                                                fontWeight: 900,
+                                                                                fontSize: '0.95rem',
+                                                                                cursor: 'pointer',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                gap: '0.5rem',
+                                                                                boxShadow: '0 4px 16px rgba(5, 150, 105, 0.35)',
+                                                                                transition: 'transform 0.15s ease'
+                                                                            }}
+                                                                        >
+                                                                            <Icons.CheckCircle />
+                                                                            <span>Aceitar Pedido • Ganhe +{formatMZCurrency(pInfo.driverNetProfit)}</span>
+                                                                        </button>
+                                                                    );
+                                                                })()}
                                                             </div>
                                                         ))}
                                                     </div>
@@ -2295,14 +2334,14 @@ export default function DriverPortal() {
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.25rem' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
                                                 {activeOrders.map(order => (
                                                     <div key={order.id} style={{
                                                         background: '#fff',
-                                                        borderRadius: '20px',
-                                                        padding: '1.5rem',
-                                                        border: '1.5px solid #2563eb',
-                                                        boxShadow: '0 4px 14px rgba(37, 99, 235, 0.08)'
+                                                        borderRadius: '22px',
+                                                        padding: '1.35rem',
+                                                        border: '1.5px solid #bfdbfe',
+                                                        boxShadow: '0 4px 20px -2px rgba(37, 99, 235, 0.08)'
                                                     }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
                                                             <span style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0f172a' }}>
@@ -2346,20 +2385,30 @@ export default function DriverPortal() {
                                                             {(() => {
                                                                 const actPickup = calcOrderPickupAndProfit(order);
                                                                 return (
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.45rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.45rem' }}>
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.45rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.55rem' }}>
                                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                            <span style={{ color: '#475569', fontSize: '0.84rem' }}>Cobrar do Cliente:</span>
-                                                                            <strong style={{ color: '#0f172a', fontWeight: 800 }}>{formatMZCurrency(order.total)}</strong>
+                                                                            <span style={{ color: '#64748b', fontSize: '0.82rem' }}>Cobrar do Cliente:</span>
+                                                                            <strong style={{ color: '#0f172a', fontWeight: 800, fontSize: '0.92rem' }}>{formatMZCurrency(order.total)}</strong>
                                                                         </div>
                                                                         {actPickup.pickupTotal > 0 && (
                                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                                <span style={{ color: '#b45309', fontSize: '0.84rem' }}>Levantamento na Loja:</span>
-                                                                                <strong style={{ color: '#b45309', fontWeight: 800 }}>{formatMZCurrency(actPickup.pickupTotal)}</strong>
+                                                                                <span style={{ color: '#b45309', fontSize: '0.82rem', fontWeight: 600 }}>Levantamento na Loja:</span>
+                                                                                <strong style={{ color: '#b45309', fontWeight: 800, fontSize: '0.92rem' }}>{formatMZCurrency(actPickup.pickupTotal)}</strong>
                                                                             </div>
                                                                         )}
                                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                            <span style={{ color: '#059669', fontSize: '0.84rem', fontWeight: 700 }}>Seu Lucro Estimado:</span>
-                                                                            <strong style={{ color: '#059669', fontWeight: 900, fontSize: '0.98rem' }}>+{formatMZCurrency(actPickup.estimatedProfit)}</strong>
+                                                                            <span style={{ color: '#475569', fontSize: '0.82rem', fontWeight: 600 }}>Lucro Estimado Bruto:</span>
+                                                                            <strong style={{ color: '#334155', fontWeight: 800, fontSize: '0.9rem' }}>+{formatMZCurrency(actPickup.estimatedProfit)}</strong>
+                                                                        </div>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                            <span style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 600 }}>Taxa da Plataforma (15%):</span>
+                                                                            <strong style={{ color: '#dc2626', fontWeight: 800, fontSize: '0.88rem' }}>-{formatMZCurrency(actPickup.platformFee)}</strong>
+                                                                        </div>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1.5px dashed #cbd5e1', paddingTop: '0.45rem', marginTop: '0.2rem' }}>
+                                                                            <span style={{ color: '#059669', fontSize: '0.86rem', fontWeight: 900 }}>Seu Lucro Líquido no Bolso:</span>
+                                                                            <span style={{ background: '#dcfce7', color: '#15803d', padding: '0.2rem 0.6rem', borderRadius: '8px', fontWeight: 900, fontSize: '0.98rem' }}>
+                                                                                +{formatMZCurrency(actPickup.driverNetProfit)}
+                                                                            </span>
                                                                         </div>
                                                                     </div>
                                                                 );
@@ -2786,6 +2835,108 @@ export default function DriverPortal() {
                                 </button>
                             </div>
                         )}
+
+                        {/* BARRA DE NAVEGAÇÃO INFERIOR FIXA (100% MOBILE / SMARTPHONE FIRST) */}
+                        {!isDebtBlocked && (
+                            <nav style={{
+                                position: 'fixed',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                zIndex: 99999,
+                                background: 'rgba(255, 255, 255, 0.97)',
+                                backdropFilter: 'blur(16px)',
+                                WebkitBackdropFilter: 'blur(16px)',
+                                borderTop: '1.5px solid #e2e8f0',
+                                display: 'flex',
+                                justifyContent: 'space-around',
+                                alignItems: 'center',
+                                padding: '0.45rem 0.35rem calc(0.45rem + env(safe-area-inset-bottom, 0px))',
+                                boxShadow: '0 -4px 20px rgba(0,0,0,0.07)'
+                            }}>
+                                {[
+                                    { id: 'dashboard', label: 'Início', icon: <Icons.TrendingUp /> },
+                                    { 
+                                        id: 'orders', 
+                                        label: 'Pedidos', 
+                                        icon: <Icons.Package />,
+                                        badge: (availableOrders.length > 0 && !hasActiveOrder && !isDebtBlocked) ? availableOrders.length : null
+                                    },
+                                    { id: 'rewards', label: 'Metas', icon: <Icons.Gift /> },
+                                    { 
+                                        id: 'warnings', 
+                                        label: 'Avisos', 
+                                        icon: <Icons.AlertTriangle />,
+                                        badge: warnings.length > 0 ? warnings.length : null
+                                    },
+                                    { id: 'profile', label: 'Perfil', icon: <Icons.User /> }
+                                ].map(tab => {
+                                    const isActive = activeTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveTab(tab.id);
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            }}
+                                            style={{
+                                                background: isActive ? '#0f172a' : 'transparent',
+                                                color: isActive ? '#ffffff' : '#64748b',
+                                                border: 'none',
+                                                borderRadius: '16px',
+                                                padding: '0.45rem 0.65rem',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '2px',
+                                                cursor: 'pointer',
+                                                position: 'relative',
+                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                minWidth: '54px',
+                                                boxShadow: isActive ? '0 3px 10px rgba(15, 23, 42, 0.25)' : 'none'
+                                            }}
+                                        >
+                                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <div style={{ transform: isActive ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.2s ease' }}>
+                                                    {tab.icon}
+                                                </div>
+                                                {tab.badge && (
+                                                    <span style={{
+                                                        position: 'absolute',
+                                                        top: '-7px',
+                                                        right: '-11px',
+                                                        background: '#ef4444',
+                                                        color: '#ffffff',
+                                                        fontSize: '0.65rem',
+                                                        fontWeight: 900,
+                                                        borderRadius: '999px',
+                                                        minWidth: '17px',
+                                                        height: '17px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        padding: '0 3px',
+                                                        boxShadow: '0 2px 6px rgba(239, 68, 68, 0.45)'
+                                                    }}>
+                                                        {tab.badge}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                fontWeight: isActive ? 800 : 600,
+                                                letterSpacing: '-0.2px',
+                                                marginTop: '2px'
+                                            }}>
+                                                {tab.label}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        )}
                     </div>
                 )}
             </main>
@@ -2922,17 +3073,29 @@ export default function DriverPortal() {
                                         <strong style={{ color: '#b45309' }}>{formatMZCurrency(confPickup.pickupTotal)}</strong>
                                     </div>
                                 )}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', marginTop: '0.2rem' }}>
-                                    <span style={{ color: '#059669', fontWeight: 800 }}>Seu Lucro Estimado:</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                    <span style={{ color: '#475569', fontWeight: 600 }}>Lucro Estimado Bruto:</span>
+                                    <strong style={{ color: '#334155' }}>+{formatMZCurrency(confPickup.estimatedProfit)}</strong>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                    <span style={{ color: '#dc2626', fontWeight: 600 }}>Taxa da Plataforma (15%):</span>
+                                    <strong style={{ color: '#dc2626' }}>-{formatMZCurrency(confPickup.platformFee)}</strong>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1.5px dashed #cbd5e1', paddingTop: '0.55rem', marginTop: '0.3rem' }}>
+                                    <div>
+                                        <div style={{ color: '#059669', fontWeight: 900, fontSize: '0.92rem' }}>Seu Lucro Líquido:</div>
+                                        <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Valor líquido no seu bolso</div>
+                                    </div>
                                     <span style={{
-                                        background: '#dcfce7',
-                                        color: '#15803d',
-                                        padding: '0.2rem 0.6rem',
-                                        borderRadius: '8px',
+                                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                        color: '#ffffff',
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '10px',
                                         fontWeight: 900,
-                                        fontSize: '0.98rem'
+                                        fontSize: '1.05rem',
+                                        boxShadow: '0 2px 8px rgba(5,150,105,0.25)'
                                     }}>
-                                        +{formatMZCurrency(confPickup.estimatedProfit)}
+                                        +{formatMZCurrency(confPickup.driverNetProfit)}
                                     </span>
                                 </div>
 
@@ -3004,8 +3167,8 @@ export default function DriverPortal() {
                                     {acceptingId === confirmingOrder.id 
                                         ? 'A processar...' 
                                         : confPickup.pickupTotal > 0 
-                                            ? `Sim, Aceito Levantar (${formatMZCurrency(confPickup.pickupTotal)}) e Entregar` 
-                                            : 'Sim, Tenho Certeza e Aceito'}
+                                            ? `Sim, Levantar (${formatMZCurrency(confPickup.pickupTotal)}) & Ganhar +${formatMZCurrency(confPickup.driverNetProfit)}` 
+                                            : `Sim, Aceitar & Ganhar +${formatMZCurrency(confPickup.driverNetProfit)}`}
                                 </button>
                             </div>
                         </div>

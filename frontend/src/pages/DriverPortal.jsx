@@ -3332,62 +3332,62 @@ export default function DriverPortal() {
                                         <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⚠️</span>
                                         <div>
                                             <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#92400e', marginBottom: '0.2rem' }}>
-                                                Atenção — Preços de Levantamento
+                                                Atenção — Preços de Levantamento da Loja
                                             </div>
-                                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#a16207', lineHeight: 1.5 }}>
-                                                A lista abaixo mostra os preços padrão de levantamento dos produtos na loja. Estes preços podem sofrer alterações de acordo com as mudanças do mercado.
+                                            <p style={{ margin: 0, fontSize: '0.82rem', color: '#a16207', lineHeight: 1.5 }}>
+                                                Estes são os preços de levantamento que a loja permite. Atenção: os preços podem sofrer alterações de acordo com as mudanças do mercado.
                                             </p>
                                         </div>
                                     </div>
 
                                     <h4 style={{ margin: '0 0 0.85rem', fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
-                                        📋 Lista de Levantamento da Loja
+                                        📋 Preços de Levantamento Permitidos pela Loja
                                     </h4>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
                                         {[
                                             { name: 'Fita Led RGB 5 metros', price: 250 },
                                             { name: 'Protetor de Vidro', price: 50 },
-                                            { name: 'Capas de Silicone', price: 150 },
-                                            { name: 'Bluetooth Speaker', price: 150 },
-                                            { name: 'Mouse com Fio', price: 150 },
-                                            { name: 'Carregador para Carro', price: 100 },
-                                            { name: 'AirPods Pro', price: 450 },
-                                            { name: 'JBL Bluetooth Speaker', price: 150 },
-                                            { name: 'JBL Headphone', price: 350 },
-                                            { name: 'Mouse Gamer Com Fio', price: 200 },
-                                            { name: 'Cabo Carregador 4 em 1', price: 50 },
+                                            { name: 'Capas de Silicone', price: 100 },
+                                            { name: 'Bluetooth Speaker', price: 250 },
+                                            { name: 'Mouse com Fio', price: 250 },
+                                            { name: 'Carregador para Carro', price: 200 },
+                                            { name: 'AirPods Pro', price: 500 },
+                                            { name: 'JBL Bluetooth Speaker', price: 8000 },
+                                            { name: 'JBL Headphone', price: 700 },
+                                            { name: 'Mouse Gamer Com Fio', price: 400 },
+                                            { name: 'Cabo Carregador 4 em 1', price: 100 },
                                             { name: 'Carregador Magsafe Para iPhone', price: 800 },
-                                            { name: 'Ventoinha Portátil', price: 100 },
+                                            { name: 'Ventoinha Portátil', price: 200 },
                                             { name: 'Pro 2 (Airpods U40)', price: 250 },
                                             { name: 'Pendrive USB (32GB)', price: 190 },
                                             { name: 'Router Wifi', price: 150 },
-                                            { name: 'Auriculares com Fio', price: 35 },
-                                            { name: 'Combo: Mouse Teclado', price: 800 },
-                                            { name: 'Power Bank 10000 Volts', price: 650 },
-                                            { name: 'Chaleira Elétrica', price: 250 },
-                                            { name: 'Video Maker', price: 950 },
-                                            { name: 'Capas Transparentes Magnéticas', price: 100 },
-                                            { name: 'LCD para Celulares Androides', price: 1500 },
-                                            { name: 'Game Stick', price: 1000 },
-                                            { name: 'Câmera de Vigilância', price: 1000 },
-                                            { name: 'Gamepad V8', price: 1500 },
-                                            { name: 'Auriculares com Fio para Pescoço', price: 200 },
+                                            { name: 'Auriculares com Fio', price: 80 },
+                                            { name: 'Combo: Mouse Teclado', price: 900 },
+                                            { name: 'Power Bank 10000 Volts', price: 800 },
+                                            { name: 'Chaleira Elétrica', price: 300 },
+                                            { name: 'Video Maker', price: 1000 },
+                                            { name: 'Capas Transparentes Magnéticas', price: 200 },
+                                            { name: 'LCD para Celulares Androides', price: 1100 },
+                                            { name: 'Game Stick', price: 1200 },
+                                            { name: 'Câmera de Vigilância', price: 1100 },
+                                            { name: 'Gamepad V8', price: 1100 },
+                                            { name: 'Auriculares com Fio para Pescoço', price: 180 },
                                             { name: 'Remote Universal', price: 150 },
                                             { name: 'Pilhas Duracell', price: 50 },
                                             { name: 'Colunas Bluetooth (Home Theater)', price: 2500 },
                                             { name: 'Microfone (Lapela)', price: 500 },
-                                            { name: 'Pro 2', price: 250 },
-                                            { name: 'Nokia Mini BM10', price: 800 },
-                                            { name: 'Bateria Nokia', price: 35 },
-                                            { name: 'Extensor 4 ports', price: 100 },
-                                            { name: 'Ventosas', price: 100 },
-                                            { name: 'Protetor de SmartWatch', price: 200 },
-                                            { name: 'Ventoinha', price: 800 },
-                                            { name: 'JBL Live Flex', price: 250 },
+                                            { name: 'Pro 2 (Cópia)', price: 200 },
+                                            { name: 'Nokia Mini BM10', price: 1000 },
+                                            { name: 'Bateria Nokia', price: 50 },
+                                            { name: 'Extensor 4 ports', price: 150 },
+                                            { name: 'Ventosas', price: 250 },
+                                            { name: 'Protetor de SmartWatch', price: 350 },
+                                            { name: 'Ventoinha', price: 900 },
+                                            { name: 'JBL Live Flex', price: 350 },
                                             { name: 'Carregador Magsafe Para iPhone (Cabo)', price: 500 },
-                                            { name: 'P47 Headphone', price: 150 },
-                                            { name: 'Earbuds M10 NEWEST', price: 250 },
+                                            { name: 'P47 Headphone', price: 200 },
+                                            { name: 'Earbuds M10 NEWEST', price: 300 },
                                             { name: 'Tsunami', price: 20 },
                                             { name: 'Balsám', price: 30 },
                                             { name: 'Pasta Removedora de mancha de fumaça', price: 95 },

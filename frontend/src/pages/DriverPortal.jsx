@@ -483,7 +483,7 @@ export default function DriverPortal() {
     const [acceptingId, setAcceptingId] = useState(null);
     const [showBalance, setShowBalance] = useState(true);
 
-    // RatixPay Unified Dark Mode (Preto Puro)
+    // Unified Dark Mode (Preto Puro)
     const [darkMode, setDarkMode] = useState(() => {
         try {
             const saved = localStorage.getItem('darkMode') || localStorage.getItem('tchapo_dark_mode');
@@ -1028,7 +1028,7 @@ export default function DriverPortal() {
                 </div>
             )}
 
-            {/* RatixPay Mobile Header */}
+            {/* Tchapo Mobile Header */}
             <header style={{
                 background: darkMode ? '#111111' : '#ffffff',
                 borderBottom: darkMode ? '1px solid #222222' : '1px solid #e2e8f0',
@@ -1109,7 +1109,7 @@ export default function DriverPortal() {
 
                     {/* Right Header Actions */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {/* RatixPay Dark Mode Toggle Button */}
+                        {/* Dark Mode Toggle Button */}
                         <button
                             type="button"
                             onClick={() => setDarkMode(!darkMode)}
@@ -1219,7 +1219,7 @@ export default function DriverPortal() {
             {/* Main Mobile Container */}
             <main className="rp-mobile-container" style={{ maxWidth: '480px', margin: '0 auto', padding: '1rem 1rem 100px', boxSizing: 'border-box', background: darkMode ? '#000000' : '#f8fafc' }}>
 
-                {/* VIEW 1: Non-logged in Mobile Landing (RatixPay Style) */}
+                {/* VIEW 1: Non-logged in Mobile Landing */}
                 {!authDriver && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {/* Hero Card */}
@@ -1693,10 +1693,10 @@ export default function DriverPortal() {
                             </div>
                         )}
 
-                        {/* TAB 1: Dashboard Overview (RatixPay Mobile Style) */}
+                        {/* TAB 1: Dashboard Overview */}
                         {activeTab === 'dashboard' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                                {/* RatixPay Hero Wallet Card */}
+                                {/* Hero Wallet Card */}
                                 <div className="rp-hero-wallet">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1869,7 +1869,7 @@ export default function DriverPortal() {
                                     </div>
                                 )}
 
-                                {/* Available Orders Prompt Banner (Ratix Alert Banner) */}
+                                {/* Available Orders Prompt Banner */}
                                 {!isDebtBlocked && !hasActiveOrder && availableOrders.length > 0 && (
                                     <div className="rp-alert-banner">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1915,7 +1915,7 @@ export default function DriverPortal() {
                                     </div>
                                 )}
 
-                                {/* RatixPay 2x2 KPI Stats Grid */}
+                                {/* 2x2 KPI Stats Grid */}
                                 <div className="rp-stats-grid">
                                     {/* Stat 1: Ganhos de Hoje */}
                                     <div className="rp-stat-card">
@@ -2021,10 +2021,10 @@ export default function DriverPortal() {
                             </div>
                         )}
 
-                        {/* TAB 2: ABA DE PEDIDOS (RatixPay Mobile Style) */}
+                        {/* TAB 2: ABA DE PEDIDOS */}
                         {activeTab === 'orders' && (
                             <div>
-                                {/* RatixPay Segmented Filter Pills */}
+                                {/* Segmented Filter Pills */}
                                 <div className="rp-segment-bar">
                                     <button
                                         type="button"
@@ -2849,7 +2849,7 @@ export default function DriverPortal() {
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.9rem', marginBottom: '1.75rem' }}>
-                                    {/* RatixPay Dark Mode Switch Option */}
+                                    {/* Dark Mode Switch Option */}
                                     <div style={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -2873,7 +2873,7 @@ export default function DriverPortal() {
                                             </div>
                                             <div>
                                                 <div style={{ fontWeight: 800, fontSize: '0.9rem', color: darkMode ? '#ffffff' : '#0f172a' }}>
-                                                    Modo Noturno (RatixPay)
+                                                    Modo Noturno
                                                 </div>
                                                 <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
                                                     {darkMode ? 'Tema preto puro ativado' : 'Tema claro padrão'}
@@ -2929,7 +2929,7 @@ export default function DriverPortal() {
                             </div>
                         )}
 
-                        {/* RATIXPAY MOBILE DOCK NAVIGATION (100% SMARTPHONE FIRST) */}
+                        {/* MOBILE DOCK NAVIGATION (100% SMARTPHONE FIRST) */}
                         {!isDebtBlocked && (
                             <nav className="rp-mobile-dock">
                                 {/* Tab 1: Início */}

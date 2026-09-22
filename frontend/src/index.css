@@ -2404,7 +2404,7 @@ body {
 }
 
 /* ==========================================================================
-   RATIXPAY MOBILE DESIGN SYSTEM FOR DRIVER PORTAL (TCHAPO DRIVER)
+   MOBILE DESIGN SYSTEM FOR DRIVER PORTAL (TCHAPO DRIVER)
    ========================================================================== */
 
 .rp-driver-shell {
@@ -2433,7 +2433,7 @@ body {
     }
 }
 
-/* Floating Bottom Navigation Bar (RatixPay Dock Pill) */
+/* Floating Bottom Navigation Bar (Dock Pill) */
 .rp-mobile-dock {
     position: fixed !important;
     bottom: 16px !important;
@@ -2546,7 +2546,7 @@ body {
     color: #f64c00 !important;
 }
 
-/* RatixPay KPI 2x2 Grid */
+/* KPI 2x2 Grid */
 .rp-stats-grid {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
@@ -2600,7 +2600,7 @@ body {
     margin-top: 3px !important;
 }
 
-/* RatixPay Hero Wallet Card */
+/* Hero Wallet Card */
 .rp-hero-wallet {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
     border-radius: 22px !important;
@@ -2623,7 +2623,7 @@ body {
     pointer-events: none;
 }
 
-/* RatixPay Alert Banner (like KYC Alert) */
+/* Alert Banner (like KYC Alert) */
 .rp-alert-banner {
     background: linear-gradient(135deg, rgba(246, 76, 0, 0.05) 0%, rgba(245, 158, 11, 0.09) 100%) !important;
     border: 1px dashed #f59e0b !important;
@@ -2636,7 +2636,7 @@ body {
     gap: 12px !important;
 }
 
-/* RatixPay Order Card */
+/* Order Card */
 .rp-order-card {
     background: #ffffff !important;
     border-radius: 20px !important;
@@ -2651,7 +2651,7 @@ body {
     transform: scale(0.99) !important;
 }
 
-/* RatixPay Pill Button */
+/* Pill Button */
 .rp-btn-primary {
     background: linear-gradient(135deg, #f64c00 0%, #ff6b2b 100%) !important;
     color: #ffffff !important;
@@ -2675,7 +2675,7 @@ body {
     transform: scale(0.97) !important;
 }
 
-/* RatixPay Segmented Filter Pills */
+/* Segmented Filter Pills */
 .rp-segment-bar {
     display: flex !important;
     background: #f1f5f9 !important;
@@ -2710,7 +2710,7 @@ body {
 }
 
 /* ==========================================================================
-   RATIXPAY UNIFIED DARK MODE SYSTEM - PRETO PURO (NÃO AZUL)
+   UNIFIED DARK MODE SYSTEM - PRETO PURO (NÃO AZUL)
    ========================================================================== */
 
 :root {

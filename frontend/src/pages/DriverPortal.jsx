@@ -237,6 +237,24 @@ const Icons = {
             <line x1="16" y1="17" x2="8" y2="17"></line>
             <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
+    ),
+    Sun: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2"/>
+            <path d="M12 20v2"/>
+            <path d="m4.93 4.93 1.41 1.41"/>
+            <path d="m17.66 17.66 1.41 1.41"/>
+            <path d="M2 12h2"/>
+            <path d="M20 12h2"/>
+            <path d="m6.34 17.66-1.41 1.41"/>
+            <path d="m19.07 4.93-1.41 1.41"/>
+        </svg>
+    ),
+    Moon: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+        </svg>
     )
 };
 
@@ -464,6 +482,30 @@ export default function DriverPortal() {
     const [toast, setToast] = useState(null);
     const [acceptingId, setAcceptingId] = useState(null);
     const [showBalance, setShowBalance] = useState(true);
+
+    // RatixPay Unified Dark Mode (Preto Puro)
+    const [darkMode, setDarkMode] = useState(() => {
+        try {
+            const saved = localStorage.getItem('darkMode') || localStorage.getItem('tchapo_dark_mode');
+            return saved === 'true';
+        } catch (_) {
+            return false;
+        }
+    });
+
+    useEffect(() => {
+        try {
+            localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
+            localStorage.setItem('tchapo_dark_mode', darkMode ? 'true' : 'false');
+            if (darkMode) {
+                document.documentElement.classList.add('dark-mode');
+                document.body.classList.add('dark-mode');
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+                document.body.classList.remove('dark-mode');
+            }
+        } catch (_) {}
+    }, [darkMode]);
 
     // Modal Controls
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -958,7 +1000,7 @@ export default function DriverPortal() {
     ];
 
     return (
-        <div className="rp-driver-shell" style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', fontFamily: "'Montserrat', sans-serif" }}>
+        <div className="rp-driver-shell" style={{ minHeight: '100vh', background: darkMode ? '#000000' : '#f8fafc', color: darkMode ? '#ffffff' : '#0f172a', fontFamily: "'Montserrat', sans-serif" }}>
             
             {/* Toast Notification */}
             {toast && (
@@ -988,12 +1030,12 @@ export default function DriverPortal() {
 
             {/* RatixPay Mobile Header */}
             <header style={{
-                background: '#ffffff',
-                borderBottom: '1px solid #e2e8f0',
+                background: darkMode ? '#111111' : '#ffffff',
+                borderBottom: darkMode ? '1px solid #222222' : '1px solid #e2e8f0',
                 position: 'sticky',
                 top: 0,
                 zIndex: 100,
-                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)',
+                boxShadow: darkMode ? '0 4px 20px rgba(0, 0, 0, 0.6)' : '0 2px 10px rgba(0, 0, 0, 0.03)',
                 height: '62px',
                 display: 'flex',
                 alignItems: 'center'
@@ -1016,7 +1058,7 @@ export default function DriverPortal() {
                                 borderRadius: '12px',
                                 overflow: 'hidden',
                                 border: '2px solid #f64c00',
-                                background: '#f1f5f9',
+                                background: darkMode ? '#1e1e1e' : '#f1f5f9',
                                 flexShrink: 0
                             }}>
                                 <img
@@ -1027,7 +1069,7 @@ export default function DriverPortal() {
                                 />
                             </div>
                             <div>
-                                <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a', lineHeight: 1.2 }}>
+                                <div style={{ fontWeight: 800, fontSize: '0.92rem', color: darkMode ? '#ffffff' : '#0f172a', lineHeight: 1.2 }}>
                                     Olá, {authDriver.name ? authDriver.name.split(' ')[0] : 'Entregador'}
                                 </div>
                                 <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
@@ -1055,7 +1097,7 @@ export default function DriverPortal() {
                                 />
                             </div>
                             <div>
-                                <div style={{ color: '#0f172a', fontWeight: 900, fontSize: '1.05rem', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
+                                <div style={{ color: darkMode ? '#ffffff' : '#0f172a', fontWeight: 900, fontSize: '1.05rem', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
                                     Tchapo Tchapo
                                 </div>
                                 <div style={{ color: '#f64c00', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
@@ -1067,6 +1109,17 @@ export default function DriverPortal() {
 
                     {/* Right Header Actions */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {/* RatixPay Dark Mode Toggle Button */}
+                        <button
+                            type="button"
+                            onClick={() => setDarkMode(!darkMode)}
+                            className="rp-theme-toggle"
+                            title={darkMode ? "Mudar para Modo Claro" : "Mudar para Modo Noturno"}
+                            aria-label={darkMode ? "Mudar para Modo Claro" : "Mudar para Modo Noturno"}
+                        >
+                            {darkMode ? <Icons.Sun /> : <Icons.Moon />}
+                        </button>
+
                         {authDriver ? (
                             <>
                                 {authDriver.approval_status === 'Aprovado' && !isDebtBlocked && (
@@ -1074,9 +1127,9 @@ export default function DriverPortal() {
                                         onClick={() => handleToggleAvailability()}
                                         disabled={togglingOnline}
                                         style={{
-                                            background: isOnline ? 'rgba(16, 185, 129, 0.12)' : '#f1f5f9',
-                                            border: isOnline ? '1.5px solid #10b981' : '1px solid #cbd5e1',
-                                            color: isOnline ? '#059669' : '#64748b',
+                                            background: isOnline ? 'rgba(16, 185, 129, 0.12)' : (darkMode ? '#1a1a1a' : '#f1f5f9'),
+                                            border: isOnline ? '1.5px solid #10b981' : (darkMode ? '1px solid #2a2a2a' : '1px solid #cbd5e1'),
+                                            color: isOnline ? '#10b981' : (darkMode ? '#94a3b8' : '#64748b'),
                                             padding: '0.45rem 0.85rem',
                                             borderRadius: '999px',
                                             fontWeight: 800,
@@ -1121,9 +1174,9 @@ export default function DriverPortal() {
                                     onClick={handleLogout}
                                     title="Terminar sessão"
                                     style={{
-                                        background: '#f8fafc',
-                                        border: '1px solid #e2e8f0',
-                                        color: '#64748b',
+                                        background: darkMode ? '#1a1a1a' : '#f8fafc',
+                                        border: darkMode ? '1px solid #2a2a2a' : '1px solid #e2e8f0',
+                                        color: darkMode ? '#94a3b8' : '#64748b',
                                         width: '36px',
                                         height: '36px',
                                         borderRadius: '10px',
@@ -1141,9 +1194,9 @@ export default function DriverPortal() {
                             <button
                                 onClick={() => setIsLoginModalOpen(true)}
                                 style={{
-                                    background: '#f1f5f9',
-                                    border: '1px solid #e2e8f0',
-                                    color: '#0f172a',
+                                    background: darkMode ? '#1a1a1a' : '#f1f5f9',
+                                    border: darkMode ? '1px solid #2a2a2a' : '1px solid #e2e8f0',
+                                    color: darkMode ? '#ffffff' : '#0f172a',
                                     padding: '0.5rem 1rem',
                                     borderRadius: '12px',
                                     fontWeight: 800,
@@ -1164,7 +1217,7 @@ export default function DriverPortal() {
             </header>
 
             {/* Main Mobile Container */}
-            <main className="rp-mobile-container" style={{ maxWidth: '480px', margin: '0 auto', padding: '1rem 1rem 100px', boxSizing: 'border-box' }}>
+            <main className="rp-mobile-container" style={{ maxWidth: '480px', margin: '0 auto', padding: '1rem 1rem 100px', boxSizing: 'border-box', background: darkMode ? '#000000' : '#f8fafc' }}>
 
                 {/* VIEW 1: Non-logged in Mobile Landing (RatixPay Style) */}
                 {!authDriver && (
@@ -2626,13 +2679,13 @@ export default function DriverPortal() {
 
                         {/* TAB 3: Prêmios & Bónus Details */}
                         {activeTab === 'rewards' && (
-                            <div style={{ background: '#fff', padding: '2rem', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ background: darkMode ? '#111111' : '#ffffff', padding: '1.5rem', borderRadius: '24px', border: darkMode ? '1px solid #222222' : '1px solid #e2e8f0', color: darkMode ? '#ffffff' : '#0f172a' }}>
                                 <div style={{ marginBottom: '2rem' }}>
-                                    <h3 style={{ margin: '0 0 0.4rem', fontSize: '1.35rem', fontWeight: 900, color: '#0f172a' }}>
+                                    <h3 style={{ margin: '0 0 0.4rem', fontSize: '1.35rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                         Metas de Carreira & Premiações
                                     </h3>
                                     <p style={{ margin: 0, color: '#64748b', fontSize: '0.92rem' }}>
-                                        O seu volume total de vendas e entregas acumulado é de: <strong>{formatMZCurrency(currentSales)}</strong>
+                                        O seu volume total de vendas e entregas acumulado é de: <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{formatMZCurrency(currentSales)}</strong>
                                     </p>
                                 </div>
 
@@ -2646,8 +2699,8 @@ export default function DriverPortal() {
                                             <div key={r.id} style={{
                                                 borderRadius: '20px',
                                                 padding: '1.75rem',
-                                                border: unlocked ? '2px solid #10b981' : '1px solid #e2e8f0',
-                                                background: unlocked ? '#f0fdf4' : '#f8fafc',
+                                                border: unlocked ? '2px solid #10b981' : (darkMode ? '1px solid #222222' : '1px solid #e2e8f0'),
+                                                background: unlocked ? (darkMode ? '#052e16' : '#f0fdf4') : (darkMode ? '#161616' : '#f8fafc'),
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 justifyContent: 'space-between'
@@ -2658,8 +2711,8 @@ export default function DriverPortal() {
                                                             {r.icon}
                                                         </div>
                                                         <span style={{
-                                                            background: unlocked ? '#dcfce7' : '#fef3c7',
-                                                            color: unlocked ? '#15803d' : '#b45309',
+                                                            background: unlocked ? (darkMode ? '#064e3b' : '#dcfce7') : (darkMode ? '#451a03' : '#fef3c7'),
+                                                            color: unlocked ? '#34d399' : '#fbbf24',
                                                             fontWeight: 800,
                                                             fontSize: '0.78rem',
                                                             padding: '0.25rem 0.75rem',
@@ -2669,10 +2722,10 @@ export default function DriverPortal() {
                                                         </span>
                                                     </div>
 
-                                                    <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                                                    <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                                         {r.title}
                                                     </h4>
-                                                    <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: '#475569', lineHeight: 1.5 }}>
+                                                    <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: darkMode ? '#a1a1aa' : '#475569', lineHeight: 1.5 }}>
                                                         {r.desc}
                                                     </p>
                                                 </div>
@@ -2680,10 +2733,10 @@ export default function DriverPortal() {
                                                 <div>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.4rem' }}>
                                                         <span style={{ fontWeight: 600, color: '#64748b' }}>Progresso:</span>
-                                                        <strong style={{ color: unlocked ? '#059669' : '#0f172a' }}>{pct}%</strong>
+                                                        <strong style={{ color: unlocked ? '#10b981' : (darkMode ? '#ffffff' : '#0f172a') }}>{pct}%</strong>
                                                     </div>
 
-                                                    <div style={{ width: '100%', height: '10px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.75rem' }}>
+                                                    <div style={{ width: '100%', height: '10px', background: darkMode ? '#222222' : '#e2e8f0', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.75rem' }}>
                                                         <div style={{
                                                             width: `${pct}%`,
                                                             height: '100%',
@@ -2692,7 +2745,7 @@ export default function DriverPortal() {
                                                         }} />
                                                     </div>
 
-                                                    <div style={{ fontSize: '0.8rem', color: unlocked ? '#059669' : '#64748b', fontWeight: 600 }}>
+                                                    <div style={{ fontSize: '0.8rem', color: unlocked ? '#10b981' : '#94a3b8', fontWeight: 600 }}>
                                                         {unlocked
                                                             ? 'Prémio Desbloqueado! Pode solicitar o levantamento na central Tchapo Tchapo.'
                                                             : `Faltam ${formatMZCurrency(remaining)} para desbloquear este prémio.`
@@ -2708,16 +2761,16 @@ export default function DriverPortal() {
 
                         {/* TAB 4: Disciplinary Warnings Tab */}
                         {activeTab === 'warnings' && (
-                            <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ background: darkMode ? '#111111' : '#ffffff', padding: '1.75rem', borderRadius: '20px', border: darkMode ? '1px solid #222222' : '1px solid #e2e8f0', color: darkMode ? '#ffffff' : '#0f172a' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                         Registo de Advertências Disciplinares
                                     </h3>
                                     <span style={{
                                         fontSize: '0.82rem',
                                         fontWeight: 700,
-                                        color: warnings.length > 0 ? '#dc2626' : '#059669',
-                                        background: warnings.length > 0 ? '#fee2e2' : '#dcfce7',
+                                        color: warnings.length > 0 ? '#ef4444' : '#10b981',
+                                        background: warnings.length > 0 ? (darkMode ? '#451a1a' : '#fee2e2') : (darkMode ? '#064e3b' : '#dcfce7'),
                                         padding: '0.25rem 0.75rem',
                                         borderRadius: '999px'
                                     }}>
@@ -2726,32 +2779,32 @@ export default function DriverPortal() {
                                 </div>
 
                                 {warnings.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#64748b' }}>
-                                        <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#dcfce7', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                    <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#94a3b8' }}>
+                                        <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: darkMode ? '#064e3b' : '#dcfce7', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
                                             <Icons.CheckCircle />
                                         </div>
-                                        <h4 style={{ margin: '0 0 0.4rem', color: '#0f172a', fontWeight: 800 }}>Excelente Conduta!</h4>
-                                        <p style={{ margin: 0, fontSize: '0.9rem' }}>Você não possui nenhuma advertência registada. Continue com o bom trabalho!</p>
+                                        <h4 style={{ margin: '0 0 0.4rem', color: darkMode ? '#ffffff' : '#0f172a', fontWeight: 800 }}>Excelente Conduta!</h4>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>Você não possui nenhuma advertência registada. Continue com o bom trabalho!</p>
                                     </div>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                                         {warnings.map((w, idx) => {
                                             const sevStyle = {
-                                                Leve: { bg: '#fef3c7', color: '#b45309' },
-                                                Média: { bg: '#fed7aa', color: '#c2410c' },
-                                                Grave: { bg: '#fee2e2', color: '#b91c1c' }
-                                            }[w.severity] || { bg: '#fee2e2', color: '#b91c1c' };
+                                                Leve: { bg: darkMode ? '#451a03' : '#fef3c7', color: '#fbbf24' },
+                                                Média: { bg: darkMode ? '#431407' : '#fed7aa', color: '#f97316' },
+                                                Grave: { bg: darkMode ? '#451a1a' : '#fee2e2', color: '#ef4444' }
+                                            }[w.severity] || { bg: darkMode ? '#451a1a' : '#fee2e2', color: '#ef4444' };
 
                                             return (
-                                                <div key={idx} style={{ background: '#fff5f5', padding: '1.25rem', borderRadius: '14px', border: '1px solid #fecaca' }}>
+                                                <div key={idx} style={{ background: darkMode ? '#1c1313' : '#fff5f5', padding: '1.25rem', borderRadius: '14px', border: darkMode ? '1px solid #3f1d1d' : '1px solid #fecaca' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
                                                         <span style={{ background: sevStyle.bg, color: sevStyle.color, padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 800 }}>
                                                             Gravidade {w.severity || 'Leve'}
                                                         </span>
-                                                        <strong style={{ color: '#0f172a', fontSize: '0.95rem' }}>{w.reason}</strong>
+                                                        <strong style={{ color: darkMode ? '#ffffff' : '#0f172a', fontSize: '0.95rem' }}>{w.reason}</strong>
                                                     </div>
                                                     {w.notes && (
-                                                        <p style={{ margin: '0.4rem 0', fontSize: '0.85rem', color: '#475569' }}>
+                                                        <p style={{ margin: '0.4rem 0', fontSize: '0.85rem', color: darkMode ? '#a1a1aa' : '#475569' }}>
                                                             {w.notes}
                                                         </p>
                                                     )}
@@ -2768,8 +2821,8 @@ export default function DriverPortal() {
 
                         {/* TAB 5: Profile Details */}
                         {activeTab === 'profile' && (
-                            <div style={{ background: '#fff', padding: '2rem', borderRadius: '20px', border: '1px solid #e2e8f0', maxWidth: '640px' }}>
-                                <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.2rem', fontWeight: 800 }}>
+                            <div style={{ background: darkMode ? '#111111' : '#ffffff', padding: '1.5rem', borderRadius: '20px', border: darkMode ? '1px solid #222222' : '1px solid #e2e8f0', color: darkMode ? '#ffffff' : '#0f172a', maxWidth: '640px' }}>
+                                <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.2rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                     Dados do Entregador
                                 </h3>
 
@@ -2781,32 +2834,73 @@ export default function DriverPortal() {
                                     />
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                            <h4 style={{ margin: '0', fontSize: '1.15rem', fontWeight: 800 }}>{authDriver.name}</h4>
+                                            <h4 style={{ margin: '0', fontSize: '1.15rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>{authDriver.name}</h4>
                                             {currentSales >= 5000 && (
                                                 <span title="Entregador Verificado" style={{ color: '#3b82f6', display: 'flex', alignItems: 'center' }}>
                                                     <Icons.BadgeCheck />
                                                 </span>
                                             )}
                                         </div>
-                                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Entregador Oficial Tchapo Tchapo • <strong>ID: {authDriver.id}</strong></div>
+                                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Entregador Oficial Tchapo Tchapo • <strong>ID: #{authDriver.id}</strong></div>
                                         <span style={{ display: 'inline-block', marginTop: '0.35rem', background: '#dcfce7', color: '#15803d', fontSize: '0.75rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
                                             Conta Aprovada
                                         </span>
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.9rem', marginBottom: '2rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.9rem', marginBottom: '1.75rem' }}>
+                                    {/* RatixPay Dark Mode Switch Option */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '0.75rem 0',
+                                        borderBottom: darkMode ? '1px solid #222222' : '1px solid #f1f5f9'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <div style={{
+                                                width: '36px',
+                                                height: '36px',
+                                                borderRadius: '10px',
+                                                background: darkMode ? '#1f1f1f' : '#f1f5f9',
+                                                color: darkMode ? '#f59e0b' : '#64748b',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                flexShrink: 0
+                                            }}>
+                                                {darkMode ? <Icons.Sun /> : <Icons.Moon />}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                    Modo Noturno (RatixPay)
+                                                </div>
+                                                <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                                                    {darkMode ? 'Tema preto puro ativado' : 'Tema claro padrão'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <label className="rp-switch" aria-label="Alternar Modo Noturno">
+                                            <input
+                                                type="checkbox"
+                                                checked={darkMode}
+                                                onChange={() => setDarkMode(prev => !prev)}
+                                            />
+                                            <span className="rp-slider" />
+                                        </label>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: darkMode ? '1px solid #222222' : '1px solid #f1f5f9' }}>
                                         <span style={{ color: '#64748b' }}>WhatsApp / Contacto:</span>
-                                        <strong>{authDriver.phone}</strong>
+                                        <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{authDriver.phone}</strong>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: darkMode ? '1px solid #222222' : '1px solid #f1f5f9' }}>
                                         <span style={{ color: '#64748b' }}>Bairro de Atuação:</span>
-                                        <strong>{authDriver.bairro || 'Beira'}</strong>
+                                        <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{authDriver.bairro || 'Beira'}</strong>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: darkMode ? '1px solid #222222' : '1px solid #f1f5f9' }}>
                                         <span style={{ color: '#64748b' }}>Documento:</span>
-                                        <strong>{authDriver.doc_type || 'BI'} • {authDriver.doc_number || 'Sem número'}</strong>
+                                        <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{authDriver.doc_type || 'BI'} • {authDriver.doc_number || 'Sem número'}</strong>
                                     </div>
                                 </div>
 
@@ -2814,18 +2908,19 @@ export default function DriverPortal() {
                                     onClick={handleLogout}
                                     style={{
                                         width: '100%',
-                                        background: '#fee2e2',
-                                        color: '#b91c1c',
-                                        border: 'none',
+                                        background: darkMode ? '#261212' : '#fee2e2',
+                                        color: '#ef4444',
+                                        border: darkMode ? '1px solid #451a1a' : 'none',
                                         padding: '0.85rem',
-                                        borderRadius: '10px',
-                                        fontWeight: 700,
+                                        borderRadius: '12px',
+                                        fontWeight: 800,
                                         fontSize: '0.9rem',
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        gap: '0.5rem'
+                                        gap: '0.5rem',
+                                        transition: 'all 0.15s ease'
                                     }}
                                 >
                                     <Icons.LogOut />
@@ -2961,7 +3056,7 @@ export default function DriverPortal() {
                     <div style={{
                         position: 'fixed',
                         inset: 0,
-                        background: 'rgba(15, 23, 42, 0.85)',
+                        background: 'rgba(0, 0, 0, 0.85)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -2970,24 +3065,25 @@ export default function DriverPortal() {
                         padding: '1.5rem'
                     }}>
                         <div style={{
-                            background: '#fff',
+                            background: darkMode ? '#111111' : '#fff',
                             borderRadius: '24px',
                             padding: '2.25rem',
                             maxWidth: '540px',
                             width: '100%',
-                            boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+                            boxShadow: darkMode ? '0 25px 60px rgba(0,0,0,0.8)' : '0 25px 60px rgba(0,0,0,0.35)',
                             border: '2px solid #f59e0b',
                             textAlign: 'center',
                             maxHeight: '92vh',
-                            overflowY: 'auto'
+                            overflowY: 'auto',
+                            color: darkMode ? '#ffffff' : '#0f172a'
                         }}>
-                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: darkMode ? '#451a03' : '#fef3c7', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
                                 <Icons.AlertTriangle />
                             </div>
 
                             <span style={{
-                                background: '#fee2e2',
-                                color: '#b91c1c',
+                                background: darkMode ? '#451a1a' : '#fee2e2',
+                                color: '#ef4444',
                                 fontWeight: 900,
                                 fontSize: '0.78rem',
                                 textTransform: 'uppercase',
@@ -3000,23 +3096,23 @@ export default function DriverPortal() {
                                 Compromisso Irrevogável
                             </span>
 
-                            <h3 style={{ margin: '0 0 0.85rem', fontSize: '1.45rem', fontWeight: 900, color: '#0f172a' }}>
+                            <h3 style={{ margin: '0 0 0.85rem', fontSize: '1.45rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                 Confirmação de Levantamento & Entrega
                             </h3>
 
                             {/* WARNING & EXPLICIT PICKUP AGREEMENT */}
                             <div style={{
-                                background: '#fff7ed',
+                                background: darkMode ? '#221408' : '#fff7ed',
                                 border: '1.5px solid #fdba74',
                                 borderRadius: '14px',
                                 padding: '1.15rem',
                                 textAlign: 'left',
                                 marginBottom: '1.35rem'
                             }}>
-                                <div style={{ fontSize: '0.88rem', color: '#9a3412', fontWeight: 800, lineHeight: 1.45, marginBottom: '0.55rem' }}>
+                                <div style={{ fontSize: '0.88rem', color: darkMode ? '#fb923c' : '#9a3412', fontWeight: 800, lineHeight: 1.45, marginBottom: '0.55rem' }}>
                                     ⚠️ TERMO DE LEVANTAMENTO DO PRODUTO:
                                 </div>
-                                <div style={{ fontSize: '0.85rem', color: '#7c2d12', lineHeight: 1.5, marginBottom: '0.65rem' }}>
+                                <div style={{ fontSize: '0.85rem', color: darkMode ? '#fed7aa' : '#7c2d12', lineHeight: 1.5, marginBottom: '0.65rem' }}>
                                     {confPickup.itemsWithPickup && confPickup.itemsWithPickup.length > 0 ? (
                                         <div>
                                             Ao aceitar, você concorda e aceita expressamente que irá levantar na loja:
@@ -3024,7 +3120,7 @@ export default function DriverPortal() {
                                                 {confPickup.itemsWithPickup.map((it, idx) => (
                                                     <li key={idx} style={{ marginBottom: '0.3rem' }}>
                                                         <strong>{it.product_name}</strong> ({it.quantity || 1}x) por{' '}
-                                                        <span style={{ color: '#b45309', fontWeight: 800 }}>
+                                                        <span style={{ color: '#f59e0b', fontWeight: 800 }}>
                                                             {it.pickupPrice ? `${formatMZCurrency(it.pickupPrice)} cada` : 'preço de levantamento da loja'}
                                                         </span>
                                                     </li>
@@ -3035,19 +3131,20 @@ export default function DriverPortal() {
                                         <span>Ao aceitar este pedido, você concorda que irá levantar o produto na loja pelo preço acordado.</span>
                                     )}
                                 </div>
-                                <div style={{ fontSize: '0.82rem', color: '#9a3412', fontWeight: 700, lineHeight: 1.4, borderTop: '1px dashed #fdba74', paddingTop: '0.45rem' }}>
+                                <div style={{ fontSize: '0.82rem', color: darkMode ? '#fb923c' : '#9a3412', fontWeight: 700, lineHeight: 1.4, borderTop: '1px dashed #fdba74', paddingTop: '0.45rem' }}>
                                     🚫 Quando aceita o pedido, NÃO É PERMITIDO VOLTAR ATRÁS nem cancelar a entrega.
                                 </div>
                             </div>
 
                             <div style={{
-                                background: '#f8fafc',
+                                background: darkMode ? '#181818' : '#f8fafc',
                                 padding: '0.95rem 1.25rem',
                                 borderRadius: '12px',
-                                border: '1px solid #e2e8f0',
+                                border: darkMode ? '1px solid #282828' : '1px solid #e2e8f0',
                                 textAlign: 'left',
                                 marginBottom: '1.75rem',
-                                fontSize: '0.88rem'
+                                fontSize: '0.88rem',
+                                color: darkMode ? '#ffffff' : '#0f172a'
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                                     <span style={{ color: '#64748b' }}>Pedido:</span>
@@ -3969,7 +4066,7 @@ export default function DriverPortal() {
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(15, 23, 42, 0.8)',
+                    background: 'rgba(0, 0, 0, 0.85)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -3979,15 +4076,16 @@ export default function DriverPortal() {
                     boxSizing: 'border-box'
                 }}>
                     <div style={{
-                        background: '#ffffff',
+                        background: darkMode ? '#111111' : '#ffffff',
                         borderRadius: '24px',
                         padding: 'clamp(1.5rem, 5vw, 2.25rem)',
                         maxWidth: '440px',
                         width: '100%',
-                        boxShadow: '0 25px 60px -15px rgba(0,0,0,0.35)',
-                        border: '1px solid #e2e8f0',
+                        boxShadow: darkMode ? '0 25px 60px -15px rgba(0,0,0,0.85)' : '0 25px 60px -15px rgba(0,0,0,0.35)',
+                        border: darkMode ? '1px solid #222222' : '1px solid #e2e8f0',
                         boxSizing: 'border-box',
-                        animation: 'fadeInUp 0.2s ease-out'
+                        animation: 'fadeInUp 0.2s ease-out',
+                        color: darkMode ? '#ffffff' : '#0f172a'
                     }}>
                         {/* Header with Logo Badge and Close */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
@@ -4005,10 +4103,10 @@ export default function DriverPortal() {
                                     <img src="/assets/logo_original.png" alt="Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
                                 </div>
                                 <div>
-                                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a', letterSpacing: '-0.3px' }}>
                                         Entrar no Portal
                                     </h3>
-                                    <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                                    <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
                                         Portal Oficial do Entregador
                                     </p>
                                 </div>
@@ -4020,8 +4118,8 @@ export default function DriverPortal() {
                                     setShowLoginPin(false);
                                 }}
                                 style={{
-                                    background: '#f1f5f9',
-                                    border: 'none',
+                                    background: darkMode ? '#1a1a1a' : '#f1f5f9',
+                                    border: darkMode ? '1px solid #2a2a2a' : 'none',
                                     borderRadius: '50%',
                                     width: '36px',
                                     height: '36px',
@@ -4029,7 +4127,7 @@ export default function DriverPortal() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    color: '#64748b',
+                                    color: darkMode ? '#ffffff' : '#64748b',
                                     transition: 'background 0.15s'
                                 }}
                             >
@@ -4040,7 +4138,7 @@ export default function DriverPortal() {
                         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
                             {/* Phone Input */}
                             <div>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.45rem', fontWeight: 700, fontSize: '0.85rem', color: '#1e293b' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.45rem', fontWeight: 700, fontSize: '0.85rem', color: darkMode ? '#ffffff' : '#1e293b' }}>
                                     <Icons.WhatsApp />
                                     <span>Telemóvel / Celular *</span>
                                 </label>
@@ -4056,21 +4154,21 @@ export default function DriverPortal() {
                                             width: '100%',
                                             padding: '0.85rem 1rem',
                                             borderRadius: '12px',
-                                            border: '1.5px solid #cbd5e1',
+                                            border: darkMode ? '1.5px solid #2a2a2a' : '1.5px solid #cbd5e1',
                                             outline: 'none',
                                             boxSizing: 'border-box',
                                             fontSize: '0.98rem',
-                                            color: '#0f172a',
-                                            background: '#f8fafc',
+                                            color: darkMode ? '#ffffff' : '#0f172a',
+                                            background: darkMode ? '#181818' : '#f8fafc',
                                             transition: 'all 0.15s'
                                         }}
                                         onFocus={(e) => {
                                             e.target.style.borderColor = '#f59e0b';
-                                            e.target.style.background = '#ffffff';
+                                            e.target.style.background = darkMode ? '#1e1e1e' : '#ffffff';
                                         }}
                                         onBlur={(e) => {
-                                            e.target.style.borderColor = '#cbd5e1';
-                                            e.target.style.background = '#f8fafc';
+                                            e.target.style.borderColor = darkMode ? '#2a2a2a' : '#cbd5e1';
+                                            e.target.style.background = darkMode ? '#181818' : '#f8fafc';
                                         }}
                                     />
                                 </div>
@@ -4118,22 +4216,22 @@ export default function DriverPortal() {
                                             width: '100%',
                                             padding: '0.85rem 1rem',
                                             borderRadius: '12px',
-                                            border: '1.5px solid #cbd5e1',
+                                            border: darkMode ? '1.5px solid #2a2a2a' : '1.5px solid #cbd5e1',
                                             outline: 'none',
                                             boxSizing: 'border-box',
                                             fontSize: '1.1rem',
                                             letterSpacing: showLoginPin ? '2px' : '4px',
-                                            color: '#0f172a',
-                                            background: '#f8fafc',
+                                            color: darkMode ? '#ffffff' : '#0f172a',
+                                            background: darkMode ? '#181818' : '#f8fafc',
                                             transition: 'all 0.15s'
                                         }}
                                         onFocus={(e) => {
                                             e.target.style.borderColor = '#f59e0b';
-                                            e.target.style.background = '#ffffff';
+                                            e.target.style.background = darkMode ? '#1e1e1e' : '#ffffff';
                                         }}
                                         onBlur={(e) => {
-                                            e.target.style.borderColor = '#cbd5e1';
-                                            e.target.style.background = '#f8fafc';
+                                            e.target.style.borderColor = darkMode ? '#2a2a2a' : '#cbd5e1';
+                                            e.target.style.background = darkMode ? '#181818' : '#f8fafc';
                                         }}
                                     />
                                 </div>

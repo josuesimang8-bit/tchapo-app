@@ -1479,15 +1479,19 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
         const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(o.status));
 
         // Date calculations
+        const now = Date.now();
         const todayStr = new Date().toISOString().slice(0, 10);
-        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const oneWeekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
 
         const todayDelivered = delivered.filter(o => (o.created_at || '').slice(0, 10) === todayStr);
         const weekDelivered = delivered.filter(o => new Date(o.created_at) >= oneWeekAgo);
+        const monthDelivered = delivered.filter(o => new Date(o.created_at) >= thirtyDaysAgo);
 
         const rate = meta.earnings_rate_per_delivery || 150;
         const todayEarnings = todayDelivered.length * rate;
         const weekEarnings = weekDelivered.length * rate;
+        const monthEarnings = monthDelivered.length * rate;
         const totalEarnings = delivered.length * rate;
 
         const totalSales = delivered.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
@@ -1506,10 +1510,13 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             stats: {
                 today_earnings: todayEarnings,
                 week_earnings: weekEarnings,
+                month_earnings: monthEarnings,
                 total_earnings: totalEarnings,
                 saldo: Math.max(0, totalEarnings - (meta.pending_debt && meta.pending_debt.status !== 'Pago' ? meta.pending_debt.amount : 0)),
                 pending_debt_amount: meta.pending_debt && meta.pending_debt.status !== 'Pago' ? meta.pending_debt.amount : 0,
                 today_deliveries: todayDelivered.length,
+                week_deliveries: weekDelivered.length,
+                month_deliveries: monthDelivered.length,
                 total_deliveries: delivered.length,
                 active_deliveries: activeOrders.length,
                 rate_per_delivery: rate,

@@ -482,6 +482,7 @@ export default function DriverPortal() {
     const [toast, setToast] = useState(null);
     const [acceptingId, setAcceptingId] = useState(null);
     const [showBalance, setShowBalance] = useState(true);
+    const [earningsPeriod, setEarningsPeriod] = useState('today'); // 'today' | '7days' | '30days'
 
     // Unified Dark Mode (Preto Puro)
     const [darkMode, setDarkMode] = useState(() => {
@@ -541,6 +542,7 @@ export default function DriverPortal() {
     const [docPhotoPreview, setDocPhotoPreview] = useState(null);
     const [regLoading, setRegLoading] = useState(false);
     const [regStep, setRegStep] = useState(1); // 1: Perfil & Contacto | 2: Documentos | 3: Lista de Levantamento
+    const [regTermsAgreed, setRegTermsAgreed] = useState(false);
 
     // Availability State
     const [isOnline, setIsOnline] = useState(false);
@@ -721,7 +723,7 @@ export default function DriverPortal() {
 
     // Handle Register - Validate and show price list
     const handleRegister = async (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
 
         // Strict verification of all fields
         if (!photoFile) {
@@ -793,6 +795,7 @@ export default function DriverPortal() {
             setIsOnline(false);
             setIsRegisterModalOpen(false);
             setRegStep(1);
+            setRegTermsAgreed(false);
             showToast('Registo submetido com sucesso! A sua conta está sob análise pelo Administrador.', 'success');
             fetchDashboard(data.id);
         } catch (err) {
@@ -947,8 +950,11 @@ export default function DriverPortal() {
     const stats = dashboardData?.stats || {
         today_earnings: 0,
         week_earnings: 0,
+        month_earnings: 0,
         total_earnings: 0,
         today_deliveries: 0,
+        week_deliveries: 0,
+        month_deliveries: 0,
         total_deliveries: 0,
         active_deliveries: 0,
         total_sales: 0,
@@ -1915,31 +1921,92 @@ export default function DriverPortal() {
                                     </div>
                                 )}
 
+                                {/* Period Filter Bar: Hoje | 7 Dias | 30 Dias */}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    marginBottom: '10px',
+                                    padding: '0 2px'
+                                }}>
+                                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: darkMode ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                        Ganhos do Período
+                                    </span>
+                                    <div style={{
+                                        display: 'inline-flex',
+                                        background: darkMode ? '#181818' : '#f1f5f9',
+                                        borderRadius: '12px',
+                                        padding: '3px',
+                                        border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
+                                        gap: '2px'
+                                    }}>
+                                        {[
+                                            { id: 'today', label: 'Hoje' },
+                                            { id: '7days', label: '7 Dias' },
+                                            { id: '30days', label: '30 Dias' }
+                                        ].map(p => (
+                                            <button
+                                                key={p.id}
+                                                type="button"
+                                                onClick={() => setEarningsPeriod(p.id)}
+                                                style={{
+                                                    border: 'none',
+                                                    borderRadius: '9px',
+                                                    padding: '5px 10px',
+                                                    fontSize: '0.74rem',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    background: earningsPeriod === p.id ? '#f64c00' : 'transparent',
+                                                    color: earningsPeriod === p.id ? '#ffffff' : (darkMode ? '#a1a1aa' : '#64748b'),
+                                                    boxShadow: earningsPeriod === p.id ? '0 2px 6px rgba(246,76,0,0.35)' : 'none',
+                                                    transition: 'all 0.18s ease'
+                                                }}
+                                            >
+                                                {p.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 {/* 2x2 KPI Stats Grid */}
                                 <div className="rp-stats-grid">
-                                    {/* Stat 1: Ganhos de Hoje */}
+                                    {/* Stat 1: Ganhos do Período */}
                                     <div className="rp-stat-card">
                                         <div className="rp-stat-icon-box" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#059669' }}>
                                             <Icons.TrendingUp />
                                         </div>
                                         <div>
                                             <div className="rp-stat-number" style={{ color: '#059669' }}>
-                                                {formatMZCurrency(stats.today_earnings)}
+                                                {formatMZCurrency(
+                                                    earningsPeriod === 'today' 
+                                                        ? stats.today_earnings 
+                                                        : earningsPeriod === '7days' 
+                                                            ? stats.week_earnings 
+                                                            : (stats.month_earnings || 0)
+                                                )}
                                             </div>
-                                            <div className="rp-stat-label">Ganhos Hoje</div>
+                                            <div className="rp-stat-label">
+                                                {earningsPeriod === 'today' ? 'Ganhos Hoje' : earningsPeriod === '7days' ? 'Ganhos (7 Dias)' : 'Ganhos (30 Dias)'}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Stat 2: Entregas Feitas */}
+                                    {/* Stat 2: Entregas Feitas no Período */}
                                     <div className="rp-stat-card">
                                         <div className="rp-stat-icon-box" style={{ background: 'rgba(14, 165, 233, 0.12)', color: '#0284c7' }}>
                                             <Icons.CheckCircle />
                                         </div>
                                         <div>
                                             <div className="rp-stat-number" style={{ color: '#0284c7' }}>
-                                                {stats.today_deliveries} <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8' }}>/ {stats.total_deliveries}</span>
+                                                {earningsPeriod === 'today' 
+                                                    ? stats.today_deliveries 
+                                                    : earningsPeriod === '7days' 
+                                                        ? (stats.week_deliveries ?? stats.today_deliveries) 
+                                                        : (stats.month_deliveries ?? stats.total_deliveries)} <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8' }}>/ {stats.total_deliveries}</span>
                                             </div>
-                                            <div className="rp-stat-label">Entregas Feitas</div>
+                                            <div className="rp-stat-label">
+                                                {earningsPeriod === 'today' ? 'Entregas Hoje' : earningsPeriod === '7days' ? 'Entregas (7 Dias)' : 'Entregas (30 Dias)'}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1949,7 +2016,7 @@ export default function DriverPortal() {
                                             <Icons.Trophy />
                                         </div>
                                         <div>
-                                            <div className="rp-stat-number" style={{ color: '#0f172a' }}>
+                                            <div className="rp-stat-number" style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>
                                                 {formatMZCurrency(stats.total_earnings)}
                                             </div>
                                             <div className="rp-stat-label">Total Ganho</div>
@@ -1962,7 +2029,7 @@ export default function DriverPortal() {
                                             <Icons.Clock />
                                         </div>
                                         <div>
-                                            <div className="rp-stat-number" style={{ color: isDebtBlocked ? '#dc2626' : '#0f172a' }}>
+                                            <div className="rp-stat-number" style={{ color: isDebtBlocked ? '#dc2626' : (darkMode ? '#ffffff' : '#0f172a') }}>
                                                 {isDebtBlocked ? formatMZCurrency(pendingDebt.amount) : '0 MT'}
                                             </div>
                                             <div className="rp-stat-label">{isDebtBlocked ? 'Taxa Devida' : 'Taxa em Dia'}</div>
@@ -3286,83 +3353,86 @@ export default function DriverPortal() {
                 );
             })()}
 
-            {/* MODAL 1: Modern Entregador Registration Modal */}
+            {/* MODAL 1: Modern Entregador Registration Modal (100% Mobile Ergonomic & Dark Mode Ready) */}
             {isRegisterModalOpen && (
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(15, 23, 42, 0.78)',
+                    background: 'rgba(0, 0, 0, 0.85)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     zIndex: 99999,
                     backdropFilter: 'blur(8px)',
-                    padding: '1.25rem'
+                    padding: '0.5rem',
+                    boxSizing: 'border-box'
                 }}>
                     <div style={{
-                        background: '#ffffff',
-                        borderRadius: '24px',
-                        maxWidth: '580px',
+                        background: darkMode ? '#121212' : '#ffffff',
+                        borderRadius: '20px',
+                        maxWidth: '460px',
                         width: '100%',
-                        maxHeight: '92vh',
+                        maxHeight: '94vh',
                         display: 'flex',
                         flexDirection: 'column',
                         overflow: 'hidden',
-                        boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.35)',
-                        border: '1px solid #e2e8f0',
+                        boxShadow: darkMode ? '0 25px 60px -15px rgba(0, 0, 0, 0.9)' : '0 25px 60px -15px rgba(15, 23, 42, 0.35)',
+                        border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
                         animation: 'fadeInUp 0.2s ease-out'
                     }}>
-                        {/* Header with gradient badge and close button */}
+                        {/* Header with badge, title and close button */}
                         <div style={{
-                            padding: '1.5rem 1.75rem 1.25rem',
-                            borderBottom: '1px solid #f1f5f9',
+                            padding: '1rem 1.15rem 0.85rem',
+                            borderBottom: darkMode ? '1px solid #222222' : '1px solid #f1f5f9',
                             display: 'flex',
                             alignItems: 'flex-start',
                             justifyContent: 'space-between',
-                            background: '#fafafa'
+                            background: darkMode ? '#161616' : '#fafafa'
                         }}>
                             <div>
                                 <div style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '0.45rem',
-                                    background: '#fef3c7',
-                                    color: '#b45309',
-                                    padding: '0.28rem 0.65rem',
+                                    gap: '0.4rem',
+                                    background: 'rgba(245, 158, 11, 0.15)',
+                                    color: '#f59e0b',
+                                    padding: '0.22rem 0.6rem',
                                     borderRadius: '6px',
-                                    fontSize: '0.72rem',
+                                    fontSize: '0.7rem',
                                     fontWeight: 800,
                                     textTransform: 'uppercase',
-                                    letterSpacing: '0.5px',
-                                    marginBottom: '0.5rem'
+                                    letterSpacing: '0.4px',
+                                    marginBottom: '0.35rem'
                                 }}>
                                     <Icons.Bike />
-                                    <span>Junta-te à Frota Oficial</span>
+                                    <span>Frota Oficial Tchapo Tchapo</span>
                                 </div>
-                                <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.3px' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a', letterSpacing: '-0.3px' }}>
                                     Registo de Entregador
                                 </h3>
-                                <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                                    Receba encomendas dos clientes Tchapo Tchapo em qualquer província de Moçambique e ganhe por entrega.
+                                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: darkMode ? '#a1a1aa' : '#64748b' }}>
+                                    Faça entregas na sua cidade e ganhe por cada rota concluída.
                                 </p>
                             </div>
                             <button
                                 onClick={() => {
                                     setIsRegisterModalOpen(false);
                                     setRegStep(1);
+                                    setRegTermsAgreed(false);
                                 }}
                                 style={{
-                                    background: '#ffffff',
-                                    border: '1px solid #e2e8f0',
+                                    background: darkMode ? '#222222' : '#ffffff',
+                                    border: darkMode ? '1px solid #333333' : '1px solid #e2e8f0',
                                     borderRadius: '50%',
-                                    width: '36px',
-                                    height: '36px',
+                                    width: '34px',
+                                    height: '34px',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    color: '#64748b',
+                                    color: darkMode ? '#cbd5e1' : '#64748b',
                                     boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                    flexShrink: 0,
                                     transition: 'all 0.15s'
                                 }}
                             >
@@ -3370,127 +3440,116 @@ export default function DriverPortal() {
                             </button>
                         </div>
 
-                        {/* Step Progress Bar */}
-                        <div style={{ padding: '0.85rem 1.75rem', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div
-                                onClick={() => setRegStep(1)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    cursor: 'pointer',
-                                    opacity: regStep === 1 ? 1 : 0.6
-                                }}
-                            >
-                                <span style={{
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '50%',
-                                    background: regStep >= 1 ? '#0f172a' : '#cbd5e1',
-                                    color: '#fff',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700
-                                }}>1</span>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: regStep === 1 ? '#0f172a' : '#64748b' }}>
-                                    Identificação & Contacto
-                                </span>
-                            </div>
-                            <div style={{ flex: 1, height: '2px', background: regStep === 2 ? '#0f172a' : '#e2e8f0' }} />
-                            <div
-                                onClick={() => {
-                                    if (photoFile && regName.trim() && regPhone.trim() && regPin.trim().length === 4 && regBairro.trim()) {
-                                        setRegStep(2);
-                                    } else if (!photoFile) {
-                                        showToast('Carregue a sua fotografia de perfil antes de avançar.', 'error');
-                                    } else if (!regName.trim() || !regPhone.trim()) {
-                                        showToast('Preencha o nome e contacto antes de avançar.', 'error');
-                                    } else if (!regPin.trim() || regPin.trim().length !== 4) {
-                                        showToast('Defina o PIN de 4 dígitos antes de avançar.', 'error');
-                                    } else if (!regBairro.trim()) {
-                                        showToast('Introduza o nome do bairro antes de avançar.', 'error');
-                                    }
-                                }}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    cursor: (photoFile && regName.trim() && regPhone.trim() && regPin.trim().length === 4 && regBairro.trim()) ? 'pointer' : 'default',
-                                    opacity: regStep === 2 ? 1 : 0.6
-                                }}
-                            >
-                                <span style={{
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '50%',
-                                    background: regStep === 2 ? '#0f172a' : '#cbd5e1',
-                                    color: '#fff',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700
-                                }}>2</span>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: regStep === 2 ? '#0f172a' : '#64748b' }}>
-                                    Documentação
-                                </span>
-                            </div>
-                            <div style={{ flex: 1, height: '2px', background: regStep === 3 ? '#0f172a' : '#e2e8f0' }} />
-                            <div
-                                onClick={() => { if (regStep === 3) setRegStep(3); }}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    opacity: regStep === 3 ? 1 : 0.6
-                                }}
-                            >
-                                <span style={{
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '50%',
-                                    background: regStep === 3 ? '#0f172a' : '#cbd5e1',
-                                    color: '#fff',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700
-                                }}>3</span>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: regStep === 3 ? '#0f172a' : '#64748b' }}>
-                                    Levantamento
-                                </span>
-                            </div>
+                        {/* Mobile-Ergonomic Step Progress Bar (Zero text wrapping) */}
+                        <div style={{
+                            padding: '0.65rem 0.9rem',
+                            background: darkMode ? '#181818' : '#f8fafc',
+                            borderBottom: darkMode ? '1px solid #222222' : '1px solid #e2e8f0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem'
+                        }}>
+                            {[
+                                { step: 1, title: '1. Pessoal' },
+                                { step: 2, title: '2. Documentos' },
+                                { step: 3, title: '3. Preços' }
+                            ].map((s, idx) => {
+                                const isActive = regStep === s.step;
+                                const isPassed = regStep > s.step;
+                                return (
+                                    <React.Fragment key={s.step}>
+                                        <div
+                                            onClick={() => {
+                                                if (s.step === 1) setRegStep(1);
+                                                else if (s.step === 2 && photoFile && regName.trim() && regPhone.trim() && regPin.trim().length === 4 && regBairro.trim()) setRegStep(2);
+                                                else if (s.step === 3 && regStep === 3) setRegStep(3);
+                                            }}
+                                            style={{
+                                                flex: 1,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                padding: '6px 2px',
+                                                borderRadius: '8px',
+                                                background: isActive 
+                                                    ? (darkMode ? '#27272a' : '#ffffff') 
+                                                    : 'transparent',
+                                                border: isActive 
+                                                    ? (darkMode ? '1px solid #3f3f46' : '1px solid #e2e8f0') 
+                                                    : '1px solid transparent',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.15s ease'
+                                            }}
+                                        >
+                                            <span style={{
+                                                fontSize: '0.74rem',
+                                                fontWeight: isActive ? 800 : 600,
+                                                color: isActive 
+                                                    ? '#f64c00' 
+                                                    : isPassed 
+                                                        ? (darkMode ? '#34d399' : '#059669') 
+                                                        : (darkMode ? '#71717a' : '#94a3b8'),
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                {isPassed ? `✓ ${s.title.split('. ')[1]}` : s.title}
+                                            </span>
+                                        </div>
+                                        {idx < 2 && (
+                                            <div style={{
+                                                width: '6px',
+                                                height: '2px',
+                                                background: regStep > idx + 1 ? '#10b981' : (darkMode ? '#2e2e2e' : '#e2e8f0'),
+                                                borderRadius: '1px',
+                                                flexShrink: 0
+                                            }} />
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
                         </div>
 
-                        {/* Modal Body / Scrollable Form */}
-                        <form onSubmit={handleRegister} style={{ overflowY: 'auto', padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {/* Modal Body: Single Smooth Scroll Container */}
+                        <form onSubmit={handleRegister} style={{
+                            overflowY: 'auto',
+                            WebkitOverflowScrolling: 'touch',
+                            padding: '1.1rem 1.15rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem',
+                            boxSizing: 'border-box'
+                        }}>
                             
-                            {/* STEP 1: Identification & Contact */}
+                            {/* STEP 1: Personal & Contact Details */}
                             {regStep === 1 && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
                                     
-                                    {/* Profile Photo Upload */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem', background: '#f8fafc', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
-                                        <div style={{ position: 'relative' }}>
+                                    {/* Profile Photo Upload Card */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.9rem',
+                                        padding: '0.85rem',
+                                        background: darkMode ? '#181818' : '#f8fafc',
+                                        borderRadius: '14px',
+                                        border: darkMode ? '1px dashed #333333' : '1px dashed #cbd5e1'
+                                    }}>
+                                        <div style={{ position: 'relative', flexShrink: 0 }}>
                                             <div style={{
-                                                width: '72px',
-                                                height: '72px',
+                                                width: '64px',
+                                                height: '64px',
                                                 borderRadius: '50%',
-                                                background: '#e2e8f0',
+                                                background: darkMode ? '#262626' : '#e2e8f0',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 overflow: 'hidden',
-                                                border: '2px solid #fff',
-                                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                                border: darkMode ? '2px solid #333333' : '2px solid #ffffff',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
                                             }}>
                                                 {photoPreview ? (
                                                     <img src={photoPreview} alt="Foto de Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 ) : (
-                                                    <Icons.User />
+                                                    <span style={{ color: darkMode ? '#71717a' : '#94a3b8' }}><Icons.User /></span>
                                                 )}
                                             </div>
                                             {photoPreview && (
@@ -3502,8 +3561,8 @@ export default function DriverPortal() {
                                                     }}
                                                     style={{
                                                         position: 'absolute',
-                                                        bottom: '-4px',
-                                                        right: '-4px',
+                                                        bottom: '-3px',
+                                                        right: '-3px',
                                                         background: '#ef4444',
                                                         color: '#fff',
                                                         border: 'none',
@@ -3514,7 +3573,7 @@ export default function DriverPortal() {
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         cursor: 'pointer',
-                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.25)'
                                                     }}
                                                     title="Remover foto"
                                                 >
@@ -3522,29 +3581,29 @@ export default function DriverPortal() {
                                                 </button>
                                             )}
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.2rem' }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: '0.84rem', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a', marginBottom: '0.15rem' }}>
                                                 Foto de Perfil (Rosto) *
                                             </div>
-                                            <p style={{ margin: '0 0 0.6rem', fontSize: '0.76rem', color: '#64748b' }}>
-                                                Foto nítida e obrigatória para identificação perante clientes em Moçambique.
+                                            <p style={{ margin: '0 0 0.5rem', fontSize: '0.72rem', color: darkMode ? '#a1a1aa' : '#64748b', lineHeight: 1.3 }}>
+                                                Foto nítida e obrigatória para identificação perante clientes.
                                             </p>
                                             <label style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
-                                                gap: '0.4rem',
-                                                background: '#ffffff',
-                                                border: photoFile ? '1.5px solid #10b981' : '1.5px dashed #cbd5e1',
-                                                padding: '0.45rem 0.9rem',
+                                                gap: '0.35rem',
+                                                background: darkMode ? '#222222' : '#ffffff',
+                                                border: photoFile ? '1.5px solid #10b981' : (darkMode ? '1.5px solid #333333' : '1.5px dashed #cbd5e1'),
+                                                padding: '0.4rem 0.8rem',
                                                 borderRadius: '8px',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 600,
-                                                color: photoFile ? '#059669' : '#334155',
+                                                fontSize: '0.76rem',
+                                                fontWeight: 700,
+                                                color: photoFile ? '#059669' : (darkMode ? '#e2e8f0' : '#334155'),
                                                 cursor: 'pointer',
                                                 boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                                             }}>
                                                 <Icons.UploadCloud />
-                                                <span>{photoFile ? 'Foto Carregada (Alterar)' : 'Carregar Fotografia *'}</span>
+                                                <span>{photoFile ? 'Foto Carregada ✓' : 'Carregar Fotografia *'}</span>
                                                 <input
                                                     type="file"
                                                     accept="image/*"
@@ -3561,7 +3620,7 @@ export default function DriverPortal() {
 
                                     {/* Full Name */}
                                     <div>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.82rem', color: darkMode ? '#e2e8f0' : '#1e293b' }}>
                                             <Icons.User />
                                             <span>Nome Completo *</span>
                                         </label>
@@ -3573,134 +3632,136 @@ export default function DriverPortal() {
                                             placeholder="Ex: Carlos Alberto Macamo"
                                             style={{
                                                 width: '100%',
-                                                padding: '0.8rem 1rem',
+                                                height: '46px',
+                                                padding: '0 0.9rem',
                                                 borderRadius: '12px',
-                                                border: '1.5px solid #e2e8f0',
-                                                fontSize: '0.92rem',
-                                                color: '#0f172a',
+                                                border: darkMode ? '1.5px solid #2e2e2e' : '1.5px solid #e2e8f0',
+                                                fontSize: '0.9rem',
+                                                color: darkMode ? '#ffffff' : '#0f172a',
                                                 outline: 'none',
-                                                background: '#fdfdfd',
-                                                boxSizing: 'border-box',
-                                                transition: 'border-color 0.15s'
+                                                background: darkMode ? '#181818' : '#fdfdfd',
+                                                boxSizing: 'border-box'
                                             }}
-                                            onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
-                                            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                            onFocus={(e) => e.target.style.borderColor = '#f64c00'}
+                                            onBlur={(e) => e.target.style.borderColor = darkMode ? '#2e2e2e' : '#e2e8f0'}
                                         />
                                     </div>
 
-                                    {/* WhatsApp & Bairro */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                                        <div>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
-                                                <Icons.WhatsApp />
-                                                <span>WhatsApp / Celular *</span>
-                                            </label>
-                                            <input
-                                                type="tel"
-                                                required
-                                                value={regPhone}
-                                                onChange={(e) => setRegPhone(e.target.value)}
-                                                placeholder="84XXXXXXX ou 87XXXXXXX"
+                                    {/* WhatsApp / Mobile */}
+                                    <div>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.82rem', color: darkMode ? '#e2e8f0' : '#1e293b' }}>
+                                            <Icons.WhatsApp />
+                                            <span>WhatsApp / Celular *</span>
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            inputMode="tel"
+                                            required
+                                            value={regPhone}
+                                            onChange={(e) => setRegPhone(e.target.value)}
+                                            placeholder="84XXXXXXX ou 87XXXXXXX"
+                                            style={{
+                                                width: '100%',
+                                                height: '46px',
+                                                padding: '0 0.9rem',
+                                                borderRadius: '12px',
+                                                border: darkMode ? '1.5px solid #2e2e2e' : '1.5px solid #e2e8f0',
+                                                fontSize: '0.9rem',
+                                                color: darkMode ? '#ffffff' : '#0f172a',
+                                                outline: 'none',
+                                                background: darkMode ? '#181818' : '#fdfdfd',
+                                                boxSizing: 'border-box'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = '#f64c00'}
+                                            onBlur={(e) => e.target.style.borderColor = darkMode ? '#2e2e2e' : '#e2e8f0'}
+                                        />
+                                    </div>
+
+                                    {/* Location (Província & Bairro) - 2 Column Clean Grid */}
+                                    <div>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.82rem', color: darkMode ? '#e2e8f0' : '#1e293b' }}>
+                                            <Icons.MapPin />
+                                            <span>Localização (Província & Bairro) *</span>
+                                        </label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                            <select
+                                                value={regProvince}
+                                                onChange={(e) => setRegProvince(e.target.value)}
                                                 style={{
                                                     width: '100%',
-                                                    padding: '0.8rem 1rem',
+                                                    height: '46px',
+                                                    padding: '0 0.6rem',
                                                     borderRadius: '12px',
-                                                    border: '1.5px solid #e2e8f0',
-                                                    fontSize: '0.92rem',
-                                                    color: '#0f172a',
+                                                    border: darkMode ? '1.5px solid #2e2e2e' : '1.5px solid #e2e8f0',
+                                                    fontSize: '0.84rem',
+                                                    color: darkMode ? '#ffffff' : '#0f172a',
                                                     outline: 'none',
-                                                    background: '#fdfdfd',
+                                                    background: darkMode ? '#181818' : '#fdfdfd',
                                                     boxSizing: 'border-box',
-                                                    transition: 'border-color 0.15s'
+                                                    cursor: 'pointer'
                                                 }}
-                                                onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
-                                                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                            >
+                                                {ALL_PROVINCES.map(prov => (
+                                                    <option key={prov} value={prov}>{prov}</option>
+                                                ))}
+                                            </select>
+
+                                            <input
+                                                type="text"
+                                                required
+                                                value={regBairro}
+                                                onChange={(e) => setRegBairro(e.target.value)}
+                                                placeholder="Nome do Bairro *"
+                                                style={{
+                                                    width: '100%',
+                                                    height: '46px',
+                                                    padding: '0 0.75rem',
+                                                    borderRadius: '12px',
+                                                    border: darkMode ? '1.5px solid #2e2e2e' : '1.5px solid #e2e8f0',
+                                                    fontSize: '0.84rem',
+                                                    color: darkMode ? '#ffffff' : '#0f172a',
+                                                    outline: 'none',
+                                                    background: darkMode ? '#181818' : '#fdfdfd',
+                                                    boxSizing: 'border-box'
+                                                }}
+                                                onFocus={(e) => e.target.style.borderColor = '#f64c00'}
+                                                onBlur={(e) => e.target.style.borderColor = darkMode ? '#2e2e2e' : '#e2e8f0'}
                                             />
-                                        </div>
-
-                                        <div>
-                                            <label style={{ display: 'flex', alignItems: 'center', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                                    <Icons.MapPin />
-                                                    <span>Localização (Província & Bairro) *</span>
-                                                </div>
-                                            </label>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
-                                                <select
-                                                    value={regProvince}
-                                                    onChange={(e) => setRegProvince(e.target.value)}
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '0.8rem 0.6rem',
-                                                        borderRadius: '12px',
-                                                        border: '1.5px solid #e2e8f0',
-                                                        fontSize: '0.86rem',
-                                                        color: '#0f172a',
-                                                        outline: 'none',
-                                                        background: '#fdfdfd',
-                                                        boxSizing: 'border-box',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    {ALL_PROVINCES.map(prov => (
-                                                        <option key={prov} value={prov}>{prov}</option>
-                                                    ))}
-                                                </select>
-
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={regBairro}
-                                                    onChange={(e) => setRegBairro(e.target.value)}
-                                                    placeholder="Digite o seu Bairro *"
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '0.8rem 0.85rem',
-                                                        borderRadius: '12px',
-                                                        border: '1.5px solid #e2e8f0',
-                                                        fontSize: '0.88rem',
-                                                        color: '#0f172a',
-                                                        outline: 'none',
-                                                        background: '#fdfdfd',
-                                                        boxSizing: 'border-box'
-                                                    }}
-                                                    onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
-                                                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                                                />
-                                            </div>
                                         </div>
                                     </div>
 
                                     {/* Security PIN */}
                                     <div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.35rem' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700, fontSize: '0.82rem', color: darkMode ? '#e2e8f0' : '#1e293b' }}>
                                                 <Icons.Lock />
                                                 <span>PIN de Acesso (4 Dígitos) *</span>
                                             </label>
-                                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Usado para entrar no portal</span>
+                                            <span style={{ fontSize: '0.72rem', color: darkMode ? '#71717a' : '#64748b' }}>Usado para entrar no portal</span>
                                         </div>
                                         <input
                                             type="password"
+                                            inputMode="numeric"
                                             maxLength="4"
                                             required
                                             value={regPin}
                                             onChange={(e) => setRegPin(e.target.value.replace(/\D/g, ''))}
-                                            placeholder="Ex: 4821"
+                                            placeholder="••••"
                                             style={{
                                                 width: '100%',
-                                                padding: '0.8rem 1rem',
+                                                height: '46px',
+                                                padding: '0 0.9rem',
                                                 borderRadius: '12px',
-                                                border: '1.5px solid #e2e8f0',
-                                                fontSize: '1rem',
-                                                letterSpacing: '3px',
-                                                color: '#0f172a',
+                                                border: darkMode ? '1.5px solid #2e2e2e' : '1.5px solid #e2e8f0',
+                                                fontSize: '1.1rem',
+                                                letterSpacing: '5px',
+                                                color: darkMode ? '#ffffff' : '#0f172a',
                                                 outline: 'none',
-                                                background: '#fdfdfd',
+                                                background: darkMode ? '#181818' : '#fdfdfd',
                                                 boxSizing: 'border-box'
                                             }}
-                                            onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
-                                            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                            onFocus={(e) => e.target.style.borderColor = '#f64c00'}
+                                            onBlur={(e) => e.target.style.borderColor = darkMode ? '#2e2e2e' : '#e2e8f0'}
                                         />
                                     </div>
 
@@ -3709,7 +3770,7 @@ export default function DriverPortal() {
                                         type="button"
                                         onClick={() => {
                                             if (!photoFile) {
-                                                showToast('A fotografia de perfil (rosto) é obrigatória para verificação.', 'error');
+                                                showToast('A fotografia de perfil (rosto) é obrigatória.', 'error');
                                                 return;
                                             }
                                             if (!regName.trim()) {
@@ -3721,7 +3782,7 @@ export default function DriverPortal() {
                                                 return;
                                             }
                                             if (!regPin.trim() || regPin.length < 4) {
-                                                showToast('Defina um PIN de 4 dígitos para segurança da sua conta.', 'error');
+                                                showToast('Defina um PIN de 4 dígitos para a sua conta.', 'error');
                                                 return;
                                             }
                                             if (!regBairro.trim()) {
@@ -3731,64 +3792,66 @@ export default function DriverPortal() {
                                             setRegStep(2);
                                         }}
                                         style={{
-                                            marginTop: '0.5rem',
-                                            background: '#0f172a',
+                                            marginTop: '0.4rem',
+                                            background: '#f64c00',
                                             color: '#ffffff',
                                             border: 'none',
-                                            padding: '0.9rem',
+                                            height: '48px',
                                             borderRadius: '12px',
-                                            fontWeight: 700,
+                                            fontWeight: 800,
                                             fontSize: '0.92rem',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            gap: '0.5rem',
-                                            transition: 'background 0.15s'
+                                            gap: '0.4rem',
+                                            boxShadow: '0 4px 14px rgba(246, 76, 0, 0.35)',
+                                            transition: 'transform 0.1s ease'
                                         }}
                                     >
-                                        <span>Continuar para Documentação</span>
+                                        <span>Avançar para Documentos</span>
                                         <Icons.ChevronRight />
                                     </button>
                                 </div>
                             )}
 
-                            {/* STEP 2: ID Document */}
+                            {/* STEP 2: Identification Document */}
                             {regStep === 2 && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
                                     
-                                    {/* Document Type & Number */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+                                    {/* Document Type & Number (2 Column Clean Grid) */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '0.5rem' }}>
                                         <div>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.82rem', color: darkMode ? '#e2e8f0' : '#1e293b' }}>
                                                 <Icons.IdCard />
-                                                <span>Documento *</span>
+                                                <span>Tipo *</span>
                                             </label>
                                             <select
                                                 value={regDocType}
                                                 onChange={(e) => setRegDocType(e.target.value)}
                                                 style={{
                                                     width: '100%',
-                                                    padding: '0.8rem 0.85rem',
+                                                    height: '46px',
+                                                    padding: '0 0.6rem',
                                                     borderRadius: '12px',
-                                                    border: '1.5px solid #e2e8f0',
-                                                    fontSize: '0.88rem',
-                                                    color: '#0f172a',
+                                                    border: darkMode ? '1.5px solid #2e2e2e' : '1.5px solid #e2e8f0',
+                                                    fontSize: '0.82rem',
+                                                    color: darkMode ? '#ffffff' : '#0f172a',
                                                     outline: 'none',
-                                                    background: '#fdfdfd',
+                                                    background: darkMode ? '#181818' : '#fdfdfd',
                                                     boxSizing: 'border-box',
                                                     cursor: 'pointer'
                                                 }}
                                             >
-                                                <option value="BI">Bilhete de Identidade (BI)</option>
-                                                <option value="Carta de Condução">Carta de Condução</option>
+                                                <option value="BI">BI</option>
+                                                <option value="Carta de Condução">Carta Condução</option>
                                                 <option value="DIRE">DIRE</option>
                                                 <option value="Passaporte">Passaporte</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
-                                                Número do Documento *
+                                            <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.82rem', color: darkMode ? '#e2e8f0' : '#1e293b' }}>
+                                                Número do Doc *
                                             </label>
                                             <input
                                                 type="text"
@@ -3798,32 +3861,33 @@ export default function DriverPortal() {
                                                 placeholder="Ex: 110100234567N"
                                                 style={{
                                                     width: '100%',
-                                                    padding: '0.8rem 1rem',
+                                                    height: '46px',
+                                                    padding: '0 0.75rem',
                                                     borderRadius: '12px',
-                                                    border: '1.5px solid #e2e8f0',
-                                                    fontSize: '0.92rem',
-                                                    color: '#0f172a',
+                                                    border: darkMode ? '1.5px solid #2e2e2e' : '1.5px solid #e2e8f0',
+                                                    fontSize: '0.86rem',
+                                                    color: darkMode ? '#ffffff' : '#0f172a',
                                                     outline: 'none',
-                                                    background: '#fdfdfd',
+                                                    background: darkMode ? '#181818' : '#fdfdfd',
                                                     boxSizing: 'border-box'
                                                 }}
-                                                onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
-                                                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                                onFocus={(e) => e.target.style.borderColor = '#f64c00'}
+                                                onBlur={(e) => e.target.style.borderColor = darkMode ? '#2e2e2e' : '#e2e8f0'}
                                             />
                                         </div>
                                     </div>
 
                                     {/* Document Photo Upload Box */}
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.84rem', color: '#1e293b' }}>
-                                            Fotografia do Documento (Frente do BI / Carta) *
+                                        <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700, fontSize: '0.82rem', color: darkMode ? '#e2e8f0' : '#1e293b' }}>
+                                            Fotografia do Documento (Frente) *
                                         </label>
                                         <div style={{
-                                            border: '1.5px dashed #cbd5e1',
-                                            borderRadius: '16px',
-                                            padding: '1.25rem',
+                                            border: darkMode ? '1.5px dashed #333333' : '1.5px dashed #cbd5e1',
+                                            borderRadius: '14px',
+                                            padding: '1rem',
                                             textAlign: 'center',
-                                            background: '#f8fafc',
+                                            background: darkMode ? '#181818' : '#f8fafc',
                                             position: 'relative'
                                         }}>
                                             {docPhotoPreview ? (
@@ -3832,11 +3896,11 @@ export default function DriverPortal() {
                                                         src={docPhotoPreview}
                                                         alt="Documento"
                                                         style={{
-                                                            maxHeight: '140px',
+                                                            maxHeight: '130px',
                                                             maxWidth: '100%',
                                                             borderRadius: '10px',
                                                             objectFit: 'contain',
-                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
                                                         }}
                                                     />
                                                     <button
@@ -3859,7 +3923,7 @@ export default function DriverPortal() {
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
                                                             cursor: 'pointer',
-                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.25)'
                                                         }}
                                                         title="Remover documento"
                                                     >
@@ -3867,26 +3931,26 @@ export default function DriverPortal() {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <label style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                                                <label style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 0' }}>
                                                     <div style={{
-                                                        width: '44px',
-                                                        height: '44px',
+                                                        width: '42px',
+                                                        height: '42px',
                                                         borderRadius: '50%',
-                                                        background: '#ffffff',
+                                                        background: darkMode ? '#262626' : '#ffffff',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        color: '#f59e0b',
-                                                        boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                                                        color: '#f64c00',
+                                                        boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
                                                     }}>
                                                         <Icons.UploadCloud />
                                                     </div>
                                                     <div>
-                                                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>
-                                                            Clique para anexar foto do BI ou Carta
+                                                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                            Anexar foto do BI ou Carta
                                                         </span>
-                                                        <p style={{ margin: '0.2rem 0 0', fontSize: '0.74rem', color: '#64748b' }}>
-                                                            Formatos aceites: JPG, PNG, WEBP (Max: 5MB)
+                                                        <p style={{ margin: '0.15rem 0 0', fontSize: '0.72rem', color: darkMode ? '#a1a1aa' : '#64748b' }}>
+                                                            Tire foto ou anexe imagem (JPG, PNG até 5MB)
                                                         </p>
                                                     </div>
                                                     <input
@@ -3905,25 +3969,25 @@ export default function DriverPortal() {
                                         </div>
                                     </div>
 
-                                    {/* Buttons: Back and Submit */}
-                                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                    {/* Buttons: Back and Proceed to Step 3 */}
+                                    <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.4rem' }}>
                                         <button
                                             type="button"
                                             onClick={() => setRegStep(1)}
                                             style={{
                                                 flex: 1,
-                                                background: '#f1f5f9',
-                                                color: '#475569',
-                                                border: '1px solid #cbd5e1',
-                                                padding: '0.9rem',
+                                                background: darkMode ? '#222222' : '#f1f5f9',
+                                                color: darkMode ? '#e2e8f0' : '#475569',
+                                                border: darkMode ? '1px solid #333333' : '1px solid #cbd5e1',
+                                                height: '48px',
                                                 borderRadius: '12px',
                                                 fontWeight: 700,
-                                                fontSize: '0.88rem',
+                                                fontSize: '0.85rem',
                                                 cursor: 'pointer',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                gap: '0.4rem'
+                                                gap: '0.3rem'
                                             }}
                                         >
                                             <Icons.ChevronLeft />
@@ -3936,92 +4000,151 @@ export default function DriverPortal() {
                                             disabled={regLoading}
                                             style={{
                                                 flex: 2,
-                                                background: '#f59e0b',
-                                                color: '#111827',
+                                                background: '#f64c00',
+                                                color: '#ffffff',
                                                 border: 'none',
-                                                padding: '0.9rem',
+                                                height: '48px',
                                                 borderRadius: '12px',
                                                 fontWeight: 800,
-                                                fontSize: '0.95rem',
+                                                fontSize: '0.92rem',
                                                 cursor: 'pointer',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                gap: '0.5rem',
-                                                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.35)'
+                                                gap: '0.4rem',
+                                                boxShadow: '0 4px 14px rgba(246, 76, 0, 0.35)'
                                             }}
                                         >
-                                            <Icons.CheckCircle />
-                                            <span>Avançar</span>
+                                            <span>Ver Preços de Loja</span>
+                                            <Icons.ChevronRight />
                                         </button>
                                     </div>
                                 </div>
                             )}
 
+                            {/* STEP 3: Store Pickup Price List & Agreement */}
                             {regStep === 3 && (
-                                <div style={{ padding: '1.25rem 1.75rem 1.5rem', overflowY: 'auto', maxHeight: '62vh' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                                    
                                     {/* Warning Banner */}
                                     <div style={{
-                                        background: '#fef3c7',
-                                        border: '1.5px solid #fbbf24',
+                                        background: darkMode ? 'rgba(245, 158, 11, 0.12)' : '#fef3c7',
+                                        border: darkMode ? '1.5px solid rgba(245, 158, 11, 0.35)' : '1.5px solid #fbbf24',
                                         borderRadius: '12px',
-                                        padding: '0.85rem 1rem',
-                                        marginBottom: '1.25rem',
+                                        padding: '0.75rem 0.85rem',
                                         display: 'flex',
                                         alignItems: 'flex-start',
-                                        gap: '0.65rem'
+                                        gap: '0.55rem'
                                     }}>
-                                        <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⚠️</span>
+                                        <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>⚠️</span>
                                         <div>
-                                            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#92400e', marginBottom: '0.2rem' }}>
+                                            <div style={{ fontWeight: 800, fontSize: '0.82rem', color: darkMode ? '#fbbf24' : '#92400e', marginBottom: '0.15rem' }}>
                                                 Atenção — Preços de Levantamento da Loja
                                             </div>
-                                            <p style={{ margin: 0, fontSize: '0.82rem', color: '#a16207', lineHeight: 1.5 }}>
-                                                Estes são os preços de levantamento que a loja permite. Atenção: os preços podem sofrer alterações de acordo com as mudanças do mercado.
+                                            <p style={{ margin: 0, fontSize: '0.75rem', color: darkMode ? '#fef3c7' : '#a16207', lineHeight: 1.4 }}>
+                                                Estes são os valores oficiais permitidos pela loja para o levantamento de produtos. Poderão sofrer atualizações conforme o mercado.
                                             </p>
                                         </div>
                                     </div>
 
-                                    <h4 style={{ margin: '0 0 0.85rem', fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
-                                        📋 Preços de Levantamento Permitidos pela Loja
-                                    </h4>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                                        {STORE_PICKUP_PRICES.map((item, idx) => (
-                                            <div key={idx} style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                padding: '0.55rem 0.75rem',
-                                                background: idx % 2 === 0 ? '#f8fafc' : '#ffffff',
-                                                borderBottom: '1px solid #f1f5f9',
-                                                borderRadius: idx === 0 ? '8px 8px 0 0' : undefined
-                                            }}>
-                                                <span style={{ fontSize: '0.82rem', color: '#334155', fontWeight: 600 }}>{item.name}</span>
-                                                <span style={{ fontSize: '0.82rem', color: '#0f172a', fontWeight: 800, whiteSpace: 'nowrap' }}>{item.price.toLocaleString('pt-MZ')} MT</span>
-                                            </div>
-                                        ))}
+                                    {/* Pickup Price List (Compact mobile table) */}
+                                    <div>
+                                        <div style={{
+                                            fontSize: '0.82rem',
+                                            fontWeight: 800,
+                                            color: darkMode ? '#ffffff' : '#0f172a',
+                                            marginBottom: '0.45rem',
+                                            display: 'flex',
+                                            justifyContent: 'space-between'
+                                        }}>
+                                            <span>Produto</span>
+                                            <span>Preço Levantamento</span>
+                                        </div>
+                                        <div style={{
+                                            maxHeight: '220px',
+                                            overflowY: 'auto',
+                                            WebkitOverflowScrolling: 'touch',
+                                            borderRadius: '12px',
+                                            border: darkMode ? '1px solid #262626' : '1px solid #e2e8f0',
+                                            background: darkMode ? '#181818' : '#ffffff'
+                                        }}>
+                                            {STORE_PICKUP_PRICES.map((item, idx) => (
+                                                <div key={idx} style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    padding: '0.5rem 0.75rem',
+                                                    background: idx % 2 === 0 
+                                                        ? (darkMode ? '#1c1c1c' : '#f8fafc') 
+                                                        : (darkMode ? '#181818' : '#ffffff'),
+                                                    borderBottom: idx < STORE_PICKUP_PRICES.length - 1 
+                                                        ? (darkMode ? '1px solid #27272a' : '1px solid #f1f5f9') 
+                                                        : 'none'
+                                                }}>
+                                                    <span style={{ fontSize: '0.78rem', color: darkMode ? '#e2e8f0' : '#334155', fontWeight: 600 }}>
+                                                        {item.name}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.8rem', color: '#f64c00', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                                                        {item.price.toLocaleString('pt-MZ')} MT
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
 
-                                    {/* Buttons: Back and Agree */}
-                                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', position: 'sticky', bottom: 0, background: '#fff', paddingTop: '0.75rem' }}>
+                                    {/* Agreement Checkbox */}
+                                    <label style={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: '0.65rem',
+                                        background: regTermsAgreed 
+                                            ? (darkMode ? 'rgba(5, 150, 105, 0.15)' : '#ecfdf5') 
+                                            : (darkMode ? '#181818' : '#f8fafc'),
+                                        border: regTermsAgreed 
+                                            ? '1.5px solid #10b981' 
+                                            : (darkMode ? '1.5px solid #2e2e2e' : '1.5px solid #e2e8f0'),
+                                        padding: '0.75rem 0.85rem',
+                                        borderRadius: '12px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={regTermsAgreed}
+                                            onChange={(e) => setRegTermsAgreed(e.target.checked)}
+                                            style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                accentColor: '#059669',
+                                                cursor: 'pointer',
+                                                marginTop: '2px',
+                                                flexShrink: 0
+                                            }}
+                                        />
+                                        <span style={{ fontSize: '0.78rem', color: darkMode ? '#e2e8f0' : '#1e293b', lineHeight: 1.4, fontWeight: 600 }}>
+                                            Declaro que li e concordo integralmente com a tabela de preços de levantamento da loja Tchapo Tchapo.
+                                        </span>
+                                    </label>
+
+                                    {/* Buttons: Back and Submit */}
+                                    <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.35rem' }}>
                                         <button
                                             type="button"
                                             onClick={() => setRegStep(2)}
                                             style={{
                                                 flex: 1,
-                                                background: '#f1f5f9',
-                                                color: '#475569',
-                                                border: '1px solid #cbd5e1',
-                                                padding: '0.9rem',
+                                                background: darkMode ? '#222222' : '#f1f5f9',
+                                                color: darkMode ? '#e2e8f0' : '#475569',
+                                                border: darkMode ? '1px solid #333333' : '1px solid #cbd5e1',
+                                                height: '48px',
                                                 borderRadius: '12px',
                                                 fontWeight: 700,
-                                                fontSize: '0.88rem',
+                                                fontSize: '0.85rem',
                                                 cursor: 'pointer',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                gap: '0.4rem'
+                                                gap: '0.3rem'
                                             }}
                                         >
                                             <Icons.ChevronLeft />
@@ -4030,28 +4153,35 @@ export default function DriverPortal() {
 
                                         <button
                                             type="button"
-                                            onClick={handleFinalSubmit}
-                                            disabled={regLoading}
+                                            onClick={() => {
+                                                if (!regTermsAgreed) {
+                                                    showToast('Por favor confirme que concorda com a lista de levantamento.', 'error');
+                                                    return;
+                                                }
+                                                handleFinalSubmit();
+                                            }}
+                                            disabled={regLoading || !regTermsAgreed}
                                             style={{
                                                 flex: 2,
-                                                background: '#059669',
+                                                background: regTermsAgreed ? '#059669' : (darkMode ? '#333333' : '#94a3b8'),
                                                 color: '#ffffff',
                                                 border: 'none',
-                                                padding: '0.9rem',
+                                                height: '48px',
                                                 borderRadius: '12px',
                                                 fontWeight: 800,
-                                                fontSize: '0.85rem',
-                                                cursor: 'pointer',
+                                                fontSize: '0.9rem',
+                                                cursor: regTermsAgreed ? 'pointer' : 'not-allowed',
                                                 opacity: regLoading ? 0.7 : 1,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                gap: '0.5rem',
-                                                boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)'
+                                                gap: '0.45rem',
+                                                boxShadow: regTermsAgreed ? '0 4px 14px rgba(5, 150, 105, 0.35)' : 'none',
+                                                transition: 'all 0.15s ease'
                                             }}
                                         >
                                             <Icons.CheckCircle />
-                                            <span>{regLoading ? 'A enviar candidatura...' : 'Eu concordo com a lista de levantamento da loja e quero continuar'}</span>
+                                            <span>{regLoading ? 'A enviar...' : 'Concluir Registo ✓'}</span>
                                         </button>
                                     </div>
                                 </div>

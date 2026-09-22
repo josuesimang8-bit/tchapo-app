@@ -276,6 +276,13 @@ const formatTimer = (secs) => {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
+// Format driver ID to 4 digits (e.g. 7 -> 0007)
+export const formatDriverId = (id) => {
+    if (id == null || id === '') return '';
+    const num = Number(id);
+    return !isNaN(num) ? String(num).padStart(4, '0') : String(id).padStart(4, '0');
+};
+
 // Pickup prices list allowed by the store
 const STORE_PICKUP_PRICES = [
     { name: 'Fita Led RGB 5 metros', price: 250 },
@@ -520,6 +527,9 @@ export default function DriverPortal() {
     const [submittingDebt, setSubmittingDebt] = useState(false);
     const [debtSecondsLeft, setDebtSecondsLeft] = useState(7200);
     const [copiedId, setCopiedId] = useState(false);
+    const [copiedPhone, setCopiedPhone] = useState(false);
+    const [reEditProof, setReEditProof] = useState(false);
+    const [checkingDebtStatus, setCheckingDebtStatus] = useState(false);
 
     // Login Form State
     const [loginPhone, setLoginPhone] = useState('');
@@ -883,7 +893,11 @@ export default function DriverPortal() {
             const res = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus, driver_id: authDriver?.id })
+                body: JSON.stringify({
+                    status: newStatus,
+                    driver_id: authDriver?.id,
+                    delivered_at: newStatus === 'Entregue' ? new Date().toISOString() : undefined
+                })
             });
             if (res.ok) {
                 if (newStatus === 'Entregue') {
@@ -926,6 +940,7 @@ export default function DriverPortal() {
                 setDebtPaymentRef('');
                 setDebtReceiptFile(null);
                 setDebtReceiptPreview(null);
+                setReEditProof(false);
                 fetchDashboard(authDriver?.id);
             } else {
                 showToast(data.error || 'Erro ao submeter comprovativo.', 'error');
@@ -944,6 +959,28 @@ export default function DriverPortal() {
             showToast('ID copiado para a área de transferência!', 'info');
             setTimeout(() => setCopiedId(false), 3000);
         } catch (_) {}
+    };
+
+    const copyPhoneToClipboard = (text) => {
+        try {
+            navigator.clipboard.writeText(text);
+            setCopiedPhone(true);
+            showToast('Número e-Mola copiado!', 'info');
+            setTimeout(() => setCopiedPhone(false), 3000);
+        } catch (_) {}
+    };
+
+    const handleCheckDebtApproval = async () => {
+        if (!authDriver?.id) return;
+        setCheckingDebtStatus(true);
+        try {
+            await fetchDashboard(authDriver.id);
+            showToast('Estado verificado com sucesso.', 'info');
+        } catch (_) {
+            showToast('Erro ao consultar o servidor.', 'error');
+        } finally {
+            setCheckingDebtStatus(false);
+        }
     };
 
     const stats = dashboardData?.stats || {
@@ -1078,7 +1115,7 @@ export default function DriverPortal() {
                                     Olá, {authDriver.name ? authDriver.name.split(' ')[0] : 'Entregador'}
                                 </div>
                                 <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
-                                    {authDriver.approval_status === 'Aprovado' ? `ID: #${authDriver.id}` : 'Conta em Análise'}
+                                    {authDriver.approval_status === 'Aprovado' ? `ID: #${formatDriverId(authDriver.id)}` : 'Conta em Análise'}
                                 </div>
                             </div>
                         </div>
@@ -1402,134 +1439,249 @@ export default function DriverPortal() {
                     <div style={{ paddingBottom: '95px' }}>
 
                         {/* ========================================================================= */}
-                        {/* TELA BRANCA DE PAGAMENTO DE TAXA APÓS ENTREGA (SOLICITADA PELO UTILIZADOR) */}
-                        {/* Cobertura total do site (Fixed Full-Screen Blocking Overlay) */}
+                        {/* TELA DE COBRANÇA DA TAXA APÓS ENTREGA (ESTILO OFICIAL DA LOJA TCHAPO TCHAPO) */}
+                        {/* Cobertura total e travamento contínuo até confirmação pelo Admin */}
                         {/* ========================================================================= */}
                         {isDebtBlocked && (
                             <div style={{
                                 position: 'fixed',
                                 inset: 0,
                                 zIndex: 999999,
-                                background: '#ffffff',
+                                background: darkMode ? '#0f172a' : '#f8fafc',
                                 overflowY: 'auto',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'flex-start',
-                                padding: '1.5rem 1rem 3rem',
+                                padding: '1.25rem 1rem 3rem',
                                 boxSizing: 'border-box'
                             }}>
+                                {/* Brand Top Bar styled like the Store Header */}
                                 <div style={{
                                     width: '100%',
-                                    maxWidth: '620px',
-                                    margin: 'auto 0',
-                                    textAlign: 'center',
-                                    padding: '1rem 0'
+                                    maxWidth: '600px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0.75rem 1rem',
+                                    background: darkMode ? '#1e293b' : '#ffffff',
+                                    borderRadius: '16px',
+                                    border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                    marginBottom: '1.25rem'
                                 }}>
-                                    {/* Top Brand Pill & Logout Link */}
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        marginBottom: '1.5rem',
-                                        paddingBottom: '1rem',
-                                        borderBottom: '1px solid #f1f5f9'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <img src="/assets/logo_original.png" alt="Logo" style={{ width: '22px', height: '22px', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
-                                            </div>
-                                            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>Tchapo Tchapo Entregador</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(245,158,11,0.3)' }}>
+                                            <img src="/assets/logo_original.png" alt="Tchapo Tchapo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
                                         </div>
+                                        <div>
+                                            <div style={{ fontWeight: 900, fontSize: '0.98rem', color: darkMode ? '#ffffff' : '#0f172a', letterSpacing: '-0.3px' }}>
+                                                Tchapo Tchapo
+                                            </div>
+                                            <div style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                Central do Entregador
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <span style={{
+                                            fontSize: '0.76rem',
+                                            fontWeight: 800,
+                                            color: '#64748b',
+                                            background: darkMode ? '#0f172a' : '#f1f5f9',
+                                            padding: '0.3rem 0.65rem',
+                                            borderRadius: '8px'
+                                        }}>
+                                            ID: #{formatDriverId(authDriver.id)}
+                                        </span>
                                         <button
                                             type="button"
                                             onClick={handleLogout}
                                             style={{
-                                                background: '#f8fafc',
-                                                border: '1px solid #e2e8f0',
+                                                background: 'transparent',
+                                                border: darkMode ? '1px solid #334155' : '1px solid #cbd5e1',
                                                 color: '#64748b',
-                                                padding: '0.4rem 0.85rem',
+                                                padding: '0.35rem 0.75rem',
                                                 borderRadius: '8px',
-                                                fontSize: '0.8rem',
+                                                fontSize: '0.78rem',
                                                 fontWeight: 700,
                                                 cursor: 'pointer',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '0.35rem'
+                                                gap: '0.3rem'
                                             }}
                                         >
                                             <Icons.LogOut />
-                                            <span>Sair da Conta</span>
+                                            <span>Sair</span>
                                         </button>
                                     </div>
+                                </div>
 
-                                    {/* Badge de Estado */}
-                                    <div style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '0.45rem',
-                                        background: debtSecondsLeft === 0 ? '#fee2e2' : '#fef3c7',
-                                        color: debtSecondsLeft === 0 ? '#b91c1c' : '#b45309',
-                                        padding: '0.45rem 1.1rem',
-                                        borderRadius: '999px',
-                                        fontSize: '0.82rem',
-                                        fontWeight: 800,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
-                                        marginBottom: '1rem'
-                                    }}>
-                                        <Icons.AlertTriangle />
-                                        <span>{debtSecondsLeft === 0 ? 'Prazo de 2 Horas Esgotado' : 'Taxa da Plataforma Obrigatória'}</span>
-                                    </div>
+                                {/* Main Store-Styled Card */}
+                                <div style={{
+                                    width: '100%',
+                                    maxWidth: '600px',
+                                    background: darkMode ? '#1e293b' : '#ffffff',
+                                    borderRadius: '24px',
+                                    padding: '1.75rem 1.5rem',
+                                    border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
+                                    boxShadow: '0 20px 45px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)',
+                                    textAlign: 'center',
+                                    boxSizing: 'border-box'
+                                }}>
+                                    {/* AVISO URGENTE PÓS-TIMER (SOLICITAÇÃO EXPLÍCITA DO UTILIZADOR) */}
+                                    {debtSecondsLeft === 0 ? (
+                                        <div style={{
+                                            background: darkMode ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
+                                            border: '2px solid #ef4444',
+                                            borderRadius: '16px',
+                                            padding: '1.2rem',
+                                            marginBottom: '1.5rem',
+                                            textAlign: 'center',
+                                            boxShadow: '0 8px 24px rgba(239, 68, 68, 0.18)'
+                                        }}>
+                                            <div style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                width: '46px',
+                                                height: '46px',
+                                                borderRadius: '50%',
+                                                background: '#fee2e2',
+                                                color: '#dc2626',
+                                                marginBottom: '0.6rem'
+                                            }}>
+                                                <Icons.AlertTriangle />
+                                            </div>
+                                            <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#dc2626', margin: '0 0 0.35rem' }}>
+                                                ⚠️ AVISO URGENTE: Prazo de 2 Horas Esgotado!
+                                            </h3>
+                                            <p style={{ fontSize: '0.92rem', color: darkMode ? '#fca5a5' : '#b91c1c', fontWeight: 800, lineHeight: 1.45, margin: 0 }}>
+                                                Deve efetuar o pagamento de forma imediata para evitar a suspensão da conta.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '0.45rem',
+                                            background: 'rgba(245, 158, 11, 0.12)',
+                                            color: '#d97706',
+                                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                                            padding: '0.4rem 1.1rem',
+                                            borderRadius: '999px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 800,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px',
+                                            marginBottom: '1rem'
+                                        }}>
+                                            <Icons.Clock />
+                                            <span>Taxa da Plataforma Obrigatória</span>
+                                        </div>
+                                    )}
 
-                                    <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.1rem)', fontWeight: 900, margin: '0 0 0.5rem', color: '#0f172a', letterSpacing: '-0.5px' }}>
-                                        Produto Entregue com Sucesso!
+                                    <h2 style={{ fontSize: 'clamp(1.4rem, 4vw, 1.95rem)', fontWeight: 900, margin: '0 0 0.4rem', color: darkMode ? '#ffffff' : '#0f172a', letterSpacing: '-0.5px' }}>
+                                        Cobrança de Taxa por Pedido Entregue
                                     </h2>
-                                    <p style={{ fontSize: 'clamp(0.88rem, 2.5vw, 0.98rem)', color: '#64748b', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
-                                        A plataforma está temporariamente indisponível para novos pedidos até que efetue o pagamento da taxa para a empresa.
+                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
+                                        A plataforma está temporariamente bloqueada para novos pedidos até que a comissão desta entrega seja confirmada pela administração.
                                     </p>
 
-                                    {/* BOX BRANCA DESTACADA COM OS DADOS EXATOS SOLICITADOS */}
+                                    {/* CRONÓMETRO DE 2 HORAS ESTILIZADO NO PADRÃO DA LOJA */}
                                     <div style={{
-                                        background: '#f8fafc',
-                                        borderRadius: '20px',
-                                        padding: '1.5rem',
-                                        border: '2px solid #e2e8f0',
-                                        marginBottom: '1.5rem',
-                                        textAlign: 'left',
-                                        boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
+                                        background: darkMode ? '#0f172a' : '#f8fafc',
+                                        borderRadius: '16px',
+                                        padding: '1rem 1.25rem',
+                                        marginBottom: '1.25rem',
+                                        border: debtSecondsLeft === 0 ? '2px solid #ef4444' : darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        flexWrap: 'wrap',
+                                        gap: '0.5rem'
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.85rem', borderBottom: '1.5px solid #e2e8f0' }}>
+                                        <div style={{ textAlign: 'left' }}>
+                                            <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                                                Tempo Restante para Pagamento:
+                                            </div>
+                                            <div style={{ fontSize: '0.78rem', color: debtSecondsLeft === 0 ? '#ef4444' : '#64748b', fontWeight: 600, marginTop: '2px' }}>
+                                                {debtSecondsLeft === 0 ? 'Prazo expirado' : 'Prazo regular de 2 horas'}
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            fontSize: '1.65rem',
+                                            fontWeight: 900,
+                                            fontFamily: 'monospace',
+                                            color: debtSecondsLeft === 0 ? '#ef4444' : debtSecondsLeft < 1800 ? '#f59e0b' : '#10b981',
+                                            letterSpacing: '1px'
+                                        }}>
+                                            {formatTimer(debtSecondsLeft)}
+                                        </div>
+                                    </div>
+
+                                    {/* CARTÃO FINANCEIRO DE DETALHES DO PEDIDO */}
+                                    <div style={{
+                                        background: darkMode ? '#0f172a' : '#f8fafc',
+                                        borderRadius: '18px',
+                                        padding: '1.25rem',
+                                        border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
+                                        marginBottom: '1.25rem',
+                                        textAlign: 'left'
+                                    }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: darkMode ? '1px solid #1e293b' : '1px solid #e2e8f0' }}>
                                             <div>
-                                                <div style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 700 }}>Taxa da Plataforma (15% do Lucro):</div>
+                                                <div style={{ fontSize: '0.86rem', color: darkMode ? '#cbd5e1' : '#475569', fontWeight: 700 }}>
+                                                    Taxa da Plataforma (15% do Lucro):
+                                                </div>
                                                 {pendingDebt.profit && (
-                                                    <div style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 700, marginTop: '2px' }}>
-                                                        Lucro obtido no pedido: +{formatMZCurrency(pendingDebt.profit)}
+                                                    <div style={{ fontSize: '0.76rem', color: '#10b981', fontWeight: 700, marginTop: '2px' }}>
+                                                        Seu Lucro neste pedido: +{formatMZCurrency(pendingDebt.profit)}
                                                     </div>
                                                 )}
                                             </div>
-                                            <strong style={{ fontSize: 'clamp(1.4rem, 3.5vw, 1.85rem)', fontWeight: 900, color: '#dc2626' }}>
+                                            <strong style={{ fontSize: '1.6rem', fontWeight: 900, color: '#f59e0b', letterSpacing: '-0.5px' }}>
                                                 {formatMZCurrency(pendingDebt.amount)}
                                             </strong>
                                         </div>
 
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-                                            <span style={{ fontSize: '0.92rem', color: '#475569', fontWeight: 600 }}>Para o e-Mola:</span>
-                                            <strong style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', letterSpacing: '0.5px' }}>
-                                                874110586
-                                            </strong>
+                                        {/* Dados do e-Mola */}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+                                            <span style={{ fontSize: '0.86rem', color: '#64748b', fontWeight: 600 }}>Número e-Mola:</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                                <strong style={{ fontSize: '1.1rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                    874110586
+                                                </strong>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => copyPhoneToClipboard('874110586')}
+                                                    style={{
+                                                        background: 'rgba(245, 158, 11, 0.15)',
+                                                        border: 'none',
+                                                        color: '#f59e0b',
+                                                        padding: '0.25rem 0.55rem',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.72rem',
+                                                        fontWeight: 800,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {copiedPhone ? 'Copiado!' : 'Copiar'}
+                                                </button>
+                                            </div>
                                         </div>
 
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.85rem', borderBottom: '1.5px solid #e2e8f0' }}>
-                                            <span style={{ fontSize: '0.92rem', color: '#475569', fontWeight: 600 }}>Titular:</span>
-                                            <strong style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', paddingBottom: '0.75rem', borderBottom: darkMode ? '1px solid #1e293b' : '1px solid #e2e8f0' }}>
+                                            <span style={{ fontSize: '0.86rem', color: '#64748b', fontWeight: 600 }}>Titular da Conta:</span>
+                                            <strong style={{ fontSize: '0.95rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                                 Massiquine Simango
                                             </strong>
                                         </div>
 
-                                        {/* No conteúdo adicione o seu ID */}
+                                        {/* Caixa de ID de 4 dígitos obrigatório */}
                                         <div style={{
-                                            background: '#fef3c7',
+                                            background: darkMode ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb',
                                             border: '1.5px solid #fde68a',
                                             borderRadius: '14px',
                                             padding: '0.85rem 1rem',
@@ -1540,29 +1692,30 @@ export default function DriverPortal() {
                                             gap: '0.5rem'
                                         }}>
                                             <div>
-                                                <div style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 800, textTransform: 'uppercase' }}>
-                                                    No conteúdo da transferência adicione:
+                                                <div style={{ fontSize: '0.72rem', color: '#b45309', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                    Adicione no conteúdo / motivo da transferência:
                                                 </div>
                                                 <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#92400e', marginTop: '2px' }}>
-                                                    ID: {authDriver.id}
+                                                    ID: {formatDriverId(authDriver.id)}
                                                 </div>
                                             </div>
 
                                             <button
                                                 type="button"
-                                                onClick={() => copyToClipboard(String(authDriver.id))}
+                                                onClick={() => copyToClipboard(formatDriverId(authDriver.id))}
                                                 style={{
-                                                    background: '#fff',
+                                                    background: '#ffffff',
                                                     border: '1px solid #f59e0b',
                                                     color: '#b45309',
-                                                    padding: '0.45rem 0.9rem',
+                                                    padding: '0.45rem 0.85rem',
                                                     borderRadius: '8px',
-                                                    fontSize: '0.82rem',
+                                                    fontSize: '0.8rem',
                                                     fontWeight: 800,
                                                     cursor: 'pointer',
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: '0.4rem'
+                                                    gap: '0.35rem',
+                                                    boxShadow: '0 2px 5px rgba(245,158,11,0.15)'
                                                 }}
                                             >
                                                 <Icons.Copy />
@@ -1571,57 +1724,90 @@ export default function DriverPortal() {
                                         </div>
                                     </div>
 
-                                    {/* CRONÓMETRO DE 2 HORAS POR BAIXO */}
-                                    <div style={{
-                                        background: '#f1f5f9',
-                                        borderRadius: '18px',
-                                        padding: '1.15rem',
-                                        marginBottom: '1.5rem',
-                                        textAlign: 'center',
-                                        border: debtSecondsLeft === 0 ? '2px solid #ef4444' : '1px solid #cbd5e1'
-                                    }}>
-                                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.35rem' }}>
-                                            Tempo Restante para Pagamento (Prazo: 2 Horas)
-                                        </div>
+                                    {/* ESTADO TRAVADO DE VALIDAÇÃO (A TELA NÃO DESAPARECE ATÉ O ADMIN CONFIRMAR) */}
+                                    {pendingDebt.status === 'Aguardando Confirmação' && !reEditProof ? (
                                         <div style={{
-                                            fontSize: 'clamp(2rem, 5vw, 2.5rem)',
-                                            fontWeight: 900,
-                                            fontFamily: 'monospace',
-                                            color: debtSecondsLeft === 0 ? '#ef4444' : debtSecondsLeft < 1800 ? '#dc2626' : '#059669',
-                                            letterSpacing: '2px'
+                                            background: darkMode ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4',
+                                            border: '2px solid #10b981',
+                                            padding: '1.5rem',
+                                            borderRadius: '20px',
+                                            textAlign: 'center',
+                                            boxShadow: '0 8px 24px rgba(16, 185, 129, 0.12)'
                                         }}>
-                                            {formatTimer(debtSecondsLeft)}
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem', color: debtSecondsLeft === 0 ? '#b91c1c' : '#64748b', marginTop: '0.25rem', fontWeight: 600 }}>
-                                            {debtSecondsLeft === 0
-                                                ? '⚠️ Prazo esgotado! Advertência registada na conta. Regularize imediatamente.'
-                                                : 'A taxa deve ser paga em até 2 horas para manter a conta ativa.'}
-                                        </div>
-                                    </div>
-
-                                    {/* FORMULÁRIO DE CONFIRMAÇÃO DO E-MOLA */}
-                                    {pendingDebt.status === 'Aguardando Confirmação' ? (
-                                        <div style={{
-                                            background: '#ecfdf5',
-                                            border: '1.5px solid #10b981',
-                                            padding: '1.25rem',
-                                            borderRadius: '16px',
-                                            color: '#065f46',
-                                            textAlign: 'center'
-                                        }}>
-                                            <div style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                                            <div style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                width: '52px',
+                                                height: '52px',
+                                                borderRadius: '50%',
+                                                background: '#dcfce7',
+                                                color: '#15803d',
+                                                marginBottom: '0.75rem'
+                                            }}>
                                                 <Icons.CheckCircle />
-                                                <span>Comprovativo Submetido!</span>
                                             </div>
-                                            <div style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
-                                                Ref: <strong>{pendingDebt.payment_proof}</strong>. A administração da Tchapo Tchapo está a validar para desbloquear a sua conta em instantes.
+                                            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: darkMode ? '#34d399' : '#15803d', margin: '0 0 0.5rem' }}>
+                                                Comprovativo em Validação
+                                            </h3>
+                                            <div style={{ fontSize: '0.88rem', color: darkMode ? '#cbd5e1' : '#334151', lineHeight: 1.55, marginBottom: '1.25rem' }}>
+                                                Ref: <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{pendingDebt.payment_proof}</strong>.
+                                                <br />
+                                                A administração da <strong>Tchapo Tchapo</strong> foi notificada e está a validar o pagamento.
+                                                <br />
+                                                <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'inline-block', marginTop: '6px' }}>
+                                                    🔒 Esta tela permanecerá ativa até que o administrador confirme no painel. A sua conta será liberada automaticamente.
+                                                </span>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCheckDebtApproval}
+                                                    disabled={checkingDebtStatus}
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                                        color: '#ffffff',
+                                                        border: 'none',
+                                                        padding: '0.9rem 1.25rem',
+                                                        borderRadius: '12px',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.92rem',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        boxShadow: '0 4px 14px rgba(16,185,129,0.3)',
+                                                        opacity: checkingDebtStatus ? 0.7 : 1
+                                                    }}
+                                                >
+                                                    <Icons.RefreshCw />
+                                                    <span>{checkingDebtStatus ? 'A consultar aprovação...' : 'Verificar Se Já Fui Liberado'}</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setReEditProof(true)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: '#64748b',
+                                                        fontSize: '0.82rem',
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                        textDecoration: 'underline'
+                                                    }}
+                                                >
+                                                    Preciso corrigir ou reenviar o comprovativo
+                                                </button>
                                             </div>
                                         </div>
                                     ) : (
-                                        <form onSubmit={handleSubmitDebtPayment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        <form onSubmit={handleSubmitDebtPayment} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                                             <div style={{ textAlign: 'left' }}>
-                                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334151', marginBottom: '0.4rem' }}>
-                                                    Código da Mensagem do e-Mola / M-Pesa:
+                                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: darkMode ? '#e2e8f0' : '#334151', marginBottom: '0.45rem' }}>
+                                                    Código da Mensagem e-Mola / M-Pesa:
                                                 </label>
                                                 <input
                                                     type="text"
@@ -1632,8 +1818,10 @@ export default function DriverPortal() {
                                                         width: '100%',
                                                         padding: '0.85rem 1rem',
                                                         borderRadius: '12px',
-                                                        border: '1.5px solid #cbd5e1',
-                                                        fontSize: '0.95rem',
+                                                        border: darkMode ? '1.5px solid #475569' : '1.5px solid #cbd5e1',
+                                                        background: darkMode ? '#0f172a' : '#ffffff',
+                                                        color: darkMode ? '#ffffff' : '#0f172a',
+                                                        fontSize: '0.92rem',
                                                         outline: 'none',
                                                         boxSizing: 'border-box'
                                                     }}
@@ -1641,8 +1829,8 @@ export default function DriverPortal() {
                                             </div>
 
                                             <div style={{ textAlign: 'left' }}>
-                                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334151', marginBottom: '0.4rem' }}>
-                                                    📸 Anexar Foto / Captura do Comprovativo (Recomendado):
+                                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: darkMode ? '#e2e8f0' : '#334151', marginBottom: '0.45rem' }}>
+                                                    📸 Anexar Foto do Comprovativo (Recomendado):
                                                 </label>
                                                 <input
                                                     type="file"
@@ -1656,14 +1844,15 @@ export default function DriverPortal() {
                                                     }}
                                                     style={{
                                                         width: '100%',
-                                                        padding: '0.5rem 0',
-                                                        fontSize: '0.88rem'
+                                                        padding: '0.4rem 0',
+                                                        fontSize: '0.85rem',
+                                                        color: darkMode ? '#cbd5e1' : '#475569'
                                                     }}
                                                 />
                                                 {debtReceiptPreview && (
-                                                    <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
-                                                        <img src={debtReceiptPreview} alt="Pré-visualização do Comprovativo" 
-                                                             style={{ maxHeight: '160px', borderRadius: '8px', border: '1px solid #cbd5e1', objectFit: 'contain' }} />
+                                                    <div style={{ marginTop: '0.6rem', textAlign: 'center' }}>
+                                                        <img src={debtReceiptPreview} alt="Comprovativo" 
+                                                             style={{ maxHeight: '150px', borderRadius: '10px', border: '1px solid #cbd5e1', objectFit: 'contain' }} />
                                                     </div>
                                                 )}
                                             </div>
@@ -1672,26 +1861,43 @@ export default function DriverPortal() {
                                                 type="submit"
                                                 disabled={submittingDebt}
                                                 style={{
-                                                    background: '#059669',
-                                                    color: '#fff',
+                                                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                                    color: '#ffffff',
                                                     border: 'none',
                                                     padding: '1rem',
-                                                    borderRadius: '12px',
-                                                    fontWeight: 800,
-                                                    fontSize: '1rem',
+                                                    borderRadius: '14px',
+                                                    fontWeight: 900,
+                                                    fontSize: '0.98rem',
                                                     cursor: 'pointer',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
                                                     gap: '0.5rem',
-                                                    boxShadow: '0 6px 18px rgba(5, 150, 105, 0.25)',
+                                                    boxShadow: '0 6px 20px rgba(245, 158, 11, 0.35)',
                                                     transition: 'opacity 0.2s',
                                                     opacity: submittingDebt ? 0.7 : 1
                                                 }}
                                             >
                                                 <Icons.CheckCircle />
-                                                <span>{submittingDebt ? 'A enviar confirmação...' : 'Submeter Confirmação de Pagamento'}</span>
+                                                <span>{submittingDebt ? 'A submeter confirmação...' : 'Submeter Comprovativo de Pagamento'}</span>
                                             </button>
+
+                                            {reEditProof && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setReEditProof(false)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: '#64748b',
+                                                        fontSize: '0.82rem',
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    ← Cancelar e voltar ao estado anterior
+                                                </button>
+                                            )}
                                         </form>
                                     )}
                                 </div>
@@ -1706,7 +1912,7 @@ export default function DriverPortal() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                                                Saldo Disponível
+                                                Ganhos Estimados
                                             </span>
                                             <button
                                                 type="button"
@@ -1724,7 +1930,7 @@ export default function DriverPortal() {
                                                     justifyContent: 'center',
                                                     padding: 0
                                                 }}
-                                                title={showBalance ? 'Ocultar saldo' : 'Mostrar saldo'}
+                                                title={showBalance ? 'Ocultar ganhos' : 'Mostrar ganhos'}
                                             >
                                                 {showBalance ? <Icons.Eye /> : <Icons.EyeOff />}
                                             </button>
@@ -1750,7 +1956,7 @@ export default function DriverPortal() {
                                     </div>
 
                                     <div style={{ fontSize: '0.76rem', color: '#94a3b8', marginBottom: '14px', fontWeight: 500 }}>
-                                        Saldo líquido já com taxas deduzidas
+                                        Ganhos estimados líquidos já com taxas deduzidas
                                     </div>
 
                                     {/* Quick action buttons in wallet card */}
@@ -1823,7 +2029,7 @@ export default function DriverPortal() {
                                                 }}
                                             >
                                                 <Icons.CheckCircle />
-                                                <span>Atualizar Saldo</span>
+                                                <span>Atualizar Ganhos</span>
                                             </button>
                                         )}
                                     </div>
@@ -2907,7 +3113,7 @@ export default function DriverPortal() {
                                                 </span>
                                             )}
                                         </div>
-                                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Entregador Oficial Tchapo Tchapo • <strong>ID: #{authDriver.id}</strong></div>
+                                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Entregador Oficial Tchapo Tchapo • <strong>ID: #{formatDriverId(authDriver.id)}</strong></div>
                                         <span style={{ display: 'inline-block', marginTop: '0.35rem', background: '#dcfce7', color: '#15803d', fontSize: '0.75rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
                                             Conta Aprovada
                                         </span>

@@ -709,6 +709,54 @@ function calculateOrderProfitAndFee(order) {
     };
 }
 
+// ─── DRIVER ID 4-DIGIT FORMATTER ──────────────────────────────────────────
+function formatDriverId(id) {
+    if (id == null || id === '') return '';
+    const num = Number(id);
+    return !isNaN(num) ? String(num).padStart(4, '0') : String(id).padStart(4, '0');
+}
+
+// ─── ORDERS METADATA ENGINE (DELIVERY TIMESTAMPS & PERSISTENCE) ───────────
+const ORDERS_META_FILE = path.join(__dirname, 'data', 'orders_meta.json');
+
+function ensureOrdersMetaDir() {
+    const dir = path.dirname(ORDERS_META_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(ORDERS_META_FILE)) fs.writeFileSync(ORDERS_META_FILE, '{}', 'utf8');
+}
+
+function loadOrdersMeta() {
+    ensureOrdersMetaDir();
+    try {
+        const raw = fs.readFileSync(ORDERS_META_FILE, 'utf8');
+        return JSON.parse(raw) || {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function saveOrdersMeta(data) {
+    ensureOrdersMetaDir();
+    try {
+        fs.writeFileSync(ORDERS_META_FILE, JSON.stringify(data, null, 2), 'utf8');
+    } catch (e) {
+        console.error('Failed to save orders meta:', e);
+    }
+}
+
+function getOrderMeta(orderId) {
+    const meta = loadOrdersMeta();
+    return meta[String(orderId)] || null;
+}
+
+function updateOrderMeta(orderId, patch) {
+    const meta = loadOrdersMeta();
+    const idKey = String(orderId);
+    meta[idKey] = { ...(meta[idKey] || {}), ...patch };
+    saveOrdersMeta(meta);
+    return meta[idKey];
+}
+
 function formatOrderResponse(order) {
     if (!order) return order;
     let itemsArray = [];
@@ -755,12 +803,18 @@ function formatOrderResponse(order) {
         timer_end_at = new Date(createdMs + 14400 * 1000).toISOString();
     }
 
+    const orderMeta = getOrderMeta(order.id);
+    const delivered_at = orderMeta?.delivered_at || null;
+    const delivered_by = orderMeta?.delivered_by || null;
+
     return {
         ...order,
         items: normalizedItems,
         order_items: normalizedItems,
         timer_end_at,
-        timer_remaining_secs
+        timer_remaining_secs,
+        delivered_at,
+        delivered_by
     };
 }
 
@@ -1066,9 +1120,15 @@ app.put('/api/orders/:id/status', async (req, res) => {
 
         if (error) throw error;
 
-        // If marked as Entregue, generate 15% debt based on estimated profit for the assigned driver
+        // If marked as Entregue, record delivered_at timestamp and generate 15% debt based on estimated profit for the assigned driver
         if (status === 'Entregue' && data) {
+            const deliveryTimestamp = req.body.delivered_at || new Date().toISOString();
             const assignedDriverId = data.driver_id || driver_id;
+            updateOrderMeta(data.id, {
+                delivered_at: deliveryTimestamp,
+                delivered_by: assignedDriverId || null
+            });
+
             if (assignedDriverId) {
                 const numDId = Number(assignedDriverId);
                 const orderTotal = Number(data.total) || 150;
@@ -1681,7 +1741,7 @@ app.post('/api/drivers/:id/pay-debt', upload.single('receipt'), async (req, res)
         // Notify Admin via Ntfy
         sendPushNotification(
             `🛵 Pagamento de Comissão Submetido pelo Entregador!`,
-            `O entregador #${numId} submeteu ${updatedDebt.amount} MT ref: ${reference || 'Anexo de Comprovativo'}. Aceda ao admin para validar.`,
+            `O entregador #${formatDriverId(numId)} submeteu ${updatedDebt.amount} MT ref: ${reference || 'Anexo de Comprovativo'}. Aceda ao admin para validar.`,
             'admin'
         );
 

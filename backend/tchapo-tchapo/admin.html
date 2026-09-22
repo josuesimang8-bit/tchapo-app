@@ -1382,6 +1382,11 @@ function tickTimers() {
     });
 }
 function pad(n) { return String(n).padStart(2,'0'); }
+function formatDriverId(id) {
+    if (id == null || id === '') return '';
+    const num = Number(id);
+    return !isNaN(num) ? String(num).padStart(4, '0') : String(id).padStart(4, '0');
+}
 
 // ── HELPERS ──────────────────────────────────────────────────────────────
 const STATUS_COLORS = {
@@ -1548,7 +1553,12 @@ function renderOrders() {
             const label = (o.status === 'Aprovado' && !o.driver_id) ? 'Aguardando Entregador' : 'Pausado';
             timerHtml = `<div class="timer-pend">⏳ ${pausedStr} (${label})</div>`;
         } else if (o.status === 'Entregue') {
-            timerHtml = `<div class="timer-done">✅ Entregue a Tempo</div>`;
+            const dTime = o.delivered_at ? `
+                <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:3px;background:#f0fdf4;padding:2px 5px;border-radius:4px;border:1px solid #bbf7d0;line-height:1.3;">
+                    <div>📅 ${new Date(o.delivered_at).toLocaleDateString('pt-MZ')}</div>
+                    <div>⏰ ${new Date(o.delivered_at).toLocaleTimeString('pt-MZ', {hour:'2-digit',minute:'2-digit'})}</div>
+                </div>` : '<div style="font-size:0.72rem;color:#166534;font-weight:600;margin-top:2px;">Entregue a Tempo</div>';
+            timerHtml = `<div class="timer-done">✅ Entregue</div>${dTime}`;
         } else if (o.status === 'Cancelado') {
             timerHtml = `<div class="timer-lost">❌ Cancelado</div>`;
         } else if (o.status === 'Perdido' || remSecs <= 0) {
@@ -1574,7 +1584,7 @@ function renderOrders() {
 
         // Driver options
         const driverOpts = allDrivers.filter(d => d.active).map(d =>
-            `<option value="${d.id}" ${o.driver_id == d.id ? 'selected':''}>${d.name}</option>`).join('');
+            `<option value="${d.id}" ${o.driver_id == d.id ? 'selected':''}>[#${formatDriverId(d.id)}] ${d.name}</option>`).join('');
 
         return `<tr style="background:${idx%2===0?'#fff':'#fafafa'}">
             <td style="color:#6b7280;font-size:0.85rem;">#${o.id}</td>
@@ -1830,7 +1840,7 @@ function filterAndRenderDrivers() {
                                 💬 ${d.phone || 'Sem WhatsApp'}
                             </a>
                             <span style="color: #cbd5e1;">•</span>
-                            <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">ID #${d.id}</span>
+                            <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">ID #${formatDriverId(d.id)}</span>
                         </div>
                     </div>
                 </div>

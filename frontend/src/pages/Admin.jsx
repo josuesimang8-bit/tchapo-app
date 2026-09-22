@@ -12,6 +12,12 @@ const STATUS_COLORS = {
     'Perdido':        { bg: '#fee2e2', color: '#991b1b' },
 };
 
+function formatDriverId(id) {
+    if (id == null || id === '') return '';
+    const num = Number(id);
+    return !isNaN(num) ? String(num).padStart(4, '0') : String(id).padStart(4, '0');
+}
+
 // Generates a short notification sound using Web Audio API
 function playNotificationSound() {
     try {
@@ -1464,7 +1470,33 @@ export default function Admin() {
                                                     </div>
                                                     {(() => {
                                                         if (order.status === 'Entregue') {
-                                                            return <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#dcfce7', color: '#15803d', fontSize: '0.78rem', fontWeight: 700 }}>✅ Entregue a Tempo</div>;
+                                                            return (
+                                                                <div>
+                                                                    <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#dcfce7', color: '#15803d', fontSize: '0.78rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                                        ✅ Entregue
+                                                                    </div>
+                                                                    {order.delivered_at ? (
+                                                                        <div style={{
+                                                                            marginTop: '5px',
+                                                                            fontSize: '0.74rem',
+                                                                            color: '#15803d',
+                                                                            fontWeight: 700,
+                                                                            background: '#f0fdf4',
+                                                                            border: '1px solid #bbf7d0',
+                                                                            padding: '3px 6px',
+                                                                            borderRadius: '6px',
+                                                                            lineHeight: 1.35
+                                                                        }}>
+                                                                            <div>📅 {new Date(order.delivered_at).toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                                                                            <div>⏰ {new Date(order.delivered_at).toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div style={{ marginTop: '3px', fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>
+                                                                            Entregue a Tempo
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
                                                         }
                                                         if (order.status === 'Cancelado') {
                                                             return <div style={{ padding: '4px 8px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', fontSize: '0.78rem', fontWeight: 700 }}>❌ Cancelado</div>;
@@ -1539,7 +1571,7 @@ export default function Admin() {
                                                         <option value="">Nenhum Entregador</option>
                                                         {drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status).map(d => (
                                                             <option key={d.id} value={d.id}>
-                                                                {d.is_online ? '🟢' : '⚪'} {d.name}
+                                                                {d.is_online ? '🟢' : '⚪'} [#{formatDriverId(d.id)}] {d.name}
                                                             </option>
                                                         ))}
                                                     </select>
@@ -1681,7 +1713,8 @@ export default function Admin() {
                             (d.bairro && d.bairro.toLowerCase().includes(q)) ||
                             (d.vehicle_type && d.vehicle_type.toLowerCase().includes(q)) ||
                             (d.doc_number && d.doc_number.toLowerCase().includes(q)) ||
-                            String(d.id).includes(q)
+                            String(d.id).includes(q) ||
+                            formatDriverId(d.id).includes(q)
                         );
                     });
 
@@ -1988,7 +2021,7 @@ export default function Admin() {
                                                                 </span>
 
                                                                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>
-                                                                    ID: #{d.id}
+                                                                    ID: #{formatDriverId(d.id)}
                                                                 </span>
                                                             </div>
 
@@ -2536,7 +2569,7 @@ export default function Admin() {
                                                                     {d.is_online ? '🟢 Online' : '⚪ Offline'}
                                                                 </span>
                                                                 <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px', fontWeight: 700 }}>
-                                                                    ID: #{d.id}
+                                                                    ID: #{formatDriverId(d.id)}
                                                                 </div>
                                                                 <button
                                                                     type="button"
@@ -4323,7 +4356,9 @@ export default function Admin() {
                                 style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
                             />
                             <div>
-                                <div style={{ fontWeight: 700, color: '#0f172a' }}>{warningModalDriver.name}</div>
+                                <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                                    {warningModalDriver.name} <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>[#{formatDriverId(warningModalDriver.id)}]</span>
+                                </div>
                                 <div style={{ fontSize: '0.8rem', color: '#64748b' }}>📞 {warningModalDriver.phone}</div>
                             </div>
                         </div>
@@ -4530,7 +4565,7 @@ export default function Admin() {
                                     </h3>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
                                         <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>
-                                            ID: #{detailsModalDriver.id}
+                                            ID: #{formatDriverId(detailsModalDriver.id)}
                                         </span>
                                         <span style={{
                                             fontSize: '0.72rem',

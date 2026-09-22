@@ -255,6 +255,11 @@ const Icons = {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
         </svg>
+    ),
+    Phone: () => (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </svg>
     )
 };
 
@@ -519,6 +524,7 @@ export default function DriverPortal() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [docPreviewModal, setDocPreviewModal] = useState(null);
     const [confirmingOrder, setConfirmingOrder] = useState(null); // Strict Acceptance Modal
+    const [previewPhoto, setPreviewPhoto] = useState(null); // Product Photo Lightbox Modal
 
     // Debt Payment State (e-Mola White Screen)
     const [debtPaymentRef, setDebtPaymentRef] = useState('');
@@ -941,7 +947,10 @@ export default function DriverPortal() {
                 setDebtReceiptFile(null);
                 setDebtReceiptPreview(null);
                 setReEditProof(false);
-                fetchDashboard(authDriver?.id);
+                if (data.pending_debt) {
+                    setDashboardData(prev => prev ? ({ ...prev, pending_debt: data.pending_debt }) : prev);
+                }
+                await fetchDashboard(authDriver?.id);
             } else {
                 showToast(data.error || 'Erro ao submeter comprovativo.', 'error');
             }
@@ -1453,47 +1462,50 @@ export default function DriverPortal() {
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'flex-start',
-                                padding: '1.25rem 1rem 3rem',
+                                padding: '0.85rem 0.65rem 3rem',
                                 boxSizing: 'border-box'
                             }}>
                                 {/* Brand Top Bar styled like the Store Header */}
                                 <div style={{
                                     width: '100%',
-                                    maxWidth: '600px',
+                                    maxWidth: '540px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    padding: '0.75rem 1rem',
+                                    padding: '0.65rem 0.85rem',
                                     background: darkMode ? '#1e293b' : '#ffffff',
                                     borderRadius: '16px',
                                     border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                                    marginBottom: '1.25rem'
+                                    marginBottom: '1rem',
+                                    boxSizing: 'border-box',
+                                    flexWrap: 'wrap',
+                                    gap: '0.5rem'
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(245,158,11,0.3)' }}>
-                                            <img src="/assets/logo_original.png" alt="Tchapo Tchapo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                        <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(245,158,11,0.3)', flexShrink: 0 }}>
+                                            <img src="/assets/logo_original.png" alt="Tchapo Tchapo" style={{ width: '22px', height: '22px', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
                                         </div>
                                         <div>
-                                            <div style={{ fontWeight: 900, fontSize: '0.98rem', color: darkMode ? '#ffffff' : '#0f172a', letterSpacing: '-0.3px' }}>
+                                            <div style={{ fontWeight: 900, fontSize: '0.94rem', color: darkMode ? '#ffffff' : '#0f172a', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
                                                 Tchapo Tchapo
                                             </div>
-                                            <div style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                            <div style={{ fontSize: '0.68rem', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                                 Central do Entregador
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                         <span style={{
-                                            fontSize: '0.76rem',
+                                            fontSize: '0.74rem',
                                             fontWeight: 800,
                                             color: '#64748b',
                                             background: darkMode ? '#0f172a' : '#f1f5f9',
-                                            padding: '0.3rem 0.65rem',
+                                            padding: '0.28rem 0.55rem',
                                             borderRadius: '8px'
                                         }}>
-                                            ID: #{formatDriverId(authDriver.id)}
+                                            ID: #{formatDriverId(authDriver?.id)}
                                         </span>
                                         <button
                                             type="button"
@@ -1502,9 +1514,9 @@ export default function DriverPortal() {
                                                 background: 'transparent',
                                                 border: darkMode ? '1px solid #334155' : '1px solid #cbd5e1',
                                                 color: '#64748b',
-                                                padding: '0.35rem 0.75rem',
+                                                padding: '0.3rem 0.65rem',
                                                 borderRadius: '8px',
-                                                fontSize: '0.78rem',
+                                                fontSize: '0.74rem',
                                                 fontWeight: 700,
                                                 cursor: 'pointer',
                                                 display: 'flex',
@@ -1521,12 +1533,12 @@ export default function DriverPortal() {
                                 {/* Main Store-Styled Card */}
                                 <div style={{
                                     width: '100%',
-                                    maxWidth: '600px',
+                                    maxWidth: '540px',
                                     background: darkMode ? '#1e293b' : '#ffffff',
-                                    borderRadius: '24px',
-                                    padding: '1.75rem 1.5rem',
+                                    borderRadius: '20px',
+                                    padding: '1.25rem 1rem',
                                     border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
-                                    boxShadow: '0 20px 45px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)',
+                                    boxShadow: '0 12px 36px -10px rgba(0,0,0,0.1)',
                                     textAlign: 'center',
                                     boxSizing: 'border-box'
                                 }}>
@@ -1535,29 +1547,29 @@ export default function DriverPortal() {
                                         <div style={{
                                             background: darkMode ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
                                             border: '2px solid #ef4444',
-                                            borderRadius: '16px',
-                                            padding: '1.2rem',
-                                            marginBottom: '1.5rem',
+                                            borderRadius: '14px',
+                                            padding: '1rem',
+                                            marginBottom: '1.15rem',
                                             textAlign: 'center',
-                                            boxShadow: '0 8px 24px rgba(239, 68, 68, 0.18)'
+                                            boxShadow: '0 6px 20px rgba(239, 68, 68, 0.15)'
                                         }}>
                                             <div style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                width: '46px',
-                                                height: '46px',
+                                                width: '42px',
+                                                height: '42px',
                                                 borderRadius: '50%',
                                                 background: '#fee2e2',
                                                 color: '#dc2626',
-                                                marginBottom: '0.6rem'
+                                                marginBottom: '0.5rem'
                                             }}>
                                                 <Icons.AlertTriangle />
                                             </div>
-                                            <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#dc2626', margin: '0 0 0.35rem' }}>
+                                            <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#dc2626', margin: '0 0 0.3rem' }}>
                                                 ⚠️ AVISO URGENTE: Prazo de 2 Horas Esgotado!
                                             </h3>
-                                            <p style={{ fontSize: '0.92rem', color: darkMode ? '#fca5a5' : '#b91c1c', fontWeight: 800, lineHeight: 1.45, margin: 0 }}>
+                                            <p style={{ fontSize: '0.85rem', color: darkMode ? '#fca5a5' : '#b91c1c', fontWeight: 800, lineHeight: 1.4, margin: 0 }}>
                                                 Deve efetuar o pagamento de forma imediata para evitar a suspensão da conta.
                                             </p>
                                         </div>
@@ -1569,23 +1581,23 @@ export default function DriverPortal() {
                                             background: 'rgba(245, 158, 11, 0.12)',
                                             color: '#d97706',
                                             border: '1px solid rgba(245, 158, 11, 0.3)',
-                                            padding: '0.4rem 1.1rem',
+                                            padding: '0.35rem 0.95rem',
                                             borderRadius: '999px',
-                                            fontSize: '0.8rem',
+                                            fontSize: '0.76rem',
                                             fontWeight: 800,
                                             textTransform: 'uppercase',
                                             letterSpacing: '0.5px',
-                                            marginBottom: '1rem'
+                                            marginBottom: '0.85rem'
                                         }}>
                                             <Icons.Clock />
                                             <span>Taxa da Plataforma Obrigatória</span>
                                         </div>
                                     )}
 
-                                    <h2 style={{ fontSize: 'clamp(1.4rem, 4vw, 1.95rem)', fontWeight: 900, margin: '0 0 0.4rem', color: darkMode ? '#ffffff' : '#0f172a', letterSpacing: '-0.5px' }}>
+                                    <h2 style={{ fontSize: 'clamp(1.15rem, 4.5vw, 1.55rem)', fontWeight: 900, margin: '0 0 0.35rem', color: darkMode ? '#ffffff' : '#0f172a', letterSpacing: '-0.3px', lineHeight: 1.25 }}>
                                         Cobrança de Taxa por Pedido Entregue
                                     </h2>
-                                    <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
+                                    <p style={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.45, margin: '0 0 1.15rem' }}>
                                         A plataforma está temporariamente bloqueada para novos pedidos até que a comissão desta entrega seja confirmada pela administração.
                                     </p>
 
@@ -1593,25 +1605,25 @@ export default function DriverPortal() {
                                     <div style={{
                                         background: darkMode ? '#0f172a' : '#f8fafc',
                                         borderRadius: '16px',
-                                        padding: '1rem 1.25rem',
-                                        marginBottom: '1.25rem',
+                                        padding: '0.85rem 1rem',
+                                        marginBottom: '1.15rem',
                                         border: debtSecondsLeft === 0 ? '2px solid #ef4444' : darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
                                         flexWrap: 'wrap',
-                                        gap: '0.5rem'
+                                        gap: '0.45rem'
                                     }}>
                                         <div style={{ textAlign: 'left' }}>
-                                            <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                                                 Tempo Restante para Pagamento:
                                             </div>
-                                            <div style={{ fontSize: '0.78rem', color: debtSecondsLeft === 0 ? '#ef4444' : '#64748b', fontWeight: 600, marginTop: '2px' }}>
+                                            <div style={{ fontSize: '0.76rem', color: debtSecondsLeft === 0 ? '#ef4444' : '#64748b', fontWeight: 600, marginTop: '2px' }}>
                                                 {debtSecondsLeft === 0 ? 'Prazo expirado' : 'Prazo regular de 2 horas'}
                                             </div>
                                         </div>
                                         <div style={{
-                                            fontSize: '1.65rem',
+                                            fontSize: 'clamp(1.35rem, 5vw, 1.65rem)',
                                             fontWeight: 900,
                                             fontFamily: 'monospace',
                                             color: debtSecondsLeft === 0 ? '#ef4444' : debtSecondsLeft < 1800 ? '#f59e0b' : '#10b981',
@@ -1624,33 +1636,33 @@ export default function DriverPortal() {
                                     {/* CARTÃO FINANCEIRO DE DETALHES DO PEDIDO */}
                                     <div style={{
                                         background: darkMode ? '#0f172a' : '#f8fafc',
-                                        borderRadius: '18px',
-                                        padding: '1.25rem',
+                                        borderRadius: '16px',
+                                        padding: '1rem',
                                         border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
-                                        marginBottom: '1.25rem',
+                                        marginBottom: '1.15rem',
                                         textAlign: 'left'
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: darkMode ? '1px solid #1e293b' : '1px solid #e2e8f0' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', paddingBottom: '0.65rem', borderBottom: darkMode ? '1px solid #1e293b' : '1px solid #e2e8f0' }}>
                                             <div>
-                                                <div style={{ fontSize: '0.86rem', color: darkMode ? '#cbd5e1' : '#475569', fontWeight: 700 }}>
+                                                <div style={{ fontSize: '0.82rem', color: darkMode ? '#cbd5e1' : '#475569', fontWeight: 700 }}>
                                                     Taxa da Plataforma (15% do Lucro):
                                                 </div>
-                                                {pendingDebt.profit && (
-                                                    <div style={{ fontSize: '0.76rem', color: '#10b981', fontWeight: 700, marginTop: '2px' }}>
+                                                {pendingDebt?.profit ? (
+                                                    <div style={{ fontSize: '0.74rem', color: '#10b981', fontWeight: 700, marginTop: '2px' }}>
                                                         Seu Lucro neste pedido: +{formatMZCurrency(pendingDebt.profit)}
                                                     </div>
-                                                )}
+                                                ) : null}
                                             </div>
-                                            <strong style={{ fontSize: '1.6rem', fontWeight: 900, color: '#f59e0b', letterSpacing: '-0.5px' }}>
-                                                {formatMZCurrency(pendingDebt.amount)}
+                                            <strong style={{ fontSize: 'clamp(1.25rem, 4.5vw, 1.55rem)', fontWeight: 900, color: '#f59e0b', letterSpacing: '-0.5px' }}>
+                                                {formatMZCurrency(pendingDebt?.amount || 0)}
                                             </strong>
                                         </div>
 
                                         {/* Dados do e-Mola */}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
-                                            <span style={{ fontSize: '0.86rem', color: '#64748b', fontWeight: 600 }}>Número e-Mola:</span>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.55rem' }}>
+                                            <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>Número e-Mola:</span>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                                                <strong style={{ fontSize: '1.1rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                <strong style={{ fontSize: '1.05rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                                     874110586
                                                 </strong>
                                                 <button
@@ -1660,7 +1672,7 @@ export default function DriverPortal() {
                                                         background: 'rgba(245, 158, 11, 0.15)',
                                                         border: 'none',
                                                         color: '#f59e0b',
-                                                        padding: '0.25rem 0.55rem',
+                                                        padding: '0.22rem 0.5rem',
                                                         borderRadius: '6px',
                                                         fontSize: '0.72rem',
                                                         fontWeight: 800,
@@ -1672,9 +1684,9 @@ export default function DriverPortal() {
                                             </div>
                                         </div>
 
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', paddingBottom: '0.75rem', borderBottom: darkMode ? '1px solid #1e293b' : '1px solid #e2e8f0' }}>
-                                            <span style={{ fontSize: '0.86rem', color: '#64748b', fontWeight: 600 }}>Titular da Conta:</span>
-                                            <strong style={{ fontSize: '0.95rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.65rem', borderBottom: darkMode ? '1px solid #1e293b' : '1px solid #e2e8f0' }}>
+                                            <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>Titular da Conta:</span>
+                                            <strong style={{ fontSize: '0.9rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                                 Massiquine Simango
                                             </strong>
                                         </div>
@@ -1683,33 +1695,33 @@ export default function DriverPortal() {
                                         <div style={{
                                             background: darkMode ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb',
                                             border: '1.5px solid #fde68a',
-                                            borderRadius: '14px',
-                                            padding: '0.85rem 1rem',
+                                            borderRadius: '12px',
+                                            padding: '0.75rem 0.85rem',
                                             display: 'flex',
                                             justifyContent: 'space-between',
                                             alignItems: 'center',
                                             flexWrap: 'wrap',
-                                            gap: '0.5rem'
+                                            gap: '0.45rem'
                                         }}>
                                             <div>
-                                                <div style={{ fontSize: '0.72rem', color: '#b45309', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                <div style={{ fontSize: '0.7rem', color: '#b45309', fontWeight: 800, textTransform: 'uppercase' }}>
                                                     Adicione no conteúdo / motivo da transferência:
                                                 </div>
-                                                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#92400e', marginTop: '2px' }}>
-                                                    ID: {formatDriverId(authDriver.id)}
+                                                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#92400e', marginTop: '2px' }}>
+                                                    ID: {formatDriverId(authDriver?.id)}
                                                 </div>
                                             </div>
 
                                             <button
                                                 type="button"
-                                                onClick={() => copyToClipboard(formatDriverId(authDriver.id))}
+                                                onClick={() => copyToClipboard(formatDriverId(authDriver?.id))}
                                                 style={{
                                                     background: '#ffffff',
                                                     border: '1px solid #f59e0b',
                                                     color: '#b45309',
-                                                    padding: '0.45rem 0.85rem',
+                                                    padding: '0.4rem 0.75rem',
                                                     borderRadius: '8px',
-                                                    fontSize: '0.8rem',
+                                                    fontSize: '0.78rem',
                                                     fontWeight: 800,
                                                     cursor: 'pointer',
                                                     display: 'flex',
@@ -1725,12 +1737,12 @@ export default function DriverPortal() {
                                     </div>
 
                                     {/* ESTADO TRAVADO DE VALIDAÇÃO (A TELA NÃO DESAPARECE ATÉ O ADMIN CONFIRMAR) */}
-                                    {pendingDebt.status === 'Aguardando Confirmação' && !reEditProof ? (
+                                    {pendingDebt?.status === 'Aguardando Confirmação' && !reEditProof ? (
                                         <div style={{
                                             background: darkMode ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4',
                                             border: '2px solid #10b981',
-                                            padding: '1.5rem',
-                                            borderRadius: '20px',
+                                            padding: '1.25rem 1rem',
+                                            borderRadius: '18px',
                                             textAlign: 'center',
                                             boxShadow: '0 8px 24px rgba(16, 185, 129, 0.12)'
                                         }}>
@@ -1738,29 +1750,43 @@ export default function DriverPortal() {
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                width: '52px',
-                                                height: '52px',
+                                                width: '48px',
+                                                height: '48px',
                                                 borderRadius: '50%',
                                                 background: '#dcfce7',
                                                 color: '#15803d',
-                                                marginBottom: '0.75rem'
+                                                marginBottom: '0.65rem'
                                             }}>
                                                 <Icons.CheckCircle />
                                             </div>
-                                            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: darkMode ? '#34d399' : '#15803d', margin: '0 0 0.5rem' }}>
+                                            <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: darkMode ? '#34d399' : '#15803d', margin: '0 0 0.45rem' }}>
                                                 Comprovativo em Validação
                                             </h3>
-                                            <div style={{ fontSize: '0.88rem', color: darkMode ? '#cbd5e1' : '#334151', lineHeight: 1.55, marginBottom: '1.25rem' }}>
-                                                Ref: <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{pendingDebt.payment_proof}</strong>.
+                                            <div style={{ fontSize: '0.85rem', color: darkMode ? '#cbd5e1' : '#334151', lineHeight: 1.5, marginBottom: '1rem' }}>
+                                                Ref: <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{typeof pendingDebt?.payment_proof === 'string' ? pendingDebt.payment_proof : (pendingDebt?.payment_proof ? JSON.stringify(pendingDebt.payment_proof) : 'Comprovativo enviado')}</strong>.
                                                 <br />
                                                 A administração da <strong>Tchapo Tchapo</strong> foi notificada e está a validar o pagamento.
                                                 <br />
-                                                <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'inline-block', marginTop: '6px' }}>
+                                                <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'inline-block', marginTop: '6px' }}>
                                                     🔒 Esta tela permanecerá ativa até que o administrador confirme no painel. A sua conta será liberada automaticamente.
                                                 </span>
                                             </div>
 
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {/* Foto do comprovativo enviado, se houver */}
+                                            {pendingDebt?.payment_proof_url && (
+                                                <div style={{ marginBottom: '1.15rem', textAlign: 'center' }}>
+                                                    <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>
+                                                        Foto do Comprovativo Anexado:
+                                                    </div>
+                                                    <img
+                                                        src={resolveImageUrl(pendingDebt.payment_proof_url)}
+                                                        alt="Comprovativo submetido"
+                                                        style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: '12px', border: '1.5px solid #10b981', objectFit: 'contain', background: '#000' }}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                                                 <button
                                                     type="button"
                                                     onClick={handleCheckDebtApproval}
@@ -1769,10 +1795,10 @@ export default function DriverPortal() {
                                                         background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                                                         color: '#ffffff',
                                                         border: 'none',
-                                                        padding: '0.9rem 1.25rem',
+                                                        padding: '0.85rem 1.15rem',
                                                         borderRadius: '12px',
                                                         fontWeight: 800,
-                                                        fontSize: '0.92rem',
+                                                        fontSize: '0.88rem',
                                                         cursor: 'pointer',
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -1793,7 +1819,7 @@ export default function DriverPortal() {
                                                         background: 'transparent',
                                                         border: 'none',
                                                         color: '#64748b',
-                                                        fontSize: '0.82rem',
+                                                        fontSize: '0.8rem',
                                                         fontWeight: 700,
                                                         cursor: 'pointer',
                                                         textDecoration: 'underline'
@@ -1804,9 +1830,9 @@ export default function DriverPortal() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <form onSubmit={handleSubmitDebtPayment} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                                        <form onSubmit={handleSubmitDebtPayment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                             <div style={{ textAlign: 'left' }}>
-                                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: darkMode ? '#e2e8f0' : '#334151', marginBottom: '0.45rem' }}>
+                                                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: darkMode ? '#e2e8f0' : '#334151', marginBottom: '0.4rem' }}>
                                                     Código da Mensagem e-Mola / M-Pesa:
                                                 </label>
                                                 <input
@@ -1816,12 +1842,12 @@ export default function DriverPortal() {
                                                     placeholder="Ex: PP260915.1234.X09876 ou nº comprovativo"
                                                     style={{
                                                         width: '100%',
-                                                        padding: '0.85rem 1rem',
+                                                        padding: '0.8rem 0.95rem',
                                                         borderRadius: '12px',
                                                         border: darkMode ? '1.5px solid #475569' : '1.5px solid #cbd5e1',
                                                         background: darkMode ? '#0f172a' : '#ffffff',
                                                         color: darkMode ? '#ffffff' : '#0f172a',
-                                                        fontSize: '0.92rem',
+                                                        fontSize: '0.88rem',
                                                         outline: 'none',
                                                         boxSizing: 'border-box'
                                                     }}
@@ -1829,7 +1855,7 @@ export default function DriverPortal() {
                                             </div>
 
                                             <div style={{ textAlign: 'left' }}>
-                                                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: darkMode ? '#e2e8f0' : '#334151', marginBottom: '0.45rem' }}>
+                                                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, color: darkMode ? '#e2e8f0' : '#334151', marginBottom: '0.4rem' }}>
                                                     📸 Anexar Foto do Comprovativo (Recomendado):
                                                 </label>
                                                 <input
@@ -1845,14 +1871,14 @@ export default function DriverPortal() {
                                                     style={{
                                                         width: '100%',
                                                         padding: '0.4rem 0',
-                                                        fontSize: '0.85rem',
+                                                        fontSize: '0.82rem',
                                                         color: darkMode ? '#cbd5e1' : '#475569'
                                                     }}
                                                 />
                                                 {debtReceiptPreview && (
-                                                    <div style={{ marginTop: '0.6rem', textAlign: 'center' }}>
+                                                    <div style={{ marginTop: '0.55rem', textAlign: 'center' }}>
                                                         <img src={debtReceiptPreview} alt="Comprovativo" 
-                                                             style={{ maxHeight: '150px', borderRadius: '10px', border: '1px solid #cbd5e1', objectFit: 'contain' }} />
+                                                             style={{ maxHeight: '140px', borderRadius: '10px', border: '1px solid #cbd5e1', objectFit: 'contain' }} />
                                                     </div>
                                                 )}
                                             </div>
@@ -1864,10 +1890,10 @@ export default function DriverPortal() {
                                                     background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                                                     color: '#ffffff',
                                                     border: 'none',
-                                                    padding: '1rem',
+                                                    padding: '0.95rem',
                                                     borderRadius: '14px',
                                                     fontWeight: 900,
-                                                    fontSize: '0.98rem',
+                                                    fontSize: '0.94rem',
                                                     cursor: 'pointer',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1890,7 +1916,7 @@ export default function DriverPortal() {
                                                         background: 'transparent',
                                                         border: 'none',
                                                         color: '#64748b',
-                                                        fontSize: '0.82rem',
+                                                        fontSize: '0.8rem',
                                                         fontWeight: 700,
                                                         cursor: 'pointer'
                                                     }}
@@ -2508,40 +2534,67 @@ export default function DriverPortal() {
                                                                                     <div key={idx} style={{
                                                                                         display: 'flex',
                                                                                         alignItems: 'center',
-                                                                                        gap: '10px',
+                                                                                        gap: '12px',
                                                                                         background: '#ffffff',
-                                                                                        padding: '8px 10px',
-                                                                                        borderRadius: '14px',
-                                                                                        border: '1px solid #f1f5f9'
+                                                                                        padding: '10px 12px',
+                                                                                        borderRadius: '16px',
+                                                                                        border: '1px solid #e2e8f0',
+                                                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                                                                                     }}>
-                                                                                        <div style={{
-                                                                                            width: '52px',
-                                                                                            height: '52px',
-                                                                                            borderRadius: '10px',
-                                                                                            overflow: 'hidden',
-                                                                                            background: '#f8fafc',
-                                                                                            border: '1px solid #e2e8f0',
-                                                                                            display: 'flex',
-                                                                                            alignItems: 'center',
-                                                                                            justifyContent: 'center',
-                                                                                            flexShrink: 0
-                                                                                        }}>
+                                                                                        {/* Photo Thumbnail */}
+                                                                                        <div
+                                                                                            onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pickupItem?.price })}
+                                                                                            title="Toque para ver a foto do produto"
+                                                                                            style={{
+                                                                                                width: '68px',
+                                                                                                height: '68px',
+                                                                                                minWidth: '68px',
+                                                                                                borderRadius: '12px',
+                                                                                                overflow: 'hidden',
+                                                                                                background: '#f8fafc',
+                                                                                                border: '1.5px solid #e2e8f0',
+                                                                                                display: 'flex',
+                                                                                                alignItems: 'center',
+                                                                                                justifyContent: 'center',
+                                                                                                flexShrink: 0,
+                                                                                                cursor: 'pointer',
+                                                                                                position: 'relative'
+                                                                                            }}
+                                                                                        >
                                                                                             {imgUrl ? (
-                                                                                                <img
-                                                                                                    src={imgUrl}
-                                                                                                    alt={it.product_name}
-                                                                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                                                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                                                                                />
+                                                                                                <>
+                                                                                                    <img
+                                                                                                        src={imgUrl}
+                                                                                                        alt={it.product_name}
+                                                                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                                                                    />
+                                                                                                    <div style={{
+                                                                                                        position: 'absolute',
+                                                                                                        bottom: '3px',
+                                                                                                        right: '3px',
+                                                                                                        background: 'rgba(15, 23, 42, 0.75)',
+                                                                                                        color: '#ffffff',
+                                                                                                        borderRadius: '4px',
+                                                                                                        padding: '1px 3px',
+                                                                                                        fontSize: '0.62rem',
+                                                                                                        display: 'flex',
+                                                                                                        alignItems: 'center'
+                                                                                                    }}>
+                                                                                                        🔍
+                                                                                                    </div>
+                                                                                                </>
                                                                                             ) : (
                                                                                                 <div style={{ color: '#94a3b8' }}><Icons.Package /></div>
                                                                                             )}
                                                                                         </div>
-                                                                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                                                                            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+
+                                                                                        {/* Aligned Details */}
+                                                                                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                                            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                                                                 {it.product_name}
                                                                                             </div>
-                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
+                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                                                                                 <span style={{ background: '#0f172a', color: '#ffffff', padding: '2px 7px', borderRadius: '6px', fontWeight: 800, fontSize: '0.72rem' }}>
                                                                                                     {it.quantity}x unid.
                                                                                                 </span>
@@ -2550,6 +2603,26 @@ export default function DriverPortal() {
                                                                                                         Levantamento: {formatMZCurrency(pickupItem.price)}
                                                                                                     </span>
                                                                                                 )}
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pickupItem?.price })}
+                                                                                                    style={{
+                                                                                                        background: '#f1f5f9',
+                                                                                                        border: 'none',
+                                                                                                        color: '#475569',
+                                                                                                        padding: '2px 8px',
+                                                                                                        borderRadius: '6px',
+                                                                                                        fontWeight: 800,
+                                                                                                        fontSize: '0.72rem',
+                                                                                                        cursor: 'pointer',
+                                                                                                        display: 'inline-flex',
+                                                                                                        alignItems: 'center',
+                                                                                                        gap: '3px'
+                                                                                                    }}
+                                                                                                >
+                                                                                                    <Icons.Eye />
+                                                                                                    <span>Ver foto</span>
+                                                                                                </button>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
@@ -2694,17 +2767,74 @@ export default function DriverPortal() {
                                                             </div>
                                                         )}
 
-                                                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.88rem' }}>
+                                                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.88rem' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 800, marginBottom: '0.45rem' }}>
                                                                 <Icons.MapPin />
                                                                 <span>{order.bairro || 'Beira'} • {order.address || 'Centro'}</span>
                                                             </div>
-                                                            <div style={{ color: '#0f172a', fontWeight: 700, marginBottom: '0.25rem' }}>
-                                                                Cliente: {order.customer_name || 'Cliente'}
+                                                            <div style={{ color: '#0f172a', fontWeight: 700, marginBottom: '0.35rem' }}>
+                                                                👤 Cliente: <strong>{order.customer_name || 'Cliente'}</strong>
                                                             </div>
-                                                            <div style={{ color: '#475569', marginBottom: '0.35rem' }}>
-                                                                Contacto: <strong>{order.customer_phone || 'Sem número'}</strong>
-                                                            </div>
+                                                            {(() => {
+                                                                const rawPhone = order.phone || order.customer_phone;
+                                                                const cleanPhone = rawPhone ? String(rawPhone).replace(/\D/g, '') : '';
+                                                                const waNumber = cleanPhone.startsWith('258') ? cleanPhone : (cleanPhone.length === 9 ? `258${cleanPhone}` : cleanPhone);
+                                                                return (
+                                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem', color: '#334151', marginBottom: '0.45rem', paddingBottom: '0.45rem', borderBottom: '1px solid #e2e8f0' }}>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                                            <Icons.Phone />
+                                                                            <span>Contacto:</span>
+                                                                            <strong style={{ color: '#0f172a', fontSize: '0.96rem', letterSpacing: '0.3px' }}>
+                                                                                {rawPhone || 'Sem número'}
+                                                                            </strong>
+                                                                        </div>
+                                                                        {cleanPhone && (
+                                                                            <div style={{ display: 'flex', gap: '0.35rem' }}>
+                                                                                <a
+                                                                                    href={`tel:${cleanPhone}`}
+                                                                                    style={{
+                                                                                        background: '#eff6ff',
+                                                                                        color: '#1d4ed8',
+                                                                                        border: '1px solid #bfdbfe',
+                                                                                        padding: '0.22rem 0.6rem',
+                                                                                        borderRadius: '6px',
+                                                                                        fontSize: '0.74rem',
+                                                                                        fontWeight: 800,
+                                                                                        textDecoration: 'none',
+                                                                                        display: 'inline-flex',
+                                                                                        alignItems: 'center',
+                                                                                        gap: '0.25rem'
+                                                                                    }}
+                                                                                >
+                                                                                    <Icons.Phone />
+                                                                                    <span>Ligar</span>
+                                                                                </a>
+                                                                                <a
+                                                                                    href={`https://wa.me/${waNumber}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20entregador%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    style={{
+                                                                                        background: '#dcfce7',
+                                                                                        color: '#15803d',
+                                                                                        border: '1px solid #bbf7d0',
+                                                                                        padding: '0.22rem 0.6rem',
+                                                                                        borderRadius: '6px',
+                                                                                        fontSize: '0.74rem',
+                                                                                        fontWeight: 800,
+                                                                                        textDecoration: 'none',
+                                                                                        display: 'inline-flex',
+                                                                                        alignItems: 'center',
+                                                                                        gap: '0.25rem'
+                                                                                    }}
+                                                                                >
+                                                                                    <Icons.WhatsApp />
+                                                                                    <span>WhatsApp</span>
+                                                                                </a>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })()}
                                                             {(() => {
                                                                 const actPickup = calcOrderPickupAndProfit(order);
                                                                 return (
@@ -2747,21 +2877,59 @@ export default function DriverPortal() {
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                                                                     {order.items.map((it, idx) => {
                                                                         const imgUrl = resolveImageUrl(it.image);
+                                                                        const pItem = findPickupItem(it.product_name);
                                                                         return (
                                                                             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.95rem', background: '#ffffff', padding: '0.75rem 0.95rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-                                                                                <div style={{ width: '84px', height: '84px', minWidth: '84px', borderRadius: '14px', overflow: 'hidden', background: '#f8fafc', border: '1.5px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 }}>
+                                                                                {/* Photo Thumbnail */}
+                                                                                <div
+                                                                                    onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pItem?.price })}
+                                                                                    title="Toque para ampliar foto"
+                                                                                    style={{
+                                                                                        width: '92px',
+                                                                                        height: '92px',
+                                                                                        minWidth: '92px',
+                                                                                        borderRadius: '14px',
+                                                                                        overflow: 'hidden',
+                                                                                        background: '#f8fafc',
+                                                                                        border: '1.5px solid #e2e8f0',
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                        position: 'relative',
+                                                                                        flexShrink: 0,
+                                                                                        cursor: 'pointer'
+                                                                                    }}
+                                                                                >
                                                                                     {imgUrl ? (
-                                                                                        <img
-                                                                                            src={imgUrl}
-                                                                                            alt={it.product_name}
-                                                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                                                            onError={(e) => {
-                                                                                                e.currentTarget.style.display = 'none';
-                                                                                                if (e.currentTarget.nextElementSibling) {
-                                                                                                    e.currentTarget.nextElementSibling.style.display = 'flex';
-                                                                                                }
-                                                                                            }}
-                                                                                        />
+                                                                                        <>
+                                                                                            <img
+                                                                                                src={imgUrl}
+                                                                                                alt={it.product_name}
+                                                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                                                onError={(e) => {
+                                                                                                    e.currentTarget.style.display = 'none';
+                                                                                                    if (e.currentTarget.nextElementSibling) {
+                                                                                                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                                                                                                    }
+                                                                                                }}
+                                                                                            />
+                                                                                            <div style={{
+                                                                                                position: 'absolute',
+                                                                                                bottom: '4px',
+                                                                                                right: '4px',
+                                                                                                background: 'rgba(15, 23, 42, 0.75)',
+                                                                                                color: '#ffffff',
+                                                                                                borderRadius: '6px',
+                                                                                                padding: '2px 5px',
+                                                                                                fontSize: '0.66rem',
+                                                                                                fontWeight: 700,
+                                                                                                display: 'flex',
+                                                                                                alignItems: 'center',
+                                                                                                gap: '2px'
+                                                                                            }}>
+                                                                                                🔍 Ampliar
+                                                                                            </div>
+                                                                                        </>
                                                                                     ) : null}
                                                                                     <div style={{ display: imgUrl ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', width: '100%', height: '100%' }}>
                                                                                         <Icons.Package />
@@ -2780,15 +2948,31 @@ export default function DriverPortal() {
                                                                                                 Venda: {formatMZCurrency(it.price)}
                                                                                             </span>
                                                                                         ) : null}
-                                                                                        {(() => {
-                                                                                            const pItem = findPickupItem(it.product_name);
-                                                                                            if (!pItem) return null;
-                                                                                            return (
-                                                                                                <span style={{ background: '#fef3c7', color: '#b45309', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem' }}>
-                                                                                                    Levantamento: {formatMZCurrency(pItem.price)}
-                                                                                                </span>
-                                                                                            );
-                                                                                        })()}
+                                                                                        {pItem && (
+                                                                                            <span style={{ background: '#fef3c7', color: '#b45309', padding: '3px 8px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem' }}>
+                                                                                                Levantamento: {formatMZCurrency(pItem.price)}
+                                                                                            </span>
+                                                                                        )}
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pItem?.price })}
+                                                                                            style={{
+                                                                                                background: '#eff6ff',
+                                                                                                color: '#1d4ed8',
+                                                                                                border: '1px solid #bfdbfe',
+                                                                                                padding: '3px 8px',
+                                                                                                borderRadius: '8px',
+                                                                                                fontWeight: 800,
+                                                                                                fontSize: '0.74rem',
+                                                                                                cursor: 'pointer',
+                                                                                                display: 'inline-flex',
+                                                                                                alignItems: 'center',
+                                                                                                gap: '3px'
+                                                                                            }}
+                                                                                        >
+                                                                                            <Icons.Eye />
+                                                                                            <span>Ver foto</span>
+                                                                                        </button>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -2823,30 +3007,36 @@ export default function DriverPortal() {
                                                                 <span>Baixar Fatura (PDF)</span>
                                                             </a>
 
-                                                            {order.customer_phone && (
-                                                                <a
-                                                                    href={`https://wa.me/${String(order.customer_phone).replace(/\D/g, '')}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20entregador%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    style={{
-                                                                        flex: 1,
-                                                                        background: '#059669',
-                                                                        color: '#fff',
-                                                                        textDecoration: 'none',
-                                                                        padding: '0.8rem',
-                                                                        borderRadius: '10px',
-                                                                        fontWeight: 700,
-                                                                        fontSize: '0.85rem',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        gap: '0.4rem'
-                                                                    }}
-                                                                >
-                                                                    <Icons.WhatsApp />
-                                                                    <span>WhatsApp</span>
-                                                                </a>
-                                                            )}
+                                                            {(() => {
+                                                                const rawPhone = order.phone || order.customer_phone;
+                                                                if (!rawPhone) return null;
+                                                                const cleanPhone = String(rawPhone).replace(/\D/g, '');
+                                                                const waNumber = cleanPhone.startsWith('258') ? cleanPhone : (cleanPhone.length === 9 ? `258${cleanPhone}` : cleanPhone);
+                                                                return (
+                                                                    <a
+                                                                        href={`https://wa.me/${waNumber}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20entregador%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        style={{
+                                                                            flex: 1,
+                                                                            background: '#059669',
+                                                                            color: '#fff',
+                                                                            textDecoration: 'none',
+                                                                            padding: '0.8rem 0.5rem',
+                                                                            borderRadius: '10px',
+                                                                            fontWeight: 700,
+                                                                            fontSize: '0.85rem',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            gap: '0.4rem'
+                                                                        }}
+                                                                    >
+                                                                        <Icons.WhatsApp />
+                                                                        <span>WhatsApp</span>
+                                                                    </a>
+                                                                );
+                                                            })()}
 
                                                             <button
                                                                 onClick={() => handleUpdateOrderStatus(order.id, 'Entregue')}
@@ -4686,6 +4876,160 @@ export default function DriverPortal() {
                             alt="Documento do Entregador"
                             style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '14px', objectFit: 'contain', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 4: Product Photo Lightbox */}
+            {previewPhoto && (
+                <div
+                    onClick={() => setPreviewPhoto(null)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.85)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 999999,
+                        backdropFilter: 'blur(6px)',
+                        padding: '1rem',
+                        boxSizing: 'border-box'
+                    }}
+                >
+                    <div
+                        style={{
+                            position: 'relative',
+                            maxWidth: '460px',
+                            width: '100%',
+                            background: darkMode ? '#1e293b' : '#ffffff',
+                            borderRadius: '24px',
+                            padding: '1.25rem',
+                            border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
+                            boxShadow: '0 20px 45px rgba(0,0,0,0.4)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.9rem',
+                            boxSizing: 'border-box'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: darkMode ? '1px solid #334155' : '1px solid #f1f5f9', paddingBottom: '0.65rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <Icons.Package />
+                                </div>
+                                <div style={{ fontWeight: 900, fontSize: '0.98rem', color: darkMode ? '#ffffff' : '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {previewPhoto.name}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setPreviewPhoto(null)}
+                                style={{
+                                    background: darkMode ? '#334155' : '#f1f5f9',
+                                    color: darkMode ? '#e2e8f0' : '#475569',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '32px',
+                                    height: '32px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}
+                            >
+                                <Icons.Close />
+                            </button>
+                        </div>
+
+                        {/* Image Preview */}
+                        <div style={{
+                            width: '100%',
+                            height: '280px',
+                            background: darkMode ? '#0f172a' : '#f8fafc',
+                            borderRadius: '16px',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0'
+                        }}>
+                            {previewPhoto.image ? (
+                                <img
+                                    src={previewPhoto.image}
+                                    alt={previewPhoto.name}
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        if (e.currentTarget.nextElementSibling) {
+                                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                                        }
+                                    }}
+                                />
+                            ) : null}
+                            <div style={{ display: previewPhoto.image ? 'none' : 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: '#94a3b8' }}>
+                                <div style={{ transform: 'scale(1.5)' }}><Icons.Package /></div>
+                                <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>Foto ilustrativa indisponível</span>
+                            </div>
+                        </div>
+
+                        {/* Meta info */}
+                        <div style={{
+                            background: darkMode ? '#0f172a' : '#f8fafc',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '14px',
+                            border: darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.45rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>Quantidade:</span>
+                                <span style={{ background: '#0f172a', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem' }}>
+                                    {previewPhoto.quantity || 1}x {previewPhoto.quantity > 1 ? 'unidades' : 'unidade'}
+                                </span>
+                            </div>
+
+                            {previewPhoto.price ? (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>Preço de Venda:</span>
+                                    <strong style={{ fontSize: '0.98rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                        {formatMZCurrency(previewPhoto.price)}
+                                    </strong>
+                                </div>
+                            ) : null}
+
+                            {previewPhoto.pickupPrice ? (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: darkMode ? '1px solid #1e293b' : '1px solid #e2e8f0', paddingTop: '0.45rem' }}>
+                                    <span style={{ fontSize: '0.82rem', color: '#b45309', fontWeight: 700 }}>Valor de Levantamento:</span>
+                                    <span style={{ background: '#fef3c7', color: '#b45309', padding: '2px 8px', borderRadius: '6px', fontWeight: 800, fontSize: '0.82rem' }}>
+                                        {formatMZCurrency(previewPhoto.pickupPrice)}
+                                    </span>
+                                </div>
+                            ) : null}
+                        </div>
+
+                        {/* Close button */}
+                        <button
+                            type="button"
+                            onClick={() => setPreviewPhoto(null)}
+                            style={{
+                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '0.75rem',
+                                borderRadius: '12px',
+                                fontWeight: 800,
+                                fontSize: '0.9rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Fechar Visualização
+                        </button>
                     </div>
                 </div>
             )}

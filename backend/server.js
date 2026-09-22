@@ -163,6 +163,31 @@ ${itemsList}
     }
 }
 
+// System-wide Ntfy alert helper for admin / driver events
+async function sendSystemNtfyAlert(title, message, tags = ['bell']) {
+    try {
+        const settings = loadAdminSettings();
+        const topic = (settings.ntfy_topic || process.env.NTFY_TOPIC || 'tchapo_pedidos_beira').trim();
+        if (!topic) return false;
+        await fetch('https://ntfy.sh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                topic,
+                title,
+                message,
+                priority: 4,
+                tags,
+                click: 'https://tchapotchapo.store/admin.html'
+            })
+        });
+        return true;
+    } catch (err) {
+        console.error('[sendSystemNtfyAlert] Error:', err.message);
+        return false;
+    }
+}
+
 // WhatsApp Notification Sender (via CallMeBot API - 100% Free & Direct to Phone)
 async function sendWhatsAppAlert(order) {
     const settings = loadAdminSettings();
@@ -807,8 +832,14 @@ function formatOrderResponse(order) {
     const delivered_at = orderMeta?.delivered_at || null;
     const delivered_by = orderMeta?.delivered_by || null;
 
+    const clientPhone = order.phone || order.customer_phone || null;
+    const clientName = order.customer_name || order.client_name || order.customer || 'Cliente';
+
     return {
         ...order,
+        customer_name: clientName,
+        customer_phone: clientPhone,
+        phone: clientPhone,
         items: normalizedItems,
         order_items: normalizedItems,
         timer_end_at,
@@ -1506,6 +1537,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 ...formatted,
                 customer_name: 'Cliente Tchapo Tchapo (Disponível após aceitar)',
                 customer_phone: null,
+                phone: null,
                 address: null, // Oculto antes de aceitar - apenas província e bairro visíveis
                 is_masked: true
             };
@@ -1739,10 +1771,10 @@ app.post('/api/drivers/:id/pay-debt', upload.single('receipt'), async (req, res)
         });
 
         // Notify Admin via Ntfy
-        sendPushNotification(
+        sendSystemNtfyAlert(
             `🛵 Pagamento de Comissão Submetido pelo Entregador!`,
             `O entregador #${formatDriverId(numId)} submeteu ${updatedDebt.amount} MT ref: ${reference || 'Anexo de Comprovativo'}. Aceda ao admin para validar.`,
-            'admin'
+            ['moneybag', 'bell']
         );
 
         res.json({
@@ -1782,12 +1814,11 @@ app.put('/api/drivers/:id/confirm-debt', async (req, res) => {
             is_blocked: false
         });
 
-        // Notify Driver
-        sendPushNotification(
-            `✅ Comissão Confirmada! Conta Desbloqueada`,
-            `O seu pagamento de ${clearedDebt.amount} MT foi confirmado pela Tchapo Tchapo. Já pode receber e aceitar pedidos!`,
-            'driver',
-            numId
+        // Notify via Ntfy
+        sendSystemNtfyAlert(
+            `✅ Comissão Confirmada! Entregador #${formatDriverId(numId)} Desbloqueado`,
+            `O pagamento de ${clearedDebt.amount} MT foi confirmado. O entregador #${formatDriverId(numId)} já está liberado para entregas.`,
+            ['white_check_mark', 'motorcycle']
         );
 
         res.json({

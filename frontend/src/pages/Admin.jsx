@@ -3,6 +3,7 @@ import { MZ_PROVINCES, ALL_PROVINCES, DEFAULT_PROVINCE, getBairrosByProvince } f
 
 const STATUS_COLORS = {
     'Pendente':       { bg: '#fef3c7', color: '#92400e' },
+    'Aprovado':       { bg: '#dcfce7', color: '#15803d' },
     'Processando':    { bg: '#dbeafe', color: '#1e40af' },
     'Preparando':     { bg: '#ede9fe', color: '#5b21b6' },
     'Com Entregador':  { bg: '#d1fae5', color: '#065f46' },
@@ -1583,6 +1584,7 @@ export default function Admin() {
                                                         }}
                                                     >
                                                         <option value="Pendente">📋 Pendente</option>
+                                                        <option value="Aprovado">🛵 Aprovado (No Portal de Entregadores)</option>
                                                         <option value="Processando">🔄 Processando</option>
                                                         <option value="Preparando">📦 Preparando</option>
                                                         <option value="Com Entregador">🛵 Com Entregador</option>
@@ -1590,6 +1592,23 @@ export default function Admin() {
                                                         <option value="Perdido">🔴 Perdido (Multa 50%)</option>
                                                         <option value="Cancelado">❌ Cancelado</option>
                                                     </select>
+                                                    {(order.status === 'Pendente' || !order.status) && (
+                                                        <div style={{ marginTop: '6px' }}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => updateStatus(order.id, 'Aprovado')}
+                                                                style={{
+                                                                    background: '#16a34a', color: '#fff', border: 'none', padding: '5px 8px',
+                                                                    borderRadius: '6px', fontWeight: 700, fontSize: '0.74rem', cursor: 'pointer',
+                                                                    display: 'inline-flex', alignItems: 'center', gap: '4px', width: '100%',
+                                                                    justifyContent: 'center', boxShadow: '0 2px 4px rgba(22,163,74,0.25)'
+                                                                }}
+                                                                title="Aprovar e enviar para o Portal de Entregadores"
+                                                            >
+                                                                ✅ Aprovar Pedido
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td style={{ padding: '1rem 1.25rem' }}>
                                                     <div style={{ display: 'flex', gap: '0.5rem' }}>

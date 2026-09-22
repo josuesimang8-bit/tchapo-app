@@ -355,23 +355,6 @@ let products = [
         desc: 'Liquidificador Multifunções de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     },
-    // 💾 Armazenamento & Acessórios
-    {
-        id: 18, category: 'Acessórios',
-        name: 'Pendrive USB de Alta Velocidade',
-        price: 450,
-        image: 'assets/default_product.png',
-        desc: 'Pendrive USB de Alta Velocidade de alta qualidade',
-        features: ['_device_selection:pendrive', '_color_selection:none', '✨ Alta Qualidade Garantida']
-    },
-    {
-        id: 19, category: 'Acessórios',
-        name: 'Cartão de Memória MicroSD + Adaptador',
-        price: 350,
-        image: 'assets/default_product.png',
-        desc: 'Cartão de Memória MicroSD + Adaptador de alta qualidade',
-        features: ['_device_selection:card', '_color_selection:none', '✨ Alta Qualidade Garantida']
-    },
     {
         id: 20, category: 'Acessórios',
         name: 'Pau de Selfie Bluetooth com Tripé',

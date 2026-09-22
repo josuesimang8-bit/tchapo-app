@@ -582,7 +582,6 @@ const STORE_PICKUP_PRICES = [
     { name: 'Carregador Magsafe Para iPhone', price: 800 },
     { name: 'Ventoinha Portátil', price: 200 },
     { name: 'Pro 2 (Airpods U40)', price: 250 },
-    { name: 'Pendrive USB (32GB)', price: 190 },
     { name: 'Router Wifi', price: 1800 },
     { name: 'Auriculares com Fio', price: 80 },
     { name: 'Combo: Mouse Teclado', price: 900 },
@@ -1032,6 +1031,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
                 
             if (currentOrder) {
                 const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente' || (currentOrder.status === 'Aprovado' && !currentOrder.driver_id);
+                const wasActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(currentOrder.status) || (currentOrder.status === 'Aprovado' && Boolean(currentOrder.driver_id));
                 const willHaveDriver = driver_id !== undefined ? Boolean(driver_id) : Boolean(currentOrder.driver_id);
                 const isNowActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(status) || (status === 'Aprovado' && willHaveDriver);
                 const isNowPendente = status === 'Pendente' || (status === 'Aprovado' && !willHaveDriver);

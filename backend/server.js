@@ -599,7 +599,6 @@ const STORE_PICKUP_PRICES = [
     { name: 'Bluetooth Speaker', price: 250 },
     { name: 'Mouse com Fio', price: 250 },
     { name: 'Carregador para Carro', price: 200 },
-    { name: 'AirPods Pro (2ª Geração)', price: 250 },
     { name: 'Pro 2', price: 250 },
     { name: 'AirPods Pro', price: 500 },
     { name: 'JBL Bluetooth Speaker', price: 8000 },
@@ -608,7 +607,6 @@ const STORE_PICKUP_PRICES = [
     { name: 'Cabo Carregador 4 em 1', price: 100 },
     { name: 'Carregador Magsafe Para iPhone', price: 800 },
     { name: 'Ventoinha Portátil', price: 200 },
-    { name: 'Pro 2 (Airpods U40)', price: 250 },
     { name: 'Router Wifi', price: 1800 },
     { name: 'Auriculares com Fio', price: 80 },
     { name: 'Combo: Mouse Teclado', price: 900 },
@@ -625,7 +623,6 @@ const STORE_PICKUP_PRICES = [
     { name: 'Pilhas Duracell', price: 50 },
     { name: 'Colunas Bluetooth (Home Theater)', price: 2500 },
     { name: 'Microfone (Lapela)', price: 500 },
-    { name: 'Pro 2 (Cópia)', price: 250 },
     { name: 'Nokia Mini BM10', price: 1000 },
     { name: 'Bateria Nokia', price: 50 },
     { name: 'Extensor 4 ports', price: 150 },
@@ -678,6 +675,17 @@ function normalizeForPickup(str) {
 function findPickupPrice(name) {
     if (!name) return null;
     const clean = normalizeForPickup(name);
+
+    // Explicit priority rule for Pro 2 vs AirPods Pro
+    if (clean.includes('pro 2') || clean.includes('2a geracao') || clean.includes('2 geracao') || clean.includes('u40')) {
+        const pro2 = STORE_PICKUP_PRICES.find(p => p.name === 'Pro 2');
+        if (pro2) return pro2.price; // 250 MT
+    }
+    if (clean.includes('airpods pro') || clean === 'airpod pro') {
+        const airpodsPro = STORE_PICKUP_PRICES.find(p => p.name === 'AirPods Pro');
+        if (airpodsPro) return airpodsPro.price; // 500 MT
+    }
+
     const exact = STORE_PICKUP_PRICES.find(p => normalizeForPickup(p.name) === clean);
     if (exact) return exact.price;
     const sub = STORE_PICKUP_PRICES.find(p => {
@@ -834,7 +842,7 @@ function formatOrderResponse(order) {
     const delivered_at = orderMeta?.delivered_at || null;
     const delivered_by = orderMeta?.delivered_by || null;
 
-    const clientPhone = order.phone || order.customer_phone || null;
+    const clientPhone = order.phone || order.customer_phone || order.contact || order.telefone || order.cellphone || order.whatsapp || order.customer_contact || null;
     const clientName = order.customer_name || order.client_name || order.customer || 'Cliente';
 
     return {
@@ -1756,8 +1764,15 @@ app.post('/api/drivers/:id/pay-debt', upload.single('receipt'), async (req, res)
 
         let proofUrl = '';
         if (req.file) {
-            const publicUrl = await uploadToCatbox(req.file) || await uploadToSupabaseStorage('drivers', req.file);
-            proofUrl = publicUrl || `/uploads/drivers/${req.file.filename}`;
+            proofUrl = `/uploads/drivers/${req.file.filename}`;
+            try {
+                const sPromise = uploadToSupabaseStorage('drivers', req.file);
+                const tPromise = new Promise((resolve) => setTimeout(() => resolve(null), 3500));
+                const sUrl = await Promise.race([sPromise, tPromise]);
+                if (sUrl) proofUrl = sUrl;
+            } catch (storageErr) {
+                console.warn('Supabase storage upload skipped for receipt:', storageErr.message);
+            }
         }
 
         const updatedDebt = {

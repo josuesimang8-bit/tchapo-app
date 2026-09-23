@@ -296,7 +296,6 @@ const STORE_PICKUP_PRICES = [
     { name: 'Bluetooth Speaker', price: 250 },
     { name: 'Mouse com Fio', price: 250 },
     { name: 'Carregador para Carro', price: 200 },
-    { name: 'AirPods Pro (2ª Geração)', price: 250 },
     { name: 'Pro 2', price: 250 },
     { name: 'AirPods Pro', price: 500 },
     { name: 'JBL Bluetooth Speaker', price: 8000 },
@@ -305,7 +304,6 @@ const STORE_PICKUP_PRICES = [
     { name: 'Cabo Carregador 4 em 1', price: 100 },
     { name: 'Carregador Magsafe Para iPhone', price: 800 },
     { name: 'Ventoinha Portátil', price: 200 },
-    { name: 'Pro 2 (Airpods U40)', price: 250 },
     { name: 'Router Wifi', price: 1800 },
     { name: 'Auriculares com Fio', price: 80 },
     { name: 'Combo: Mouse Teclado', price: 900 },
@@ -322,7 +320,6 @@ const STORE_PICKUP_PRICES = [
     { name: 'Pilhas Duracell', price: 50 },
     { name: 'Colunas Bluetooth (Home Theater)', price: 2500 },
     { name: 'Microfone (Lapela)', price: 500 },
-    { name: 'Pro 2 (Cópia)', price: 250 },
     { name: 'Nokia Mini BM10', price: 1000 },
     { name: 'Bateria Nokia', price: 50 },
     { name: 'Extensor 4 ports', price: 150 },
@@ -376,6 +373,16 @@ const findPickupItem = (productName) => {
     if (!productName) return null;
     const cleanName = normalizeForMatch(productName);
     
+    // Explicit priority rule for Pro 2 vs AirPods Pro
+    if (cleanName.includes('pro 2') || cleanName.includes('2a geracao') || cleanName.includes('2 geracao') || cleanName.includes('u40')) {
+        const pro2 = STORE_PICKUP_PRICES.find(p => p.name === 'Pro 2');
+        if (pro2) return pro2;
+    }
+    if (cleanName.includes('airpods pro') || cleanName === 'airpod pro') {
+        const airpodsPro = STORE_PICKUP_PRICES.find(p => p.name === 'AirPods Pro');
+        if (airpodsPro) return airpodsPro;
+    }
+
     // 1. Exact match
     const exact = STORE_PICKUP_PRICES.find(p => normalizeForMatch(p.name) === cleanName);
     if (exact) return exact;
@@ -403,78 +410,158 @@ const findPickupItem = (productName) => {
     return null;
 };
 
-const calcOrderPickupAndProfit = (order) => {
-    if (!order) return { pickupTotal: 0, orderTotal: 0, estimatedProfit: 150, hasMatchedAny: false, itemsWithPickup: [] };
-    
-    let totalPickup = 0;
-    let hasMatchedAny = false;
-    const items = order.items || [];
-    
-    const itemsWithPickup = items.map(it => {
-        const match = findPickupItem(it.product_name || it.name);
-        const qty = it.quantity || 1;
-        const pickupUnit = match ? match.price : null;
-        if (pickupUnit !== null) {
-            totalPickup += pickupUnit * qty;
-            hasMatchedAny = true;
-        }
-        return {
-            ...it,
-            pickupPrice: pickupUnit,
-            pickupTotal: pickupUnit !== null ? pickupUnit * qty : null,
-            matchedName: match ? match.name : (it.product_name || it.name || 'Produto')
-        };
-    });
-
-    const orderTotal = Number(order.total) || 0;
-    let estimatedProfit = 0;
-
-    if (hasMatchedAny && totalPickup > 0) {
-        estimatedProfit = Math.max(0, orderTotal - totalPickup);
-    } else {
-        estimatedProfit = 150;
-    }
-
-    // Taxa da plataforma: exatamente 15% do lucro estimado (mínimo 20 MT)
-    const platformFee = Math.max(20, Math.round(estimatedProfit * 0.15));
-    const driverNetProfit = Math.max(0, estimatedProfit - platformFee);
-
-    return {
-        pickupTotal: totalPickup,
-        orderTotal,
-        estimatedProfit,
-        platformFee,
-        driverNetProfit,
-        hasMatchedAny,
-        itemsWithPickup
-    };
+// Fallback image assets matching product keywords
+const PRODUCT_IMAGE_FALLBACKS = {
+    'airpods pro': 'assets/airpods_pro_1777767746082.png',
+    'pro 2': 'assets/airpods_pro_1777767746082.png',
+    'airpods 3': 'assets/airpods_3_1777767759427.png',
+    'airpods (3ª geração)': 'assets/airpods_3_1777767759427.png',
+    'fita led': 'assets/led_lights_1777769768426.png',
+    'coluna bluetooth': 'assets/bluetooth_speaker_1777774326728.png',
+    'bluetooth speaker': 'assets/bluetooth_speaker_1777774326728.png',
+    'smartwatch': 'assets/smartwatch_1777774341144.png',
+    'capas de silicone': 'assets/iphone_silicone_case.png',
+    'power bank': 'assets/power_bank_1777774355353.png',
+    'celular android': 'assets/android_phone_1777769782866.png'
 };
 
-export default function DriverPortal() {
+const getProductFallbackImage = (productName) => {
+    if (!productName) return null;
+    const clean = normalizeForMatch(productName);
+    for (const [key, path] of Object.entries(PRODUCT_IMAGE_FALLBACKS)) {
+        if (clean.includes(normalizeForMatch(key)) || normalizeForMatch(key).includes(clean)) {
+            return path;
+        }
+    }
+    return null;
+};
+
+class DriverPortalErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+    componentDidCatch(error, errorInfo) {
+        console.error('DriverPortal Error caught:', error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '2rem 1rem',
+                    background: '#0f172a',
+                    color: '#ffffff',
+                    fontFamily: "'Montserrat', sans-serif",
+                    textAlign: 'center'
+                }}>
+                    <div style={{ maxWidth: '440px', background: '#1e293b', padding: '2rem', borderRadius: '20px', border: '1px solid #334155' }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem', fontSize: '1.6rem' }}>
+                            ⚠️
+                        </div>
+                        <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem', fontWeight: 900 }}>Recarregando Central</h3>
+                        <p style={{ margin: '0 0 1.5rem', color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                            Ocorreu uma pequena instabilidade na visualização. Clique no botão abaixo para restaurar o portal imediatamente.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
+                            style={{
+                                background: '#f59e0b',
+                                color: '#111827',
+                                border: 'none',
+                                padding: '0.85rem 1.75rem',
+                                borderRadius: '12px',
+                                fontWeight: 800,
+                                fontSize: '0.92rem',
+                                cursor: 'pointer',
+                                width: '100%'
+                            }}
+                        >
+                            Atualizar Página
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+function DriverPortalContent() {
     const API_URL = import.meta.env.VITE_API_URL || '';
 
-    const resolveImageUrl = (img) => {
-        if (!img || typeof img !== 'string') return null;
-        if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:')) return img;
-        const clean = img.startsWith('/') ? img : '/' + img;
+    const resolveImageUrl = (img, fallbackName = null) => {
+        let target = img;
+        if (!target && fallbackName) {
+            target = getProductFallbackImage(fallbackName);
+        }
+        if (!target || typeof target !== 'string') return null;
+        if (target.startsWith('http://') || target.startsWith('https://') || target.startsWith('data:') || target.startsWith('blob:')) return target;
+        const clean = target.startsWith('/') ? target : '/' + target;
         return API_URL ? `${API_URL}${clean}` : clean;
     };
 
     const extractOrderLocation = (order) => {
-        if (!order) return { province: 'Maputo', bairro: 'Centro' };
+        if (!order) return { province: 'Sofala', bairro: 'Beira' };
         let prov = order.province || '';
-        let bai = order.bairro || '';
+        let bai = order.bairro || order.customer_bairro || '';
         
+        if (bai && bai.includes(' - ')) {
+            const parts = bai.split(' - ');
+            if (parts.length >= 2) {
+                const potentialProv = parts[0].trim();
+                const matchedProv = ALL_PROVINCES.find(p => p.toLowerCase() === potentialProv.toLowerCase());
+                if (matchedProv) {
+                    prov = matchedProv;
+                    bai = parts.slice(1).join(' - ').trim();
+                }
+            }
+        }
+
         if (bai && bai.includes('(') && bai.includes(')')) {
             const match = bai.match(/^(.*?)\s*\((.*?)\)$/);
             if (match) {
                 bai = match[1].trim();
-                if (!prov) prov = match[2].trim();
+                const paren = match[2].trim();
+                if (!prov) {
+                    if (paren.toLowerCase() === 'beira') prov = 'Sofala';
+                    else if (paren.toLowerCase() === 'maputo' || paren.toLowerCase() === 'matola') prov = 'Maputo';
+                    else if (paren.toLowerCase() === 'nampula') prov = 'Nampula';
+                    else if (paren.toLowerCase() === 'quelimane') prov = 'Zambézia';
+                    else if (paren.toLowerCase() === 'tete') prov = 'Tete';
+                    else if (paren.toLowerCase() === 'chimoio') prov = 'Manica';
+                    else prov = paren;
+                }
             }
         }
-        
+
+        if (!prov) {
+            const lowerBai = bai.toLowerCase();
+            for (const item of MZ_PROVINCES) {
+                if (lowerBai.includes(item.name.toLowerCase()) || (item.capital && lowerBai.includes(item.capital.toLowerCase()))) {
+                    prov = item.name;
+                    break;
+                }
+            }
+        }
+
+        if (prov.toLowerCase() === 'beira') prov = 'Sofala';
+        else if (prov.toLowerCase().includes('matola')) prov = 'Maputo';
+
+        const exactProv = ALL_PROVINCES.find(p => p.toLowerCase() === prov.toLowerCase());
+        if (exactProv) {
+            prov = exactProv;
+        }
+
         return {
-            province: prov || 'Maputo',
+            province: prov || 'Sofala',
             bairro: bai || 'Centro'
         };
     };
@@ -528,10 +615,12 @@ export default function DriverPortal() {
     const [confirmingOrder, setConfirmingOrder] = useState(null); // Strict Acceptance Modal
     const [previewPhoto, setPreviewPhoto] = useState(null); // Product Photo Lightbox Modal
 
-    // Debt Payment State (e-Mola White Screen)
+    // Debt Payment State (e-Mola Fee Screen)
     const [debtPaymentRef, setDebtPaymentRef] = useState('');
     const [debtReceiptFile, setDebtReceiptFile] = useState(null);
     const [debtReceiptPreview, setDebtReceiptPreview] = useState(null);
+    const [submittedProofPreview, setSubmittedProofPreview] = useState(null);
+    const [selectedProvinceFilter, setSelectedProvinceFilter] = useState('Todas');
     const [submittingDebt, setSubmittingDebt] = useState(false);
     const [debtSecondsLeft, setDebtSecondsLeft] = useState(7200);
     const [copiedId, setCopiedId] = useState(false);
@@ -923,7 +1012,8 @@ export default function DriverPortal() {
     // Driver Submits Debt Payment Proof
     const handleSubmitDebtPayment = async (e) => {
         e.preventDefault();
-        if (!debtPaymentRef.trim() && !debtReceiptFile) {
+        const trimmedRef = debtPaymentRef.trim();
+        if (!trimmedRef && !debtReceiptFile) {
             showToast('Por favor introduza o código de confirmação ou anexe o comprovativo.', 'error');
             return;
         }
@@ -931,32 +1021,58 @@ export default function DriverPortal() {
         setSubmittingDebt(true);
         try {
             const fd = new FormData();
-            if (debtPaymentRef.trim()) {
-                fd.append('reference', debtPaymentRef.trim());
+            if (trimmedRef) {
+                fd.append('reference', trimmedRef);
             }
             if (debtReceiptFile) {
                 fd.append('receipt', debtReceiptFile);
+            }
+
+            // Preserve local image preview immediately
+            if (debtReceiptPreview) {
+                setSubmittedProofPreview(debtReceiptPreview);
             }
 
             const res = await fetch(`${API_URL}/api/drivers/${authDriver?.id}/pay-debt`, {
                 method: 'POST',
                 body: fd
             });
-            const data = await res.json();
+
+            let data = {};
+            try {
+                data = await res.json();
+            } catch (_) {
+                data = {};
+            }
+
             if (res.ok) {
                 showToast('Comprovativo submetido com sucesso! A administração irá validar.', 'success');
                 setDebtPaymentRef('');
                 setDebtReceiptFile(null);
-                setDebtReceiptPreview(null);
                 setReEditProof(false);
-                if (data.pending_debt) {
-                    setDashboardData(prev => prev ? ({ ...prev, pending_debt: data.pending_debt }) : prev);
-                }
-                await fetchDashboard(authDriver?.id);
+
+                const currentDebt = dashboardData?.pending_debt || pendingDebt || {};
+                const optimisticDebt = data.pending_debt || {
+                    ...currentDebt,
+                    status: 'Aguardando Confirmação',
+                    payment_proof: trimmedRef || 'Comprovativo de Imagem Anexado',
+                    payment_proof_url: debtReceiptPreview || currentDebt.payment_proof_url || null,
+                    paid_submission_at: new Date().toISOString()
+                };
+
+                setDashboardData(prev => ({
+                    ...(prev || {}),
+                    pending_debt: optimisticDebt
+                }));
+
+                try {
+                    await fetchDashboard(authDriver?.id);
+                } catch (_) {}
             } else {
                 showToast(data.error || 'Erro ao submeter comprovativo.', 'error');
             }
         } catch (err) {
+            console.error('Error submitting debt proof:', err);
             showToast('Erro de comunicação com o servidor.', 'error');
         } finally {
             setSubmittingDebt(false);
@@ -1015,6 +1131,18 @@ export default function DriverPortal() {
     const pendingDebt = dashboardData?.pending_debt || null;
     const isDebtBlocked = Boolean(pendingDebt && pendingDebt.status !== 'Pago');
     const hasActiveOrder = activeOrders.length > 0;
+
+    // Debt payment countdown timer sync
+    useEffect(() => {
+        if (!pendingDebt?.due_at) return;
+        const updateCountdown = () => {
+            const diffSecs = Math.max(0, Math.floor((new Date(pendingDebt.due_at).getTime() - Date.now()) / 1000));
+            setDebtSecondsLeft(diffSecs);
+        };
+        updateCountdown();
+        const timer = setInterval(updateCountdown, 1000);
+        return () => clearInterval(timer);
+    }, [pendingDebt?.due_at]);
 
     // Saldo calculado
     const saldoLiquido = stats.saldo !== undefined ? stats.saldo : Math.max(0, stats.total_earnings - (pendingDebt ? pendingDebt.amount : 0));
@@ -1223,25 +1351,27 @@ export default function DriverPortal() {
                                     </span>
                                 )}
 
-                                <button
-                                    onClick={handleLogout}
-                                    title="Terminar sessão"
-                                    style={{
-                                        background: darkMode ? '#1a1a1a' : '#f8fafc',
-                                        border: darkMode ? '1px solid #2a2a2a' : '1px solid #e2e8f0',
-                                        color: darkMode ? '#94a3b8' : '#64748b',
-                                        width: '36px',
-                                        height: '36px',
-                                        borderRadius: '10px',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        transition: 'all 0.15s ease'
-                                    }}
-                                >
-                                    <Icons.LogOut />
-                                </button>
+                                {!isDebtBlocked && (
+                                    <button
+                                        onClick={handleLogout}
+                                        title="Terminar sessão"
+                                        style={{
+                                            background: darkMode ? '#1a1a1a' : '#f8fafc',
+                                            border: darkMode ? '1px solid #2a2a2a' : '1px solid #e2e8f0',
+                                            color: darkMode ? '#94a3b8' : '#64748b',
+                                            width: '36px',
+                                            height: '36px',
+                                            borderRadius: '10px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                    >
+                                        <Icons.LogOut />
+                                    </button>
+                                )}
                             </>
                         ) : (
                             <button
@@ -1509,26 +1639,6 @@ export default function DriverPortal() {
                                         }}>
                                             ID: #{formatDriverId(authDriver?.id)}
                                         </span>
-                                        <button
-                                            type="button"
-                                            onClick={handleLogout}
-                                            style={{
-                                                background: 'transparent',
-                                                border: darkMode ? '1px solid #334155' : '1px solid #cbd5e1',
-                                                color: '#64748b',
-                                                padding: '0.3rem 0.65rem',
-                                                borderRadius: '8px',
-                                                fontSize: '0.74rem',
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.3rem'
-                                            }}
-                                        >
-                                            <Icons.LogOut />
-                                            <span>Sair</span>
-                                        </button>
                                     </div>
                                 </div>
 
@@ -1775,15 +1885,22 @@ export default function DriverPortal() {
                                             </div>
 
                                             {/* Foto do comprovativo enviado, se houver */}
-                                            {pendingDebt?.payment_proof_url && (
+                                            {(submittedProofPreview || pendingDebt?.payment_proof_url) && (
                                                 <div style={{ marginBottom: '1.15rem', textAlign: 'center' }}>
                                                     <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>
                                                         Foto do Comprovativo Anexado:
                                                     </div>
                                                     <img
-                                                        src={resolveImageUrl(pendingDebt.payment_proof_url)}
+                                                        src={submittedProofPreview || resolveImageUrl(pendingDebt?.payment_proof_url)}
                                                         alt="Comprovativo submetido"
-                                                        style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: '12px', border: '1.5px solid #10b981', objectFit: 'contain', background: '#000' }}
+                                                        style={{ maxHeight: '180px', maxWidth: '100%', borderRadius: '12px', border: '1.5px solid #10b981', objectFit: 'contain', background: '#000' }}
+                                                        onError={(e) => {
+                                                            if (submittedProofPreview && e.currentTarget.src !== submittedProofPreview) {
+                                                                e.currentTarget.src = submittedProofPreview;
+                                                            } else {
+                                                                e.currentTarget.style.display = 'none';
+                                                            }
+                                                        }}
                                                     />
                                                 </div>
                                             )}
@@ -2452,186 +2569,313 @@ export default function DriverPortal() {
                                                     </button>
                                                 </div>
 
-                                                {availableOrders.length === 0 ? (
-                                                    <div style={{ background: '#fff', padding: '4rem 2rem', borderRadius: '24px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                                                        <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f1f5f9', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                                                            <Icons.Package />
-                                                        </div>
-                                                        <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                                                            Nenhum pedido novo disponível no momento
-                                                        </h4>
-                                                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', maxWidth: '480px', marginInline: 'auto' }}>
-                                                            Assim que um cliente fizer uma encomenda na loja, ela aparecerá aqui.
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                                                        {availableOrders.map(order => {
-                                                            const pInfo = calcOrderPickupAndProfit(order);
-                                                            const loc = extractOrderLocation(order);
-                                                            return (
-                                                                <div key={order.id} className="rp-order-card">
-                                                                    {/* Header with Order ID & Status */}
-                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                            <span style={{ fontWeight: 900, fontSize: '1.05rem', color: '#0f172a' }}>
-                                                                                Pedido #{order.id}
-                                                                            </span>
-                                                                            {order.time && (
-                                                                                <span style={{
-                                                                                    background: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '#fee2e2' : '#eff6ff',
-                                                                                    color: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '#b91c1c' : '#1d4ed8',
-                                                                                    fontSize: '0.72rem',
-                                                                                    fontWeight: 800,
-                                                                                    padding: '2px 8px',
-                                                                                    borderRadius: '999px',
-                                                                                    display: 'inline-flex',
-                                                                                    alignItems: 'center',
-                                                                                    gap: '4px'
-                                                                                }}>
-                                                                                    <Icons.Clock />
-                                                                                    {order.time}
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
+                                                 {/* Filtro por Províncias */}
+                                                 <div style={{
+                                                     background: darkMode ? '#18181b' : '#f8fafc',
+                                                     border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
+                                                     borderRadius: '16px',
+                                                     padding: '12px 14px',
+                                                     marginBottom: '1.25rem',
+                                                     display: 'flex',
+                                                     flexDirection: 'column',
+                                                     gap: '10px'
+                                                 }}>
+                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', fontWeight: 800, color: darkMode ? '#f8fafc' : '#0f172a' }}>
+                                                             <span style={{ color: '#f64c00' }}><Icons.MapPin /></span>
+                                                             <span>Filtro de Pedidos por Província:</span>
+                                                         </div>
+                                                         {selectedProvinceFilter !== 'Todas' && (
+                                                             <button
+                                                                 type="button"
+                                                                 onClick={() => setSelectedProvinceFilter('Todas')}
+                                                                 style={{
+                                                                     background: 'transparent',
+                                                                     border: 'none',
+                                                                     color: '#f64c00',
+                                                                     fontSize: '0.8rem',
+                                                                     fontWeight: 700,
+                                                                     cursor: 'pointer',
+                                                                     textDecoration: 'underline'
+                                                                 }}
+                                                             >
+                                                                 Ver todas ({availableOrders.length})
+                                                             </button>
+                                                         )}
+                                                     </div>
 
-                                                                        <span style={{
-                                                                            background: 'rgba(246, 76, 0, 0.1)',
-                                                                            color: '#f64c00',
-                                                                            fontSize: '0.74rem',
-                                                                            fontWeight: 800,
-                                                                            padding: '3px 10px',
-                                                                            borderRadius: '999px',
-                                                                            border: '1px solid rgba(246, 76, 0, 0.25)'
-                                                                        }}>
-                                                                            Disponível
-                                                                        </span>
-                                                                    </div>
+                                                     {/* Scrollable Province Pills */}
+                                                     <div style={{
+                                                         display: 'flex',
+                                                         alignItems: 'center',
+                                                         gap: '8px',
+                                                         overflowX: 'auto',
+                                                         paddingBottom: '4px',
+                                                         WebkitOverflowScrolling: 'touch'
+                                                     }}>
+                                                         {['Todas', ...ALL_PROVINCES].map(prov => {
+                                                             const count = prov === 'Todas'
+                                                                 ? availableOrders.length
+                                                                 : availableOrders.filter(o => extractOrderLocation(o).province.toLowerCase() === prov.toLowerCase()).length;
+                                                             const isSelected = selectedProvinceFilter.toLowerCase() === prov.toLowerCase();
 
-                                                                    {/* Clean Single-line Location Tag */}
-                                                                    <div style={{
-                                                                        background: '#f8fafc',
-                                                                        padding: '8px 12px',
-                                                                        borderRadius: '12px',
-                                                                        border: '1px solid #e2e8f0',
-                                                                        marginBottom: '12px',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'space-between'
-                                                                    }}>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0f172a' }}>
-                                                                            <span style={{ color: '#f64c00' }}><Icons.MapPin /></span>
-                                                                            <span><strong>{loc.bairro || 'Beira'}</strong> • {loc.province}</span>
-                                                                        </div>
-                                                                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>Dados pós-aceite</span>
-                                                                    </div>
+                                                             return (
+                                                                 <button
+                                                                     key={prov}
+                                                                     type="button"
+                                                                     onClick={() => setSelectedProvinceFilter(prov)}
+                                                                     style={{
+                                                                         padding: '6px 14px',
+                                                                         borderRadius: '999px',
+                                                                         fontSize: '0.8rem',
+                                                                         fontWeight: isSelected ? 800 : 600,
+                                                                         border: isSelected ? '1.5px solid #f64c00' : (darkMode ? '1px solid #3f3f46' : '1px solid #cbd5e1'),
+                                                                         background: isSelected ? '#f64c00' : (darkMode ? '#27272a' : '#ffffff'),
+                                                                         color: isSelected ? '#ffffff' : (darkMode ? '#e4e4e7' : '#475569'),
+                                                                         cursor: 'pointer',
+                                                                         whiteSpace: 'nowrap',
+                                                                         display: 'inline-flex',
+                                                                         alignItems: 'center',
+                                                                         gap: '6px',
+                                                                         transition: 'all 0.15s ease',
+                                                                         flexShrink: 0
+                                                                     }}
+                                                                 >
+                                                                     <span>{prov}</span>
+                                                                     <span style={{
+                                                                         fontSize: '0.72rem',
+                                                                         background: isSelected ? 'rgba(255,255,255,0.28)' : (darkMode ? '#3f3f46' : '#e2e8f0'),
+                                                                         color: isSelected ? '#ffffff' : (darkMode ? '#a1a1aa' : '#64748b'),
+                                                                         padding: '1px 6px',
+                                                                         borderRadius: '999px',
+                                                                         fontWeight: 800
+                                                                     }}>
+                                                                         {count}
+                                                                     </span>
+                                                                 </button>
+                                                             );
+                                                         })}
+                                                     </div>
+                                                 </div>
 
-                                                                    {/* Items Preview */}
-                                                                    {order.items && order.items.length > 0 && (
-                                                                        <div style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                                            {order.items.map((it, idx) => {
-                                                                                const imgUrl = resolveImageUrl(it.image);
-                                                                                const pickupItem = findPickupItem(it.product_name);
-                                                                                return (
-                                                                                    <div key={idx} style={{
-                                                                                        display: 'flex',
-                                                                                        alignItems: 'center',
-                                                                                        gap: '12px',
-                                                                                        background: '#ffffff',
-                                                                                        padding: '10px 12px',
-                                                                                        borderRadius: '16px',
-                                                                                        border: '1px solid #e2e8f0',
-                                                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                                                                                    }}>
-                                                                                        {/* Photo Thumbnail */}
-                                                                                        <div
-                                                                                            onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pickupItem?.price })}
-                                                                                            title="Toque para ver a foto do produto"
-                                                                                            style={{
-                                                                                                width: '68px',
-                                                                                                height: '68px',
-                                                                                                minWidth: '68px',
-                                                                                                borderRadius: '12px',
-                                                                                                overflow: 'hidden',
-                                                                                                background: '#f8fafc',
-                                                                                                border: '1.5px solid #e2e8f0',
-                                                                                                display: 'flex',
-                                                                                                alignItems: 'center',
-                                                                                                justifyContent: 'center',
-                                                                                                flexShrink: 0,
-                                                                                                cursor: 'pointer',
-                                                                                                position: 'relative'
-                                                                                            }}
-                                                                                        >
-                                                                                            {imgUrl ? (
-                                                                                                <>
-                                                                                                    <img
-                                                                                                        src={imgUrl}
-                                                                                                        alt={it.product_name}
-                                                                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                                                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                                                                                    />
-                                                                                                    <div style={{
-                                                                                                        position: 'absolute',
-                                                                                                        bottom: '3px',
-                                                                                                        right: '3px',
-                                                                                                        background: 'rgba(15, 23, 42, 0.75)',
-                                                                                                        color: '#ffffff',
-                                                                                                        borderRadius: '4px',
-                                                                                                        padding: '1px 3px',
-                                                                                                        fontSize: '0.62rem',
-                                                                                                        display: 'flex',
-                                                                                                        alignItems: 'center'
-                                                                                                    }}>
-                                                                                                        🔍
-                                                                                                    </div>
-                                                                                                </>
-                                                                                            ) : (
-                                                                                                <div style={{ color: '#94a3b8' }}><Icons.Package /></div>
-                                                                                            )}
-                                                                                        </div>
+                                                 {availableOrders.length === 0 ? (
+                                                     <div style={{ background: '#fff', padding: '4rem 2rem', borderRadius: '24px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                                         <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f1f5f9', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                                             <Icons.Package />
+                                                         </div>
+                                                         <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                                                             Nenhum pedido novo disponível no momento
+                                                         </h4>
+                                                         <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', maxWidth: '480px', marginInline: 'auto' }}>
+                                                             Assim que um cliente fizer uma encomenda na loja, ela aparecerá aqui.
+                                                         </p>
+                                                     </div>
+                                                 ) : (() => {
+                                                     const filteredAvailableOrders = availableOrders.filter(order => {
+                                                         if (selectedProvinceFilter === 'Todas') return true;
+                                                         const loc = extractOrderLocation(order);
+                                                         return loc.province.toLowerCase() === selectedProvinceFilter.toLowerCase();
+                                                     });
 
-                                                                                        {/* Aligned Details */}
-                                                                                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                                                            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                                                {it.product_name}
-                                                                                            </div>
-                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                                                                                <span style={{ background: '#0f172a', color: '#ffffff', padding: '2px 7px', borderRadius: '6px', fontWeight: 800, fontSize: '0.72rem' }}>
-                                                                                                    {it.quantity}x unid.
-                                                                                                </span>
-                                                                                                {pickupItem && (
-                                                                                                    <span style={{ background: '#fef3c7', color: '#b45309', padding: '2px 7px', borderRadius: '6px', fontWeight: 800, fontSize: '0.72rem' }}>
-                                                                                                        Levantamento: {formatMZCurrency(pickupItem.price)}
-                                                                                                    </span>
-                                                                                                )}
-                                                                                                <button
-                                                                                                    type="button"
-                                                                                                    onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pickupItem?.price })}
-                                                                                                    style={{
-                                                                                                        background: '#f1f5f9',
-                                                                                                        border: 'none',
-                                                                                                        color: '#475569',
-                                                                                                        padding: '2px 8px',
-                                                                                                        borderRadius: '6px',
-                                                                                                        fontWeight: 800,
-                                                                                                        fontSize: '0.72rem',
-                                                                                                        cursor: 'pointer',
-                                                                                                        display: 'inline-flex',
-                                                                                                        alignItems: 'center',
-                                                                                                        gap: '3px'
-                                                                                                    }}
-                                                                                                >
-                                                                                                    <Icons.Eye />
-                                                                                                    <span>Ver foto</span>
-                                                                                                </button>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    )}
+                                                     if (filteredAvailableOrders.length === 0) {
+                                                         return (
+                                                             <div style={{ background: darkMode ? '#18181b' : '#fff', padding: '3.5rem 1.5rem', borderRadius: '24px', border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0', textAlign: 'center' }}>
+                                                                 <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: darkMode ? '#27272a' : '#f1f5f9', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                                                     <Icons.MapPin />
+                                                                 </div>
+                                                                 <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: darkMode ? '#fff' : '#0f172a' }}>
+                                                                     Nenhum pedido disponível na província de {selectedProvinceFilter}
+                                                                 </h4>
+                                                                 <p style={{ margin: '0 0 1.25rem', color: '#64748b', fontSize: '0.9rem', maxWidth: '420px', marginInline: 'auto' }}>
+                                                                     Existem {availableOrders.length} pedido(s) disponível(is) noutras províncias.
+                                                                 </p>
+                                                                 <button
+                                                                     type="button"
+                                                                     onClick={() => setSelectedProvinceFilter('Todas')}
+                                                                     style={{
+                                                                         background: '#f64c00',
+                                                                         color: '#fff',
+                                                                         border: 'none',
+                                                                         padding: '0.65rem 1.25rem',
+                                                                         borderRadius: '10px',
+                                                                         fontWeight: 800,
+                                                                         fontSize: '0.88rem',
+                                                                         cursor: 'pointer'
+                                                                     }}
+                                                                 >
+                                                                     Ver Todas as Províncias ({availableOrders.length})
+                                                                 </button>
+                                                             </div>
+                                                         );
+                                                     }
+
+                                                     return (
+                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                                             {filteredAvailableOrders.map(order => {
+                                                                 const pInfo = calcOrderPickupAndProfit(order);
+                                                                 const loc = extractOrderLocation(order);
+                                                                 return (
+                                                                     <div key={order.id} className="rp-order-card">
+                                                                         {/* Header with Order ID & Status */}
+                                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                 <span style={{ fontWeight: 900, fontSize: '1.05rem', color: '#0f172a' }}>
+                                                                                     Pedido #{order.id}
+                                                                                 </span>
+                                                                                 {order.time && (
+                                                                                     <span style={{
+                                                                                         background: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '#fee2e2' : '#eff6ff',
+                                                                                         color: (order.time.includes('Rápida') || order.time.includes('Imediato')) ? '#b91c1c' : '#1d4ed8',
+                                                                                         fontSize: '0.72rem',
+                                                                                         fontWeight: 800,
+                                                                                         padding: '2px 8px',
+                                                                                         borderRadius: '999px',
+                                                                                         display: 'inline-flex',
+                                                                                         alignItems: 'center',
+                                                                                         gap: '4px'
+                                                                                     }}>
+                                                                                         <Icons.Clock />
+                                                                                         {order.time}
+                                                                                     </span>
+                                                                                 )}
+                                                                             </div>
+
+                                                                             <span style={{
+                                                                                 background: 'rgba(246, 76, 0, 0.1)',
+                                                                                 color: '#f64c00',
+                                                                                 fontSize: '0.74rem',
+                                                                                 fontWeight: 800,
+                                                                                 padding: '3px 10px',
+                                                                                 borderRadius: '999px',
+                                                                                 border: '1px solid rgba(246, 76, 0, 0.25)'
+                                                                             }}>
+                                                                                 Disponível
+                                                                             </span>
+                                                                         </div>
+
+                                                                         {/* Clean Single-line Location Tag */}
+                                                                         <div style={{
+                                                                             background: '#f8fafc',
+                                                                             padding: '8px 12px',
+                                                                             borderRadius: '12px',
+                                                                             border: '1px solid #e2e8f0',
+                                                                             marginBottom: '12px',
+                                                                             display: 'flex',
+                                                                             alignItems: 'center',
+                                                                             justifyContent: 'space-between'
+                                                                         }}>
+                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0f172a' }}>
+                                                                                 <span style={{ color: '#f64c00' }}><Icons.MapPin /></span>
+                                                                                 <span><strong>{loc.bairro || 'Beira'}</strong> • {loc.province}</span>
+                                                                             </div>
+                                                                             <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>Dados pós-aceite</span>
+                                                                         </div>
+
+                                                                         {/* Items Preview */}
+                                                                         {order.items && order.items.length > 0 && (
+                                                                             <div style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                                 {order.items.map((it, idx) => {
+                                                                                     const imgUrl = resolveImageUrl(it.image, it.product_name);
+                                                                                     const pickupItem = findPickupItem(it.product_name);
+                                                                                     return (
+                                                                                         <div key={idx} style={{
+                                                                                             display: 'flex',
+                                                                                             alignItems: 'center',
+                                                                                             gap: '12px',
+                                                                                             background: '#ffffff',
+                                                                                             padding: '10px 12px',
+                                                                                             borderRadius: '16px',
+                                                                                             border: '1px solid #e2e8f0',
+                                                                                             boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                                                                                         }}>
+                                                                                             {/* Photo Thumbnail */}
+                                                                                             <div
+                                                                                                 onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pickupItem?.price })}
+                                                                                                 title="Toque para ver a foto do produto"
+                                                                                                 style={{
+                                                                                                     width: '74px',
+                                                                                                     height: '74px',
+                                                                                                     minWidth: '74px',
+                                                                                                     borderRadius: '14px',
+                                                                                                     overflow: 'hidden',
+                                                                                                     background: '#f8fafc',
+                                                                                                     border: '1.5px solid #e2e8f0',
+                                                                                                     display: 'flex',
+                                                                                                     alignItems: 'center',
+                                                                                                     justifyContent: 'center',
+                                                                                                     flexShrink: 0,
+                                                                                                     cursor: 'pointer',
+                                                                                                     position: 'relative'
+                                                                                                 }}
+                                                                                             >
+                                                                                                 {imgUrl ? (
+                                                                                                     <>
+                                                                                                         <img
+                                                                                                             src={imgUrl}
+                                                                                                             alt={it.product_name}
+                                                                                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                                                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                                                                         />
+                                                                                                         <div style={{
+                                                                                                             position: 'absolute',
+                                                                                                             bottom: '3px',
+                                                                                                             right: '3px',
+                                                                                                             background: 'rgba(15, 23, 42, 0.75)',
+                                                                                                             color: '#ffffff',
+                                                                                                             borderRadius: '4px',
+                                                                                                             padding: '1px 4px',
+                                                                                                             fontSize: '0.62rem',
+                                                                                                             display: 'flex',
+                                                                                                             alignItems: 'center'
+                                                                                                         }}>
+                                                                                                             🔍
+                                                                                                         </div>
+                                                                                                     </>
+                                                                                                 ) : (
+                                                                                                     <div style={{ color: '#94a3b8' }}><Icons.Package /></div>
+                                                                                                 )}
+                                                                                             </div>
+
+                                                                                             {/* Aligned Details */}
+                                                                                             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                                                 <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                                     {it.product_name}
+                                                                                                 </div>
+                                                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                                                                                     <span style={{ background: '#0f172a', color: '#ffffff', padding: '2px 7px', borderRadius: '6px', fontWeight: 800, fontSize: '0.72rem' }}>
+                                                                                                         {it.quantity}x unid.
+                                                                                                     </span>
+                                                                                                     {pickupItem && (
+                                                                                                         <span style={{ background: '#fef3c7', color: '#b45309', padding: '2px 7px', borderRadius: '6px', fontWeight: 800, fontSize: '0.72rem' }}>
+                                                                                                             Levantamento: {formatMZCurrency(pickupItem.price)}
+                                                                                                         </span>
+                                                                                                     )}
+                                                                                                     <button
+                                                                                                         type="button"
+                                                                                                         onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pickupItem?.price })}
+                                                                                                         style={{
+                                                                                                             background: '#eff6ff',
+                                                                                                             border: '1px solid #bfdbfe',
+                                                                                                             color: '#1d4ed8',
+                                                                                                             padding: '2px 8px',
+                                                                                                             borderRadius: '6px',
+                                                                                                             fontWeight: 800,
+                                                                                                             fontSize: '0.72rem',
+                                                                                                             cursor: 'pointer',
+                                                                                                             display: 'inline-flex',
+                                                                                                             alignItems: 'center',
+                                                                                                             gap: '3px'
+                                                                                                         }}
+                                                                                                     >
+                                                                                                         <span>👁️ Ver foto do produto</span>
+                                                                                                     </button>
+                                                                                                 </div>
+                                                                                             </div>
+                                                                                         </div>
+                                                                                     );
+                                                                                 })}
+                                                                             </div>
+                                                                         )}
 
                                                                     {/* Financial Breakdown Ticket */}
                                                                     <div style={{
@@ -2698,11 +2942,12 @@ export default function DriverPortal() {
                                                             );
                                                         })}
                                                     </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                                );
+                                            })()}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                                 {/* SUB-VIEW 2: MINHAS ENTREGAS EM CURSO */}
                                 {ordersSubTab === 'active' && (
@@ -2778,9 +3023,8 @@ export default function DriverPortal() {
                                                                 👤 Cliente: <strong>{order.customer_name || 'Cliente'}</strong>
                                                             </div>
                                                             {(() => {
-                                                                const rawPhone = order.phone || order.customer_phone;
+                                                                const rawPhone = order.phone || order.customer_phone || order.contact || order.telefone || order.cellphone || order.whatsapp || order.customer_contact;
                                                                 const cleanPhone = rawPhone ? String(rawPhone).replace(/\D/g, '') : '';
-                                                                const waNumber = cleanPhone.startsWith('258') ? cleanPhone : (cleanPhone.length === 9 ? `258${cleanPhone}` : cleanPhone);
                                                                 return (
                                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem', color: '#334151', marginBottom: '0.45rem', paddingBottom: '0.45rem', borderBottom: '1px solid #e2e8f0' }}>
                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -2798,39 +3042,18 @@ export default function DriverPortal() {
                                                                                         background: '#eff6ff',
                                                                                         color: '#1d4ed8',
                                                                                         border: '1px solid #bfdbfe',
-                                                                                        padding: '0.22rem 0.6rem',
-                                                                                        borderRadius: '6px',
-                                                                                        fontSize: '0.74rem',
+                                                                                        padding: '0.32rem 0.75rem',
+                                                                                        borderRadius: '8px',
+                                                                                        fontSize: '0.78rem',
                                                                                         fontWeight: 800,
                                                                                         textDecoration: 'none',
                                                                                         display: 'inline-flex',
                                                                                         alignItems: 'center',
-                                                                                        gap: '0.25rem'
+                                                                                        gap: '0.3rem'
                                                                                     }}
                                                                                 >
                                                                                     <Icons.Phone />
                                                                                     <span>Ligar</span>
-                                                                                </a>
-                                                                                <a
-                                                                                    href={`https://wa.me/${waNumber}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20entregador%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                    style={{
-                                                                                        background: '#dcfce7',
-                                                                                        color: '#15803d',
-                                                                                        border: '1px solid #bbf7d0',
-                                                                                        padding: '0.22rem 0.6rem',
-                                                                                        borderRadius: '6px',
-                                                                                        fontSize: '0.74rem',
-                                                                                        fontWeight: 800,
-                                                                                        textDecoration: 'none',
-                                                                                        display: 'inline-flex',
-                                                                                        alignItems: 'center',
-                                                                                        gap: '0.25rem'
-                                                                                    }}
-                                                                                >
-                                                                                    <Icons.WhatsApp />
-                                                                                    <span>WhatsApp</span>
                                                                                 </a>
                                                                             </div>
                                                                         )}
@@ -3010,18 +3233,16 @@ export default function DriverPortal() {
                                                             </a>
 
                                                             {(() => {
-                                                                const rawPhone = order.phone || order.customer_phone;
+                                                                const rawPhone = order.phone || order.customer_phone || order.contact || order.telefone || order.cellphone || order.whatsapp || order.customer_contact;
                                                                 if (!rawPhone) return null;
                                                                 const cleanPhone = String(rawPhone).replace(/\D/g, '');
-                                                                const waNumber = cleanPhone.startsWith('258') ? cleanPhone : (cleanPhone.length === 9 ? `258${cleanPhone}` : cleanPhone);
+                                                                if (!cleanPhone) return null;
                                                                 return (
                                                                     <a
-                                                                        href={`https://wa.me/${waNumber}?text=Olá%20${encodeURIComponent(order.customer_name || '')},%20sou%20o%20entregador%20da%20Tchapo%20Tchapo%20com%20o%20seu%20pedido%20%23${order.id}.`}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
+                                                                        href={`tel:${cleanPhone}`}
                                                                         style={{
                                                                             flex: 1,
-                                                                            background: '#059669',
+                                                                            background: '#0284c7',
                                                                             color: '#fff',
                                                                             textDecoration: 'none',
                                                                             padding: '0.8rem 0.5rem',
@@ -3031,11 +3252,12 @@ export default function DriverPortal() {
                                                                             display: 'flex',
                                                                             alignItems: 'center',
                                                                             justifyContent: 'center',
-                                                                            gap: '0.4rem'
+                                                                            gap: '0.4rem',
+                                                                            boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)'
                                                                         }}
                                                                     >
-                                                                        <Icons.WhatsApp />
-                                                                        <span>WhatsApp</span>
+                                                                        <Icons.Phone />
+                                                                        <span>Ligar para Cliente</span>
                                                                     </a>
                                                                 );
                                                             })()}
@@ -3679,12 +3901,16 @@ export default function DriverPortal() {
                                             <Icons.Package />
                                             <span>Itens da Entrega ({confPickup.itemsWithPickup.reduce((s, it) => s + (it.quantity || 1), 0)}):</span>
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '160px', overflowY: 'auto' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '180px', overflowY: 'auto' }}>
                                             {confPickup.itemsWithPickup.map((it, idx) => {
-                                                const imgUrl = resolveImageUrl(it.image);
+                                                const imgUrl = resolveImageUrl(it.image, it.product_name);
                                                 return (
-                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', padding: '0.5rem 0.65rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                                                        <div style={{ width: '52px', height: '52px', minWidth: '52px', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fff', padding: '0.6rem 0.75rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                        <div
+                                                            onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: it.pickupPrice })}
+                                                            title="Toque para ampliar foto"
+                                                            style={{ width: '56px', height: '56px', minWidth: '56px', borderRadius: '10px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}
+                                                        >
                                                             {imgUrl ? (
                                                                 <img src={imgUrl} alt={it.product_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                                             ) : (
@@ -3695,7 +3921,7 @@ export default function DriverPortal() {
                                                             <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                                 {it.product_name}
                                                             </div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginTop: '2px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginTop: '3px' }}>
                                                                 <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>
                                                                     Qtd: {it.quantity || 1}x
                                                                 </span>
@@ -3704,6 +3930,22 @@ export default function DriverPortal() {
                                                                         Levantamento: {formatMZCurrency(it.pickupPrice)}
                                                                     </span>
                                                                 ) : null}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: it.pickupPrice })}
+                                                                    style={{
+                                                                        background: '#eff6ff',
+                                                                        border: '1px solid #bfdbfe',
+                                                                        color: '#1d4ed8',
+                                                                        padding: '1px 6px',
+                                                                        borderRadius: '6px',
+                                                                        fontSize: '0.7rem',
+                                                                        fontWeight: 800,
+                                                                        cursor: 'pointer'
+                                                                    }}
+                                                                >
+                                                                    👁️ Foto
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -5036,5 +5278,13 @@ export default function DriverPortal() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function DriverPortal() {
+    return (
+        <DriverPortalErrorBoundary>
+            <DriverPortalContent />
+        </DriverPortalErrorBoundary>
     );
 }

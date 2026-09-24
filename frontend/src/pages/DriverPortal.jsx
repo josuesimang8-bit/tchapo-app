@@ -2,7 +2,15 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { MZ_PROVINCES, ALL_PROVINCES, DEFAULT_PROVINCE, getBairrosByProvince } from '../data/mozambiqueLocations';
 
 // Modern SVG Icons (No Emojis)
-const Icons = {
+const IconsBase = {
+    RefreshCw: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M8 16H3v5"/>
+        </svg>
+    ),
     Car: () => (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
@@ -262,6 +270,18 @@ const Icons = {
         </svg>
     )
 };
+
+// Safe Proxy to guarantee no undefined Icon can ever crash the interface
+const Icons = new Proxy(IconsBase, {
+    get: (target, prop) => {
+        if (typeof prop === 'string' && prop in target) return target[prop];
+        return () => (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+            </svg>
+        );
+    }
+});
 
 const formatMZCurrency = (value) => {
     try {
@@ -528,6 +548,12 @@ class DriverPortalErrorBoundary extends React.Component {
                         <p style={{ margin: '0 0 1.5rem', color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>
                             Ocorreu uma pequena instabilidade na visualização. Clique no botão abaixo para restaurar o portal imediatamente.
                         </p>
+                        {this.state.error && (
+                            <details style={{ textAlign: 'left', marginBottom: '1.25rem', fontSize: '0.75rem', color: '#ef4444', background: '#0f172a', padding: '0.6rem 0.8rem', borderRadius: '8px', overflowX: 'auto' }}>
+                                <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Ver detalhes do erro</summary>
+                                <pre style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{String(this.state.error?.message || this.state.error)}</pre>
+                            </details>
+                        )}
                         <button
                             type="button"
                             onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
@@ -1120,7 +1146,7 @@ function DriverPortalContent() {
                 setDebtReceiptFile(null);
                 setReEditProof(false);
 
-                const currentDebt = dashboardData?.pending_debt || pendingDebt || {};
+                const currentDebt = dashboardData?.pending_debt || {};
                 const optimisticDebt = data.pending_debt || {
                     ...currentDebt,
                     status: 'Aguardando Confirmação',
@@ -1960,7 +1986,7 @@ function DriverPortalContent() {
                                                         Foto do Comprovativo Anexado:
                                                     </div>
                                                     <img
-                                                        src={submittedProofPreview || resolveImageUrl(pendingDebt?.payment_proof_url)}
+                                                        src={submittedProofPreview || resolveImageUrl(pendingDebt?.payment_proof_url) || ''}
                                                         alt="Comprovativo submetido"
                                                         style={{ maxHeight: '180px', maxWidth: '100%', borderRadius: '12px', border: '1.5px solid #10b981', objectFit: 'contain', background: '#000' }}
                                                         onError={(e) => {

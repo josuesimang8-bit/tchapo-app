@@ -410,6 +410,65 @@ const findPickupItem = (productName) => {
     return null;
 };
 
+const calcOrderPickupAndProfit = (order) => {
+    if (!order) return { pickupTotal: 0, orderTotal: 0, estimatedProfit: 150, platformFee: 22, driverNetProfit: 128, hasMatchedAny: false, itemsWithPickup: [] };
+    
+    let totalPickup = 0;
+    let hasMatchedAny = false;
+    let items = [];
+    if (order.items) {
+        if (typeof order.items === 'string') {
+            try { items = JSON.parse(order.items); } catch (_) { items = []; }
+        } else if (Array.isArray(order.items)) {
+            items = order.items;
+        }
+    } else if (order.order_items && Array.isArray(order.order_items)) {
+        items = order.order_items;
+    }
+    
+    const itemsWithPickup = items.map(it => {
+        if (!it) return { product_name: 'Produto', quantity: 1, price: 0, pickupPrice: null, pickupTotal: null, matchedName: 'Produto' };
+        const prodName = it.product_name || it.name || 'Produto';
+        const match = findPickupItem(prodName);
+        const qty = Number(it.quantity) || 1;
+        const pickupUnit = match ? Number(match.price) : null;
+        if (pickupUnit !== null && !isNaN(pickupUnit)) {
+            totalPickup += pickupUnit * qty;
+            hasMatchedAny = true;
+        }
+        return {
+            ...it,
+            product_name: prodName,
+            pickupPrice: pickupUnit,
+            pickupTotal: pickupUnit !== null ? pickupUnit * qty : null,
+            matchedName: match ? match.name : prodName
+        };
+    });
+
+    const orderTotal = Number(order.total) || 0;
+    let estimatedProfit = 0;
+
+    if (hasMatchedAny && totalPickup > 0) {
+        estimatedProfit = Math.max(0, orderTotal - totalPickup);
+    } else {
+        estimatedProfit = 150;
+    }
+
+    // Taxa da plataforma: exatamente 15% do lucro estimado (mínimo 20 MT)
+    const platformFee = Math.max(20, Math.round(estimatedProfit * 0.15));
+    const driverNetProfit = Math.max(0, estimatedProfit - platformFee);
+
+    return {
+        pickupTotal: totalPickup,
+        orderTotal,
+        estimatedProfit,
+        platformFee,
+        driverNetProfit,
+        hasMatchedAny,
+        itemsWithPickup
+    };
+};
+
 // Fallback image assets matching product keywords
 const PRODUCT_IMAGE_FALLBACKS = {
     'airpods pro': 'assets/airpods_pro_1777767746082.png',
@@ -510,14 +569,16 @@ function DriverPortalContent() {
 
     const extractOrderLocation = (order) => {
         if (!order) return { province: 'Sofala', bairro: 'Beira' };
-        let prov = order.province || '';
-        let bai = order.bairro || order.customer_bairro || '';
+        let prov = typeof order.province === 'string' ? order.province.trim() : '';
+        let bai = typeof order.bairro === 'string' 
+            ? order.bairro.trim() 
+            : (typeof order.customer_bairro === 'string' ? order.customer_bairro.trim() : '');
         
         if (bai && bai.includes(' - ')) {
             const parts = bai.split(' - ');
             if (parts.length >= 2) {
                 const potentialProv = parts[0].trim();
-                const matchedProv = ALL_PROVINCES.find(p => p.toLowerCase() === potentialProv.toLowerCase());
+                const matchedProv = (ALL_PROVINCES || []).find(p => p && p.toLowerCase() === potentialProv.toLowerCase());
                 if (matchedProv) {
                     prov = matchedProv;
                     bai = parts.slice(1).join(' - ').trim();
@@ -529,35 +590,43 @@ function DriverPortalContent() {
             const match = bai.match(/^(.*?)\s*\((.*?)\)$/);
             if (match) {
                 bai = match[1].trim();
-                const paren = match[2].trim();
-                if (!prov) {
-                    if (paren.toLowerCase() === 'beira') prov = 'Sofala';
-                    else if (paren.toLowerCase() === 'maputo' || paren.toLowerCase() === 'matola') prov = 'Maputo';
-                    else if (paren.toLowerCase() === 'nampula') prov = 'Nampula';
-                    else if (paren.toLowerCase() === 'quelimane') prov = 'Zambézia';
-                    else if (paren.toLowerCase() === 'tete') prov = 'Tete';
-                    else if (paren.toLowerCase() === 'chimoio') prov = 'Manica';
+                const paren = (match[2] || '').trim();
+                if (!prov && paren) {
+                    const lowParen = paren.toLowerCase();
+                    if (lowParen === 'beira') prov = 'Sofala';
+                    else if (lowParen === 'maputo' || lowParen === 'matola') prov = 'Maputo';
+                    else if (lowParen === 'nampula') prov = 'Nampula';
+                    else if (lowParen === 'quelimane') prov = 'Zambézia';
+                    else if (lowParen === 'tete') prov = 'Tete';
+                    else if (lowParen === 'chimoio') prov = 'Manica';
                     else prov = paren;
                 }
             }
         }
 
-        if (!prov) {
+        if (!prov && bai) {
             const lowerBai = bai.toLowerCase();
-            for (const item of MZ_PROVINCES) {
-                if (lowerBai.includes(item.name.toLowerCase()) || (item.capital && lowerBai.includes(item.capital.toLowerCase()))) {
+            for (const item of (MZ_PROVINCES || [])) {
+                if (item?.name && lowerBai.includes(item.name.toLowerCase())) {
+                    prov = item.name;
+                    break;
+                }
+                if (item?.capital && lowerBai.includes(item.capital.toLowerCase())) {
                     prov = item.name;
                     break;
                 }
             }
         }
 
-        if (prov.toLowerCase() === 'beira') prov = 'Sofala';
-        else if (prov.toLowerCase().includes('matola')) prov = 'Maputo';
+        if (prov) {
+            const lowProv = prov.toLowerCase();
+            if (lowProv === 'beira') prov = 'Sofala';
+            else if (lowProv.includes('matola')) prov = 'Maputo';
 
-        const exactProv = ALL_PROVINCES.find(p => p.toLowerCase() === prov.toLowerCase());
-        if (exactProv) {
-            prov = exactProv;
+            const exactProv = (ALL_PROVINCES || []).find(p => p && p.toLowerCase() === prov.toLowerCase());
+            if (exactProv) {
+                prov = exactProv;
+            }
         }
 
         return {
@@ -2616,8 +2685,11 @@ function DriverPortalContent() {
                                                          {['Todas', ...ALL_PROVINCES].map(prov => {
                                                              const count = prov === 'Todas'
                                                                  ? availableOrders.length
-                                                                 : availableOrders.filter(o => extractOrderLocation(o).province.toLowerCase() === prov.toLowerCase()).length;
-                                                             const isSelected = selectedProvinceFilter.toLowerCase() === prov.toLowerCase();
+                                                                 : availableOrders.filter(o => {
+                                                                    const loc = extractOrderLocation(o);
+                                                                    return (loc?.province || '').toLowerCase() === (prov || '').toLowerCase();
+                                                                }).length;
+                                                             const isSelected = (selectedProvinceFilter || 'Todas').toLowerCase() === (prov || '').toLowerCase();
 
                                                              return (
                                                                  <button
@@ -2672,9 +2744,9 @@ function DriverPortalContent() {
                                                      </div>
                                                  ) : (() => {
                                                      const filteredAvailableOrders = availableOrders.filter(order => {
-                                                         if (selectedProvinceFilter === 'Todas') return true;
-                                                         const loc = extractOrderLocation(order);
-                                                         return loc.province.toLowerCase() === selectedProvinceFilter.toLowerCase();
+                                                         if (!selectedProvinceFilter || selectedProvinceFilter === 'Todas') return true;
+                                                          const loc = extractOrderLocation(order);
+                                                          return (loc?.province || '').toLowerCase() === (selectedProvinceFilter || '').toLowerCase();
                                                      });
 
                                                      if (filteredAvailableOrders.length === 0) {

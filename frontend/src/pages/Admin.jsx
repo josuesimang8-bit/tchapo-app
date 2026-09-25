@@ -662,11 +662,25 @@ export default function Admin() {
 
     const assignDriver = async (orderId, driverId) => {
         try {
-            await fetch(import.meta.env.VITE_API_URL + `/api/orders/${orderId}/status`, {
+            if (driverId) {
+                const selectedDriver = drivers.find(d => String(d.id) === String(driverId));
+                if (selectedDriver && !selectedDriver.is_online) {
+                    setToast(`Aviso: O entregador ${selectedDriver.name} está offline e não pode receber pedidos. Aguarde que ele fique online.`);
+                    setTimeout(() => setToast(null), 4000);
+                    return;
+                }
+            }
+            const res = await fetch(import.meta.env.VITE_API_URL + `/api/orders/${orderId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ driver_id: driverId ? parseInt(driverId) : null })
             });
+            const data = await res.json();
+            if (!res.ok) {
+                setToast(data.error || 'Erro ao designar entregador.');
+                setTimeout(() => setToast(null), 4000);
+                return;
+            }
             fetchOrders();
             setToast('Entregador designado com sucesso!');
             setTimeout(() => setToast(null), 3000);
@@ -1571,7 +1585,7 @@ export default function Admin() {
                                                         <option value="">Nenhum Entregador</option>
                                                         {drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status).map(d => (
                                                             <option key={d.id} value={d.id}>
-                                                                {d.is_online ? '🟢' : '⚪'} [#{formatDriverId(d.id)}] {d.name}
+                                                                {d.is_online ? '🟢 (Online)' : '⚪ (Offline)'} [#{formatDriverId(d.id)}] {d.name}
                                                             </option>
                                                         ))}
                                                     </select>

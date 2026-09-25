@@ -1029,6 +1029,7 @@ function DriverPortalContent() {
                 setIsOnline(newState);
                 setAuthDriver(prev => ({ ...prev, is_online: newState }));
                 showToast(newState ? 'Você está Online e pronto para receber pedidos.' : 'Você está Offline.', 'info');
+                try { fetchDashboard(authDriver.id); } catch (_) {}
             }
         } catch (err) {
             showToast('Erro ao atualizar disponibilidade.', 'error');
@@ -1039,6 +1040,10 @@ function DriverPortalContent() {
 
     // Prompt Strict Acceptance Modal
     const promptAcceptOrder = (order) => {
+        if (!isOnline) {
+            showToast('Você está offline! Ative o modo Online para receber e aceitar pedidos.', 'warning');
+            return;
+        }
         if (dashboardData?.pending_debt && dashboardData.pending_debt.status !== 'Pago') {
             showToast(`A sua conta está bloqueada com uma taxa pendente de ${dashboardData.pending_debt.amount} MT. Pague para aceitar pedidos.`, 'error');
             return;
@@ -1053,6 +1058,10 @@ function DriverPortalContent() {
     // Confirm and Execute Order Acceptance
     const handleConfirmAcceptOrder = async () => {
         if (!confirmingOrder || !authDriver?.id) return;
+        if (!isOnline) {
+            showToast('Você precisa ficar Online para aceitar pedidos.', 'warning');
+            return;
+        }
         const orderId = confirmingOrder.id;
         setAcceptingId(orderId);
         try {
@@ -2201,7 +2210,7 @@ function DriverPortalContent() {
 
                                     {/* Quick action buttons in wallet card */}
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        {availableOrders.length > 0 && !hasActiveOrder && !isDebtBlocked ? (
+                                        {availableOrders.length > 0 && !hasActiveOrder && !isDebtBlocked && isOnline ? (
                                             <button
                                                 onClick={() => { setActiveTab('orders'); setOrdersSubTab('available'); }}
                                                 style={{
@@ -2634,6 +2643,69 @@ function DriverPortalContent() {
                                                     }}
                                                 >
                                                     Ver Tela de Pagamento
+                                                </button>
+                                            </div>
+                                        ) : !isOnline ? (
+                                            <div style={{
+                                                background: darkMode ? '#18181b' : '#ffffff',
+                                                padding: '3.5rem 1.5rem',
+                                                borderRadius: '24px',
+                                                border: darkMode ? '1.5px solid #27272a' : '1.5px solid #e2e8f0',
+                                                textAlign: 'center',
+                                                boxShadow: darkMode ? '0 10px 30px rgba(0,0,0,0.3)' : '0 10px 30px rgba(0,0,0,0.04)'
+                                            }}>
+                                                <div style={{
+                                                    width: '68px',
+                                                    height: '68px',
+                                                    borderRadius: '50%',
+                                                    background: darkMode ? '#27272a' : '#f1f5f9',
+                                                    color: '#94a3b8',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    margin: '0 auto 1.25rem',
+                                                    position: 'relative'
+                                                }}>
+                                                    <Icons.Bike />
+                                                    <span style={{
+                                                        position: 'absolute',
+                                                        bottom: '2px',
+                                                        right: '2px',
+                                                        width: '16px',
+                                                        height: '16px',
+                                                        borderRadius: '50%',
+                                                        background: '#ef4444',
+                                                        border: '2.5px solid ' + (darkMode ? '#18181b' : '#ffffff')
+                                                    }} />
+                                                </div>
+                                                <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.35rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                    Você está Offline
+                                                </h3>
+                                                <p style={{ margin: '0 0 1.75rem', color: darkMode ? '#94a3b8' : '#64748b', fontSize: '0.95rem', maxWidth: '460px', marginInline: 'auto', lineHeight: 1.6 }}>
+                                                    Não pode receber novos pedidos enquanto estiver offline. Fique online para começar a receber e aceitar entregas na sua área.
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleToggleAvailability(true)}
+                                                    disabled={togglingOnline}
+                                                    style={{
+                                                        background: '#10b981',
+                                                        color: '#ffffff',
+                                                        border: 'none',
+                                                        padding: '0.95rem 2rem',
+                                                        borderRadius: '14px',
+                                                        fontWeight: 900,
+                                                        fontSize: '1rem',
+                                                        cursor: 'pointer',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.65rem',
+                                                        boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35)',
+                                                        transition: 'all 0.15s ease'
+                                                    }}
+                                                >
+                                                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffffff' }} />
+                                                    <span>{togglingOnline ? 'A conectar...' : 'Ficar Online Agora'}</span>
                                                 </button>
                                             </div>
                                         ) : (

@@ -1114,7 +1114,18 @@ app.put('/api/orders/:id/status', async (req, res) => {
         
         const updates = {};
         if (status !== undefined) updates.status = status;
-        if (driver_id !== undefined) updates.driver_id = driver_id;
+        if (driver_id !== undefined) {
+            if (driver_id) {
+                const numDId = Number(driver_id);
+                const dMeta = getDriverMeta(numDId);
+                if (!dMeta.is_online) {
+                    return res.status(400).json({
+                        error: 'Este entregador está offline no momento e não pode receber pedidos. Aguarde até que fique online.'
+                    });
+                }
+            }
+            updates.driver_id = driver_id;
+        }
         
         // Timer management on status change
         if (status !== undefined) {
@@ -1530,13 +1541,18 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             .eq('driver_id', numId)
             .order('created_at', { ascending: false });
 
-        // Fetch unassigned orders waiting for a driver to accept (APPROVED ORDERS ONLY - WITH PRIVACY)
-        const { data: poolOrders } = await supabase
-            .from('orders')
-            .select('*')
-            .is('driver_id', null)
-            .in('status', ['Aprovado', 'Processando', 'Preparando'])
-            .order('created_at', { ascending: false });
+        // Fetch unassigned orders waiting for a driver to accept (ONLY IF DRIVER IS ONLINE)
+        const isDriverOnline = Boolean(meta.is_online);
+        let poolOrders = [];
+        if (isDriverOnline) {
+            const { data } = await supabase
+                .from('orders')
+                .select('*')
+                .is('driver_id', null)
+                .in('status', ['Aprovado', 'Processando', 'Preparando'])
+                .order('created_at', { ascending: false });
+            poolOrders = data || [];
+        }
 
         const driverOrders = orders || [];
         
@@ -1665,8 +1681,15 @@ app.put('/api/orders/:id/accept', async (req, res) => {
             return res.status(409).json({ error: 'Este pedido já foi aceito por outro entregador.' });
         }
 
-        // Check if driver has an unpaid pending debt
+        // Check if driver is online
         const driverMeta = getDriverMeta(numDriverId);
+        if (!driverMeta.is_online) {
+            return res.status(403).json({
+                error: 'Você está offline! Deve ficar online para poder aceitar pedidos.'
+            });
+        }
+
+        // Check if driver has an unpaid pending debt
         if (driverMeta.pending_debt && driverMeta.pending_debt.status !== 'Pago') {
             return res.status(403).json({
                 error: `Não pode aceitar novos pedidos enquanto tiver uma comissão/dívida pendente de ${driverMeta.pending_debt.amount} MT. Por favor regularize o pagamento para desbloquear a sua conta.`

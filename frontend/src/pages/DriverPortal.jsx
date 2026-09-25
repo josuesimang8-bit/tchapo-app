@@ -375,7 +375,8 @@ const STORE_PICKUP_PRICES = [
     { name: 'Creme Corporal de Emagrecimento', price: 250 },
     { name: 'Creme para Abdómen (Six Pack)', price: 200 },
     { name: 'Creme Corporal de Emagrecimento (Red)', price: 180 },
-    { name: 'Protetor Solar', price: 130 }
+    { name: 'Protetor Solar', price: 130 },
+    { name: 'Joystick de PS4', price: 900 }
 ];
 
 const normalizeForMatch = (str) => {
@@ -401,6 +402,12 @@ const findPickupItem = (productName) => {
     if (cleanName.includes('airpods pro') || cleanName === 'airpod pro') {
         const airpodsPro = STORE_PICKUP_PRICES.find(p => p.name === 'AirPods Pro');
         if (airpodsPro) return airpodsPro;
+    }
+
+    // Explicit priority rule for Joystick de PS4
+    if (cleanName.includes('ps4') || cleanName.includes('joystick de ps4') || (cleanName.includes('joystick') && cleanName.includes('ps4')) || cleanName.includes('comando ps4') || cleanName.includes('manete ps4')) {
+        const ps4 = STORE_PICKUP_PRICES.find(p => p.name === 'Joystick de PS4');
+        if (ps4) return ps4;
     }
 
     // 1. Exact match

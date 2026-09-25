@@ -1620,7 +1620,7 @@ export default function Admin() {
                                                 </td>
                                                 <td style={{ padding: '1rem 1.25rem' }}>
                                                     <select
-                                                        value={order.status || 'Pendente'}
+                                                        value={order.sent_to_driver_pool && (order.status === 'Pendente' || !order.status) ? 'Aprovado' : (order.status || 'Pendente')}
                                                         onChange={(e) => updateStatus(order.id, e.target.value)}
                                                         style={{
                                                             padding: '0.4rem 0.75rem', borderRadius: '8px',
@@ -1630,7 +1630,7 @@ export default function Admin() {
                                                         }}
                                                     >
                                                         <option value="Pendente">📋 Pendente</option>
-                                                        <option value="Aprovado">🛵 Aprovado (No Portal de Entregadores)</option>
+                                                        <option value="Aprovado">🛵 Aprovado (Na Central de Entregadores)</option>
                                                         <option value="Processando">🔄 Processando</option>
                                                         <option value="Preparando">📦 Preparando</option>
                                                         <option value="Com Entregador">🛵 Com Entregador</option>
@@ -1640,19 +1640,42 @@ export default function Admin() {
                                                     </select>
                                                     {(order.status === 'Pendente' || !order.status) && (
                                                         <div style={{ marginTop: '6px' }}>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => updateStatus(order.id, 'Aprovado')}
-                                                                style={{
-                                                                    background: '#16a34a', color: '#fff', border: 'none', padding: '5px 8px',
-                                                                    borderRadius: '6px', fontWeight: 700, fontSize: '0.74rem', cursor: 'pointer',
-                                                                    display: 'inline-flex', alignItems: 'center', gap: '4px', width: '100%',
-                                                                    justifyContent: 'center', boxShadow: '0 2px 4px rgba(22,163,74,0.25)'
-                                                                }}
-                                                                title="Aprovar e enviar para o Portal de Entregadores"
-                                                            >
-                                                                ✅ Aprovar Pedido
-                                                            </button>
+                                                            {order.sent_to_driver_pool ? (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                    <span style={{
+                                                                        background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
+                                                                        borderRadius: '6px', padding: '4px 6px', fontWeight: 700, fontSize: '0.72rem',
+                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
+                                                                    }}>
+                                                                        🛵 Na Central (Aguardando Aceite)
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => updateStatus(order.id, 'Pendente')}
+                                                                        style={{
+                                                                            background: '#f3f4f6', color: '#6b7280', border: '1px solid #d1d5db',
+                                                                            borderRadius: '5px', padding: '2px 5px', fontSize: '0.68rem', cursor: 'pointer'
+                                                                        }}
+                                                                        title="Remover pedido da Central de Entregadores"
+                                                                    >
+                                                                        ↩️ Cancelar Envio à Central
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => updateStatus(order.id, 'Aprovado')}
+                                                                    style={{
+                                                                        background: '#16a34a', color: '#fff', border: 'none', padding: '5px 8px',
+                                                                        borderRadius: '6px', fontWeight: 700, fontSize: '0.74rem', cursor: 'pointer',
+                                                                        display: 'inline-flex', alignItems: 'center', gap: '4px', width: '100%',
+                                                                        justifyContent: 'center', boxShadow: '0 2px 4px rgba(22,163,74,0.25)'
+                                                                    }}
+                                                                    title="Aprovar e enviar para a Central de Entregadores"
+                                                                >
+                                                                    ✅ Aprovar Pedido
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </td>

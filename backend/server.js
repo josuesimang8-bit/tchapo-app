@@ -658,7 +658,8 @@ const STORE_PICKUP_PRICES = [
     { name: 'Creme Corporal de Emagrecimento', price: 250 },
     { name: 'Creme para Abdómen (Six Pack)', price: 200 },
     { name: 'Creme Corporal de Emagrecimento (Red)', price: 180 },
-    { name: 'Protetor Solar', price: 130 }
+    { name: 'Protetor Solar', price: 130 },
+    { name: 'Joystick de PS4', price: 900 }
 ];
 
 function normalizeForPickup(str) {
@@ -684,6 +685,12 @@ function findPickupPrice(name) {
     if (clean.includes('airpods pro') || clean === 'airpod pro') {
         const airpodsPro = STORE_PICKUP_PRICES.find(p => p.name === 'AirPods Pro');
         if (airpodsPro) return airpodsPro.price; // 500 MT
+    }
+
+    // Explicit priority rule for Joystick de PS4
+    if (clean.includes('ps4') || clean.includes('joystick de ps4') || (clean.includes('joystick') && clean.includes('ps4')) || clean.includes('comando ps4') || clean.includes('manete ps4')) {
+        const ps4 = STORE_PICKUP_PRICES.find(p => p.name === 'Joystick de PS4');
+        if (ps4) return ps4.price; // 900 MT
     }
 
     const exact = STORE_PICKUP_PRICES.find(p => normalizeForPickup(p.name) === clean);
@@ -816,8 +823,15 @@ function formatOrderResponse(order) {
     let timer_end_at = null;
     let timer_remaining_secs = 14400;
 
+    const orderMeta = getOrderMeta(order.id);
+    const delivered_at = orderMeta?.delivered_at || null;
+    const delivered_by = orderMeta?.delivered_by || null;
+    const sent_to_driver_pool = Boolean(orderMeta?.sent_to_driver_pool) || (order.status === 'Aprovado' && !order.driver_id);
+    // Pedido aprovado para ir à central de entregadores continua pendente até que um entregador aceite
+    const finalStatus = (order.status === 'Aprovado' && !order.driver_id) ? 'Pendente' : (order.status || 'Pendente');
+
     // Pedido aprovado pelo admin sem motorista atribuído continua pendente (timer pausado)
-    const isPaused = !order.status || order.status === 'Pendente' || (order.status === 'Aprovado' && !order.driver_id);
+    const isPaused = !finalStatus || finalStatus === 'Pendente';
 
     if (isPaused) {
         // Paused state
@@ -829,24 +843,21 @@ function formatOrderResponse(order) {
             timer_remaining_secs = 14400;
         }
         timer_end_at = null; // null means paused
-    } else if (['Entregue', 'Cancelado', 'Perdido'].includes(order.status)) {
+    } else if (['Entregue', 'Cancelado', 'Perdido'].includes(finalStatus)) {
         timer_remaining_secs = 0;
         timer_end_at = null;
     } else {
-        // Active: Processando, Preparando, Com Motorista, Com Entregador, ou Aprovado com motorista já atribuído
+        // Active: Processando, Preparando, Com Motorista, Com Entregador
         timer_remaining_secs = Math.max(0, 14400 - Math.floor((nowMs - createdMs) / 1000));
         timer_end_at = new Date(createdMs + 14400 * 1000).toISOString();
     }
-
-    const orderMeta = getOrderMeta(order.id);
-    const delivered_at = orderMeta?.delivered_at || null;
-    const delivered_by = orderMeta?.delivered_by || null;
 
     const clientPhone = order.phone || order.customer_phone || order.contact || order.telefone || order.cellphone || order.whatsapp || order.customer_contact || null;
     const clientName = order.customer_name || order.client_name || order.customer || 'Cliente';
 
     return {
         ...order,
+        status: finalStatus,
         customer_name: clientName,
         customer_phone: clientPhone,
         phone: clientPhone,
@@ -855,7 +866,8 @@ function formatOrderResponse(order) {
         timer_end_at,
         timer_remaining_secs,
         delivered_at,
-        delivered_by
+        delivered_by,
+        sent_to_driver_pool
     };
 }
 
@@ -1113,7 +1125,6 @@ app.put('/api/orders/:id/status', async (req, res) => {
         const { status, driver_id } = req.body;
         
         const updates = {};
-        if (status !== undefined) updates.status = status;
         if (driver_id !== undefined) {
             if (driver_id) {
                 const numDId = Number(driver_id);
@@ -1125,6 +1136,22 @@ app.put('/api/orders/:id/status', async (req, res) => {
                 }
             }
             updates.driver_id = driver_id;
+        }
+
+        if (status !== undefined) {
+            if (status === 'Aprovado') {
+                // Ao aprovar pedido para ir à Central de Entregadores, o pedido DEVE CONTINUAR PENDENTE até que um entregador aceite
+                updates.status = 'Pendente';
+                updateOrderMeta(id, { sent_to_driver_pool: true });
+            } else if (status === 'Pendente') {
+                updates.status = 'Pendente';
+                updateOrderMeta(id, { sent_to_driver_pool: false });
+            } else {
+                updates.status = status;
+                if (['Cancelado', 'Entregue', 'Perdido'].includes(status)) {
+                    updateOrderMeta(id, { sent_to_driver_pool: false });
+                }
+            }
         }
         
         // Timer management on status change
@@ -1138,9 +1165,10 @@ app.put('/api/orders/:id/status', async (req, res) => {
             if (currentOrder) {
                 const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente' || (currentOrder.status === 'Aprovado' && !currentOrder.driver_id);
                 const wasActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(currentOrder.status) || (currentOrder.status === 'Aprovado' && Boolean(currentOrder.driver_id));
+                const targetStatus = updates.status !== undefined ? updates.status : status;
                 const willHaveDriver = driver_id !== undefined ? Boolean(driver_id) : Boolean(currentOrder.driver_id);
-                const isNowActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(status) || (status === 'Aprovado' && willHaveDriver);
-                const isNowPendente = status === 'Pendente' || (status === 'Aprovado' && !willHaveDriver);
+                const isNowActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(targetStatus) || (targetStatus === 'Aprovado' && willHaveDriver);
+                const isNowPendente = targetStatus === 'Pendente' || (targetStatus === 'Aprovado' && !willHaveDriver);
                 const createdDate = new Date(currentOrder.created_at);
                 const createdMs = createdDate.getTime();
                 const nowMs = Date.now();
@@ -1549,9 +1577,16 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 .from('orders')
                 .select('*')
                 .is('driver_id', null)
-                .in('status', ['Aprovado', 'Processando', 'Preparando'])
+                .in('status', ['Aprovado', 'Processando', 'Preparando', 'Pendente'])
                 .order('created_at', { ascending: false });
-            poolOrders = data || [];
+            poolOrders = (data || []).filter(o => {
+                if (['Aprovado', 'Processando', 'Preparando'].includes(o.status)) return true;
+                if (o.status === 'Pendente' || !o.status) {
+                    const om = getOrderMeta(o.id);
+                    return Boolean(om?.sent_to_driver_pool);
+                }
+                return false;
+            });
         }
 
         const driverOrders = orders || [];
@@ -1710,7 +1745,7 @@ app.put('/api/orders/:id/accept', async (req, res) => {
         }
 
         // Set status to Com Entregador (or keep if already in transit)
-        const newStatus = ['Aprovado', 'Processando', 'Preparando'].includes(order.status)
+        const newStatus = ['Aprovado', 'Processando', 'Preparando', 'Pendente'].includes(order.status)
             ? 'Com Entregador'
             : (order.status || 'Com Entregador');
 
@@ -1726,6 +1761,8 @@ app.put('/api/orders/:id/accept', async (req, res) => {
             .single();
 
         if (updateErr) throw updateErr;
+
+        updateOrderMeta(id, { sent_to_driver_pool: false });
 
         res.json({
             success: true,
@@ -1755,13 +1792,14 @@ app.put('/api/orders/:id/reject', async (req, res) => {
                 .from('orders')
                 .update({
                     driver_id: null,
-                    status: 'Processando'
+                    status: 'Pendente'
                 })
                 .eq('id', id)
                 .select()
                 .single();
 
             if (error) throw error;
+            updateOrderMeta(id, { sent_to_driver_pool: true });
             return res.json({ success: true, order: formatOrderResponse(updated), message: 'Pedido devolvido à fila de disponíveis.' });
         }
 

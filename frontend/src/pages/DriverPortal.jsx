@@ -1251,36 +1251,49 @@ function DriverPortalContent() {
     // Saldo calculado
     const saldoLiquido = stats.saldo !== undefined ? stats.saldo : Math.max(0, stats.total_earnings - (pendingDebt ? pendingDebt.amount : 0));
 
-    // Milestone calculations: 5k, 20k, 100k
+    // Milestone calculations: 5k, 25k, 100k, 1M
     const currentSales = stats.total_sales || (stats.total_deliveries * 150);
+    const hasUnlocked100k = currentSales >= 100000;
 
     const rewards = [
         {
             id: '5k',
             target: 5000,
-            title: 'Camisa Oficial + Entregador Verificado',
-            desc: 'Camisa Oficial de Entregador Tchapo Tchapo + Selo de Verificação no Perfil.',
-            icon: <Icons.ShirtReward />,
+            title: 'Motorista Verificado',
+            desc: 'Selo Oficial de Motorista Verificado exibido com destaque no seu Perfil Tchapo Tchapo.',
+            icon: <Icons.BadgeCheck />,
             badge: '5.000 MT',
             level: 'Nível 1'
         },
         {
-            id: '20k',
-            target: 20000,
-            title: 'Capacete de Segurança + Mochila Térmica + Bónus 1.000 MT',
-            desc: 'Capacete Oficial Tchapo Tchapo + Mochila Térmica de Entregas Impermeável + Bónus em dinheiro.',
-            icon: <Icons.Helmet />,
-            badge: '20.000 MT',
+            id: '25k',
+            target: 25000,
+            title: 'Camisa Oficial da Tchapo Tchapo',
+            desc: 'Camisa Oficial da Tchapo Tchapo exclusiva para entregadores de alta performance.',
+            icon: <Icons.ShirtReward />,
+            badge: '25.000 MT',
             level: 'Nível 2'
         },
         {
             id: '100k',
             target: 100000,
-            title: 'Placa Oficial de Ouro + Super Bónus 5.000 MT',
-            desc: 'Placa de Reconhecimento Oficial de Ouro gravada com o seu nome + Bónus de 5.000 MT.',
+            title: 'Placa de 100k Faturados',
+            desc: 'Placa Oficial de Honra ao Mérito de 100k Faturados gravada com o seu nome.',
             icon: <Icons.Plaque />,
             badge: '100.000 MT',
-            level: 'Nível Lendário'
+            level: 'Nível 3'
+        },
+        {
+            id: '1m',
+            target: 1000000,
+            title: hasUnlocked100k ? 'Super Troféu Diamante de 1M + Grande Premiação' : 'Prêmio Secreto de 1 Milhão 🔒',
+            desc: hasUnlocked100k
+                ? 'Super Premiação Revelada: Troféu Diamante Oficial de 1.000.000 MT + Grande Premiação Especial da Tchapo Tchapo!'
+                : 'Deve se desbloquear os 100k para descobrir',
+            icon: hasUnlocked100k ? <Icons.Trophy /> : <Icons.Lock />,
+            badge: '1.000.000 MT',
+            level: 'Nível Lendário (1M)',
+            isSecretLocked: !hasUnlocked100k
         }
     ];
 
@@ -1614,26 +1627,34 @@ function DriverPortalContent() {
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.75rem 0.85rem', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
-                                    <div style={{ color: '#f64c00', display: 'flex' }}><Icons.ShirtReward /></div>
+                                    <div style={{ color: '#059669', display: 'flex' }}><Icons.BadgeCheck /></div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#0f172a' }}>5.000 MT: Camisa + Verificado</div>
-                                        <div style={{ fontSize: '0.74rem', color: '#64748b' }}>Camisa da marca + Selo Oficial Verificado</div>
+                                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#0f172a' }}>5.000 MT: Motorista Verificado</div>
+                                        <div style={{ fontSize: '0.74rem', color: '#64748b' }}>Selo Oficial de Motorista Verificado no Perfil</div>
                                     </div>
                                 </div>
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.75rem 0.85rem', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
-                                    <div style={{ color: '#0284c7', display: 'flex' }}><Icons.Helmet /></div>
+                                    <div style={{ color: '#f64c00', display: 'flex' }}><Icons.ShirtReward /></div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#0f172a' }}>20.000 MT: Capacete + Mochila + Bónus</div>
-                                        <div style={{ fontSize: '0.74rem', color: '#64748b' }}>Capacete Oficial + Mochila Térmica + 1.000 MT</div>
+                                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#0f172a' }}>25.000 MT: Camisa Oficial da Tchapo Tchapo</div>
+                                        <div style={{ fontSize: '0.74rem', color: '#64748b' }}>Camisa da marca oficial Tchapo Tchapo</div>
                                     </div>
                                 </div>
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fefce8', padding: '0.75rem 0.85rem', borderRadius: '14px', border: '1px solid #fde047' }}>
                                     <div style={{ color: '#ca8a04', display: 'flex' }}><Icons.Plaque /></div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#854d0e' }}>100.000 MT: Placa de Ouro + 5.000 MT</div>
-                                        <div style={{ fontSize: '0.74rem', color: '#a16207' }}>Placa de Reconhecimento Oficial em Ouro</div>
+                                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#854d0e' }}>100.000 MT: Placa de 100k Faturados</div>
+                                        <div style={{ fontSize: '0.74rem', color: '#a16207' }}>Placa Oficial de Honra ao Mérito gravada</div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f5f3ff', padding: '0.75rem 0.85rem', borderRadius: '14px', border: '1.5px dashed #c4b5fd' }}>
+                                    <div style={{ color: '#7c3aed', display: 'flex' }}><Icons.Lock /></div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#6d28d9' }}>1.000.000 MT: Prêmio Secreto 🔒</div>
+                                        <div style={{ fontSize: '0.74rem', color: '#8b5cf6' }}>Deve se desbloquear os 100k para descobrir</div>
                                     </div>
                                 </div>
                             </div>
@@ -3547,6 +3568,7 @@ function DriverPortalContent() {
 
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
                                     {rewards.map(r => {
+                                        const isSecretLocked = r.isSecretLocked;
                                         const unlocked = currentSales >= r.target;
                                         const pct = Math.min(100, Math.round((currentSales / r.target) * 100));
                                         const remaining = Math.max(0, r.target - currentSales);
@@ -3555,20 +3577,42 @@ function DriverPortalContent() {
                                             <div key={r.id} style={{
                                                 borderRadius: '20px',
                                                 padding: '1.75rem',
-                                                border: unlocked ? '2px solid #10b981' : (darkMode ? '1px solid #222222' : '1px solid #e2e8f0'),
-                                                background: unlocked ? (darkMode ? '#052e16' : '#f0fdf4') : (darkMode ? '#161616' : '#f8fafc'),
+                                                border: isSecretLocked
+                                                    ? (darkMode ? '2px dashed #4c1d95' : '2px dashed #c4b5fd')
+                                                    : unlocked
+                                                    ? '2px solid #10b981'
+                                                    : (darkMode ? '1px solid #222222' : '1px solid #e2e8f0'),
+                                                background: isSecretLocked
+                                                    ? (darkMode ? '#1e1b4b' : '#faf5ff')
+                                                    : unlocked
+                                                    ? (darkMode ? '#052e16' : '#f0fdf4')
+                                                    : (darkMode ? '#161616' : '#f8fafc'),
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                justifyContent: 'space-between'
+                                                justifyContent: 'space-between',
+                                                position: 'relative'
                                             }}>
                                                 <div>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                                        <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: unlocked ? '#10b981' : '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <div style={{
+                                                            width: '42px',
+                                                            height: '42px',
+                                                            borderRadius: '12px',
+                                                            background: isSecretLocked ? '#7c3aed' : unlocked ? '#10b981' : '#f59e0b',
+                                                            color: '#fff',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}>
                                                             {r.icon}
                                                         </div>
                                                         <span style={{
-                                                            background: unlocked ? (darkMode ? '#064e3b' : '#dcfce7') : (darkMode ? '#451a03' : '#fef3c7'),
-                                                            color: unlocked ? '#34d399' : '#fbbf24',
+                                                            background: isSecretLocked
+                                                                ? (darkMode ? '#312e81' : '#ede9fe')
+                                                                : unlocked
+                                                                ? (darkMode ? '#064e3b' : '#dcfce7')
+                                                                : (darkMode ? '#451a03' : '#fef3c7'),
+                                                            color: isSecretLocked ? '#a78bfa' : unlocked ? '#34d399' : '#fbbf24',
                                                             fontWeight: 800,
                                                             fontSize: '0.78rem',
                                                             padding: '0.25rem 0.75rem',
@@ -3578,7 +3622,7 @@ function DriverPortalContent() {
                                                         </span>
                                                     </div>
 
-                                                    <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                    <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: isSecretLocked ? (darkMode ? '#c4b5fd' : '#6d28d9') : (darkMode ? '#ffffff' : '#0f172a') }}>
                                                         {r.title}
                                                     </h4>
                                                     <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: darkMode ? '#a1a1aa' : '#475569', lineHeight: 1.5 }}>
@@ -3589,20 +3633,24 @@ function DriverPortalContent() {
                                                 <div>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.4rem' }}>
                                                         <span style={{ fontWeight: 600, color: '#64748b' }}>Progresso:</span>
-                                                        <strong style={{ color: unlocked ? '#10b981' : (darkMode ? '#ffffff' : '#0f172a') }}>{pct}%</strong>
+                                                        <strong style={{ color: isSecretLocked ? '#8b5cf6' : unlocked ? '#10b981' : (darkMode ? '#ffffff' : '#0f172a') }}>
+                                                            {isSecretLocked ? '🔒 Bloqueado' : `${pct}%`}
+                                                        </strong>
                                                     </div>
 
                                                     <div style={{ width: '100%', height: '10px', background: darkMode ? '#222222' : '#e2e8f0', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.75rem' }}>
                                                         <div style={{
-                                                            width: `${pct}%`,
+                                                            width: `${isSecretLocked ? 0 : pct}%`,
                                                             height: '100%',
-                                                            background: unlocked ? '#10b981' : '#f59e0b',
+                                                            background: isSecretLocked ? '#7c3aed' : unlocked ? '#10b981' : '#f59e0b',
                                                             borderRadius: '999px'
                                                         }} />
                                                     </div>
 
-                                                    <div style={{ fontSize: '0.8rem', color: unlocked ? '#10b981' : '#94a3b8', fontWeight: 600 }}>
-                                                        {unlocked
+                                                    <div style={{ fontSize: '0.8rem', color: isSecretLocked ? '#7c3aed' : unlocked ? '#10b981' : '#94a3b8', fontWeight: 600 }}>
+                                                        {isSecretLocked
+                                                            ? '🔒 Deve se desbloquear os 100k para descobrir este prémio.'
+                                                            : unlocked
                                                             ? 'Prémio Desbloqueado! Pode solicitar o levantamento na central Tchapo Tchapo.'
                                                             : `Faltam ${formatMZCurrency(remaining)} para desbloquear este prémio.`
                                                         }

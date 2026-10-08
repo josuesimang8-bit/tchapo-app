@@ -737,6 +737,28 @@ export default function Admin() {
         }
     };
 
+    const handleForceExpirePool = async (orderId) => {
+        if (!confirm('Deseja marcar este pedido como expirado (+24h) para testar o fluxo no Portal do Entregador?')) return;
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/expire-pool`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setToast(data.message || 'Pedido expirado para teste!');
+                setTimeout(() => setToast(null), 3500);
+                fetchOrders();
+            } else {
+                setToast(data.error || 'Erro ao expirar pedido.');
+                setTimeout(() => setToast(null), 4000);
+            }
+        } catch (err) {
+            console.error('Erro ao expirar pedido:', err);
+            setToast('Erro ao comunicar com o servidor.');
+            setTimeout(() => setToast(null), 4000);
+        }
+    };
+
     
     
     const handleConfirmDebt = async (driverId) => {
@@ -1830,14 +1852,28 @@ export default function Admin() {
                                                                             </button>
                                                                         </div>
                                                                     ) : (
-                                                                        <span style={{
-                                                                            background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
-                                                                            borderRadius: '6px', padding: '4px 6px', fontWeight: 700, fontSize: '0.7rem',
-                                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
-                                                                            textAlign: 'center'
-                                                                        }}>
-                                                                            🛵 Na Central ({order.pool_remaining_secs != null ? `${Math.floor(order.pool_remaining_secs / 3600)}h ${Math.floor((order.pool_remaining_secs % 3600) / 60)}m` : '24h'})
-                                                                        </span>
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                                            <span style={{
+                                                                                background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
+                                                                                borderRadius: '6px', padding: '4px 6px', fontWeight: 700, fontSize: '0.7rem',
+                                                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                                                                textAlign: 'center'
+                                                                            }}>
+                                                                                🛵 Na Central ({order.pool_remaining_secs != null ? `${Math.floor(order.pool_remaining_secs / 3600)}h ${Math.floor((order.pool_remaining_secs % 3600) / 60)}m` : '24h'})
+                                                                            </span>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleForceExpirePool(order.id)}
+                                                                                style={{
+                                                                                    background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a',
+                                                                                    borderRadius: '5px', padding: '2px 4px', fontWeight: 700, fontSize: '0.67rem',
+                                                                                    cursor: 'pointer', textAlign: 'center'
+                                                                                }}
+                                                                                title="Forçar expiração deste pedido para teste no portal do entregador"
+                                                                            >
+                                                                                ⚡ Expirar Agora (Teste)
+                                                                            </button>
+                                                                        </div>
                                                                     )}
 
                                                                     <button

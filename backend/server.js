@@ -832,7 +832,7 @@ function formatOrderResponse(order) {
 
     // 24-Hour Expiration calculation
     const pool_approved_at = orderMeta?.pool_approved_at || (sent_to_driver_pool ? order.created_at : null);
-    const pool_expires_at = pool_approved_at ? new Date(new Date(pool_approved_at).getTime() + 24 * 60 * 60 * 1000).toISOString() : null;
+    const pool_expires_at = orderMeta?.pool_expires_at || (pool_approved_at ? new Date(new Date(pool_approved_at).getTime() + 24 * 60 * 60 * 1000).toISOString() : null);
     const is_pool_expired = Boolean(sent_to_driver_pool && !order.driver_id && pool_expires_at && (nowMs >= new Date(pool_expires_at).getTime()));
     const pool_remaining_secs = (sent_to_driver_pool && !order.driver_id && pool_expires_at)
         ? Math.max(0, Math.floor((new Date(pool_expires_at).getTime() - nowMs) / 1000))
@@ -1776,8 +1776,9 @@ app.put('/api/orders/:id/accept', async (req, res) => {
 
         // Check if order has expired after 24 hours
         const currentMeta = getOrderMeta(id);
-        const poolApprovedAt = currentMeta?.pool_approved_at || order.created_at;
-        const poolExpiresAt = poolApprovedAt ? new Date(new Date(poolApprovedAt).getTime() + 24 * 60 * 60 * 1000).getTime() : 0;
+        const poolExpiresAt = currentMeta?.pool_expires_at 
+            ? new Date(currentMeta.pool_expires_at).getTime() 
+            : (currentMeta?.pool_approved_at ? new Date(new Date(currentMeta.pool_approved_at).getTime() + 24 * 60 * 60 * 1000).getTime() : 0);
         if (poolExpiresAt && Date.now() >= poolExpiresAt) {
             return res.status(400).json({
                 error: 'Este pedido ultrapassou o prazo de 24 horas para aceitação direta. Por favor, envie uma solicitação ao Administrador na aba Pedidos Expirados.'
@@ -2023,6 +2024,36 @@ app.post('/api/orders/:id/renew-pool', async (req, res) => {
         });
     } catch (err) {
         console.error('Error renewing pool:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST Admin / Test forces order pool expiration (for testing / demo)
+app.post('/api/orders/:id/expire-pool', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const past25h = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
+        const expiredAt = new Date(Date.now() - 60 * 1000).toISOString();
+        updateOrderMeta(id, {
+            sent_to_driver_pool: true,
+            pool_approved_at: past25h,
+            pool_expires_at: expiredAt,
+            expiration_request: null
+        });
+
+        const { data: order } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        res.json({
+            success: true,
+            message: `O pedido #${id} foi marcado como expirado (+24h) com sucesso!`,
+            order: formatOrderResponse(order)
+        });
+    } catch (err) {
+        console.error('Error expiring pool:', err);
         res.status(500).json({ error: err.message });
     }
 });

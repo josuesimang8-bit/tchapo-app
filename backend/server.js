@@ -2146,6 +2146,100 @@ app.post('/api/drivers/:id/pay-debt', upload.single('receipt'), async (req, res)
     }
 });
 
+// ─── FINANCIAL ENTRIES & REVENUE MANAGEMENT HELPERS ─────────────────────────
+const FINANCE_FILE = path.join(__dirname, 'data', 'financial_entries.json');
+
+function ensureFinanceDataDir() {
+    const dir = path.dirname(FINANCE_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(FINANCE_FILE)) fs.writeFileSync(FINANCE_FILE, '[]', 'utf8');
+}
+
+function readLocalFinanceEntries() {
+    ensureFinanceDataDir();
+    try {
+        const raw = fs.readFileSync(FINANCE_FILE, 'utf8');
+        return JSON.parse(raw) || [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function writeLocalFinanceEntries(entries) {
+    ensureFinanceDataDir();
+    fs.writeFileSync(FINANCE_FILE, JSON.stringify(entries, null, 2), 'utf8');
+}
+
+async function recordFinancialRevenue({
+    type = 'receita',
+    description,
+    amount,
+    category = 'Logística & Entregas',
+    payment_method = 'eMola',
+    entry_date = new Date().toISOString().slice(0, 10),
+    notes = ''
+}) {
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+        console.warn('[Finance] Valor inválido para registo de receita:', amount);
+        return null;
+    }
+
+    const newEntry = {
+        type: (type || 'receita').toLowerCase(),
+        description: description ? String(description).trim() : 'Taxa da Plataforma',
+        amount: numAmount,
+        category: category || 'Logística & Entregas',
+        payment_method: payment_method || 'eMola',
+        entry_date: entry_date || new Date().toISOString().slice(0, 10),
+        notes: notes ? String(notes).trim() : '',
+        created_at: new Date().toISOString()
+    };
+
+    let savedEntry = null;
+
+    // 1. Try Supabase insert
+    try {
+        const { data, error } = await supabase
+            .from('financial_entries')
+            .insert([newEntry])
+            .select()
+            .single();
+
+        if (!error && data) {
+            savedEntry = data;
+        } else if (error) {
+            console.warn('[Finance] Supabase insert warning:', error.message);
+        }
+    } catch (err) {
+        console.warn('[Finance] Supabase insert error:', err.message);
+    }
+
+    // 2. Local JSON sync / fallback
+    try {
+        const localList = readLocalFinanceEntries();
+        const localEntry = savedEntry ? { ...savedEntry, id: Number(savedEntry.id) || Date.now() } : {
+            id: Date.now(),
+            ...newEntry
+        };
+
+        const exists = localList.some(e => String(e.id) === String(localEntry.id));
+        if (!exists) {
+            localList.unshift(localEntry);
+            writeLocalFinanceEntries(localList);
+        }
+
+        if (!savedEntry) {
+            savedEntry = localEntry;
+        }
+    } catch (localErr) {
+        console.warn('[Finance] Local JSON backup error:', localErr.message);
+    }
+
+    console.log(`[Finance] Receita registada: ${numAmount} MT | "${newEntry.description}" | (${newEntry.payment_method})`);
+    return savedEntry;
+}
+
 // PUT Admin confirms debt payment and unlocks driver
 app.put('/api/drivers/:id/confirm-debt', async (req, res) => {
     try {
@@ -2172,17 +2266,63 @@ app.put('/api/drivers/:id/confirm-debt', async (req, res) => {
             is_blocked: false
         });
 
+        // Fetch driver information for ledger description
+        let driverName = `Entregador #${formatDriverId(numId)}`;
+        try {
+            const { data: driverData } = await supabase
+                .from('drivers')
+                .select('name, phone')
+                .eq('id', numId)
+                .single();
+            if (driverData && driverData.name) {
+                driverName = driverData.name.trim();
+            }
+        } catch (_) {}
+
+        // Detect payment method (eMola, M-Pesa, Dinheiro, Conta Bancária)
+        let paymentMethod = 'eMola';
+        const proofText = String(clearedDebt.payment_proof || '').toLowerCase();
+        if (proofText.includes('mpesa') || proofText.includes('m-pesa')) {
+            paymentMethod = 'M-Pesa';
+        } else if (proofText.includes('banco') || proofText.includes('conta') || proofText.includes('ponto24')) {
+            paymentMethod = 'Conta Bancária';
+        } else if (proofText.includes('dinheiro') || proofText.includes('caixa')) {
+            paymentMethod = 'Dinheiro';
+        }
+
+        // Automatically record platform fee in Finanças
+        let financialEntry = null;
+        try {
+            const feeAmount = parseFloat(clearedDebt.amount) || 0;
+            if (feeAmount > 0) {
+                const orderRef = clearedDebt.order_id ? ` (Pedido #${clearedDebt.order_id})` : '';
+                const proofInfo = clearedDebt.payment_proof ? ` Ref/Comprovativo: ${clearedDebt.payment_proof}` : '';
+                financialEntry = await recordFinancialRevenue({
+                    type: 'receita',
+                    description: `Taxa da Plataforma - ${driverName}${orderRef}`,
+                    amount: feeAmount,
+                    category: 'Logística & Entregas',
+                    payment_method: paymentMethod,
+                    entry_date: new Date().toISOString().slice(0, 10),
+                    notes: `Comissão/Taxa da plataforma liquidada por ${driverName}.${orderRef ? ` Pedido #${clearedDebt.order_id}.` : ''}${proofInfo}`
+                });
+            }
+        } catch (finErr) {
+            console.error('[Finance] Erro ao registar receita automaticamente:', finErr);
+        }
+
         // Notify via Ntfy
         sendSystemNtfyAlert(
             `✅ Comissão Confirmada! Entregador #${formatDriverId(numId)} Desbloqueado`,
-            `O pagamento de ${clearedDebt.amount} MT foi confirmado. O entregador #${formatDriverId(numId)} já está liberado para entregas.`,
+            `O pagamento de ${clearedDebt.amount} MT foi confirmado e registado nas Finanças. O entregador #${formatDriverId(numId)} já está liberado para entregas.`,
             ['white_check_mark', 'motorcycle']
         );
 
         res.json({
             success: true,
-            message: 'Pagamento de comissão confirmado! Entregador desbloqueado com sucesso.',
-            cleared_debt: clearedDebt
+            message: 'Pagamento de comissão confirmado e registado nas Finanças! Entregador desbloqueado com sucesso.',
+            cleared_debt: clearedDebt,
+            financial_entry: financialEntry
         });
     } catch (err) {
         console.error('Error confirming debt:', err);
@@ -3260,28 +3400,9 @@ app.get('/api/users/admin', async (req, res) => {
 });
 
 // ─── FINANCIAL ENTRIES & REVENUE MANAGEMENT ─────────────────────────────────
-const FINANCE_FILE = path.join(__dirname, 'data', 'financial_entries.json');
+// Helpers (FINANCE_FILE, readLocalFinanceEntries, writeLocalFinanceEntries, recordFinancialRevenue)
+// are defined above in the server initialization.
 
-function ensureFinanceDataDir() {
-    const dir = path.dirname(FINANCE_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    if (!fs.existsSync(FINANCE_FILE)) fs.writeFileSync(FINANCE_FILE, '[]', 'utf8');
-}
-
-function readLocalFinanceEntries() {
-    ensureFinanceDataDir();
-    try {
-        const raw = fs.readFileSync(FINANCE_FILE, 'utf8');
-        return JSON.parse(raw) || [];
-    } catch (_) {
-        return [];
-    }
-}
-
-function writeLocalFinanceEntries(entries) {
-    ensureFinanceDataDir();
-    fs.writeFileSync(FINANCE_FILE, JSON.stringify(entries, null, 2), 'utf8');
-}
 
 // GET all financial entries with optional filters & computed summary
 app.get('/api/financial-entries', async (req, res) => {

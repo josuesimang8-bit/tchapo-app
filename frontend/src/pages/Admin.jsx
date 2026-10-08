@@ -762,15 +762,18 @@ export default function Admin() {
     
     
     const handleConfirmDebt = async (driverId) => {
-        if (!confirm('Deseja confirmar o pagamento da comissão de 20% e desbloquear este entregador?')) return;
+        if (!confirm('Deseja confirmar o pagamento da taxa/comissão e desbloquear este entregador?')) return;
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/drivers/${driverId}/confirm-debt`, {
                 method: 'PUT'
             });
             if (res.ok) {
-                setToast('✅ Pagamento de comissão confirmado! Entregador desbloqueado com sucesso.');
+                setToast('✅ Pagamento de comissão confirmado e registado nas Finanças! Entregador desbloqueado com sucesso.');
                 setTimeout(() => setToast(null), 3500);
                 fetchDrivers();
+                if (typeof fetchFinanceEntries === 'function') {
+                    fetchFinanceEntries();
+                }
             } else {
                 const data = await res.json();
                 alert('Erro: ' + (data.error || 'Falha ao confirmar pagamento'));

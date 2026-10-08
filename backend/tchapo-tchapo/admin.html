@@ -2185,9 +2185,12 @@ async function confirmDriverDebt(driverId, name, amount) {
             const err = await res.json();
             throw new Error(err.error || 'Erro ao confirmar dívida');
         }
-        toast(`✅ Pagamento de ${amount} MT confirmado! ${name} foi desbloqueado com sucesso.`);
+        toast(`✅ Pagamento de ${amount} MT confirmado e registado nas Finanças! ${name} foi desbloqueado com sucesso.`);
         loadDebts();
         loadDrivers();
+        if (typeof loadFinanceEntries === 'function') {
+            loadFinanceEntries();
+        }
     } catch(err) {
         alert('Erro ao confirmar liquidação: ' + err.message);
     }

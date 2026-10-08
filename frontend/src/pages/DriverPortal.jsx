@@ -716,6 +716,8 @@ function DriverPortalContent() {
     const [docPreviewModal, setDocPreviewModal] = useState(null);
     const [confirmingOrder, setConfirmingOrder] = useState(null); // Strict Acceptance Modal
     const [previewPhoto, setPreviewPhoto] = useState(null); // Product Photo Lightbox Modal
+    const [requestingExpiredOrder, setRequestingExpiredOrder] = useState(null); // Expired Order Request Modal
+    const [submittingExpiredRequest, setSubmittingExpiredRequest] = useState(false);
 
     // Debt Payment State (e-Mola Fee Screen)
     const [debtPaymentRef, setDebtPaymentRef] = useState('');
@@ -1095,6 +1097,35 @@ function DriverPortalContent() {
         }
     };
 
+    // Request Expired Order (+24h) from Admin
+    const handleConfirmRequestExpired = async () => {
+        if (!requestingExpiredOrder || !authDriver?.id) return;
+        if (!isOnline) {
+            showToast('Você precisa ficar Online para solicitar pedidos.', 'warning');
+            return;
+        }
+        setSubmittingExpiredRequest(true);
+        try {
+            const res = await fetch(`${API_URL}/api/orders/${requestingExpiredOrder.id}/request-expired`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ driver_id: authDriver.id })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message || 'Solicitação enviada com sucesso! Aguarde a aprovação do Administrador.', 'success');
+                setRequestingExpiredOrder(null);
+                fetchDashboard(authDriver.id);
+            } else {
+                showToast(data.error || 'Erro ao enviar solicitação.', 'error');
+            }
+        } catch (err) {
+            showToast('Erro de comunicação com o servidor.', 'error');
+        } finally {
+            setSubmittingExpiredRequest(false);
+        }
+    };
+
     // Update Order Status (Marking 'Entregue' produces pending debt and displays the white payment screen)
     const handleUpdateOrderStatus = async (orderId, newStatus) => {
         try {
@@ -1236,8 +1267,18 @@ function DriverPortalContent() {
     };
 
     const availableOrders = dashboardData?.available_orders || [];
+    const expiredOrders = dashboardData?.expired_orders || [];
     const activeOrders = dashboardData?.active_orders || [];
     const recentDeliveries = dashboardData?.recent_deliveries || [];
+
+    const format24hCountdown = (order) => {
+        if (!order?.pool_expires_at) return '24h restantes';
+        const diff = Math.max(0, Math.floor((new Date(order.pool_expires_at).getTime() - Date.now()) / 1000));
+        if (diff <= 0) return 'Expirado (+24h)';
+        const hours = Math.floor(diff / 3600);
+        const minutes = Math.floor((diff % 3600) / 60);
+        return `${hours}h ${minutes}m restantes`;
+    };
     const warnings = dashboardData?.warnings || authDriver?.warnings || [];
     const pendingDebt = dashboardData?.pending_debt || null;
     const isDebtBlocked = Boolean(pendingDebt && pendingDebt.status !== 'Pago');
@@ -2586,6 +2627,16 @@ function DriverPortalContent() {
 
                                     <button
                                         type="button"
+                                        onClick={() => setOrdersSubTab('expired')}
+                                        className={`rp-segment-btn ${ordersSubTab === 'expired' ? 'active' : ''}`}
+                                        style={expiredOrders.length > 0 ? { borderColor: '#f59e0b' } : {}}
+                                    >
+                                        <Icons.Clock />
+                                        <span>Expirados ({expiredOrders.length})</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
                                         onClick={() => setOrdersSubTab('active')}
                                         className={`rp-segment-btn ${ordersSubTab === 'active' ? 'active' : ''}`}
                                     >
@@ -2938,17 +2989,34 @@ function DriverPortalContent() {
                                                                                  )}
                                                                              </div>
 
-                                                                             <span style={{
-                                                                                 background: 'rgba(246, 76, 0, 0.1)',
-                                                                                 color: '#f64c00',
-                                                                                 fontSize: '0.74rem',
-                                                                                 fontWeight: 800,
-                                                                                 padding: '3px 10px',
-                                                                                 borderRadius: '999px',
-                                                                                 border: '1px solid rgba(246, 76, 0, 0.25)'
-                                                                             }}>
-                                                                                 Disponível
-                                                                             </span>
+                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                                  <span style={{
+                                                                                      background: '#eff6ff',
+                                                                                      color: '#1d4ed8',
+                                                                                      fontSize: '0.72rem',
+                                                                                      fontWeight: 800,
+                                                                                      padding: '3px 8px',
+                                                                                      borderRadius: '999px',
+                                                                                      border: '1px solid #bfdbfe',
+                                                                                      display: 'inline-flex',
+                                                                                      alignItems: 'center',
+                                                                                      gap: '4px'
+                                                                                  }}>
+                                                                                      <Icons.Clock />
+                                                                                      <span>{format24hCountdown(order)}</span>
+                                                                                  </span>
+                                                                                  <span style={{
+                                                                                      background: 'rgba(246, 76, 0, 0.1)',
+                                                                                      color: '#f64c00',
+                                                                                      fontSize: '0.74rem',
+                                                                                      fontWeight: 800,
+                                                                                      padding: '3px 10px',
+                                                                                      borderRadius: '999px',
+                                                                                      border: '1px solid rgba(246, 76, 0, 0.25)'
+                                                                                  }}>
+                                                                                      Disponível
+                                                                                  </span>
+                                                                              </div>
                                                                          </div>
 
                                                                          {/* Clean Single-line Location Tag */}
@@ -3146,6 +3214,246 @@ function DriverPortalContent() {
                                     )}
                                 </div>
                             )}
+
+                                {/* SUB-VIEW: PEDIDOS EXPIRADOS (+24h SEM ACEITE) */}
+                                {ordersSubTab === 'expired' && (
+                                    <div>
+                                        <div style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                            <div>
+                                                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#991b1b' }}>
+                                                    Pedidos Expirados na Central (+24h)
+                                                </h3>
+                                                <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.88rem' }}>
+                                                    Pedidos que completaram o prazo de 24h sem aceite. Pode solicitar a entrega; o Administrador será notificado para aprovar ou recusar.
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => fetchDashboard(authDriver?.id)}
+                                                style={{
+                                                    background: '#f1f5f9',
+                                                    color: '#334151',
+                                                    border: '1px solid #cbd5e1',
+                                                    padding: '0.45rem 0.85rem',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                Atualizar Lista
+                                            </button>
+                                        </div>
+
+                                        {expiredOrders.length === 0 ? (
+                                             <div style={{ background: darkMode ? '#18181b' : '#fff', padding: '4rem 2rem', borderRadius: '24px', border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0', textAlign: 'center' }}>
+                                                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                                    <Icons.Clock />
+                                                </div>
+                                                <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                    Nenhum pedido expirado no momento
+                                                </h4>
+                                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', maxWidth: '480px', marginInline: 'auto' }}>
+                                                    Todos os pedidos aprovados estão dentro do prazo de 24 horas na aba de Pedidos Prontos.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
+                                                {expiredOrders.map(order => {
+                                                    const loc = extractOrderLocation(order);
+                                                    const pInfo = calcOrderPickupAndProfit(order);
+                                                    const myReq = order.expiration_request && String(order.expiration_request.driver_id) === String(authDriver?.id) ? order.expiration_request : null;
+
+                                                    return (
+                                                        <div key={order.id} className="rp-order-card" style={{ border: '1.5px solid #fecaca', background: darkMode ? '#18181b' : '#fff' }}>
+                                                            {/* Warning Expiration Banner */}
+                                                            <div style={{
+                                                                background: '#fef2f2',
+                                                                color: '#991b1b',
+                                                                border: '1px solid #fee2e2',
+                                                                borderRadius: '12px',
+                                                                padding: '8px 10px',
+                                                                marginBottom: '10px',
+                                                                fontSize: '0.78rem',
+                                                                fontWeight: 800,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px'
+                                                            }}>
+                                                                <Icons.AlertTriangle />
+                                                                <span>Prazo de 24 horas expirado na Central • Exige aprovação do Admin</span>
+                                                            </div>
+
+                                                            {/* Header with Order ID */}
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                                <span style={{ fontWeight: 900, fontSize: '1.05rem', color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                                    Pedido #{order.id}
+                                                                </span>
+                                                                <span style={{
+                                                                    background: '#fee2e2',
+                                                                    color: '#b91c1c',
+                                                                    fontSize: '0.74rem',
+                                                                    fontWeight: 800,
+                                                                    padding: '3px 10px',
+                                                                    borderRadius: '999px',
+                                                                    border: '1px solid #fca5a5'
+                                                                }}>
+                                                                    Expirado
+                                                                </span>
+                                                            </div>
+
+                                                            {/* Location */}
+                                                            <div style={{
+                                                                background: darkMode ? '#27272a' : '#f8fafc',
+                                                                padding: '8px 12px',
+                                                                borderRadius: '12px',
+                                                                border: darkMode ? '1px solid #3f3f46' : '1px solid #e2e8f0',
+                                                                marginBottom: '12px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'space-between'
+                                                            }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                                    <span style={{ color: '#f64c00' }}><Icons.MapPin /></span>
+                                                                    <span><strong>{loc.bairro || 'Beira'}</strong> • {loc.province}</span>
+                                                                </div>
+                                                                <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>Dados pós-aprovação</span>
+                                                            </div>
+
+                                                            {/* Items */}
+                                                            {order.items && order.items.length > 0 && (
+                                                                <div style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                    {order.items.map((it, idx) => {
+                                                                        const imgUrl = resolveImageUrl(it.image, it.product_name);
+                                                                        const pickupItem = findPickupItem(it.product_name);
+                                                                        return (
+                                                                            <div key={idx} style={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '12px',
+                                                                                background: darkMode ? '#27272a' : '#ffffff',
+                                                                                padding: '10px 12px',
+                                                                                borderRadius: '16px',
+                                                                                border: darkMode ? '1px solid #3f3f46' : '1px solid #e2e8f0'
+                                                                            }}>
+                                                                                <div
+                                                                                    onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pickupItem?.price })}
+                                                                                    style={{ width: '60px', height: '60px', minWidth: '60px', borderRadius: '12px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                                                >
+                                                                                    {imgUrl && <img src={imgUrl} alt={it.product_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                                                                </div>
+                                                                                <div style={{ flex: 1 }}>
+                                                                                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: darkMode ? '#ffffff' : '#0f172a' }}>{it.product_name}</div>
+                                                                                    <div style={{ fontSize: '0.78rem', color: '#64748b' }}>Qtd: {it.quantity || 1} • Valor: {formatMZCurrency(it.price)}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Financial Summary */}
+                                                            <div style={{ background: darkMode ? '#27272a' : '#f8fafc', padding: '10px 12px', borderRadius: '14px', border: darkMode ? '1px solid #3f3f46' : '1px solid #e2e8f0', marginBottom: '12px' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '4px' }}>
+                                                                    <span style={{ color: '#64748b' }}>Total a Cobrar:</span>
+                                                                    <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{formatMZCurrency(order.total || pInfo.orderTotal)}</strong>
+                                                                </div>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '6px' }}>
+                                                                    <span style={{ color: '#64748b' }}>Levantamento na Loja:</span>
+                                                                    <strong style={{ color: '#dc2626' }}>{formatMZCurrency(pInfo.pickupTotal)}</strong>
+                                                                </div>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed #cbd5e1', paddingTop: '6px' }}>
+                                                                    <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#059669' }}>Seu Lucro Estimado:</span>
+                                                                    <span style={{ background: '#dcfce7', color: '#15803d', padding: '3px 8px', borderRadius: '8px', fontWeight: 900, fontSize: '0.92rem' }}>
+                                                                        +{formatMZCurrency(pInfo.driverNetProfit)}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Action Buttons & Status */}
+                                                            {myReq && myReq.status === 'Pendente' ? (
+                                                                <div style={{
+                                                                    background: '#fef3c7',
+                                                                    color: '#92400e',
+                                                                    border: '1.5px solid #fbbf24',
+                                                                    borderRadius: '12px',
+                                                                    padding: '0.85rem 1rem',
+                                                                    fontWeight: 800,
+                                                                    fontSize: '0.84rem',
+                                                                    textAlign: 'center',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    gap: '8px'
+                                                                }}>
+                                                                    <span>⏳ Solicitação Enviada • Aguardando Aprovação do Administrador</span>
+                                                                </div>
+                                                            ) : myReq && myReq.status === 'Recusado' ? (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                    <div style={{
+                                                                        background: '#fee2e2',
+                                                                        color: '#991b1b',
+                                                                        borderRadius: '10px',
+                                                                        padding: '6px 10px',
+                                                                        fontSize: '0.78rem',
+                                                                        fontWeight: 700,
+                                                                        textAlign: 'center'
+                                                                    }}>
+                                                                        ❌ A sua solicitação foi recusada pelo Administrador.
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setRequestingExpiredOrder(order)}
+                                                                        style={{
+                                                                            background: '#f59e0b',
+                                                                            color: '#111827',
+                                                                            border: 'none',
+                                                                            padding: '0.75rem',
+                                                                            borderRadius: '12px',
+                                                                            fontWeight: 800,
+                                                                            fontSize: '0.88rem',
+                                                                            cursor: 'pointer',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            gap: '6px'
+                                                                        }}
+                                                                    >
+                                                                        <Icons.Clock />
+                                                                        <span>Solicitar Novamente ao Admin</span>
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setRequestingExpiredOrder(order)}
+                                                                    style={{
+                                                                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                                                        color: '#ffffff',
+                                                                        border: 'none',
+                                                                        padding: '0.85rem 1.25rem',
+                                                                        borderRadius: '12px',
+                                                                        fontWeight: 800,
+                                                                        fontSize: '0.9rem',
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        gap: '8px',
+                                                                        boxShadow: '0 4px 12px rgba(217, 119, 6, 0.25)',
+                                                                        width: '100%'
+                                                                    }}
+                                                                >
+                                                                    <Icons.Bike />
+                                                                    <span>✋ Solicitar Entrega ao Administrador</span>
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* SUB-VIEW 2: MINHAS ENTREGAS EM CURSO */}
                                 {ordersSubTab === 'active' && (
@@ -5345,6 +5653,93 @@ function DriverPortalContent() {
                             alt="Documento do Entregador"
                             style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '14px', objectFit: 'contain', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Confirmação de Solicitação de Pedido Expirado */}
+            {requestingExpiredOrder && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(15, 23, 42, 0.75)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 999999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1rem'
+                }}>
+                    <div style={{
+                        background: '#ffffff',
+                        borderRadius: '24px',
+                        maxWidth: '460px',
+                        width: '100%',
+                        padding: '1.75rem',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+                    }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.5rem' }}>
+                            ✋
+                        </div>
+                        <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', textAlign: 'center' }}>
+                            Solicitar Pedido Expirado
+                        </h3>
+                        <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: '#475569', textAlign: 'center', lineHeight: 1.5 }}>
+                            Deseja solicitar ao Administrador a realização da entrega do <strong>Pedido #{requestingExpiredOrder.id}</strong>?
+                        </p>
+                        <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: '#64748b' }}>Valor Total:</span>
+                                <strong style={{ color: '#0f172a' }}>{formatMZCurrency(requestingExpiredOrder.total)}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669', fontWeight: 800 }}>
+                                <span>Seu Lucro Estimado:</span>
+                                <span>+{formatMZCurrency(calcOrderPickupAndProfit(requestingExpiredOrder).driverNetProfit)}</span>
+                            </div>
+                            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e2e8f0', color: '#b45309', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                                💡 Assim que o Administrador aprovar, o pedido entrará automaticamente na sua aba <strong>"Em Rota"</strong> como uma entrega ativa!
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => setRequestingExpiredOrder(null)}
+                                disabled={submittingExpiredRequest}
+                                style={{
+                                    flex: 1,
+                                    background: '#f1f5f9',
+                                    color: '#475569',
+                                    border: '1px solid #cbd5e1',
+                                    padding: '0.85rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmRequestExpired}
+                                disabled={submittingExpiredRequest}
+                                style={{
+                                    flex: 1.5,
+                                    background: '#d97706',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    padding: '0.85rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px'
+                                }}
+                            >
+                                {submittingExpiredRequest ? 'A enviar...' : 'Confirmar Solicitação ➔'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

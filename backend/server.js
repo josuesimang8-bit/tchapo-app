@@ -830,6 +830,15 @@ function formatOrderResponse(order) {
     // Pedido aprovado para ir à central de entregadores continua pendente até que um entregador aceite
     const finalStatus = (order.status === 'Aprovado' && !order.driver_id) ? 'Pendente' : (order.status || 'Pendente');
 
+    // 24-Hour Expiration calculation
+    const pool_approved_at = orderMeta?.pool_approved_at || (sent_to_driver_pool ? order.created_at : null);
+    const pool_expires_at = pool_approved_at ? new Date(new Date(pool_approved_at).getTime() + 24 * 60 * 60 * 1000).toISOString() : null;
+    const is_pool_expired = Boolean(sent_to_driver_pool && !order.driver_id && pool_expires_at && (nowMs >= new Date(pool_expires_at).getTime()));
+    const pool_remaining_secs = (sent_to_driver_pool && !order.driver_id && pool_expires_at)
+        ? Math.max(0, Math.floor((new Date(pool_expires_at).getTime() - nowMs) / 1000))
+        : null;
+    const expiration_request = orderMeta?.expiration_request || null;
+
     // Pedido aprovado pelo admin sem motorista atribuído continua pendente (timer pausado)
     const isPaused = !finalStatus || finalStatus === 'Pendente';
 
@@ -867,7 +876,12 @@ function formatOrderResponse(order) {
         timer_remaining_secs,
         delivered_at,
         delivered_by,
-        sent_to_driver_pool
+        sent_to_driver_pool,
+        pool_approved_at,
+        pool_expires_at,
+        is_pool_expired,
+        pool_remaining_secs,
+        expiration_request
     };
 }
 
@@ -1140,9 +1154,15 @@ app.put('/api/orders/:id/status', async (req, res) => {
 
         if (status !== undefined) {
             if (status === 'Aprovado') {
-                // Ao aprovar pedido para ir à Central de Entregadores, o pedido DEVE CONTINUAR PENDENTE até que um entregador aceite
+                // Ao aprovar pedido para ir à Central de Entregadores, o pedido DEVE CONTINUAR PENDENTE até que um entregador aceite (janela de 24h)
                 updates.status = 'Pendente';
-                updateOrderMeta(id, { sent_to_driver_pool: true });
+                const nowIso = new Date().toISOString();
+                updateOrderMeta(id, { 
+                    sent_to_driver_pool: true,
+                    pool_approved_at: nowIso,
+                    pool_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                    expiration_request: null
+                });
             } else if (status === 'Pendente') {
                 updates.status = 'Pendente';
                 updateOrderMeta(id, { sent_to_driver_pool: false });
@@ -1591,10 +1611,13 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
 
         const driverOrders = orders || [];
         
-        // MASK CUSTOMER DATA for available orders before acceptance (ONLY PROVINCE & BAIRRO SHOWN)
-        const availableOrders = (poolOrders || []).map(order => {
+        // MASK CUSTOMER DATA & SEPARATE AVAILABLE VS EXPIRED (24h rule)
+        const availableOrders = [];
+        const expiredOrders = [];
+
+        (poolOrders || []).forEach(order => {
             const formatted = formatOrderResponse(order);
-            return {
+            const maskedOrder = {
                 ...formatted,
                 customer_name: 'Cliente Tchapo Tchapo (Disponível após aceitar)',
                 customer_phone: null,
@@ -1602,6 +1625,12 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 address: null, // Oculto antes de aceitar - apenas província e bairro visíveis
                 is_masked: true
             };
+
+            if (formatted.is_pool_expired) {
+                expiredOrders.push(maskedOrder);
+            } else {
+                availableOrders.push(maskedOrder);
+            }
         });
 
         // Check 2h debt status and auto-issue warning if overdue
@@ -1679,6 +1708,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 reward_progress: rewardProgress
             },
             available_orders: availableOrders,
+            expired_orders: expiredOrders,
             active_orders: activeOrders.map(formatOrderResponse),
             recent_deliveries: delivered.slice(0, 15).map(formatOrderResponse),
             warnings: meta.warnings || []
@@ -1744,6 +1774,16 @@ app.put('/api/orders/:id/accept', async (req, res) => {
             });
         }
 
+        // Check if order has expired after 24 hours
+        const currentMeta = getOrderMeta(id);
+        const poolApprovedAt = currentMeta?.pool_approved_at || order.created_at;
+        const poolExpiresAt = poolApprovedAt ? new Date(new Date(poolApprovedAt).getTime() + 24 * 60 * 60 * 1000).getTime() : 0;
+        if (poolExpiresAt && Date.now() >= poolExpiresAt) {
+            return res.status(400).json({
+                error: 'Este pedido ultrapassou o prazo de 24 horas para aceitação direta. Por favor, envie uma solicitação ao Administrador na aba Pedidos Expirados.'
+            });
+        }
+
         // Set status to Com Entregador (or keep if already in transit)
         const newStatus = ['Aprovado', 'Processando', 'Preparando', 'Pendente'].includes(order.status)
             ? 'Com Entregador'
@@ -1806,6 +1846,183 @@ app.put('/api/orders/:id/reject', async (req, res) => {
         res.json({ success: true, message: 'Operação concluída.' });
     } catch (err) {
         console.error('Error rejecting order:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST Driver requests an expired order (+24h)
+app.post('/api/orders/:id/request-expired', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { driver_id } = req.body;
+        if (!driver_id) {
+            return res.status(400).json({ error: 'ID do entregador é obrigatório.' });
+        }
+        const numDriverId = Number(driver_id);
+        const { data: driver } = await supabase
+            .from('drivers')
+            .select('*')
+            .eq('id', numDriverId)
+            .single();
+
+        if (!driver) {
+            return res.status(404).json({ error: 'Entregador não encontrado.' });
+        }
+
+        const driverMeta = getDriverMeta(numDriverId);
+        if (!driverMeta.is_online) {
+            return res.status(403).json({ error: 'Você está offline! Deve ficar online para solicitar pedidos.' });
+        }
+        if (driverMeta.pending_debt && driverMeta.pending_debt.status !== 'Pago') {
+            return res.status(403).json({ error: 'Você possui uma taxa/comissão pendente. Regularize o pagamento para poder solicitar pedidos.' });
+        }
+
+        const { data: order, error: orderErr } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (orderErr || !order) {
+            return res.status(404).json({ error: 'Pedido não encontrado.' });
+        }
+
+        if (order.driver_id) {
+            return res.status(409).json({ error: 'Este pedido já foi atribuído a outro entregador.' });
+        }
+
+        // Set expiration request in orderMeta
+        const expRequest = {
+            driver_id: numDriverId,
+            driver_name: driver.name,
+            driver_phone: driver.phone,
+            requested_at: new Date().toISOString(),
+            status: 'Pendente'
+        };
+
+        updateOrderMeta(id, {
+            expiration_request: expRequest
+        });
+
+        console.log(`[EXPIRED_REQUEST] Driver #${numDriverId} (${driver.name}) requested expired order #${id}.`);
+
+        res.json({
+            success: true,
+            message: 'Solicitação de entrega enviada com sucesso! O Administrador foi notificado para aprovação.',
+            order: formatOrderResponse(order)
+        });
+    } catch (err) {
+        console.error('Error requesting expired order:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT Admin resolves expired order request (approve or reject)
+app.put('/api/orders/:id/expiration-request', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action } = req.body; // 'approve' | 'reject'
+
+        const { data: order, error: orderErr } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (orderErr || !order) {
+            return res.status(404).json({ error: 'Pedido não encontrado.' });
+        }
+
+        const orderMeta = getOrderMeta(id);
+        const expRequest = orderMeta?.expiration_request;
+
+        if (!expRequest || expRequest.status !== 'Pendente') {
+            return res.status(400).json({ error: 'Nenhuma solicitação pendente encontrada para este pedido.' });
+        }
+
+        const requestingDriverId = Number(expRequest.driver_id);
+
+        if (action === 'approve' || action === 'Aprovar') {
+            // Assign order to this driver and transition to 'Com Entregador'
+            const { data: updated, error: updateErr } = await supabase
+                .from('orders')
+                .update({
+                    driver_id: requestingDriverId,
+                    status: 'Com Entregador',
+                    created_at: new Date().toISOString() // starts 4h delivery countdown timer
+                })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (updateErr) throw updateErr;
+
+            updateOrderMeta(id, {
+                sent_to_driver_pool: false,
+                expiration_request: {
+                    ...expRequest,
+                    status: 'Aprovado',
+                    decided_at: new Date().toISOString()
+                }
+            });
+
+            console.log(`[EXPIRED_REQUEST] Approved: Order #${id} assigned to driver #${requestingDriverId} (${expRequest.driver_name})`);
+
+            return res.json({
+                success: true,
+                message: `Solicitação aprovada! O pedido #${id} foi atribuído a ${expRequest.driver_name} como uma entrega ativa.`,
+                order: formatOrderResponse(updated)
+            });
+        } else if (action === 'reject' || action === 'Recusar') {
+            updateOrderMeta(id, {
+                expiration_request: {
+                    ...expRequest,
+                    status: 'Recusado',
+                    decided_at: new Date().toISOString()
+                }
+            });
+
+            console.log(`[EXPIRED_REQUEST] Rejected: Request for order #${id} by driver #${requestingDriverId}`);
+
+            return res.json({
+                success: true,
+                message: 'Solicitação do entregador recusada.',
+                order: formatOrderResponse(order)
+            });
+        } else {
+            return res.status(400).json({ error: 'Ação inválida. Use approve ou reject.' });
+        }
+    } catch (err) {
+        console.error('Error handling expiration request:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST Admin renews 24h pool window for an expired order
+app.post('/api/orders/:id/renew-pool', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const nowIso = new Date().toISOString();
+        updateOrderMeta(id, {
+            sent_to_driver_pool: true,
+            pool_approved_at: nowIso,
+            pool_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            expiration_request: null
+        });
+
+        const { data: order } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        res.json({
+            success: true,
+            message: 'Prazo de 24 horas renovado na Central de Entregadores com sucesso!',
+            order: formatOrderResponse(order)
+        });
+    } catch (err) {
+        console.error('Error renewing pool:', err);
         res.status(500).json({ error: err.message });
     }
 });

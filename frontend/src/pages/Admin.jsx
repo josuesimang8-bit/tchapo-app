@@ -689,6 +689,54 @@ export default function Admin() {
         }
     };
 
+    const handleResolveExpirationRequest = async (orderId, action) => {
+        const actionLabel = action === 'approve' || action === 'Aprovar' ? 'aprovar' : 'recusar';
+        if (!confirm(`Deseja ${actionLabel} a solicitação do entregador para este pedido expirado?`)) return;
+
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/expiration-request`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setToast(data.message || 'Solicitação processada com sucesso!');
+                setTimeout(() => setToast(null), 3500);
+                fetchOrders();
+            } else {
+                setToast(data.error || 'Erro ao processar solicitação.');
+                setTimeout(() => setToast(null), 4000);
+            }
+        } catch (err) {
+            console.error('Erro ao processar solicitação de expiração:', err);
+            setToast('Erro ao comunicar com o servidor.');
+            setTimeout(() => setToast(null), 4000);
+        }
+    };
+
+    const handleRenewPoolTimer = async (orderId) => {
+        if (!confirm('Deseja renovar o prazo de 24 horas deste pedido na Central de Entregadores?')) return;
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/renew-pool`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setToast(data.message || 'Prazo de 24 horas renovado na Central!');
+                setTimeout(() => setToast(null), 3500);
+                fetchOrders();
+            } else {
+                setToast(data.error || 'Erro ao renovar prazo.');
+                setTimeout(() => setToast(null), 4000);
+            }
+        } catch (err) {
+            console.error('Erro ao renovar prazo na Central:', err);
+            setToast('Erro ao comunicar com o servidor.');
+            setTimeout(() => setToast(null), 4000);
+        }
+    };
+
     
     
     const handleConfirmDebt = async (driverId) => {
@@ -1287,7 +1335,16 @@ export default function Admin() {
                     }}
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                    Encomendas
+                    <span>Encomendas</span>
+                    {orders.filter(o => o.expiration_request?.status === 'Pendente').length > 0 && (
+                        <span style={{
+                            background: '#ef4444', color: '#fff', fontSize: '0.7rem',
+                            fontWeight: 800, padding: '2px 6px', borderRadius: '10px',
+                            animation: 'pulse 1.5s infinite'
+                        }}>
+                            {orders.filter(o => o.expiration_request?.status === 'Pendente').length} nova(s)
+                        </span>
+                    )}
                 </button>
                 <button
                     onClick={() => setActiveTab('drivers')}
@@ -1376,6 +1433,79 @@ export default function Admin() {
 
             {activeTab === 'orders' && (
                 <>
+                    {/* Alerta de Solicitações de Pedidos Expirados por Entregadores */}
+                    {orders.filter(o => o.expiration_request && o.expiration_request.status === 'Pendente').length > 0 && (
+                        <div style={{
+                            margin: '1.5rem 2rem 0',
+                            background: '#fffbeb',
+                            border: '2px solid #f59e0b',
+                            borderRadius: '16px',
+                            padding: '1.25rem 1.5rem',
+                            boxShadow: '0 4px 14px rgba(245, 158, 11, 0.15)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                <span style={{ fontSize: '1.6rem' }}>🔔</span>
+                                <div>
+                                    <h4 style={{ margin: 0, color: '#92400e', fontSize: '1.05rem', fontWeight: 800 }}>
+                                        Solicitações de Pedidos Expirados ({orders.filter(o => o.expiration_request?.status === 'Pendente').length})
+                                    </h4>
+                                    <p style={{ margin: '2px 0 0', color: '#b45309', fontSize: '0.82rem' }}>
+                                        Entregadores solicitaram autorização para efetuar a entrega de pedidos que ultrapassaram as 24 horas na Central. Ao aprovar, o pedido entrará automaticamente na conta do entregador como entrega ativa.
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {orders.filter(o => o.expiration_request && o.expiration_request.status === 'Pendente').map(reqOrder => (
+                                    <div key={reqOrder.id} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        background: '#ffffff',
+                                        padding: '0.9rem 1.25rem',
+                                        borderRadius: '12px',
+                                        border: '1.5px solid #fde68a',
+                                        flexWrap: 'wrap',
+                                        gap: '0.75rem'
+                                    }}>
+                                        <div>
+                                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>
+                                                Pedido #{reqOrder.id} — {reqOrder.customer_name || 'Cliente'} ({reqOrder.bairro || 'Sem Bairro'})
+                                            </div>
+                                            <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '3px' }}>
+                                                👤 Solicitado por: <strong style={{ color: '#d97706' }}>{reqOrder.expiration_request.driver_name || 'Entregador'}</strong> {reqOrder.expiration_request.driver_phone ? `(${reqOrder.expiration_request.driver_phone})` : ''} • {new Date(reqOrder.expiration_request.requested_at).toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleResolveExpirationRequest(reqOrder.id, 'approve')}
+                                                style={{
+                                                    background: '#16a34a', color: '#fff', border: 'none',
+                                                    padding: '0.6rem 1.1rem', borderRadius: '8px', fontWeight: 800,
+                                                    fontSize: '0.84rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                                                    boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)'
+                                                }}
+                                            >
+                                                ✅ Aprovar e Ativar Entrega
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleResolveExpirationRequest(reqOrder.id, 'reject')}
+                                                style={{
+                                                    background: '#ef4444', color: '#fff', border: 'none',
+                                                    padding: '0.6rem 0.95rem', borderRadius: '8px', fontWeight: 700,
+                                                    fontSize: '0.84rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+                                                }}
+                                            >
+                                                ❌ Recusar
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Stats bar */}
                     <div style={{
                         display: 'flex', gap: '1rem', padding: '1.5rem 2rem',
@@ -1642,13 +1772,74 @@ export default function Admin() {
                                                         <div style={{ marginTop: '6px' }}>
                                                             {order.sent_to_driver_pool ? (
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                                    <span style={{
-                                                                        background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
-                                                                        borderRadius: '6px', padding: '4px 6px', fontWeight: 700, fontSize: '0.72rem',
-                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
-                                                                    }}>
-                                                                        🛵 Na Central (Aguardando Aceite)
-                                                                    </span>
+                                                                    {order.expiration_request && order.expiration_request.status === 'Pendente' && (
+                                                                        <div style={{
+                                                                            background: '#fffbeb', border: '1.5px solid #f59e0b', borderRadius: '8px',
+                                                                            padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: '4px'
+                                                                        }}>
+                                                                            <div style={{ fontWeight: 800, color: '#92400e', fontSize: '0.72rem', lineHeight: 1.2 }}>
+                                                                                🙋 Solicitado por: <strong>{order.expiration_request.driver_name || 'Entregador'}</strong>
+                                                                            </div>
+                                                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleResolveExpirationRequest(order.id, 'approve')}
+                                                                                    style={{
+                                                                                        flex: 1, background: '#16a34a', color: '#fff', border: 'none',
+                                                                                        borderRadius: '5px', padding: '3px 4px', fontWeight: 700, fontSize: '0.68rem',
+                                                                                        cursor: 'pointer'
+                                                                                    }}
+                                                                                >
+                                                                                    ✅ Aprovar
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleResolveExpirationRequest(order.id, 'reject')}
+                                                                                    style={{
+                                                                                        background: '#ef4444', color: '#fff', border: 'none',
+                                                                                        borderRadius: '5px', padding: '3px 6px', fontWeight: 700, fontSize: '0.68rem',
+                                                                                        cursor: 'pointer'
+                                                                                    }}
+                                                                                >
+                                                                                    ❌ Recusar
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {order.is_pool_expired ? (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                            <span style={{
+                                                                                background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca',
+                                                                                borderRadius: '6px', padding: '3px 6px', fontWeight: 800, fontSize: '0.7rem',
+                                                                                textAlign: 'center'
+                                                                            }}>
+                                                                                ⚠️ Expirado (+24h)
+                                                                            </span>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleRenewPoolTimer(order.id)}
+                                                                                style={{
+                                                                                    background: '#f59e0b', color: '#fff', border: 'none',
+                                                                                    borderRadius: '5px', padding: '3px 5px', fontWeight: 700, fontSize: '0.68rem',
+                                                                                    cursor: 'pointer', textAlign: 'center'
+                                                                                }}
+                                                                                title="Renovar prazo de 24 horas na Central"
+                                                                            >
+                                                                                🔄 Renovar +24h na Central
+                                                                            </button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span style={{
+                                                                            background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe',
+                                                                            borderRadius: '6px', padding: '4px 6px', fontWeight: 700, fontSize: '0.7rem',
+                                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                                                            textAlign: 'center'
+                                                                        }}>
+                                                                            🛵 Na Central ({order.pool_remaining_secs != null ? `${Math.floor(order.pool_remaining_secs / 3600)}h ${Math.floor((order.pool_remaining_secs % 3600) / 60)}m` : '24h'})
+                                                                        </span>
+                                                                    )}
+
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => updateStatus(order.id, 'Pendente')}

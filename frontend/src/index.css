@@ -2682,15 +2682,22 @@ body {
     padding: 4px !important;
     border-radius: 14px !important;
     gap: 4px !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 14px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.rp-segment-bar::-webkit-scrollbar {
+    display: none !important;
 }
 
 .rp-segment-btn {
-    flex: 1 !important;
-    padding: 9px 12px !important;
+    flex: 1 0 auto !important;
+    padding: 8px 12px !important;
     border: none !important;
     border-radius: 10px !important;
-    font-size: 0.82rem !important;
+    font-size: 0.8rem !important;
     font-weight: 700 !important;
     cursor: pointer !important;
     color: #64748b !important;
@@ -2701,6 +2708,8 @@ body {
     align-items: center !important;
     justify-content: center !important;
     gap: 6px !important;
+    white-space: nowrap !important;
+    min-height: 40px !important;
 }
 
 .rp-segment-btn.active {
@@ -2932,5 +2941,77 @@ input:checked + .rp-slider {
 
 input:checked + .rp-slider:before {
     transform: translateX(20px);
+}
+
+/* ==========================================================================
+   MOBILE OPTIMIZATIONS FOR DRIVER PORTAL (PEDIDOS & ACTIONS)
+   ========================================================================== */
+
+.rp-active-order-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1.25rem;
+    border: 1.5px solid #bfdbfe;
+    box-shadow: 0 4px 20px -2px rgba(37, 99, 235, 0.08);
+}
+
+body.dark-mode .rp-active-order-card {
+    background: #111111 !important;
+    border: 1.5px solid #1e3a8a !important;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6) !important;
+}
+
+.rp-history-card {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+body.dark-mode .rp-history-card {
+    background: #111111 !important;
+    border-color: #222222 !important;
+    color: #ffffff !important;
+}
+
+@media (max-width: 480px) {
+    .rp-mobile-container {
+        padding: 0 10px 105px !important;
+    }
+
+    .rp-order-card {
+        padding: 12px 10px !important;
+        border-radius: 16px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .rp-active-order-card {
+        padding: 12px 10px !important;
+        border-radius: 16px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .rp-history-card {
+        padding: 12px 10px !important;
+        border-radius: 16px !important;
+    }
+
+    .rp-btn-primary {
+        padding: 12px 12px !important;
+        font-size: 0.86rem !important;
+        border-radius: 14px !important;
+        min-height: 46px !important;
+    }
+
+    .rp-segment-btn {
+        padding: 8px 10px !important;
+        font-size: 0.76rem !important;
+        gap: 4px !important;
+    }
+
+    .rp-modal-box {
+        padding: 1.25rem 1rem !important;
+        border-radius: 18px !important;
+    }
 }
 

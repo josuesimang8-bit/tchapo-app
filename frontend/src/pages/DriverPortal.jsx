@@ -2805,7 +2805,7 @@ function DriverPortalContent() {
                                             <div>
                                                 <div style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                                                     <div>
-                                                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>
+                                                        <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                                             Pedidos Aguardando Entregador em Moçambique
                                                         </h3>
                                                         <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.88rem' }}>
@@ -2815,9 +2815,9 @@ function DriverPortalContent() {
                                                     <button
                                                         onClick={() => fetchDashboard(authDriver?.id)}
                                                         style={{
-                                                            background: '#f1f5f9',
-                                                            color: '#334151',
-                                                            border: '1px solid #cbd5e1',
+                                                            background: darkMode ? '#27272a' : '#f1f5f9',
+                                                            color: darkMode ? '#f1f5f9' : '#334151',
+                                                            border: darkMode ? '1px solid #3f3f46' : '1px solid #cbd5e1',
                                                             padding: '0.45rem 0.85rem',
                                                             borderRadius: '8px',
                                                             fontSize: '0.8rem',
@@ -3005,9 +3005,9 @@ function DriverPortalContent() {
                                                                  return (
                                                                      <div key={order.id} className="rp-order-card">
                                                                          {/* Header with Order ID & Status */}
-                                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                 <span style={{ fontWeight: 900, fontSize: '1.05rem', color: '#0f172a' }}>
+                                                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                                                                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                  <span style={{ fontWeight: 900, fontSize: '1.05rem', color: darkMode ? '#ffffff' : '#0f172a' }}>
                                                                                      Pedido #{order.id}
                                                                                  </span>
                                                                                  {order.time && (
@@ -3059,17 +3059,19 @@ function DriverPortalContent() {
                                                                          </div>
 
                                                                          {/* Clean Single-line Location Tag */}
-                                                                         <div style={{
-                                                                             background: '#f8fafc',
-                                                                             padding: '8px 12px',
-                                                                             borderRadius: '12px',
-                                                                             border: '1px solid #e2e8f0',
-                                                                             marginBottom: '12px',
-                                                                             display: 'flex',
-                                                                             alignItems: 'center',
-                                                                             justifyContent: 'space-between'
-                                                                         }}>
-                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0f172a' }}>
+                                                                          <div style={{
+                                                                              background: darkMode ? '#18181b' : '#f8fafc',
+                                                                              padding: '8px 12px',
+                                                                              borderRadius: '12px',
+                                                                              border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
+                                                                              marginBottom: '12px',
+                                                                              display: 'flex',
+                                                                              alignItems: 'center',
+                                                                              justifyContent: 'space-between',
+                                                                              flexWrap: 'wrap',
+                                                                              gap: '6px'
+                                                                          }}>
+                                                                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: darkMode ? '#f8fafc' : '#0f172a' }}>
                                                                                  <span style={{ color: '#f64c00' }}><Icons.MapPin /></span>
                                                                                  <span><strong>{loc.bairro || 'Beira'}</strong> • {loc.province}</span>
                                                                              </div>
@@ -3085,22 +3087,22 @@ function DriverPortalContent() {
                                                                                      return (
                                                                                          <div key={idx} style={{
                                                                                              display: 'flex',
-                                                                                             alignItems: 'center',
-                                                                                             gap: '12px',
-                                                                                             background: '#ffffff',
-                                                                                             padding: '10px 12px',
-                                                                                             borderRadius: '16px',
-                                                                                             border: '1px solid #e2e8f0',
-                                                                                             boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                                                                                         }}>
-                                                                                             {/* Photo Thumbnail */}
-                                                                                             <div
-                                                                                                 onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pickupItem?.price })}
-                                                                                                 title="Toque para ver a foto do produto"
-                                                                                                 style={{
-                                                                                                     width: '74px',
-                                                                                                     height: '74px',
-                                                                                                     minWidth: '74px',
+                                                                                              alignItems: 'center',
+                                                                                              gap: '10px',
+                                                                                              background: darkMode ? '#18181b' : '#ffffff',
+                                                                                              padding: '10px 12px',
+                                                                                              borderRadius: '16px',
+                                                                                              border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
+                                                                                              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                                                                                          }}>
+                                                                                              {/* Photo Thumbnail */}
+                                                                                              <div
+                                                                                                  onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pickupItem?.price })}
+                                                                                                  title="Toque para ver a foto do produto"
+                                                                                                  style={{
+                                                                                                      width: '68px',
+                                                                                                      height: '68px',
+                                                                                                      minWidth: '68px',
                                                                                                      borderRadius: '14px',
                                                                                                      overflow: 'hidden',
                                                                                                      background: '#f8fafc',
@@ -3142,8 +3144,8 @@ function DriverPortalContent() {
                                                                                              </div>
 
                                                                                              {/* Aligned Details */}
-                                                                                             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                                                                 <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                                                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: darkMode ? '#ffffff' : '#0f172a', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                                                                      {it.product_name}
                                                                                                  </div>
                                                                                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
@@ -3184,15 +3186,15 @@ function DriverPortalContent() {
 
                                                                     {/* Financial Breakdown Ticket */}
                                                                     <div style={{
-                                                                        background: '#f8fafc',
+                                                                        background: darkMode ? '#18181b' : '#f8fafc',
                                                                         borderRadius: '14px',
-                                                                        border: '1px solid #e2e8f0',
+                                                                        border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
                                                                         padding: '10px 12px',
                                                                         marginBottom: '12px'
                                                                     }}>
                                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontSize: '0.8rem' }}>
-                                                                            <span style={{ color: '#64748b' }}>Cobrar do Cliente:</span>
-                                                                            <strong style={{ color: '#0f172a', fontWeight: 800 }}>{formatMZCurrency(order.total)}</strong>
+                                                                            <span style={{ color: darkMode ? '#a1a1aa' : '#64748b' }}>Cobrar do Cliente:</span>
+                                                                            <strong style={{ color: darkMode ? '#ffffff' : '#0f172a', fontWeight: 800 }}>{formatMZCurrency(order.total)}</strong>
                                                                         </div>
                                                                         {pInfo.pickupTotal > 0 && (
                                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontSize: '0.8rem' }}>
@@ -3213,7 +3215,7 @@ function DriverPortalContent() {
                                                                             display: 'flex',
                                                                             justifyContent: 'space-between',
                                                                             alignItems: 'center',
-                                                                            borderTop: '1px dashed #cbd5e1',
+                                                                            borderTop: darkMode ? '1px dashed #3f3f46' : '1px dashed #cbd5e1',
                                                                             paddingTop: '8px'
                                                                         }}>
                                                                             <div>
@@ -3313,7 +3315,7 @@ function DriverPortalContent() {
                                                 </p>
                                             </div>
                                         ) : (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                                 {expiredOrders.map(order => {
                                                     const loc = extractOrderLocation(order);
                                                     const pInfo = calcOrderPickupAndProfit(order);
@@ -3515,7 +3517,7 @@ function DriverPortalContent() {
                                 {ordersSubTab === 'active' && (
                                     <div>
                                         <div style={{ marginBottom: '1.25rem' }}>
-                                            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>
+                                            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                                 Entregas em Andamento ({activeOrders.length})
                                             </h3>
                                             <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.88rem' }}>
@@ -3539,17 +3541,17 @@ function DriverPortalContent() {
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                                 {activeOrders.map(order => (
-                                                    <div key={order.id} style={{
-                                                        background: '#fff',
-                                                        borderRadius: '22px',
-                                                        padding: '1.35rem',
-                                                        border: '1.5px solid #bfdbfe',
+                                                    <div key={order.id} className="rp-active-order-card" style={{
+                                                        background: darkMode ? '#111111' : '#fff',
+                                                        borderRadius: '20px',
+                                                        padding: '1.25rem',
+                                                        border: darkMode ? '1.5px solid #1e3a8a' : '1.5px solid #bfdbfe',
                                                         boxShadow: '0 4px 20px -2px rgba(37, 99, 235, 0.08)'
                                                     }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-                                                            <span style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0f172a' }}>
+                                                            <span style={{ fontWeight: 900, fontSize: '1.15rem', color: darkMode ? '#ffffff' : '#0f172a' }}>
                                                                 Pedido #{order.id}
                                                             </span>
                                                             <span style={{ background: '#dbeafe', color: '#1d4ed8', fontSize: '0.78rem', fontWeight: 800, padding: '0.25rem 0.65rem', borderRadius: '999px' }}>
@@ -3576,12 +3578,12 @@ function DriverPortalContent() {
                                                             </div>
                                                         )}
 
-                                                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.88rem' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0f172a', fontWeight: 800, marginBottom: '0.45rem' }}>
+                                                        <div style={{ background: darkMode ? '#18181b' : '#f8fafc', padding: '1rem', borderRadius: '14px', border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.88rem' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: darkMode ? '#ffffff' : '#0f172a', fontWeight: 800, marginBottom: '0.45rem' }}>
                                                                 <Icons.MapPin />
                                                                 <span>{order.bairro || 'Beira'} • {order.address || 'Centro'}</span>
                                                             </div>
-                                                            <div style={{ color: '#0f172a', fontWeight: 700, marginBottom: '0.35rem' }}>
+                                                            <div style={{ color: darkMode ? '#f1f5f9' : '#0f172a', fontWeight: 700, marginBottom: '0.35rem' }}>
                                                                 👤 Cliente: <strong>{order.customer_name || 'Cliente'}</strong>
                                                             </div>
                                                             {(() => {
@@ -3672,9 +3674,9 @@ function DriverPortalContent() {
                                                                                     onClick={() => setPreviewPhoto({ name: it.product_name, image: imgUrl, price: it.price, quantity: it.quantity, pickupPrice: pItem?.price })}
                                                                                     title="Toque para ampliar foto"
                                                                                     style={{
-                                                                                        width: '92px',
-                                                                                        height: '92px',
-                                                                                        minWidth: '92px',
+                                                                                        width: '68px',
+                                                                                        height: '68px',
+                                                                                        minWidth: '68px',
                                                                                         borderRadius: '14px',
                                                                                         overflow: 'hidden',
                                                                                         background: '#f8fafc',
@@ -3769,83 +3771,92 @@ function DriverPortalContent() {
                                                             </div>
                                                         )}
 
-                                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                                            <a
-                                                                href={`${API_URL}/api/orders/${order.id}/pdf`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                style={{
-                                                                    flex: 1,
-                                                                    background: '#0f172a',
-                                                                    color: '#fff',
-                                                                    textDecoration: 'none',
-                                                                    padding: '0.8rem',
-                                                                    borderRadius: '10px',
-                                                                    fontWeight: 800,
-                                                                    fontSize: '0.85rem',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    gap: '0.45rem',
-                                                                    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.18)'
-                                                                }}
-                                                            >
-                                                                <Icons.FileText />
-                                                                <span>Baixar Fatura (PDF)</span>
-                                                            </a>
-
-                                                            {(() => {
-                                                                const rawPhone = order.phone || order.customer_phone || order.contact || order.telefone || order.cellphone || order.whatsapp || order.customer_contact;
-                                                                if (!rawPhone) return null;
-                                                                const cleanPhone = String(rawPhone).replace(/\D/g, '');
-                                                                if (!cleanPhone) return null;
-                                                                return (
-                                                                    <a
-                                                                        href={`tel:${cleanPhone}`}
-                                                                        style={{
-                                                                            flex: 1,
-                                                                            background: '#0284c7',
-                                                                            color: '#fff',
-                                                                            textDecoration: 'none',
-                                                                            padding: '0.8rem 0.5rem',
-                                                                            borderRadius: '10px',
-                                                                            fontWeight: 700,
-                                                                            fontSize: '0.85rem',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            gap: '0.4rem',
-                                                                            boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)'
-                                                                        }}
-                                                                    >
-                                                                        <Icons.Phone />
-                                                                        <span>Ligar para Cliente</span>
-                                                                    </a>
-                                                                );
-                                                            })()}
-
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                                                            {/* Botão Primário de Ação Rápida */}
                                                             <button
                                                                 onClick={() => handleUpdateOrderStatus(order.id, 'Entregue')}
                                                                 style={{
-                                                                    flex: 1.3,
-                                                                    background: '#2563eb',
+                                                                    width: '100%',
+                                                                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                                                                     color: '#fff',
                                                                     border: 'none',
-                                                                    padding: '0.8rem',
-                                                                    borderRadius: '10px',
-                                                                    fontWeight: 800,
-                                                                    fontSize: '0.85rem',
+                                                                    padding: '0.95rem 1rem',
+                                                                    borderRadius: '14px',
+                                                                    fontWeight: 900,
+                                                                    fontSize: '0.95rem',
                                                                     cursor: 'pointer',
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'center',
-                                                                    gap: '0.4rem',
-                                                                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+                                                                    gap: '0.5rem',
+                                                                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+                                                                    minHeight: '48px'
                                                                 }}
                                                             >
                                                                 <Icons.CheckCircle />
                                                                 <span>Confirmar Entrega</span>
                                                             </button>
+
+                                                            {/* Ações Secundárias lado a lado */}
+                                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                                {(() => {
+                                                                    const rawPhone = order.phone || order.customer_phone || order.contact || order.telefone || order.cellphone || order.whatsapp || order.customer_contact;
+                                                                    if (!rawPhone) return null;
+                                                                    const cleanPhone = String(rawPhone).replace(/\D/g, '');
+                                                                    if (!cleanPhone) return null;
+                                                                    return (
+                                                                        <a
+                                                                            href={`tel:${cleanPhone}`}
+                                                                            style={{
+                                                                                flex: 1,
+                                                                                background: '#0284c7',
+                                                                                color: '#fff',
+                                                                                textDecoration: 'none',
+                                                                                padding: '0.75rem 0.5rem',
+                                                                                borderRadius: '12px',
+                                                                                fontWeight: 700,
+                                                                                fontSize: '0.82rem',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                gap: '0.4rem',
+                                                                                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
+                                                                                minHeight: '42px',
+                                                                                textAlign: 'center'
+                                                                            }}
+                                                                        >
+                                                                            <Icons.Phone />
+                                                                            <span>Ligar Cliente</span>
+                                                                        </a>
+                                                                    );
+                                                                })()}
+
+                                                                <a
+                                                                    href={`${API_URL}/api/orders/${order.id}/pdf`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    style={{
+                                                                        flex: 1,
+                                                                        background: darkMode ? '#242424' : '#0f172a',
+                                                                        color: '#fff',
+                                                                        textDecoration: 'none',
+                                                                        padding: '0.75rem 0.5rem',
+                                                                        borderRadius: '12px',
+                                                                        fontWeight: 700,
+                                                                        fontSize: '0.82rem',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        gap: '0.4rem',
+                                                                        boxShadow: '0 2px 8px rgba(15, 23, 42, 0.18)',
+                                                                        minHeight: '42px',
+                                                                        textAlign: 'center'
+                                                                    }}
+                                                                >
+                                                                    <Icons.FileText />
+                                                                    <span>Fatura PDF</span>
+                                                                </a>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -3856,8 +3867,8 @@ function DriverPortalContent() {
 
                                 {/* SUB-VIEW 3: HISTÓRICO CONCLUÍDO */}
                                 {ordersSubTab === 'history' && (
-                                    <div style={{ background: '#fff', padding: '2rem', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
-                                        <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.25rem', fontWeight: 900 }}>
+                                    <div className="rp-history-card" style={{ background: darkMode ? '#111111' : '#fff', padding: '1.25rem 1rem', borderRadius: '20px', border: darkMode ? '1px solid #222222' : '1px solid #e2e8f0' }}>
+                                        <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.25rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
                                             Histórico de Entregas Finalizadas
                                         </h3>
                                         {recentDeliveries.length === 0 ? (
@@ -4337,12 +4348,12 @@ function DriverPortalContent() {
                         justifyContent: 'center',
                         zIndex: 999999,
                         backdropFilter: 'blur(8px)',
-                        padding: '1.5rem'
+                        padding: '1rem'
                     }}>
-                        <div style={{
+                        <div className="rp-modal-box" style={{
                             background: darkMode ? '#111111' : '#fff',
                             borderRadius: '24px',
-                            padding: '2.25rem',
+                            padding: '1.75rem',
                             maxWidth: '540px',
                             width: '100%',
                             boxShadow: darkMode ? '0 25px 60px rgba(0,0,0,0.8)' : '0 25px 60px rgba(0,0,0,0.35)',
@@ -5726,33 +5737,34 @@ function DriverPortalContent() {
                     justifyContent: 'center',
                     padding: '1rem'
                 }}>
-                    <div style={{
-                        background: '#ffffff',
+                    <div className="rp-modal-box" style={{
+                        background: darkMode ? '#111111' : '#ffffff',
+                        color: darkMode ? '#ffffff' : '#0f172a',
                         borderRadius: '24px',
                         maxWidth: '460px',
                         width: '100%',
-                        padding: '1.75rem',
+                        padding: '1.5rem',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
                     }}>
-                        <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.5rem' }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: darkMode ? '#451a03' : '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.5rem' }}>
                             ✋
                         </div>
-                        <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', textAlign: 'center' }}>
+                        <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a', textAlign: 'center' }}>
                             Solicitar Pedido Expirado
                         </h3>
-                        <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: '#475569', textAlign: 'center', lineHeight: 1.5 }}>
+                        <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: darkMode ? '#94a3b8' : '#475569', textAlign: 'center', lineHeight: 1.5 }}>
                             Deseja solicitar ao Administrador a realização da entrega do <strong>Pedido #{requestingExpiredOrder.id}</strong>?
                         </p>
-                        <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+                        <div style={{ background: darkMode ? '#18181b' : '#f8fafc', padding: '12px', borderRadius: '14px', border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                <span style={{ color: '#64748b' }}>Valor Total:</span>
-                                <strong style={{ color: '#0f172a' }}>{formatMZCurrency(requestingExpiredOrder.total)}</strong>
+                                <span style={{ color: darkMode ? '#94a3b8' : '#64748b' }}>Valor Total:</span>
+                                <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{formatMZCurrency(requestingExpiredOrder.total)}</strong>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669', fontWeight: 800 }}>
                                 <span>Seu Lucro Estimado:</span>
                                 <span>+{formatMZCurrency(calcOrderPickupAndProfit(requestingExpiredOrder).driverNetProfit)}</span>
                             </div>
-                            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e2e8f0', color: '#b45309', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0', color: '#b45309', fontSize: '0.78rem', lineHeight: 1.4 }}>
                                 💡 Assim que o Administrador aprovar, o pedido entrará automaticamente na sua aba <strong>"Em Rota"</strong> como uma entrega ativa!
                             </div>
                         </div>

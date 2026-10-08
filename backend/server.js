@@ -799,6 +799,21 @@ function updateOrderMeta(orderId, patch) {
     return meta[idKey];
 }
 
+function getDriverPendingExpirationRequest(driverId) {
+    if (!driverId) return null;
+    const numId = Number(driverId);
+    const allMeta = loadOrdersMeta();
+    for (const [orderId, meta] of Object.entries(allMeta)) {
+        if (meta && meta.expiration_request) {
+            const req = meta.expiration_request;
+            if (Number(req.driver_id) === numId && req.status === 'Pendente') {
+                return { order_id: Number(orderId), ...req };
+            }
+        }
+    }
+    return null;
+}
+
 function formatOrderResponse(order) {
     if (!order) return order;
     let itemsArray = [];
@@ -1711,6 +1726,8 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             expired_orders: expiredOrders,
             active_orders: activeOrders.map(formatOrderResponse),
             recent_deliveries: delivered.slice(0, 15).map(formatOrderResponse),
+            pending_expiration_request: getDriverPendingExpirationRequest(numId),
+            has_pending_request: Boolean(getDriverPendingExpirationRequest(numId)),
             warnings: meta.warnings || []
         });
     } catch (err) {
@@ -1771,6 +1788,14 @@ app.put('/api/orders/:id/accept', async (req, res) => {
         if (currentActiveOrders && currentActiveOrders.length > 0) {
             return res.status(400).json({
                 error: 'Já possui um pedido em andamento! Deve concluir a entrega atual e efetuar o pagamento da plataforma antes de aceitar outro pedido.'
+            });
+        }
+
+        // Check if driver has a pending request for an expired order
+        const pendingExpReq = getDriverPendingExpirationRequest(numDriverId);
+        if (pendingExpReq) {
+            return res.status(400).json({
+                error: `Você possui uma solicitação pendente para o Pedido #${pendingExpReq.order_id}! Aguarde a decisão (aprovação ou recusa) do Administrador antes de aceitar novos pedidos.`
             });
         }
 
@@ -1876,6 +1901,13 @@ app.post('/api/orders/:id/request-expired', async (req, res) => {
         }
         if (driverMeta.pending_debt && driverMeta.pending_debt.status !== 'Pago') {
             return res.status(403).json({ error: 'Você possui uma taxa/comissão pendente. Regularize o pagamento para poder solicitar pedidos.' });
+        }
+
+        const pendingExpReq = getDriverPendingExpirationRequest(numDriverId);
+        if (pendingExpReq && Number(pendingExpReq.order_id) !== Number(id)) {
+            return res.status(400).json({
+                error: `Você já possui uma solicitação de entrega pendente para o Pedido #${pendingExpReq.order_id}! Aguarde a decisão do Administrador antes de solicitar outro pedido.`
+            });
         }
 
         const { data: order, error: orderErr } = await supabase

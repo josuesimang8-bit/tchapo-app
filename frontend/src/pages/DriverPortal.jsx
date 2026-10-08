@@ -1061,6 +1061,10 @@ function DriverPortalContent() {
             showToast('Você já tem um pedido em andamento! Conclua a entrega atual antes de aceitar outro.', 'error');
             return;
         }
+        if (pendingExpirationRequest) {
+            showToast(`Você possui uma solicitação pendente para o Pedido #${pendingExpirationRequest.order_id}! Aguarde a decisão do Administrador antes de aceitar novos pedidos.`, 'warning');
+            return;
+        }
         setConfirmingOrder(order);
     };
 
@@ -1102,6 +1106,10 @@ function DriverPortalContent() {
         if (!requestingExpiredOrder || !authDriver?.id) return;
         if (!isOnline) {
             showToast('Você precisa ficar Online para solicitar pedidos.', 'warning');
+            return;
+        }
+        if (pendingExpirationRequest && Number(requestingExpiredOrder.id) !== Number(pendingExpirationRequest.order_id)) {
+            showToast(`Você já possui uma solicitação pendente para o Pedido #${pendingExpirationRequest.order_id}! Aguarde o Administrador responder antes de solicitar outro pedido.`, 'warning');
             return;
         }
         setSubmittingExpiredRequest(true);
@@ -1270,6 +1278,12 @@ function DriverPortalContent() {
     const expiredOrders = dashboardData?.expired_orders || [];
     const activeOrders = dashboardData?.active_orders || [];
     const recentDeliveries = dashboardData?.recent_deliveries || [];
+
+    // Solicitação de pedido expirado iniciada por este entregador (bloqueia aceitar novos pedidos)
+    const pendingExpirationRequest = dashboardData?.pending_expiration_request || (() => {
+        const found = (expiredOrders || []).find(o => o.expiration_request && Number(o.expiration_request.driver_id) === Number(authDriver?.id) && o.expiration_request.status === 'Pendente');
+        return found ? { order_id: found.id, ...found.expiration_request } : null;
+    })();
 
     const format24hCountdown = (order) => {
         if (!order?.pool_expires_at) return '24h restantes';
@@ -2815,7 +2829,32 @@ function DriverPortalContent() {
                                                     </button>
                                                 </div>
 
-                                                 {/* Filtro por Províncias */}
+                                                 {/* Alerta de Solicitação Pendente Bloqueando Novos Aceites */}
+                                                {pendingExpirationRequest && (
+                                                    <div style={{
+                                                        background: '#fffbeb',
+                                                        border: '2px solid #f59e0b',
+                                                        borderRadius: '16px',
+                                                        padding: '1rem 1.25rem',
+                                                        marginBottom: '1.25rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.75rem',
+                                                        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.12)'
+                                                    }}>
+                                                        <span style={{ fontSize: '1.6rem' }}>⏳</span>
+                                                        <div style={{ flex: 1 }}>
+                                                            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#92400e' }}>
+                                                                Solicitação do Pedido #{pendingExpirationRequest.order_id} em Análise pelo Administrador
+                                                            </h4>
+                                                            <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#b45309', lineHeight: 1.4 }}>
+                                                                Você solicitou a entrega deste pedido expirado. Enquanto o Administrador não aprovar ou recusar, você não poderá aceitar novos pedidos.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Filtro por Províncias */}
                                                  <div style={{
                                                      background: darkMode ? '#18181b' : '#f8fafc',
                                                      border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
@@ -3196,14 +3235,31 @@ function DriverPortalContent() {
                                                                     </div>
 
                                                                     {/* Action Button */}
-                                                                    <button
-                                                                        onClick={() => promptAcceptOrder(order)}
-                                                                        className="rp-btn-primary"
-                                                                        style={{ width: '100%' }}
-                                                                    >
-                                                                        <Icons.CheckCircle />
-                                                                        <span>Aceitar Pedido • Ganhe +{formatMZCurrency(pInfo.driverNetProfit)} ➔</span>
-                                                                    </button>
+                                                                    {pendingExpirationRequest ? (
+                                                                        <div style={{
+                                                                            background: '#fffbeb',
+                                                                            border: '1.5px solid #f59e0b',
+                                                                            borderRadius: '12px',
+                                                                            padding: '0.75rem 1rem',
+                                                                            textAlign: 'center'
+                                                                        }}>
+                                                                            <div style={{ color: '#92400e', fontWeight: 800, fontSize: '0.84rem', marginBottom: '2px' }}>
+                                                                                🔒 Bloqueado: Solicitação do Pedido #{pendingExpirationRequest.order_id} em análise
+                                                                            </div>
+                                                                            <p style={{ margin: 0, color: '#b45309', fontSize: '0.75rem', lineHeight: 1.3 }}>
+                                                                                Aguarde o Administrador aprovar ou recusar a sua solicitação antes de aceitar este pedido.
+                                                                            </p>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => promptAcceptOrder(order)}
+                                                                            className="rp-btn-primary"
+                                                                            style={{ width: '100%' }}
+                                                                        >
+                                                                            <Icons.CheckCircle />
+                                                                            <span>Aceitar Pedido • Ganhe +{formatMZCurrency(pInfo.driverNetProfit)} ➔</span>
+                                                                        </button>
+                                                                    )}
                                                                 </div>
                                                             );
                                                         })}

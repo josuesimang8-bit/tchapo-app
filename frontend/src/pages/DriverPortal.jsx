@@ -268,6 +268,18 @@ const IconsBase = {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
         </svg>
+    ),
+    Target: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="6"/>
+            <circle cx="12" cy="12" r="2"/>
+        </svg>
+    ),
+    Flame: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+        </svg>
     )
 };
 
@@ -685,6 +697,7 @@ function DriverPortalContent() {
     const [acceptingId, setAcceptingId] = useState(null);
     const [showBalance, setShowBalance] = useState(true);
     const [earningsPeriod, setEarningsPeriod] = useState('today'); // 'today' | '7days' | '30days'
+    const [dailyGoalTarget, setDailyGoalTarget] = useState(3); // Meta diária no simulador de incentivo (1, 3, 5, 8)
 
     // Unified Dark Mode (Preto Puro)
     const [darkMode, setDarkMode] = useState(() => {
@@ -2457,6 +2470,192 @@ function DriverPortalContent() {
                                         </button>
                                     </div>
                                 )}
+
+                                {/* Incentive & Earnings Potential Simulator Card */}
+                                {(() => {
+                                    const ESTIMATED_NET_PER_DELIVERY = 150;
+                                    const simDaily = dailyGoalTarget * ESTIMATED_NET_PER_DELIVERY;
+                                    const simMonthly = simDaily * 30;
+                                    const simDeliveries = dailyGoalTarget * 30;
+
+                                    return (
+                                        <div style={{
+                                            background: darkMode ? '#18181b' : '#ffffff',
+                                            borderRadius: '20px',
+                                            padding: '16px 18px',
+                                            border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
+                                            boxShadow: darkMode ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 2px 10px rgba(0, 0, 0, 0.04)',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}>
+                                            {/* Ambient decorative glow */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '-30px',
+                                                right: '-30px',
+                                                width: '120px',
+                                                height: '120px',
+                                                borderRadius: '50%',
+                                                background: 'radial-gradient(circle, rgba(246, 76, 0, 0.18) 0%, rgba(246, 76, 0, 0) 70%)',
+                                                pointerEvents: 'none'
+                                            }} />
+
+                                            {/* Header */}
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '10px',
+                                                        background: 'linear-gradient(135deg, #f64c00 0%, #ff6b2b 100%)',
+                                                        color: '#ffffff',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        boxShadow: '0 2px 8px rgba(246, 76, 0, 0.3)'
+                                                    }}>
+                                                        <Icons.TrendingUp />
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: darkMode ? '#ffffff' : '#0f172a' }}>
+                                                            Simulador de Lucro Mensal
+                                                        </div>
+                                                        <div style={{ fontSize: '0.72rem', color: darkMode ? '#a1a1aa' : '#64748b' }}>
+                                                            Vê quanto podes faturar por mês
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <span style={{
+                                                    background: darkMode ? 'rgba(246, 76, 0, 0.2)' : '#fff7ed',
+                                                    color: '#f64c00',
+                                                    border: '1px solid rgba(246, 76, 0, 0.3)',
+                                                    padding: '3px 9px',
+                                                    borderRadius: '999px',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 800,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
+                                                }}>
+                                                    <span>🔥</span> Incentivo
+                                                </span>
+                                            </div>
+
+                                            {/* Highlighted Result Display */}
+                                            <div style={{
+                                                background: darkMode ? '#222226' : '#f8fafc',
+                                                borderRadius: '16px',
+                                                padding: '14px 16px',
+                                                marginBottom: '14px',
+                                                border: darkMode ? '1px solid #2e2e33' : '1px solid #edf2f7'
+                                            }}>
+                                                <div style={{ fontSize: '0.74rem', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, marginBottom: '4px' }}>
+                                                    Com <strong>{dailyGoalTarget} {dailyGoalTarget === 1 ? 'venda' : 'vendas'} por dia</strong>:
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '1.75rem',
+                                                    fontWeight: 900,
+                                                    letterSpacing: '-0.5px',
+                                                    color: '#16a34a',
+                                                    lineHeight: 1.15
+                                                }}>
+                                                    {formatMZCurrency(simMonthly)}
+                                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: darkMode ? '#a1a1aa' : '#64748b', marginLeft: '6px' }}>
+                                                        / mês líquido
+                                                    </span>
+                                                </div>
+                                                <div style={{ fontSize: '0.74rem', color: darkMode ? '#cbd5e1' : '#475569', marginTop: '6px', lineHeight: 1.45 }}>
+                                                    São <strong>{formatMZCurrency(simDaily)} por dia</strong> ({dailyGoalTarget} × 150 MT) totalizando <strong>{simDeliveries} entregas</strong> ao fim de 30 dias.
+                                                </div>
+                                            </div>
+
+                                            {/* Quick interactive selector chips */}
+                                            <div style={{ marginBottom: '14px' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: darkMode ? '#a1a1aa' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                                                    Experimenta outros ritmos:
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                                                    {[
+                                                        { count: 1, label: '1/dia', tag: '4.500 MT' },
+                                                        { count: 3, label: '3/dia', tag: '13.500 MT ⭐' },
+                                                        { count: 5, label: '5/dia', tag: '22.500 MT 🚀' },
+                                                        { count: 8, label: '8/dia', tag: '36.000 MT 👑' }
+                                                    ].map(item => {
+                                                        const isSelected = dailyGoalTarget === item.count;
+                                                        return (
+                                                            <button
+                                                                key={item.count}
+                                                                type="button"
+                                                                onClick={() => setDailyGoalTarget(item.count)}
+                                                                style={{
+                                                                    background: isSelected
+                                                                        ? 'linear-gradient(135deg, #f64c00 0%, #ff6b2b 100%)'
+                                                                        : (darkMode ? '#222226' : '#f1f5f9'),
+                                                                    color: isSelected ? '#ffffff' : (darkMode ? '#e4e4e7' : '#334155'),
+                                                                    border: isSelected
+                                                                        ? 'none'
+                                                                        : (darkMode ? '1px solid #333338' : '1px solid #e2e8f0'),
+                                                                    padding: '8px 4px',
+                                                                    borderRadius: '12px',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    alignItems: 'center',
+                                                                    gap: '2px',
+                                                                    boxShadow: isSelected ? '0 4px 12px rgba(246, 76, 0, 0.35)' : 'none',
+                                                                    transition: 'all 0.18s ease'
+                                                                }}
+                                                            >
+                                                                <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>{item.label}</span>
+                                                                <span style={{ fontSize: '0.62rem', fontWeight: 700, opacity: isSelected ? 0.95 : 0.75, whiteSpace: 'nowrap' }}>
+                                                                    {item.tag}
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            {/* Motivational Footer & Quick Action */}
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                paddingTop: '10px',
+                                                borderTop: darkMode ? '1px solid #27272a' : '1px solid #f1f5f9',
+                                                gap: '10px',
+                                                flexWrap: 'wrap'
+                                            }}>
+                                                <div style={{ fontSize: '0.72rem', color: darkMode ? '#94a3b8' : '#64748b', lineHeight: 1.35, flex: 1, minWidth: '170px' }}>
+                                                    💡 <em>Quanto mais rápido entregas, mais pedidos recebes!</em>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setActiveTab('orders'); setOrdersSubTab('available'); }}
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #f64c00 0%, #ff6b2b 100%)',
+                                                        color: '#ffffff',
+                                                        border: 'none',
+                                                        padding: '8px 12px',
+                                                        borderRadius: '10px',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.75rem',
+                                                        cursor: 'pointer',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        boxShadow: '0 2px 8px rgba(246, 76, 0, 0.3)',
+                                                        fontFamily: "'Montserrat', sans-serif"
+                                                    }}
+                                                >
+                                                    <span>Ver Pedidos</span>
+                                                    <Icons.ChevronRight />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* Period Filter Bar: Hoje | 7 Dias | 30 Dias */}
                                 <div style={{

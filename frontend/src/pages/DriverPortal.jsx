@@ -5863,12 +5863,12 @@ function DriverPortalContent() {
                                 <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
                                     Esqueceu o PIN ou precisa de ajuda?{' '}
                                     <a
-                                        href="https://wa.me/258846695621?text=Ola%20Tchapo%20Tchapo,%20esqueci%20o%20meu%20PIN%20e%20preciso%20de%20ajuda%20para%20aceder%20a%20minha%20conta%20de%20entregador."
+                                        href="https://wa.me/258834533474?text=Ola%20Tchapo%20Tchapo,%20esqueci%20o%20meu%20PIN%20e%20preciso%20de%20ajuda%20para%20aceder%20a%20minha%20conta%20de%20entregador."
                                         target="_blank"
                                         rel="noreferrer"
                                         style={{ color: '#059669', fontWeight: 700, textDecoration: 'none' }}
                                     >
-                                        Falar no WhatsApp (+258 84 669 5621)
+                                        Falar no WhatsApp (+258 83 453 3474)
                                     </a>
                                 </div>
                             </div>

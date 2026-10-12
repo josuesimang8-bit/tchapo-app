@@ -408,7 +408,7 @@ const getDriverIndex = () => {
     return null;
 };
 
-app.get(['/drivers', '/drivers/*'], (req, res) => {
+app.get(['/drivers', '/drivers/*', '/driver', '/driver/*'], (req, res) => {
     const driverIndex = getDriverIndex();
     if (driverIndex) {
         res.sendFile(driverIndex);

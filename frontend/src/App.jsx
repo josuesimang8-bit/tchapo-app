@@ -10,6 +10,7 @@ function App() {
         <Route path="/" element={<Store />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/drivers" element={<DriverPortal />} />
+        <Route path="/driver" element={<DriverPortal />} />
       </Routes>
     </BrowserRouter>
   );

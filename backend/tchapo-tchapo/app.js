@@ -2840,57 +2840,23 @@ function initPromoPopup() {
         const deliveryPaymentModal = document.getElementById('delivery-payment-promo-modal');
         const closeDeliveryPayment = document.getElementById('close-delivery-payment-promo');
 
-        const deliveryOverlay = document.getElementById('delivery-promo-overlay');
-        const deliveryModal = document.getElementById('delivery-promo-modal');
-        const closeDelivery = document.getElementById('close-delivery-promo');
-
-        const referralOverlay = document.getElementById('referral-promo-overlay');
-        const referralModal = document.getElementById('referral-promo-modal');
-        const closeReferral = document.getElementById('close-referral-promo');
-
-        if (!deliveryPaymentOverlay || !deliveryPaymentModal || !deliveryOverlay || !deliveryModal || !referralOverlay || !referralModal) return;
+        if (!deliveryPaymentOverlay || !deliveryPaymentModal) return;
 
         sessionStorage.setItem('tchapo_promo_seen', 'true');
 
-        // Show Delivery Payment promo first
+        // Show Delivery Payment promo
         deliveryPaymentOverlay.classList.add('active');
         deliveryPaymentModal.classList.add('active');
         updateScrollLock();
 
-        const transitionToDelivery = () => {
+        const closeAllPromos = () => {
             deliveryPaymentOverlay.classList.remove('active');
             deliveryPaymentModal.classList.remove('active');
-            
-            // Show Delivery promo second
-            deliveryOverlay.classList.add('active');
-            deliveryModal.classList.add('active');
             updateScrollLock();
         };
 
-        const transitionToReferral = () => {
-            deliveryOverlay.classList.remove('active');
-            deliveryModal.classList.remove('active');
-            
-            // Show Referral promo third
-            referralOverlay.classList.add('active');
-            referralModal.classList.add('active');
-            updateScrollLock();
-        };
-
-        const closeAllPromos = () => {
-            referralOverlay.classList.remove('active');
-            referralModal.classList.remove('active');
-            updateScrollLock();
-        };
-
-        if (closeDeliveryPayment) closeDeliveryPayment.onclick = transitionToDelivery;
-        if (deliveryPaymentOverlay) deliveryPaymentOverlay.onclick = transitionToDelivery;
-
-        if (closeDelivery) closeDelivery.onclick = transitionToReferral;
-        if (deliveryOverlay) deliveryOverlay.onclick = transitionToReferral;
-
-        if (closeReferral) closeReferral.onclick = closeAllPromos;
-        if (referralOverlay) referralOverlay.onclick = closeAllPromos;
+        if (closeDeliveryPayment) closeDeliveryPayment.onclick = closeAllPromos;
+        if (deliveryPaymentOverlay) deliveryPaymentOverlay.onclick = closeAllPromos;
     } catch (e) {}
 }
 

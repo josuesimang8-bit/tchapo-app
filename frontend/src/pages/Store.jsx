@@ -1692,12 +1692,6 @@ export default function Store() {
                                 </div>
                             )}
                         </div>
-                        {currentUser && (
-                            <button className="btn-referrals" onClick={handleOpenReferrals} style={{ backgroundColor: '#f97316', color: '#fff', marginRight: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-                                <span className="nav-btn-text">Indique e Ganha</span>
-                            </button>
-                        )}
                         <button className="btn-meus-pedidos" onClick={fetchMyOrders}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /></svg>
                             <span className="nav-btn-text">Os Meus Pedidos</span>
@@ -2267,36 +2261,7 @@ export default function Store() {
                                     <option value="Dinheiro Físico">Dinheiro Físico</option>
                                 </select>
 
-                                <div className="referral-input-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '0.5rem', marginTop: '0.5rem' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="Código de Indicação"
-                                        value={referralInput}
-                                        onChange={e => setReferralInput(e.target.value)}
-                                        disabled={!!appliedReferralCode}
-                                        style={{ flex: 1, textTransform: 'uppercase', padding: '0.5rem', background: '#374151', border: '1px solid #4b5563', borderRadius: '6px', color: '#fff' }}
-                                    />
-                                    {appliedReferralCode ? (
-                                        <button
-                                            type="button"
-                                            onClick={handleRemoveReferral}
-                                            style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer' }}
-                                        >
-                                            Remover
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={handleValidateReferral}
-                                            disabled={validatingReferral || !referralInput.trim()}
-                                            style={{ backgroundColor: '#eab308', color: '#000', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                        >
-                                            {validatingReferral ? '...' : 'Aplicar'}
-                                        </button>
-                                    )}
-                                </div>
-                                {referralError && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginBottom: '0.5rem', width: '100%' }}>{referralError}</div>}
-                                {appliedReferralCode && <div style={{ color: '#10b981', fontSize: '0.8rem', marginBottom: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 10% de desconto aplicado!</div>}
+
 
                                 <button type="submit" id="btn-checkout" className="btn-checkout" style={{ marginTop: '0.5rem' }}>
                                     Confirmar e Enviar Pedido
@@ -2501,42 +2466,7 @@ export default function Store() {
                                             <option value="Dinheiro Físico">Dinheiro Físico</option>
                                         </select>
 
-                                        <div className="referral-input-container" style={{ display: 'flex', gap: '0.5rem', width: '100%', marginBottom: '0.5rem', marginTop: '0.5rem' }}>
-                                            <input
-                                                type="text"
-                                                placeholder="Código de Indicação"
-                                                value={referralInput}
-                                                onChange={e => setReferralInput(e.target.value)}
-                                                disabled={!!appliedReferralCode}
-                                                style={{ flex: 1, textTransform: 'uppercase', padding: '0.5rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: '6px', color: '#000' }}
-                                            />
-                                            {appliedReferralCode ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleRemoveReferral}
-                                                    style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer' }}
-                                                >
-                                                    Remover
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleValidateReferral}
-                                                    disabled={validatingReferral || !referralInput.trim()}
-                                                    style={{ backgroundColor: '#eab308', color: '#000', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                                >
-                                                    {validatingReferral ? '...' : 'Aplicar'}
-                                                </button>
-                                            )}
-                                        </div>
-                                        {referralError && (
-                                            <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', width: '100%' }}>{referralError}</span>
-                                        )}
-                                        {appliedReferralCode && (
-                                            <span style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'block', fontWeight: 'bold', width: '100%' }}>
-                                                ✓ Código '{appliedReferralCode}' aplicado!
-                                            </span>
-                                        )}
+
                                     </div>
                                 </div>
                             </div>
@@ -2615,8 +2545,8 @@ export default function Store() {
                 </>
             )}
 
-            {/* Indique e Ganha Modal */}
-            {isReferralOpen && (
+            {/* Indique e Ganha Modal (Desativado) */}
+            {false && isReferralOpen && (
                 <>
                     <div className="modal-overlay active" onClick={() => setIsReferralOpen(false)}></div>
                     <div className="product-modal active" style={{ maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto', background: '#fff', color: '#111827' }}>
@@ -2916,30 +2846,10 @@ export default function Store() {
             {/* Promo Modals */}
             {activePromo === 'delivery_payment' && (
                 <>
-                    <div className="modal-overlay active" onClick={() => setActivePromo('delivery')}></div>
-                    <div className="promo-modal active">
-                        <button className="promo-close-btn" onClick={() => setActivePromo('delivery')}>×</button>
-                        <img src="/assets/delivery_payment_promo.jpg" alt="Pague ao receber na sua casa" />
-                    </div>
-                </>
-            )}
-
-            {activePromo === 'delivery' && (
-                <>
-                    <div className="modal-overlay active" onClick={() => setActivePromo('referral')}></div>
-                    <div className="promo-modal active">
-                        <button className="promo-close-btn" onClick={() => setActivePromo('referral')}>×</button>
-                        <img src="/assets/delivery_promo.jpg" alt="Entrega Rápida" />
-                    </div>
-                </>
-            )}
-
-            {activePromo === 'referral' && (
-                <>
                     <div className="modal-overlay active" onClick={() => setActivePromo(null)}></div>
                     <div className="promo-modal active">
                         <button className="promo-close-btn" onClick={() => setActivePromo(null)}>×</button>
-                        <img src="/assets/referral_promo.jpg" alt="Promoção Indica e Ganha" />
+                        <img src="/assets/delivery_payment_promo.jpg" alt="Pague ao receber na sua casa" />
                     </div>
                 </>
             )}

@@ -1695,9 +1695,6 @@ function removeFromCart(productId) {
 function updateCartUI() {
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     cartCount.textContent = totalItems;
-    if (cartCount.classList) {
-        cartCount.classList.toggle('has-items', totalItems > 0);
-    }
 
     const cartSubtotalEl = document.getElementById('cart-subtotal');
     const cartDiscountRow = document.getElementById('cart-discount-row');

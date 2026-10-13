@@ -1919,25 +1919,26 @@ body {
 
 .btn-guest-checkout {
     width: 100%;
-    height: 38px;
-    background: #f8fafc;
-    color: #475569;
-    border: 1px solid #cbd5e1;
+    height: 44px;
+    background-color: var(--primary);
+    color: var(--dark);
+    border: none;
     border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.85rem;
+    font-weight: 700;
+    font-size: 0.92rem;
     cursor: pointer;
     font-family: inherit;
-    transition: all 0.2s ease;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .btn-guest-checkout:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #1e293b;
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
 }
 
 .auth-guest-warning {

@@ -5868,7 +5868,7 @@ function DriverPortalContent() {
                                         rel="noreferrer"
                                         style={{ color: '#059669', fontWeight: 700, textDecoration: 'none' }}
                                     >
-                                        Falar no WhatsApp (+258 83 453 3474)
+                                        Falar no WhatsApp
                                     </a>
                                 </div>
                             </div>

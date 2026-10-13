@@ -2811,45 +2811,39 @@ export default function Store() {
                             </form>
                         )}
 
-                        <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
+                        <div className="auth-guest-section">
                             <button 
                                 type="button" 
                                 onClick={handleContinueAsGuest}
-                                className="btn-primary"
-                                style={{ width: '100%', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                                className="btn-guest-checkout"
                             >
                                 Continuar sem Conta
                             </button>
-                            <div style={{
-                                marginTop: '0.75rem',
-                                padding: '0.75rem 1rem',
-                                background: '#fffbeb',
-                                border: '1px solid #fde68a',
-                                borderRadius: '10px',
-                                color: '#b45309',
-                                fontSize: '0.78rem',
-                                textAlign: 'center',
-                                lineHeight: '1.4',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.4rem'
-                            }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                <span><strong>Aviso Importante:</strong> Ao continuar sem criar conta, os dados do seu pedido e histórico podem ser perdidos caso limpe a cache ou feche a sessão do navegador.</span>
+                            <div className="auth-guest-warning">
+                                ⚠️ <strong>Aviso:</strong> Sem criar conta, o histórico do pedido pode ser perdido se fechar a sessão.
                             </div>
                         </div>
                     </div>
                 </>
             )}
 
-            {/* Promo Modals */}
+            {/* Promo Modals (1º e 3º, pulando o 2º) */}
             {activePromo === 'delivery_payment' && (
+                <>
+                    <div className="modal-overlay active" onClick={() => setActivePromo('referral')}></div>
+                    <div className="promo-modal active">
+                        <button className="promo-close-btn" onClick={() => setActivePromo('referral')}>×</button>
+                        <img src="/assets/delivery_payment_promo.jpg" alt="Pague ao receber na sua casa" />
+                    </div>
+                </>
+            )}
+
+            {activePromo === 'referral' && (
                 <>
                     <div className="modal-overlay active" onClick={() => setActivePromo(null)}></div>
                     <div className="promo-modal active">
                         <button className="promo-close-btn" onClick={() => setActivePromo(null)}>×</button>
-                        <img src="/assets/delivery_payment_promo.jpg" alt="Pague ao receber na sua casa" />
+                        <img src="/assets/referral_promo.jpg" alt="Promoção Indica e Ganha" />
                     </div>
                 </>
             )}

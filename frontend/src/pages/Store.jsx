@@ -2827,23 +2827,13 @@ export default function Store() {
                 </>
             )}
 
-            {/* Promo Modals (1º e 3º, pulando o 2º) */}
+            {/* Promo Modal (Apenas o 1º de Pagamento na Entrega) */}
             {activePromo === 'delivery_payment' && (
-                <>
-                    <div className="modal-overlay active" onClick={() => setActivePromo('referral')}></div>
-                    <div className="promo-modal active">
-                        <button className="promo-close-btn" onClick={() => setActivePromo('referral')}>×</button>
-                        <img src="/assets/delivery_payment_promo.jpg" alt="Pague ao receber na sua casa" />
-                    </div>
-                </>
-            )}
-
-            {activePromo === 'referral' && (
                 <>
                     <div className="modal-overlay active" onClick={() => setActivePromo(null)}></div>
                     <div className="promo-modal active">
                         <button className="promo-close-btn" onClick={() => setActivePromo(null)}>×</button>
-                        <img src="/assets/referral_promo.jpg" alt="Promoção Indica e Ganha" />
+                        <img src="/assets/delivery_payment_promo.jpg" alt="Pague ao receber na sua casa" />
                     </div>
                 </>
             )}

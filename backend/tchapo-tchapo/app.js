@@ -2840,40 +2840,23 @@ function initPromoPopup() {
         const deliveryPaymentModal = document.getElementById('delivery-payment-promo-modal');
         const closeDeliveryPayment = document.getElementById('close-delivery-payment-promo');
 
-        const referralOverlay = document.getElementById('referral-promo-overlay');
-        const referralModal = document.getElementById('referral-promo-modal');
-        const closeReferral = document.getElementById('close-referral-promo');
-
-        if (!deliveryPaymentOverlay || !deliveryPaymentModal || !referralOverlay || !referralModal) return;
+        if (!deliveryPaymentOverlay || !deliveryPaymentModal) return;
 
         sessionStorage.setItem('tchapo_promo_seen', 'true');
 
-        // Show Delivery Payment promo first (1º Pop-up)
+        // Show Delivery Payment promo
         deliveryPaymentOverlay.classList.add('active');
         deliveryPaymentModal.classList.add('active');
         updateScrollLock();
 
-        // Transição do 1º direto para o 3º (referral_promo), pulando o 2º
-        const transitionToReferral = () => {
+        const closeAllPromos = () => {
             deliveryPaymentOverlay.classList.remove('active');
             deliveryPaymentModal.classList.remove('active');
-
-            referralOverlay.classList.add('active');
-            referralModal.classList.add('active');
             updateScrollLock();
         };
 
-        const closeAllPromos = () => {
-            referralOverlay.classList.remove('active');
-            referralModal.classList.remove('active');
-            updateScrollLock();
-        };
-
-        if (closeDeliveryPayment) closeDeliveryPayment.onclick = transitionToReferral;
-        if (deliveryPaymentOverlay) deliveryPaymentOverlay.onclick = transitionToReferral;
-
-        if (closeReferral) closeReferral.onclick = closeAllPromos;
-        if (referralOverlay) referralOverlay.onclick = closeAllPromos;
+        if (closeDeliveryPayment) closeDeliveryPayment.onclick = closeAllPromos;
+        if (deliveryPaymentOverlay) deliveryPaymentOverlay.onclick = closeAllPromos;
     } catch (e) {}
 }
 

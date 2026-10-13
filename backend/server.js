@@ -21,7 +21,7 @@ app.use(express.json());
 // Migration Notice for users accessing legacy .store domain
 app.use((req, res, next) => {
     const host = (req.headers.host || '').toLowerCase();
-    if (host.includes('tchapotchapo.store') && !req.path.startsWith('/api')) {
+    if (host.includes('tchapotchapo.store') && !req.path.startsWith('/api') && !req.path.startsWith('/assets')) {
         return res.status(200).send(`<!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -58,17 +58,20 @@ app.use((req, res, next) => {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .icon-badge {
-            width: 76px;
-            height: 76px;
-            background: linear-gradient(135deg, #f64c00 0%, #ff8c42 100%);
-            border-radius: 22px;
+        .logo-wrapper {
+            margin-bottom: 1.5rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.4rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 10px 25px rgba(246, 76, 0, 0.4);
+        }
+        .logo-img {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            border-radius: 22px;
+            background: #ffffff;
+            padding: 6px;
+            box-shadow: 0 10px 25px rgba(246, 76, 0, 0.35);
         }
         h1 {
             font-size: 1.85rem;
@@ -137,7 +140,9 @@ app.use((req, res, next) => {
 </head>
 <body>
     <div class="card">
-        <div class="icon-badge">🚀</div>
+        <div class="logo-wrapper">
+            <img src="/assets/logo_original.png" onerror="this.src='https://tchapotchapo.com/assets/logo_original.png'" alt="Tchapo Tchapo" class="logo-img">
+        </div>
         <h1>Mudámos de Casa!</h1>
         <p class="subtitle">
             A <strong>Tchapo Tchapo</strong> migrou para um novo endereço oficial mais rápido, moderno e seguro para melhor lhe atender:

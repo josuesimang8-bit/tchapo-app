@@ -2860,6 +2860,105 @@ function initPromoPopup() {
     } catch (e) {}
 }
 
+// ─── LEGAL PAPERS & FOOTER NAVIGATION ─────────────────────────────
+const legalMeta = {
+    termos: { title: 'Termos de Uso', icon: '📜' },
+    privacidade: { title: 'Política de Privacidade', icon: '🔒' },
+    entregas: { title: 'Política de Entregas & Prazos', icon: '🚚' },
+    reembolso: { title: 'Devoluções & Reembolso', icon: '🔄' },
+    seguranca: { title: 'Segurança & Pagamentos', icon: '🛡️' },
+    empresa: { title: 'Empresa & Contacto Oficial', icon: '🏢' }
+};
+
+window.openLegalModal = function(docKey = 'termos') {
+    const modal = document.getElementById('legal-modal');
+    const overlay = document.getElementById('legal-overlay');
+    if (!modal || !overlay) return;
+
+    window.switchLegalDoc(docKey);
+    overlay.classList.add('active');
+    modal.classList.add('active');
+    updateScrollLock();
+};
+
+window.closeLegalModal = function() {
+    const modal = document.getElementById('legal-modal');
+    const overlay = document.getElementById('legal-overlay');
+    if (modal) modal.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+    updateScrollLock();
+    if (['#termos', '#privacidade', '#entregas', '#reembolso', '#seguranca', '#empresa', '#contacto'].includes(window.location.hash)) {
+        history.replaceState(null, null, window.location.pathname);
+    }
+};
+
+window.switchLegalDoc = function(docKey) {
+    const key = legalMeta[docKey] ? docKey : 'termos';
+    const info = legalMeta[key];
+
+    // Update title and icon
+    const titleEl = document.getElementById('legal-modal-title');
+    const iconEl = document.getElementById('legal-modal-icon');
+    if (titleEl) titleEl.textContent = info.title;
+    if (iconEl) iconEl.textContent = info.icon;
+
+    // Update tabs
+    const tabs = document.querySelectorAll('.legal-tab-btn');
+    tabs.forEach(btn => {
+        if (btn.getAttribute('data-tab') === key) {
+            btn.classList.add('active');
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // Update sections
+    const sections = document.querySelectorAll('.legal-section');
+    sections.forEach(sec => {
+        if (sec.id === `legal-sec-${key}`) {
+            sec.classList.add('active');
+        } else {
+            sec.classList.remove('active');
+        }
+    });
+
+    // Scroll body to top
+    const bodyEl = document.getElementById('legal-modal-body');
+    if (bodyEl) bodyEl.scrollTop = 0;
+};
+
+window.openTrackingFromFooter = function() {
+    const trackInput = document.getElementById('order-search');
+    if (trackInput) {
+        trackInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        trackInput.focus();
+    } else {
+        const btnTrack = document.getElementById('btn-track-order');
+        if (btnTrack) btnTrack.click();
+    }
+};
+
+// Check hash on page load (e.g. #termos, #privacidade, etc.)
+window.addEventListener('DOMContentLoaded', () => {
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    if (hash === 'contacto') {
+        window.openLegalModal('empresa');
+    } else if (['termos', 'privacidade', 'entregas', 'reembolso', 'seguranca', 'empresa'].includes(hash)) {
+        window.openLegalModal(hash);
+    }
+});
+
+// ESC key to close legal modal
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('legal-modal');
+        if (modal && modal.classList.contains('active')) {
+            window.closeLegalModal();
+        }
+    }
+});
+
 // ─── INIT CALL ───────────────────────────────────────────────────────
 document.body.classList.remove('dark-theme');
 localStorage.removeItem('tchapo_theme');

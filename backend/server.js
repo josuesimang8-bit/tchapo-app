@@ -22,7 +22,7 @@ const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BAxlp2zq_g-ExdDWsJUsC6
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'CbknALrndzXKpMaXfYOeO32QAyh9CG-I6F53pjX9Pmw';
 
 webpush.setVapidDetails(
-    'mailto:admin@tchapotchapo.store',
+    'mailto:admin@tchapotchapo.com',
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
 );
@@ -146,7 +146,7 @@ ${itemsList}
                 message: bodyText,
                 priority: 5, // Maximum urgent priority: vibrates & plays loud notification
                 tags: ['shopping_cart', 'rotating_light', 'loudspeaker'],
-                click: 'https://tchapotchapo.store/admin.html'
+                click: 'https://tchapotchapo.com/admin'
             })
         });
 
@@ -178,7 +178,7 @@ async function sendSystemNtfyAlert(title, message, tags = ['bell']) {
                 message,
                 priority: 4,
                 tags,
-                click: 'https://tchapotchapo.store/admin.html'
+                click: 'https://tchapotchapo.com/admin'
             })
         });
         return true;
@@ -221,7 +221,7 @@ ${itemsList}
 💰 *TOTAL:* *${Number(order.total || 0).toLocaleString('pt-MZ')} MT*
 ⏱️ *Hora:* ${new Date().toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' })}
 
-👉 *Painel Admin:* https://tchapotchapo.store/admin.html`;
+👉 *Painel Admin:* https://tchapotchapo.com/admin`;
 
         const waUrl = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(apiKey)}`;
         const res = await fetch(waUrl, { signal: AbortSignal.timeout(10000) });
@@ -268,7 +268,7 @@ ${itemsList}
 💰 <b>TOTAL:</b> <b>${Number(order.total || 0).toLocaleString('pt-MZ')} MT</b>
 ⏱️ <b>Hora:</b> ${new Date().toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' })}
 
-👉 <a href="https://tchapotchapo.store/admin.html">Abrir Painel Admin</a>`;
+👉 <a href="https://tchapotchapo.com/admin">Abrir Painel Admin</a>`;
 
         const tgUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         const res = await fetch(tgUrl, {

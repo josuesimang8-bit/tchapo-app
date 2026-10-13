@@ -1,4 +1,4 @@
-﻿name: 24/7 Keep-Alive (Prevent Render Sleep)
+name: 24/7 Keep-Alive (Prevent Render Sleep)
 
 on:
   schedule:
@@ -13,12 +13,12 @@ jobs:
       - name: Ping Tchapo Tchapo Server
         run: |
           echo "Sending keep-alive ping to Tchapo Tchapo..."
-          URL="https://tchapotchapo.store/api/ping"
+          URL="https://tchapotchapo.com/api/ping"
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "failed")
           echo "Status: $STATUS"
           if [ "$STATUS" = "200" ]; then
             echo "✅ Server is alive and awake!"
           else
             echo "⚠️ Ping response: $STATUS - Retrying health check..."
-            curl -s https://tchapotchapo.store/api/health || true
+            curl -s https://tchapotchapo.com/api/health || true
           fi

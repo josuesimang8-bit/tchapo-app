@@ -18,6 +18,163 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Migration Notice for users accessing legacy .store domain
+app.use((req, res, next) => {
+    const host = (req.headers.host || '').toLowerCase();
+    if (host.includes('tchapotchapo.store') && !req.path.startsWith('/api')) {
+        return res.status(200).send(`<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tchapo Tchapo — Mudámos para tchapotchapo.com</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0b0f19 0%, #1e1b4b 50%, #0f172a 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            max-width: 520px;
+            width: 100%;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(246, 76, 0, 0.2);
+            animation: fadeIn 0.6s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .icon-badge {
+            width: 76px;
+            height: 76px;
+            background: linear-gradient(135deg, #f64c00 0%, #ff8c42 100%);
+            border-radius: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.4rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 25px rgba(246, 76, 0, 0.4);
+        }
+        h1 {
+            font-size: 1.85rem;
+            font-weight: 900;
+            margin-bottom: 0.6rem;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .domain-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1.5px dashed #f64c00;
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+        }
+        .domain-box span {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .domain-box strong {
+            font-size: 1.2rem;
+            color: #38bdf8;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+        .cta-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            width: 100%;
+            background: linear-gradient(135deg, #f64c00 0%, #ea580c 100%);
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.05rem;
+            padding: 1.1rem 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(246, 76, 0, 0.4);
+            transition: all 0.2s ease;
+        }
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(246, 76, 0, 0.55);
+        }
+        .timer-text {
+            margin-top: 1.25rem;
+            font-size: 0.82rem;
+            color: #94a3b8;
+        }
+        .timer-text strong {
+            color: #f64c00;
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon-badge">🚀</div>
+        <h1>Mudámos de Casa!</h1>
+        <p class="subtitle">
+            A <strong>Tchapo Tchapo</strong> migrou para um novo endereço oficial mais rápido, moderno e seguro para melhor lhe atender:
+        </p>
+        <div class="domain-box">
+            <span>Novo endereço oficial:</span>
+            <strong>tchapotchapo.com</strong>
+        </div>
+        <a id="redirect-btn" class="cta-btn" href="https://tchapotchapo.com">
+            <span>Aceder à Nova Loja Oficial</span>
+            <span>➔</span>
+        </a>
+        <p class="timer-text">
+            A redirecionar automaticamente em <strong id="countdown">5</strong> segundos...
+        </p>
+    </div>
+    <script>
+        const targetUrl = 'https://tchapotchapo.com' + window.location.pathname + window.location.search;
+        const btn = document.getElementById('redirect-btn');
+        if (btn) btn.href = targetUrl;
+        let seconds = 5;
+        const countdownEl = document.getElementById('countdown');
+        const interval = setInterval(() => {
+            seconds--;
+            if (countdownEl) countdownEl.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.replace(targetUrl);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>`);
+    }
+    next();
+});
+
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BAxlp2zq_g-ExdDWsJUsC6z1FWpSg6L-ysw64w_ouuJtselkPdEvPbo3yH9BBddaRzPbvTQGqyE7MS36Ns1ygvM';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'CbknALrndzXKpMaXfYOeO32QAyh9CG-I6F53pjX9Pmw';
 

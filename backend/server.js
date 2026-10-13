@@ -411,6 +411,9 @@ const getDriverIndex = () => {
 app.get(['/drivers', '/drivers/*', '/driver', '/driver/*'], (req, res) => {
     const driverIndex = getDriverIndex();
     if (driverIndex) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         res.sendFile(driverIndex);
     } else {
         res.redirect('/');

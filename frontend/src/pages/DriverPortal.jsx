@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { subscribeToPush, triggerDeviceNotification, playNotificationChime, getNotificationPermission } from '../utils/notificationService';
 import { MZ_PROVINCES, ALL_PROVINCES, DEFAULT_PROVINCE, getBairrosByProvince } from '../data/mozambiqueLocations';
 
 // Modern SVG Icons (No Emojis)
@@ -1089,6 +1090,11 @@ function DriverPortalContent() {
 
     // Availability State
     const [isOnline, setIsOnline] = useState(false);
+    const [driverNotifActive, setDriverNotifActive] = useState(() => {
+        return typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
+    });
+    const prevPoolOrderIdsRef = useRef(new Set());
+    const warnedDebtIdRef = useRef(null);
     const [togglingOnline, setTogglingOnline] = useState(false);
 
     const heartbeatRef = useRef(null);
@@ -1155,6 +1161,26 @@ function DriverPortalContent() {
                 if (isLoggedOutRef.current) return;
 
                 setDashboardData(data);
+                // Detect new incoming orders in available pool and trigger sound/vibration alert
+                if (Array.isArray(data.available_orders)) {
+                    const currentIds = new Set(data.available_orders.map(o => o.id));
+                    if (prevPoolOrderIdsRef.current.size > 0) {
+                        const newOrders = data.available_orders.filter(o => !prevPoolOrderIdsRef.current.has(o.id));
+                        if (newOrders.length > 0) {
+                            const latest = newOrders[0];
+                            playNotificationChime('driver');
+                            triggerDeviceNotification({
+                                title: `🚨 Novo Pedido Disponível! (#${latest.id})`,
+                                body: `📍 ${latest.bairro || 'Sua Região'} • Total: ${Number(latest.total || 0).toLocaleString('pt-MZ')} MT\nToque para aceitar e garantir o seu lucro!`,
+                                url: '/drivers',
+                                tag: `order-pool-${latest.id}`,
+                                chime: 'driver'
+                            });
+                            showToast(`🚨 Novo pedido disponível em ${latest.bairro || 'sua região'}!`, 'info');
+                        }
+                    }
+                    prevPoolOrderIdsRef.current = currentIds;
+                }
                 if (data.driver) {
                     setIsOnline(Boolean(data.driver.is_online));
                     setAuthDriver(prev => {
@@ -1349,6 +1375,32 @@ function DriverPortalContent() {
     };
 
     // Toggle Availability
+    const handleToggleDriverNotifications = async () => {
+        try {
+            const res = await subscribeToPush({
+                role: 'driver',
+                driverId: authDriver?.id,
+                province: authDriver?.bairro,
+                phone: authDriver?.phone
+            });
+            if (res.success) {
+                setDriverNotifActive(true);
+                playNotificationChime('driver');
+                showToast('🔔 Notificações de entregas ativadas com sucesso!', 'success');
+                triggerDeviceNotification({
+                    title: '🔔 Notificações de Entregas Ativas!',
+                    body: 'Você receberá avisos sonoros e vibração no telemóvel para novos pedidos na sua região.',
+                    chime: 'driver',
+                    url: '/drivers'
+                });
+            } else {
+                showToast('Não foi possível ativar notificações. Verifique as permissões do navegador.', 'warning');
+            }
+        } catch (e) {
+            showToast('Erro ao ativar notificações.', 'error');
+        }
+    };
+
     const handleToggleAvailability = async (targetState) => {
         if (!authDriver?.id) return;
         if (authDriver.approval_status !== 'Aprovado') {
@@ -1371,6 +1423,16 @@ function DriverPortalContent() {
                 setIsOnline(newState);
                 setAuthDriver(prev => ({ ...prev, is_online: newState }));
                 showToast(newState ? 'Você está Online e pronto para receber pedidos.' : 'Você está Offline.', 'info');
+                if (!newState) {
+                    fetch(`${API_URL}/api/drivers/${authDriver.id}/offline-reminder`, { method: 'POST' }).catch(() => {});
+                    triggerDeviceNotification({
+                        title: '⚠️ Você está offline no Portal Tchapo!',
+                        body: 'Fique online para receber novos pedidos e garantir lucros na sua província hoje!',
+                        url: '/drivers',
+                        tag: `offline-${Date.now()}`,
+                        chime: 'alert'
+                    });
+                }
                 try { fetchDashboard(authDriver.id); } catch (_) {}
             }
         } catch (err) {
@@ -1402,6 +1464,22 @@ function DriverPortalContent() {
     };
 
     // Confirm and Execute Order Acceptance
+    
+    // Platform fee alert notification effect
+    useEffect(() => {
+        const debt = dashboardData?.pending_debt;
+        if (debt && debt.status !== 'Pago' && warnedDebtIdRef.current !== debt.id) {
+            warnedDebtIdRef.current = debt.id;
+            triggerDeviceNotification({
+                title: '💳 Regularização de Taxa da Plataforma (15%)',
+                body: `Você tem uma taxa de ${debt.amount} MT referente ao pedido #${debt.order_id}. Efetue o repasse via M-Pesa ou E-Mola para manter a conta desbloqueada!`,
+                url: '/drivers',
+                tag: `fee-${debt.id}`,
+                chime: 'alert'
+            });
+        }
+    }, [dashboardData?.pending_debt]);
+
     const handleConfirmAcceptOrder = async () => {
         if (!confirmingOrder || !authDriver?.id) return;
         if (!isOnline) {
@@ -1815,7 +1893,7 @@ function DriverPortalContent() {
 
                         {authDriver ? (
                             <>
-                                {authDriver.approval_status === 'Aprovado' && !isDebtBlocked && (
+                                {authDriver.approval_status === 'Aprovado' && !isDebtBlocked && (<>
                                     <button
                                         onClick={() => handleToggleAvailability()}
                                         disabled={togglingOnline}
@@ -1844,9 +1922,28 @@ function DriverPortalContent() {
                                         }} />
                                         <span>{isOnline ? 'Online' : 'Offline'}</span>
                                     </button>
-                                )}
-
-                                {isDebtBlocked && (
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleDriverNotifications}
+                                        title={driverNotifActive ? "Notificações Ativas" : "Ativar Notificações de Entregas"}
+                                        style={{
+                                            background: driverNotifActive ? 'rgba(245, 158, 11, 0.15)' : (darkMode ? '#1a1a1a' : '#f1f5f9'),
+                                            border: driverNotifActive ? '1.5px solid #f59e0b' : (darkMode ? '1px solid #2a2a2a' : '1px solid #cbd5e1'),
+                                            color: driverNotifActive ? '#f59e0b' : (darkMode ? '#94a3b8' : '#64748b'),
+                                            padding: '0.45rem 0.85rem',
+                                            borderRadius: '999px',
+                                            fontWeight: 800,
+                                            fontSize: '0.78rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.45rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontFamily: "'Montserrat', sans-serif"
+                                        }}
+                                    >
+                                        <span>{driverNotifActive ? '🔔 Notificações ON' : '🔕 Ativar Notificações'}</span>
+                                    </button></>)}\n                                {isDebtBlocked && (
                                     <span style={{
                                         background: '#fee2e2',
                                         color: '#dc2626',

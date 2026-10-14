@@ -1,4 +1,5 @@
-const CACHE_NAME = 'tchapo-admin-v2';
+// Tchapo Tchapo Service Worker — High-reliability Web Push & PWA Hub
+const CACHE_NAME = 'tchapo-pwa-v3';
 let shownOrderTags = new Set();
 
 self.addEventListener('install', (event) => {
@@ -9,27 +10,29 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(self.clients.claim());
 });
 
-// Listen for Web Push events (iOS & Android background push notifications)
+// Listen for Web Push events (Background push for Store, Drivers, and Admin)
 self.addEventListener('push', (event) => {
     let data = {
-        title: '🚨 NOVO PEDIDO — Tchapo Tchapo!',
-        body: 'Novo pedido recebido na loja!',
-        icon: '/favicon.ico',
-        url: '/admin.html',
-        tag: 'new-order'
+        title: 'Tchapo Tchapo',
+        body: 'Nova notificação da Tchapo Tchapo!',
+        icon: '/assets/logo_box.png',
+        badge: '/assets/logo_box.png',
+        url: '/',
+        tag: 'tchapo-general'
     };
 
     if (event.data) {
         try {
-            data = event.data.json();
+            const parsed = event.data.json();
+            data = { ...data, ...parsed };
         } catch (e) {
             data.body = event.data.text();
         }
     }
 
-    const notifTag = data.tag || 'order-general';
+    const notifTag = data.tag || `notif-${Date.now()}`;
 
-    // Prevent displaying duplicate notifications within the same service worker session
+    // Deduplicate notifications with identical tags in short windows
     if (shownOrderTags.has(notifTag)) {
         return;
     }
@@ -41,32 +44,48 @@ self.addEventListener('push', (event) => {
 
     const options = {
         body: data.body,
-        icon: data.icon || '/favicon.ico',
-        badge: '/favicon.ico',
+        icon: data.icon || '/assets/logo_box.png',
+        badge: data.badge || '/assets/logo_box.png',
         tag: notifTag,
-        renotify: false,
+        renotify: true,
         requireInteraction: true,
-        vibrate: [300, 100, 300, 100, 300],
+        vibrate: data.vibrate || [200, 100, 200, 100, 200],
         data: {
-            url: data.url || '/admin.html'
+            url: data.url || '/'
         }
     };
 
     event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
-// Notification click event -> open admin panel
+// Notification click event -> Focus existing tab or open new window
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const targetUrl = event.notification.data?.url || '/admin.html';
-    
+    const targetUrl = event.notification.data?.url || '/';
+
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            const isAdminTarget = targetUrl.includes('admin');
+            const isDriverTarget = targetUrl.includes('driver') || targetUrl.includes('entregador');
+
             for (const client of clientList) {
-                if (client.url.includes('admin') && 'focus' in client) {
+                const clientUrl = client.url || '';
+                const isClientAdmin = clientUrl.includes('admin');
+                const isClientDriver = clientUrl.includes('driver') || clientUrl.includes('entregador');
+
+                let matches = false;
+                if (isAdminTarget && isClientAdmin) matches = true;
+                else if (isDriverTarget && isClientDriver) matches = true;
+                else if (!isAdminTarget && !isDriverTarget && !isClientAdmin && !isClientDriver) matches = true;
+
+                if (matches && 'focus' in client) {
+                    if (targetUrl && client.url !== targetUrl) {
+                        client.navigate(targetUrl);
+                    }
                     return client.focus();
                 }
             }
+
             if (clients.openWindow) {
                 return clients.openWindow(targetUrl);
             }

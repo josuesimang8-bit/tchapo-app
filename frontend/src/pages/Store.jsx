@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { subscribeToPush, triggerDeviceNotification, playNotificationChime, getNotificationPermission } from '../utils/notificationService';
 import { createClient } from '@supabase/supabase-js';
 import { MZ_PROVINCES, ALL_PROVINCES, DEFAULT_PROVINCE, getBairrosByProvince } from '../data/mozambiqueLocations';
 
@@ -732,7 +733,21 @@ export default function Store() {
     const [selectedDevice, setSelectedDevice] = useState('iPhone 15 Pro Max');
     const [selectedColor, setSelectedColor] = useState('Preto');
     const [customDevice, setCustomDevice] = useState('');
-    const [cart, setCart] = useState(() => {
+    const [cart, setCart] = useState
+    // Web Push & Notification States
+    const [showCustomerNotifPrompt, setShowCustomerNotifPrompt] = useState(() => {
+        try {
+            return localStorage.getItem('tchapo_notif_dismissed') !== 'true' &&
+                   'Notification' in window &&
+                   Notification.permission === 'default';
+        } catch (_) {
+            return false;
+        }
+    });
+    const [customerNotifStatus, setCustomerNotifStatus] = useState(() => {
+        return typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported';
+    });
+    const prevTrackingStatusRef = useRef(null);(() => {
         const saved = localStorage.getItem('tchapoTchapoCart');
         return saved ? JSON.parse(saved) : [];
     });
@@ -1320,13 +1335,31 @@ export default function Store() {
                     // Use server-computed remaining secs
                     setTrackingTimeLeft(order.timer_remaining_secs != null ? order.timer_remaining_secs : 14400);
                     
-                    if (order.status === 'Com Motorista') {
-                        showToastMessage('O teu motorista está a caminho!');
-                    } else if (order.status === 'Entregue') {
-                        showToastMessage('🎉 O teu pedido foi entregue! Obrigado!');
-                    } else if (order.status === 'Cancelado') {
-                        showToastMessage('❌ O teu pedido foi cancelado.');
+                    // Check for status transition and trigger device notification
+                    if (prevTrackingStatusRef.current && prevTrackingStatusRef.current !== order.status) {
+                        if (['Com Motorista', 'Com Entregador'].includes(order.status)) {
+                            triggerDeviceNotification({
+                                title: `🛵 Motorista a Caminho! (Pedido #${order.id})`,
+                                body: `O seu pedido foi aceite pelo estafeta ${order.drivers?.name || 'parceiro'} e está em rota de entrega!`,
+                                url: `/?track=${order.id}`,
+                                tag: `order-${order.id}-accepted`,
+                                chime: 'order'
+                            });
+                            showToastMessage('🛵 O teu motorista está a caminho!');
+                        } else if (order.status === 'Entregue') {
+                            triggerDeviceNotification({
+                                title: `✅ Pedido #${order.id} Entregue com Sucesso!`,
+                                body: 'A sua encomenda foi entregue. Muito obrigado por comprar na Tchapo Tchapo!',
+                                url: `/?track=${order.id}`,
+                                tag: `order-${order.id}-delivered`,
+                                chime: 'success'
+                            });
+                            showToastMessage('🎉 O teu pedido foi entregue! Obrigado!');
+                        } else if (order.status === 'Cancelado') {
+                            showToastMessage('❌ O teu pedido foi cancelado.');
+                        }
                     }
+                    prevTrackingStatusRef.current = order.status;
                 }
             } catch (e) {}
         };
@@ -1335,6 +1368,38 @@ export default function Store() {
         const interval = setInterval(poll, 5000);
         return () => clearInterval(interval);
     }, [trackingOrder?.id, trackingStatus]);
+
+    const handleEnableCustomerNotifications = async () => {
+        try {
+            const res = await subscribeToPush({
+                role: 'customer',
+                phone: checkoutForm.phone || quickOrderForm.phone || '',
+                orderId: trackingOrder?.id || null,
+                userId: currentUser?.id || null
+            });
+            if (res.success) {
+                setCustomerNotifStatus('granted');
+                setShowCustomerNotifPrompt(false);
+                try { localStorage.setItem('tchapo_notif_dismissed', 'true'); } catch (_) {}
+                triggerDeviceNotification({
+                    title: '🔔 Notificações Ativadas!',
+                    body: 'Você receberá atualizações em tempo real das suas encomendas no telemóvel.',
+                    chime: 'order'
+                });
+                showToastMessage('🔔 Notificações ativadas com sucesso!');
+            } else if (res.reason === 'permission_denied') {
+                setCustomerNotifStatus('denied');
+                showToastMessage('Permissão de notificações recusada no navegador.');
+            }
+        } catch (err) {
+            console.error('Error enabling notifications:', err);
+        }
+    };
+
+    const handleDismissCustomerPrompt = () => {
+        setShowCustomerNotifPrompt(false);
+        try { localStorage.setItem('tchapo_notif_dismissed', 'true'); } catch (_) {}
+    };
 
     const showToastMessage = (msg) => {
         setToastMessage(msg);
@@ -1469,6 +1534,20 @@ export default function Store() {
                 setTrackingDriver(null);
                 setTrackingTimeLeft(4 * 3600);
                 setTrackingOrder(order);
+                // Register customer push subscription & notify
+                subscribeToPush({
+                    role: 'customer',
+                    phone: checkoutForm.phone,
+                    orderId: order.id,
+                    userId: currentUser ? currentUser.id : null
+                }).catch(() => {});
+                triggerDeviceNotification({
+                    title: `🎉 Pedido #${order.id} Confirmado!`,
+                    body: `A sua encomenda no valor de ${total} MT foi registada. Recebe dentro de 24h em todo o país!`,
+                    url: `/?track=${order.id}`,
+                    tag: `order-${order.id}-created`,
+                    chime: 'order'
+                });
             }
         } catch (error) {
             console.error('Failed to submit order', error);
@@ -1577,6 +1656,20 @@ export default function Store() {
                 setTrackingDriver(null);
                 setTrackingTimeLeft(4 * 3600);
                 setTrackingOrder(order);
+                // Register customer push subscription & notify
+                subscribeToPush({
+                    role: 'customer',
+                    phone: quickOrderForm.phone,
+                    orderId: order.id,
+                    userId: currentUser ? currentUser.id : null
+                }).catch(() => {});
+                triggerDeviceNotification({
+                    title: `🎉 Pedido #${order.id} Confirmado!`,
+                    body: `A sua encomenda no valor de ${total} MT foi registada. Recebe dentro de 24h em todo o país!`,
+                    url: `/?track=${order.id}`,
+                    tag: `order-${order.id}-created`,
+                    chime: 'order'
+                });
             }
         } catch (error) {
             console.error('Failed to submit quick order', error);
@@ -2929,6 +3022,48 @@ export default function Store() {
                                     </>
                                 )}
                             </div>
+
+                        {/* Customer Notification Banner inside Tracking Modal */}
+                        {customerNotifStatus !== 'granted' && (
+                            <div style={{
+                                background: '#090d16',
+                                border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                                borderRadius: '16px',
+                                padding: '0.85rem 1.1rem',
+                                margin: '0.9rem 0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '0.75rem',
+                                textAlign: 'left',
+                                boxSizing: 'border-box'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <img src="/assets/logo_box.png" alt="Tchapo" style={{ width: '36px', height: '36px', borderRadius: '8px' }} onError={(e) => { e.target.src = '/assets/logo_original.png'; }} />
+                                    <div>
+                                        <strong style={{ color: '#ffffff', fontSize: '0.85rem', display: 'block' }}>Receber Alertas deste Pedido 🔔</strong>
+                                        <p style={{ margin: '0.2rem 0 0', color: '#94a3b8', fontSize: '0.74rem', lineHeight: 1.3 }}>Notificações no telemóvel quando o motorista estiver a caminho e ao entregar.</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleEnableCustomerNotifications}
+                                    style={{
+                                        background: '#f59e0b',
+                                        color: '#000000',
+                                        border: 'none',
+                                        padding: '0.55rem 0.95rem',
+                                        borderRadius: '8px',
+                                        fontWeight: 800,
+                                        fontSize: '0.78rem',
+                                        cursor: 'pointer',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    Ativar Alertas
+                                </button>
+                            </div>
+                        )}
                         </div>
 
                         <div className="tracking-progress" style={{ display: trackingStatus === 'Cancelado' ? 'none' : 'flex' }}>

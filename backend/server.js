@@ -193,22 +193,46 @@ webpush.setVapidDetails(
 const PUSH_SUBS_FILE = path.join(__dirname, 'data', 'push_subscriptions.json');
 const ADMIN_SETTINGS_FILE = path.join(__dirname, 'data', 'admin_settings.json');
 
-function loadPushSubscriptions() {
+function loadAllPushSubscriptions() {
     try {
         if (fs.existsSync(PUSH_SUBS_FILE)) {
             const raw = fs.readFileSync(PUSH_SUBS_FILE, 'utf8');
-            return JSON.parse(raw) || [];
+            const data = JSON.parse(raw);
+            if (Array.isArray(data)) {
+                return { admin: data, customers: [], drivers: [] };
+            }
+            return {
+                admin: Array.isArray(data.admin) ? data.admin : [],
+                customers: Array.isArray(data.customers) ? data.customers : [],
+                drivers: Array.isArray(data.drivers) ? data.drivers : []
+            };
         }
     } catch (_) {}
-    return [];
+    return { admin: [], customers: [], drivers: [] };
 }
 
-function savePushSubscriptions(subs) {
+function saveAllPushSubscriptions(subs) {
     try {
         const dir = path.dirname(PUSH_SUBS_FILE);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(PUSH_SUBS_FILE, JSON.stringify(subs, null, 2), 'utf8');
     } catch (_) {}
+}
+
+let allPushSubscriptions = loadAllPushSubscriptions();
+let pushSubscriptions = allPushSubscriptions.admin;
+
+function loadPushSubscriptions() {
+    allPushSubscriptions = loadAllPushSubscriptions();
+    pushSubscriptions = allPushSubscriptions.admin;
+    return pushSubscriptions;
+}
+
+function savePushSubscriptions(subs) {
+    allPushSubscriptions = loadAllPushSubscriptions();
+    allPushSubscriptions.admin = subs;
+    pushSubscriptions = subs;
+    saveAllPushSubscriptions(allPushSubscriptions);
 }
 
 function loadAdminSettings() {
@@ -229,22 +253,79 @@ function saveAdminSettings(settings) {
     } catch (_) {}
 }
 
-let pushSubscriptions = loadPushSubscriptions();
+// Universal Public VAPID Key endpoints (accessible by Store, Drivers, and Admin)
+app.get('/api/vapid-public-key', (req, res) => {
+    res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
 
 app.get('/api/admin/vapid-public-key', (req, res) => {
     res.json({ publicKey: VAPID_PUBLIC_KEY });
 });
 
+// Admin push subscription (backward compatible)
 app.post('/api/admin/subscribe-push', (req, res) => {
     const subscription = req.body;
     if (subscription && subscription.endpoint) {
-        if (!pushSubscriptions.find(s => s.endpoint === subscription.endpoint)) {
-            pushSubscriptions.push(subscription);
-            savePushSubscriptions(pushSubscriptions);
-            console.log('[WebPush] New admin subscription persisted. Total subscribers:', pushSubscriptions.length);
+        allPushSubscriptions = loadAllPushSubscriptions();
+        if (!allPushSubscriptions.admin.find(s => s.endpoint === subscription.endpoint)) {
+            allPushSubscriptions.admin.push(subscription);
+            pushSubscriptions = allPushSubscriptions.admin;
+            saveAllPushSubscriptions(allPushSubscriptions);
+            console.log('[WebPush] New admin subscription persisted. Total subscribers:', allPushSubscriptions.admin.length);
         }
     }
-    res.status(201).json({ status: 'subscribed', total: pushSubscriptions.length });
+    res.status(201).json({ status: 'subscribed', total: allPushSubscriptions.admin.length });
+});
+
+// Universal Push Subscription Endpoint (Customers, Drivers, Admin)
+app.post('/api/notifications/subscribe', (req, res) => {
+    try {
+        const { subscription, role, phone, user_id, order_id, driver_id, province, bairro } = req.body;
+        if (!subscription || !subscription.endpoint) {
+            return res.status(400).json({ error: 'Subscription endpoint is required' });
+        }
+
+        allPushSubscriptions = loadAllPushSubscriptions();
+        const roleKey = role === 'driver' ? 'drivers' : (role === 'admin' ? 'admin' : 'customers');
+        const cleanPhone = phone ? String(phone).replace(/\D/g, '') : '';
+        const list = allPushSubscriptions[roleKey] || [];
+        const existingIdx = list.findIndex(s => s.endpoint === subscription.endpoint);
+
+        const subEntry = {
+            ...subscription,
+            role: roleKey,
+            phone: cleanPhone || (existingIdx >= 0 ? list[existingIdx].phone : ''),
+            user_id: user_id || (existingIdx >= 0 ? list[existingIdx].user_id : null),
+            driver_id: driver_id || (existingIdx >= 0 ? list[existingIdx].driver_id : null),
+            province: province || (existingIdx >= 0 ? list[existingIdx].province : ''),
+            bairro: bairro || (existingIdx >= 0 ? list[existingIdx].bairro : ''),
+            orders: existingIdx >= 0 ? (list[existingIdx].orders || []) : [],
+            updated_at: new Date().toISOString()
+        };
+
+        if (order_id) {
+            const strOrderId = String(order_id);
+            if (!subEntry.orders.includes(strOrderId)) {
+                subEntry.orders.push(strOrderId);
+            }
+        }
+
+        if (existingIdx >= 0) {
+            list[existingIdx] = subEntry;
+        } else {
+            list.push(subEntry);
+        }
+
+        allPushSubscriptions[roleKey] = list;
+        if (roleKey === 'admin') pushSubscriptions = list;
+        saveAllPushSubscriptions(allPushSubscriptions);
+
+        console.log(`[WebPush] Subscription saved for role [${roleKey}]. Total in role: ${list.length}`);
+        res.status(201).json({ success: true, role: roleKey, total: list.length });
+    } catch (e) {
+        console.error('[WebPush] Error saving subscription:', e);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // Admin Notification Settings endpoints
@@ -519,6 +600,177 @@ async function notifyAdminNewOrder(order) {
     // 4. Telegram push (optional fallback if configured)
     sendTelegramAlert(order).catch(e => console.error('[NotificationEngine] Telegram dispatch err:', e));
 }
+
+// Generic Web Push Sender Helper
+async function sendPushToSub(sub, payload) {
+    if (!sub || !sub.endpoint) return false;
+    try {
+        const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+        await webpush.sendNotification(sub, payloadStr, { urgency: 'high' });
+        console.log('[WebPush] Delivered to', sub.role || 'sub', (sub.endpoint || '').slice(0, 30));
+        return true;
+    } catch (err) {
+        console.warn('[WebPush] Push delivery warning:', err.statusCode || err.message);
+        return false;
+    }
+}
+
+// Customer Push Dispatcher (Real-time updates to customer phone for order events)
+async function notifyCustomerOrderEvent({ phone, user_id, order_id, event, order, driver }) {
+    try {
+        allPushSubscriptions = loadAllPushSubscriptions();
+        const customers = allPushSubscriptions.customers || [];
+        if (customers.length === 0) return;
+
+        const cleanPhone = phone ? String(phone).replace(/\D/g, '') : '';
+        const strOrderId = String(order_id || '');
+
+        const matchedSubs = customers.filter(sub => {
+            if (strOrderId && Array.isArray(sub.orders) && sub.orders.includes(strOrderId)) return true;
+            if (cleanPhone && sub.phone && (sub.phone.endsWith(cleanPhone) || cleanPhone.endsWith(sub.phone))) return true;
+            if (user_id && sub.user_id && String(sub.user_id) === String(user_id)) return true;
+            return false;
+        });
+
+        if (matchedSubs.length === 0) {
+            console.log(`[CustomerPush] No customer device registered yet for order #${order_id}`);
+            return;
+        }
+
+        let title = 'Tchapo Tchapo';
+        let body = `Atualização do seu pedido #${order_id}`;
+        let tag = `customer-order-${order_id}`;
+
+        if (event === 'order_created') {
+            title = `🎉 Pedido #${order_id} Confirmado!`;
+            body = `Olá ${order?.customer_name || 'Cliente'}! A sua encomenda foi recebida e está a ser preparada. Entrega em até 24h em todo o país!`;
+            tag = `order-${order_id}-created`;
+        } else if (event === 'order_accepted') {
+            const driverName = driver?.name || 'O seu estafeta';
+            title = `🛵 Motorista a Caminho! (#${order_id})`;
+            body = `${driverName} aceitou o seu pedido e está em rota para efetuar a sua entrega! Total: ${Number(order?.total || 0).toLocaleString('pt-MZ')} MT.`;
+            tag = `order-${order_id}-accepted`;
+        } else if (event === 'order_delivered') {
+            title = `✅ Pedido #${order_id} Entregue com Sucesso!`;
+            body = `A sua encomenda foi entregue. Muito obrigado por comprar na Tchapo Tchapo! Volte sempre.`;
+            tag = `order-${order_id}-delivered`;
+        }
+
+        const payload = {
+            title,
+            body,
+            icon: '/assets/logo_box.png',
+            badge: '/assets/logo_box.png',
+            tag,
+            vibrate: [200, 100, 200, 100, 200],
+            requireInteraction: true,
+            url: `/?track=${order_id}`
+        };
+
+        for (const sub of matchedSubs) {
+            await sendPushToSub(sub, payload);
+        }
+    } catch (err) {
+        console.error('[CustomerPush] Dispatch error:', err);
+    }
+}
+
+// Driver Pool Push Dispatcher (Alerts drivers of available orders in their region)
+async function notifyDriversNewOrder(order) {
+    try {
+        allPushSubscriptions = loadAllPushSubscriptions();
+        const drivers = allPushSubscriptions.drivers || [];
+        if (drivers.length === 0) return;
+
+        const payload = {
+            title: `🚨 Novo Pedido Disponível! (#${order.id})`,
+            body: `📍 Destino: ${order.bairro || 'Sua Província'} • Valor: ${Number(order.total || 0).toLocaleString('pt-MZ')} MT\nToque para aceitar e garantir seu lucro!`,
+            icon: '/assets/logo_box.png',
+            badge: '/assets/logo_box.png',
+            tag: `order-pool-${order.id}`,
+            vibrate: [300, 100, 300, 100, 300],
+            requireInteraction: true,
+            url: '/drivers'
+        };
+
+        for (const sub of drivers) {
+            await sendPushToSub(sub, payload);
+        }
+    } catch (err) {
+        console.error('[DriverPush] Dispatch error:', err);
+    }
+}
+
+// Driver Offline Reminder
+async function notifyDriverOfflineReminder(driverId) {
+    try {
+        allPushSubscriptions = loadAllPushSubscriptions();
+        const drivers = (allPushSubscriptions.drivers || []).filter(s => !driverId || String(s.driver_id) === String(driverId));
+        if (drivers.length === 0) return;
+
+        const payload = {
+            title: '⚠️ Você está offline no Portal Tchapo!',
+            body: 'Fique online no Portal do Entregador para receber novos pedidos e faturar lucros na sua província hoje!',
+            icon: '/assets/logo_box.png',
+            badge: '/assets/logo_box.png',
+            tag: `driver-offline-${Date.now()}`,
+            vibrate: [200, 100, 200],
+            requireInteraction: true,
+            url: '/drivers'
+        };
+
+        for (const sub of drivers) {
+            await sendPushToSub(sub, payload);
+        }
+    } catch (err) {
+        console.error('[DriverPush] Offline reminder err:', err);
+    }
+}
+
+// Driver Platform Fee (15%) Alert
+async function notifyDriverFeeAlert(driverId, debt) {
+    try {
+        allPushSubscriptions = loadAllPushSubscriptions();
+        const drivers = (allPushSubscriptions.drivers || []).filter(s => String(s.driver_id) === String(driverId));
+        if (drivers.length === 0) return;
+
+        const feeAmount = debt?.amount || 0;
+        const payload = {
+            title: '💳 Regularização de Taxa da Plataforma (15%)',
+            body: `Você tem uma taxa pendente de ${feeAmount} MT referente ao pedido #${debt?.order_id || ''}. Efetue o repasse via M-Pesa ou E-Mola para manter a sua conta desbloqueada!`,
+            icon: '/assets/logo_box.png',
+            badge: '/assets/logo_box.png',
+            tag: `driver-fee-${debt?.id || Date.now()}`,
+            vibrate: [300, 100, 300],
+            requireInteraction: true,
+            url: '/drivers'
+        };
+
+        for (const sub of drivers) {
+            await sendPushToSub(sub, payload);
+        }
+    } catch (err) {
+        console.error('[DriverPush] Fee alert err:', err);
+    }
+}
+
+// Endpoints for manual or automated driver reminders
+app.post('/api/drivers/:id/offline-reminder', async (req, res) => {
+    const { id } = req.params;
+    await notifyDriverOfflineReminder(id);
+    res.json({ success: true, message: 'Offline reminder dispatched.' });
+});
+
+app.post('/api/drivers/:id/fee-reminder', async (req, res) => {
+    const { id } = req.params;
+    const numId = Number(id);
+    const meta = getDriverMeta(numId);
+    if (meta?.pending_debt) {
+        await notifyDriverFeeAlert(id, meta.pending_debt);
+        return res.json({ success: true, message: 'Fee reminder dispatched.' });
+    }
+    res.status(404).json({ error: 'No pending debt found for driver.' });
+});
 
 // Test Notification Endpoint
 app.post('/api/admin/test-notification', async (req, res) => {
@@ -1478,6 +1730,14 @@ app.post('/api/orders', async (req, res) => {
 
         const formattedOrder = formatOrderResponse(order);
         notifyAdminNewOrder(formattedOrder).catch(err => console.error('[NotificationEngine] Dispatch error:', err));
+        notifyCustomerOrderEvent({
+            phone: formattedOrder.phone,
+            user_id: formattedOrder.user_id,
+            order_id: formattedOrder.id,
+            event: 'order_created',
+            order: formattedOrder
+        }).catch(err => console.error('[NotificationEngine] Customer push error:', err));
+        notifyDriversNewOrder(formattedOrder).catch(err => console.error('[NotificationEngine] Driver push error:', err));
         res.status(201).json(formattedOrder);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1506,6 +1766,7 @@ app.get('/api/orders/:id', async (req, res) => {
             }
             throw error;
         }
+        if (['Com Motorista', 'Com Entregador'].includes(status) && data) { const driverInfo = data.driver_id ? getDriverMeta(Number(data.driver_id)) : null; notifyCustomerOrderEvent({ phone: data.phone, user_id: data.user_id, order_id: data.id, event: 'order_accepted', order: data, driver: driverInfo }).catch(e => console.error('[Push] Notify customer accepted err:', e)); }
         res.json(formatOrderResponse(data));
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1639,6 +1900,16 @@ app.put('/api/orders/:id/status', async (req, res) => {
             } else if (status === 'Pendente') {
                 updates.status = 'Pendente';
                 updateOrderMeta(id, { sent_to_driver_pool: false });
+        // Notify customer that driver accepted the order
+        const assignedDriverObj = getDriverMeta(numDriverId);
+        notifyCustomerOrderEvent({
+            phone: updated.phone,
+            user_id: updated.user_id,
+            order_id: updated.id,
+            event: 'order_accepted',
+            order: updated,
+            driver: assignedDriverObj
+        }).catch(e => console.error('[Push] Notify customer accepted err:', e));
             } else {
                 updates.status = status;
                 if (['Cancelado', 'Entregue', 'Perdido'].includes(status)) {
@@ -1695,6 +1966,14 @@ app.put('/api/orders/:id/status', async (req, res) => {
 
         // If marked as Entregue, record delivered_at timestamp and generate 15% debt based on estimated profit for the assigned driver
         if (status === 'Entregue' && data) {
+            // Notify customer that order was delivered
+            notifyCustomerOrderEvent({
+                phone: data.phone,
+                user_id: data.user_id,
+                order_id: data.id,
+                event: 'order_delivered',
+                order: data
+            }).catch(e => console.error('[Push] Notify customer delivered err:', e));
             const deliveryTimestamp = req.body.delivered_at || new Date().toISOString();
             const assignedDriverId = data.driver_id || driver_id;
             updateOrderMeta(data.id, {
@@ -1731,6 +2010,10 @@ app.put('/api/orders/:id/status', async (req, res) => {
                 });
 
                 console.log(`[DEBT] Created 15% profit-based debt of ${platformFee} MT for driver #${numDId} on order #${data.id} (Profit: ${estimatedProfit} MT). Due at: ${dueAt.toISOString()}`);
+                // Notify driver of the fee/debt alert
+                if (newDebt) {
+                    notifyDriverFeeAlert(numDId, newDebt).catch(e => console.error('[Push] Notify driver fee err:', e));
+                }
             }
 
             if (data.referral_code) {

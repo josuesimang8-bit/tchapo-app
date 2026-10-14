@@ -61,6 +61,9 @@
                     </div>
                 </div>
 
+                <button class="btn-notification-toggle" id="btn-notification-toggle" type="button" style="background: rgba(245, 158, 11, 0.12); border: 1.5px solid #f59e0b; color: #f59e0b; padding: 0.45rem 0.85rem; border-radius: 999px; font-weight: 800; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; white-space: nowrap; margin-right: 0.35rem;" title="Ativar Notificações de Encomenda no Telemóvel">
+                    <span>🔔 Ativar Notificações</span>
+                </button>
                 <button class="btn-meus-pedidos" id="btn-meus-pedidos">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -386,6 +389,20 @@
             <div class="tracking-timer">
                 <p>Tempo estimado para entrega:</p>
                 <div class="timer-display" id="timer-display">02:00:00</div>
+
+            <!-- Tracking Modal Notification Box -->
+            <div id="tracking-notif-box" style="background: #090d16; border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 16px; padding: 0.85rem 1.1rem; margin: 0.9rem 0; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; text-align: left; box-sizing: border-box;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="/assets/logo_box.png" alt="Tchapo" style="width: 38px; height: 38px; border-radius: 8px;" onerror="this.src='/assets/logo_original.png';">
+                    <div>
+                        <strong style="color: #ffffff; font-size: 0.86rem; display: block;">Receber Alertas deste Pedido 🔔</strong>
+                        <p style="margin: 0.2rem 0 0; color: #94a3b8; font-size: 0.75rem; line-height: 1.35;">Notificações no telemóvel quando o motorista estiver a caminho e ao entregar.</p>
+                    </div>
+                </div>
+                <button type="button" id="btn-tracking-notif" style="background: #f59e0b; color: #000000; border: none; padding: 0.55rem 0.95rem; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer; white-space: nowrap;">
+                    Ativar Alertas
+                </button>
+            </div>
             </div>
 
             <div class="tracking-progress">
@@ -671,6 +688,34 @@
                 </a>
             </div>
             <button type="button" class="btn-primary legal-close-btn" onclick="closeLegalModal()">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Floating Notification Permission Prompt Banner for Customers -->
+    <div id="customer-notif-prompt" style="display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); max-width: 460px; width: calc(100% - 32px); background: #090d16; color: #ffffff; border: 1.5px solid #f59e0b; box-shadow: 0 16px 40px rgba(0,0,0,0.65); border-radius: 20px; padding: 1.15rem 1.35rem; z-index: 99999; flex-direction: column; gap: 0.85rem; font-family: 'Inter', sans-serif;">
+        <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+            <img src="/assets/logo_box.png" alt="Tchapo Tchapo" style="width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; object-fit: contain;" onerror="this.src='/assets/logo_original.png';">
+            <div style="flex: 1; text-align: left;">
+                <div style="font-weight: 800; font-size: 0.95rem; color: #f59e0b; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>Ativar Notificações de Encomenda</span>
+                    <span>🔔</span>
+                </div>
+                <div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 0.25rem; line-height: 1.45;">
+                    Receba avisos instantâneos no seu telemóvel quando o seu pedido for confirmado, quando o estafeta estiver a caminho e quando for entregue!
+                </div>
+            </div>
+            <button type="button" id="btn-close-notif-prompt" style="background: rgba(255,255,255,0.08); border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; line-height: 1; padding: 0.2rem 0.5rem; border-radius: 8px;" title="Fechar">
+                &times;
+            </button>
+        </div>
+        <div style="display: flex; gap: 0.65rem;">
+            <button type="button" id="btn-accept-notif-prompt" style="flex: 2; background: #f59e0b; color: #000000; border: none; padding: 0.75rem 1rem; border-radius: 12px; font-weight: 800; font-size: 0.85rem; cursor: pointer; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                <span>Ativar Notificações</span>
+                <span>🔔</span>
+            </button>
+            <button type="button" id="btn-dismiss-notif-prompt" style="flex: 1; background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); padding: 0.75rem 1rem; border-radius: 12px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                Agora Não
+            </button>
         </div>
     </div>
 

@@ -1,3 +1,183 @@
+
+// ─── TCHAPO TCHAPO UNIVERSAL NOTIFICATION & AUDIO ENGINE ──────────────────────
+function playNotificationChime(type = 'default') {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+
+        if (type === 'order' || type === 'success') {
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, now);
+            gain1.gain.setValueAtTime(0.25, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.35);
+
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880, now + 0.12);
+            gain2.gain.setValueAtTime(0.3, now + 0.12);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.12);
+            osc2.stop(now + 0.65);
+        } else {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(659.25, now);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+    } catch (_) {}
+}
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function requestNotificationPermission() {
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+    if (Notification.permission === 'granted') return 'granted';
+    try {
+        let permission;
+        const p = Notification.requestPermission((res) => { if (res) permission = res; });
+        if (p && typeof p.then === 'function') permission = await p;
+        return permission || Notification.permission;
+    } catch (e) {
+        return Notification.permission || 'denied';
+    }
+}
+
+async function subscribeToPush({ role = 'customer', phone = '', orderId = null, userId = null } = {}) {
+    if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator)) return null;
+    try {
+        const perm = await requestNotificationPermission();
+        if (perm !== 'granted') return null;
+
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+
+        let publicKey = 'BAxlp2zq_g-ExdDWsJUsC6z1FWpSg6L-ysw64w_ouuJtselkPdEvPbo3yH9BBddaRzPbvTQGqyE7MS36Ns1ygvM';
+        try {
+            const res = await fetch('/api/vapid-public-key');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.publicKey) publicKey = data.publicKey;
+            }
+        } catch (_) {}
+
+        const convertedKey = urlBase64ToUint8Array(publicKey);
+        let subscription = await reg.pushManager.getSubscription();
+        if (!subscription) {
+            subscription = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: convertedKey
+            });
+        }
+
+        await fetch('/api/notifications/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subscription,
+                role,
+                phone,
+                order_id: orderId,
+                user_id: userId
+            })
+        });
+
+        updateNotificationUI();
+        return subscription;
+    } catch (e) {
+        console.warn('Push subscribe error:', e);
+        return null;
+    }
+}
+
+async function triggerDeviceNotification({ title, body, url = '/', tag = 'notif-' + Date.now(), chime = 'order' }) {
+    if (chime) playNotificationChime(chime);
+    if ('vibrate' in navigator) {
+        try { navigator.vibrate([200, 100, 200]); } catch (_) {}
+    }
+    if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+            if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (reg) {
+                    await reg.showNotification(title, {
+                        body,
+                        icon: window.location.origin + '/assets/logo_box.png',
+                        badge: window.location.origin + '/assets/logo_box.png',
+                        tag,
+                        requireInteraction: true,
+                        data: { url }
+                    });
+                    return;
+                }
+            }
+            new Notification(title, {
+                body,
+                icon: window.location.origin + '/assets/logo_box.png',
+                tag
+            });
+        } catch (_) {}
+    }
+}
+
+function updateNotificationUI() {
+    const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+    const btn = document.getElementById('btn-notification-toggle');
+    if (btn) {
+        if (perm === 'granted') {
+            btn.innerHTML = '<span>🔔 Notificações Ativas</span>';
+            btn.style.borderColor = '#10b981';
+            btn.style.color = '#10b981';
+            btn.style.background = 'rgba(16, 185, 129, 0.12)';
+        } else {
+            btn.innerHTML = '<span>🔔 Ativar Notificações</span>';
+            btn.style.borderColor = '#f59e0b';
+            btn.style.color = '#f59e0b';
+            btn.style.background = 'rgba(245, 158, 11, 0.12)';
+        }
+    }
+    const trackingNotifBox = document.getElementById('tracking-notif-box');
+    if (trackingNotifBox) {
+        trackingNotifBox.style.display = perm === 'granted' ? 'none' : 'flex';
+    }
+    const prompt = document.getElementById('customer-notif-prompt');
+    if (prompt) {
+        if (perm === 'granted' || sessionStorage.getItem('tchapo_notif_dismissed_session') === 'true') {
+            prompt.style.display = 'none';
+        } else {
+            prompt.style.display = 'flex';
+        }
+    }
+}
+
+let prevLiveOrderStatus = null;
+
 const DEVICE_OPTIONS = [
     'iPhone 17 Pro Max', 'iPhone 17 Pro', 'iPhone 17',
     'iPhone 16 Pro Max', 'iPhone 16 Pro', 'iPhone 16',
@@ -1528,6 +1708,16 @@ function handleQuickOrder(e) {
         closeQuickOrderModal();
         appliedCoupon = null; // Clear applied coupon
         startTracking(order ? order.id : null, name, order ? order.created_at : null, order ? order.status : 'Pendente');
+        if (order && order.id) {
+            subscribeToPush({ role: 'customer', phone: orderData.phone, orderId: order.id, userId: currentUser ? currentUser.id : null }).catch(() => {});
+            triggerDeviceNotification({
+                title: `🎉 Pedido #${order.id} Confirmado!`,
+                body: `A sua encomenda no valor de ${order.total || ''} MT foi registada. Recebe dentro de 24h em todo o país!`,
+                url: `/?track=${order.id}`,
+                tag: `order-${order.id}-created-quick`,
+                chime: 'order'
+            });
+        }
     })
     .catch(() => {
         closeQuickOrderModal();
@@ -1871,6 +2061,16 @@ function handleCheckout(e) {
         submitBtn.textContent = 'Finalizar Pedido';
         submitBtn.disabled = false;
         startTracking(order ? order.id : null, name, order ? order.created_at : null, order ? order.status : 'Pendente');
+        if (order && order.id) {
+            subscribeToPush({ role: 'customer', phone: orderData.phone, orderId: order.id, userId: currentUser ? currentUser.id : null }).catch(() => {});
+            triggerDeviceNotification({
+                title: `🎉 Pedido #${order.id} Confirmado!`,
+                body: `A sua encomenda no valor de ${order.total || ''} MT foi registada. Recebe dentro de 24h em todo o país!`,
+                url: `/?track=${order.id}`,
+                tag: `order-${order.id}-created-cart`,
+                chime: 'order'
+            });
+        }
     })
     .catch(() => {
         const cm = document.getElementById('checkout-modal');
@@ -2009,6 +2209,28 @@ async function pollOrderStatus(orderId) {
 }
 
 function applyRealStatus(status, driver, createdAt = null, timerEndAt = null, timerRemainingSecs = null) {
+    if (prevLiveOrderStatus && prevLiveOrderStatus !== status) {
+        if (['Com Motorista', 'Com Entregador'].includes(status)) {
+            triggerDeviceNotification({
+                title: `🛵 Motorista a Caminho! (Pedido #${currentOrderId || ''})`,
+                body: `O seu pedido foi aceite pelo estafeta ${driver?.name || 'parceiro'} e está em rota de entrega!`,
+                url: `/?track=${currentOrderId || ''}`,
+                tag: `order-${currentOrderId || ''}-accepted`,
+                chime: 'order'
+            });
+            showToast('🛵 O teu motorista está a caminho!');
+        } else if (status === 'Entregue') {
+            triggerDeviceNotification({
+                title: `✅ Pedido #${currentOrderId || ''} Entregue com Sucesso!`,
+                body: 'A sua encomenda foi entregue. Muito obrigado por comprar na Tchapo Tchapo!',
+                url: `/?track=${currentOrderId || ''}`,
+                tag: `order-${currentOrderId || ''}-delivered`,
+                chime: 'success'
+            });
+            showToast('🎉 O teu pedido foi entregue! Obrigado!');
+        }
+    }
+    prevLiveOrderStatus = status;
     trackingStatus = status;
     const step = STATUS_STEPS[status] || 1;
     
@@ -3086,3 +3308,74 @@ init();
 setInterval(() => {
     fetch('/api/ping').catch(() => {});
 }, 4 * 60 * 1000);
+
+
+// ─── INITIALIZE NOTIFICATIONS ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+    updateNotificationUI();
+
+    const btnToggle = document.getElementById('btn-notification-toggle');
+    if (btnToggle) {
+        btnToggle.addEventListener('click', async () => {
+            const sub = await subscribeToPush({ role: 'customer' });
+            if (sub) {
+                triggerDeviceNotification({
+                    title: '🔔 Notificações Ativadas!',
+                    body: 'Você receberá avisos em tempo real das suas encomendas no telemóvel.',
+                    chime: 'order'
+                });
+                showToast('🔔 Notificações ativadas com sucesso!');
+            } else {
+                showToast('Notificações não ativadas. Verifique as permissões do navegador.');
+            }
+        });
+    }
+
+    const btnAcceptPrompt = document.getElementById('btn-accept-notif-prompt');
+    if (btnAcceptPrompt) {
+        btnAcceptPrompt.addEventListener('click', async () => {
+            const prompt = document.getElementById('customer-notif-prompt');
+            if (prompt) prompt.style.display = 'none';
+            try { sessionStorage.setItem('tchapo_notif_dismissed_session', 'true'); } catch (_) {}
+            const sub = await subscribeToPush({ role: 'customer' });
+            if (sub) {
+                triggerDeviceNotification({
+                    title: '🔔 Notificações Ativadas!',
+                    body: 'Você receberá avisos em tempo real das suas encomendas no telemóvel.',
+                    chime: 'order'
+                });
+                showToast('🔔 Notificações ativadas com sucesso!');
+            }
+        });
+    }
+
+    const btnDismissPrompt = document.getElementById('btn-dismiss-notif-prompt');
+    const btnClosePrompt = document.getElementById('btn-close-notif-prompt');
+    [btnDismissPrompt, btnClosePrompt].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                const prompt = document.getElementById('customer-notif-prompt');
+                if (prompt) prompt.style.display = 'none';
+                try { sessionStorage.setItem('tchapo_notif_dismissed_session', 'true'); } catch (_) {}
+            });
+        }
+    });
+
+    const btnTrackingNotif = document.getElementById('btn-tracking-notif');
+    if (btnTrackingNotif) {
+        btnTrackingNotif.addEventListener('click', async () => {
+            const sub = await subscribeToPush({ role: 'customer', orderId: currentOrderId });
+            if (sub) {
+                triggerDeviceNotification({
+                    title: '🔔 Alertas Deste Pedido Ativados!',
+                    body: 'Você será notificado quando o motorista estiver a caminho e ao entregar.',
+                    chime: 'order'
+                });
+                showToast('🔔 Alertas ativados!');
+            }
+        });
+    }
+});

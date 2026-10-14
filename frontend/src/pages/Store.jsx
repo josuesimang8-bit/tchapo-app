@@ -760,24 +760,15 @@ export default function Store() {
     const [selectedDevice, setSelectedDevice] = useState('iPhone 15 Pro Max');
     const [selectedColor, setSelectedColor] = useState('Preto');
     const [customDevice, setCustomDevice] = useState('');
-    const [cart, setCart] = useState
-    // Web Push & Notification States
-    const [showCustomerNotifPrompt, setShowCustomerNotifPrompt] = useState(() => {
-        try {
-            if (typeof window === 'undefined' || !('Notification' in window)) return false;
-            if (Notification.permission === 'granted') return false;
-            return sessionStorage.getItem('tchapo_notif_dismissed_session') !== 'true';
-        } catch (_) {
-            return true;
-        }
-    });
-    const [customerNotifStatus, setCustomerNotifStatus] = useState(() => {
-        return typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported';
-    });
-    const prevTrackingStatusRef = useRef(null);(() => {
+    const [cart, setCart] = useState(() => {
         const saved = localStorage.getItem('tchapoTchapoCart');
         return saved ? JSON.parse(saved) : [];
     });
+    // Web Push & Notification States
+    const [customerNotifStatus, setCustomerNotifStatus] = useState(() => {
+        return typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported';
+    });
+    const prevTrackingStatusRef = useRef(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
     
     // Dialog overlays
@@ -1341,6 +1332,41 @@ export default function Store() {
             fetch(`${import.meta.env.VITE_API_URL}/api/ping`).catch(() => {});
         }, 4 * 60 * 1000);
         return () => clearInterval(pingInterval);
+    }, []);
+
+    // Auto-prompt native browser notification dialog on store load and first interaction
+    useEffect(() => {
+        const triggerNativePrompt = async () => {
+            if (typeof window === 'undefined' || !('Notification' in window)) return;
+            if (Notification.permission === 'default') {
+                try {
+                    const res = await subscribeToPush({ role: 'customer' });
+                    if (res && res.success) {
+                        setCustomerNotifStatus('granted');
+                    } else if (res && res.reason === 'permission_denied') {
+                        setCustomerNotifStatus('denied');
+                    }
+                } catch (_) {}
+            }
+        };
+
+        triggerNativePrompt();
+
+        const handleUserGesture = () => {
+            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+                triggerNativePrompt();
+            }
+        };
+
+        window.addEventListener('click', handleUserGesture, { once: true, passive: true });
+        window.addEventListener('touchstart', handleUserGesture, { once: true, passive: true });
+        window.addEventListener('scroll', handleUserGesture, { once: true, passive: true });
+
+        return () => {
+            window.removeEventListener('click', handleUserGesture);
+            window.removeEventListener('touchstart', handleUserGesture);
+            window.removeEventListener('scroll', handleUserGesture);
+        };
     }, []);
 
     // Real-time tracking order status poll
@@ -3050,47 +3076,7 @@ export default function Store() {
                                 )}
                             </div>
 
-                        {/* Customer Notification Banner inside Tracking Modal */}
-                        {customerNotifStatus !== 'granted' && (
-                            <div style={{
-                                background: '#090d16',
-                                border: '1.5px solid rgba(245, 158, 11, 0.4)',
-                                borderRadius: '16px',
-                                padding: '0.85rem 1.1rem',
-                                margin: '0.9rem 0',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: '0.75rem',
-                                textAlign: 'left',
-                                boxSizing: 'border-box'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <img src="/assets/logo_box.png" alt="Tchapo" style={{ width: '36px', height: '36px', borderRadius: '8px' }} onError={(e) => { e.target.src = '/assets/logo_original.png'; }} />
-                                    <div>
-                                        <strong style={{ color: '#ffffff', fontSize: '0.85rem', display: 'block' }}>Receber Alertas deste Pedido 🔔</strong>
-                                        <p style={{ margin: '0.2rem 0 0', color: '#94a3b8', fontSize: '0.74rem', lineHeight: 1.3 }}>Notificações no telemóvel quando o motorista estiver a caminho e ao entregar.</p>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={handleEnableCustomerNotifications}
-                                    style={{
-                                        background: '#f59e0b',
-                                        color: '#000000',
-                                        border: 'none',
-                                        padding: '0.55rem 0.95rem',
-                                        borderRadius: '8px',
-                                        fontWeight: 800,
-                                        fontSize: '0.78rem',
-                                        cursor: 'pointer',
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                >
-                                    Ativar Alertas
-                                </button>
-                            </div>
-                        )}
+
                         </div>
 
                         <div className="tracking-progress" style={{ display: trackingStatus === 'Cancelado' ? 'none' : 'flex' }}>

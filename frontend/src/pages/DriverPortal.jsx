@@ -1027,16 +1027,16 @@ function DriverPortalContent() {
 
     // Legal Terms & Papers Modal for Driver Portal
     const [isDriverLegalOpen, setIsDriverLegalOpen] = useState(false);
-    const [driverLegalTab, setDriverLegalTab] = useState('termos');
+    const [driverLegalTab, setDriverLegalTab] = useState('como-funciona');
 
-    const openDriverLegal = (tab = 'termos') => {
+    const openDriverLegal = (tab = 'como-funciona') => {
         setDriverLegalTab(tab);
         setIsDriverLegalOpen(true);
     };
 
     const closeDriverLegal = () => {
         setIsDriverLegalOpen(false);
-        if (['#termos', '#levantamento', '#repasses', '#entregas', '#conduta', '#empresa', '#contacto'].includes(window.location.hash)) {
+        if (['#como-funciona', '#termos', '#levantamento', '#repasses', '#entregas', '#conduta', '#empresa', '#contacto'].includes(window.location.hash)) {
             history.replaceState(null, null, window.location.pathname);
         }
     };
@@ -1046,7 +1046,7 @@ function DriverPortalContent() {
         const hash = window.location.hash.replace('#', '').toLowerCase();
         if (hash === 'contacto') {
             openDriverLegal('empresa');
-        } else if (['termos', 'levantamento', 'repasses', 'entregas', 'conduta', 'empresa'].includes(hash)) {
+        } else if (['como-funciona', 'termos', 'levantamento', 'repasses', 'entregas', 'conduta', 'empresa'].includes(hash)) {
             openDriverLegal(hash);
         }
     }, []);
@@ -2243,76 +2243,83 @@ function DriverPortalContent() {
                             </div>
                         </div>
 
-                        {/* FOOTER ESTILO ESCALEPAY PARA O PORTAL DO ENTREGADOR */}
-                        <footer style={{
-                            background: darkMode ? '#111111' : '#ffffff',
-                            borderRadius: '20px',
-                            padding: '1.5rem 1.25rem',
-                            border: darkMode ? '1px solid #222222' : '1px solid #e2e8f0',
-                            marginTop: '0.5rem',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1.25rem',
-                            textAlign: 'center',
-                            boxShadow: darkMode ? '0 2px 10px rgba(0, 0, 0, 0.3)' : '0 2px 10px rgba(0, 0, 0, 0.03)'
+                        {/* Footer (EscalePay style - Estrutura idêntica à da Loja Tchapo Tchapo em Preto Puro) */}
+                        <footer className="main-footer" id="main-footer" style={{
+                            backgroundColor: '#090d16',
+                            color: '#e2e8f0',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '24px',
+                            padding: '2.5rem 1.25rem 1.5rem',
+                            marginTop: '1.25rem',
+                            boxSizing: 'border-box',
+                            textAlign: 'left'
                         }}>
-                            {/* Logo & Tagline */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <img src="/assets/logo_box.png" alt="Tchapo Tchapo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={(e) => { e.target.src = '/assets/logo_original.png'; }} />
-                                    <span style={{ fontSize: '1rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a', letterSpacing: '-0.3px' }}>
-                                        Tchapo Tchapo <span style={{ color: '#f59e0b' }}>Entregadores</span>
-                                    </span>
+                            <div className="footer-container" style={{ maxWidth: '100%' }}>
+                                <div className="footer-grid" style={{ gridTemplateColumns: '1fr', gap: '2rem' }}>
+                                    {/* Coluna 1: Marca & Apresentação */}
+                                    <div className="footer-col brand-col">
+                                        <div className="footer-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                            <img src="/assets/logo_box.png" alt="Tchapo Tchapo" className="footer-logo" onError={(e) => { e.target.src = '/assets/logo_original.png'; }} />
+                                            <span className="footer-brand-name">Tchapo Tchapo <span style={{ color: '#f59e0b', fontSize: '0.9rem', fontWeight: 800 }}>Entregadores</span></span>
+                                        </div>
+                                        <p className="footer-desc">
+                                            Plataforma oficial de distribuição logística da Tchapo Tchapo em Moçambique. O Portal do Entregador serve para você receber pedidos da loja online em tempo real, fazer o levantamento de produtos na loja física ou parceira (incluindo catálogo Kratos Empire) e realizar a entrega ao cliente dentro de 24 horas em todo o país com pagamento no destino.
+                                        </p>
+                                    </div>
+
+                                    {/* Coluna 2: Contato */}
+                                    <div className="footer-col">
+                                        <h4 className="footer-title">Contato</h4>
+                                        <p className="footer-subtitle">Você pode entrar em contato com nossa equipe pelos meios abaixo:</p>
+                                        <ul className="footer-contact-list">
+                                            <li>
+                                                <span className="contact-lbl">Email:</span>
+                                                <a href="mailto:suporte@tchapotchapo.com" className="footer-link-highlight">suporte@tchapotchapo.com</a>
+                                            </li>
+                                            <li>
+                                                <span className="contact-lbl">WhatsApp:</span>
+                                                <a href="https://wa.me/258834533474" target="_blank" rel="noopener noreferrer" className="footer-link-highlight">+258 83 453 3474</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Coluna 3: Plataforma */}
+                                    <div className="footer-col">
+                                        <h4 className="footer-title">Plataforma</h4>
+                                        <ul className="footer-links">
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('como-funciona')}>Como funciona o Portal</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('como-funciona')}>Receber Pedidos da Loja</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('levantamento')}>Preços de Levantamento</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => setIsRegisterModalOpen(true)}>Cadastrar como Entregador</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => setIsLoginModalOpen(true)}>Entrar no Painel</button></li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Coluna 4: Legal */}
+                                    <div className="footer-col">
+                                        <h4 className="footer-title">Legal</h4>
+                                        <ul className="footer-links">
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('como-funciona')}>Como funciona</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('termos')}>Termos de Uso</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('levantamento')}>Regras de Levantamento</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('repasses')}>Repasses & Lucros</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('entregas')}>Política de Entregas (24h)</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('conduta')}>Código de Conduta & Fraude Zero</button></li>
+                                            <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openDriverLegal('empresa')}>Contacto</button></li>
+                                        </ul>
+                                    </div>
                                 </div>
-                                <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>
-                                    ⚡ Recebe dentro de 24 horas em todo o país &bull; Entregadores em todo o Moçambique
-                                </span>
-                            </div>
 
-                            {/* Registered Company Info (Z E U S Network, LDA & Beira, Sofala) */}
-                            <div style={{
-                                background: darkMode ? '#18181b' : '#f8fafc',
-                                borderRadius: '12px',
-                                padding: '0.75rem 1rem',
-                                border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
-                                fontSize: '0.78rem',
-                                color: darkMode ? '#cbd5e1' : '#475569',
-                                lineHeight: 1.5
-                            }}>
-                                <div><strong>Company:</strong> Z E U S Network, LDA</div>
-                                <div><strong>Registered Address:</strong> Beira, Sofala &bull; Moçambique</div>
-                            </div>
-
-                            {/* Legal Links Suite */}
-                            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.5rem 0.85rem', fontSize: '0.8rem' }}>
-                                <button type="button" onClick={() => openDriverLegal('termos')} style={{ background: 'none', border: 'none', color: '#f59e0b', fontWeight: 700, cursor: 'pointer', padding: '4px 6px' }}>Termos de Adesão</button>
-                                <span style={{ color: '#94a3b8' }}>•</span>
-                                <button type="button" onClick={() => openDriverLegal('levantamento')} style={{ background: 'none', border: 'none', color: '#f59e0b', fontWeight: 700, cursor: 'pointer', padding: '4px 6px' }}>Regras de Levantamento</button>
-                                <span style={{ color: '#94a3b8' }}>•</span>
-                                <button type="button" onClick={() => openDriverLegal('repasses')} style={{ background: 'none', border: 'none', color: '#f59e0b', fontWeight: 700, cursor: 'pointer', padding: '4px 6px' }}>Repasses & Lucros</button>
-                                <span style={{ color: '#94a3b8' }}>•</span>
-                                <button type="button" onClick={() => openDriverLegal('entregas')} style={{ background: 'none', border: 'none', color: '#f59e0b', fontWeight: 700, cursor: 'pointer', padding: '4px 6px' }}>Prazos & Entregas (24h)</button>
-                                <span style={{ color: '#94a3b8' }}>•</span>
-                                <button type="button" onClick={() => openDriverLegal('conduta')} style={{ background: 'none', border: 'none', color: '#f59e0b', fontWeight: 700, cursor: 'pointer', padding: '4px 6px' }}>Código de Conduta</button>
-                                <span style={{ color: '#94a3b8' }}>•</span>
-                                <button type="button" onClick={() => openDriverLegal('empresa')} style={{ background: 'none', border: 'none', color: '#f59e0b', fontWeight: 700, cursor: 'pointer', padding: '4px 6px' }}>Empresa & Suporte</button>
-                            </div>
-
-                            {/* WhatsApp Direct Help Link */}
-                            <div style={{ borderTop: darkMode ? '1px solid #222222' : '1px solid #f1f5f9', paddingTop: '0.85rem', fontSize: '0.78rem', color: '#94a3b8' }}>
-                                Dúvidas sobre o cadastro ou parcerias?{' '}
-                                <a
-                                    href="https://wa.me/258834533474?text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20como%20trabalhar%20como%20entregador%20na%20Tchapo%20Tchapo"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{ color: '#059669', fontWeight: 800, textDecoration: 'none' }}
-                                >
-                                    Suporte WhatsApp: +258 83 453 3474 &rarr;
-                                </a>
-                            </div>
-
-                            <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                                © {new Date().getFullYear()} Z E U S Network, LDA &bull; Tchapo Tchapo. Todos os direitos reservados.
+                                {/* Rodapé Inferior: Direitos e Empresa (Estilo EscalePay) */}
+                                <div className="footer-bottom" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1.25rem', marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', textAlign: 'center' }}>
+                                    <div className="footer-bottom-info" style={{ textAlign: 'center' }}>
+                                        <p className="copyright" style={{ color: '#94a3b8', fontWeight: 600, marginBottom: '0.3rem' }}>&copy; 2026 Todos os direitos reservados</p>
+                                        <p className="company-detail" style={{ margin: '0.2rem 0', fontSize: '0.78rem', color: '#64748b' }}><span className="lbl" style={{ color: '#475569' }}>Company: </span><span className="val" style={{ color: '#94a3b8' }}>Z E U S Network, LDA</span></p>
+                                        <p className="company-detail" style={{ margin: '0.2rem 0', fontSize: '0.78rem', color: '#64748b' }}><span className="lbl" style={{ color: '#475569' }}>Registered Address: </span><span className="val" style={{ color: '#94a3b8' }}>Beira, Sofala</span></p>
+                                        <p className="company-detail" style={{ margin: '0.2rem 0', fontSize: '0.78rem', color: '#64748b' }}><span className="lbl" style={{ color: '#475569' }}>Email: </span><a href="mailto:suporte@tchapotchapo.com" className="val" style={{ color: '#94a3b8' }}>suporte@tchapotchapo.com</a></p>
+                                        <p className="footer-made-with" style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.8rem' }}>Feito com paixão em Moçambique</p>
+                                    </div>
+                                </div>
                             </div>
                         </footer>
                     </div>
@@ -6701,7 +6708,7 @@ function DriverPortalContent() {
                     </div>
                 </div>
             )}
-            {/* MODAL 5: Comprehensive Driver Legal Terms & Policies Suite */}
+            {/* MODAL 5: Comprehensive Driver Legal Terms & Policies Suite (SEMPRE PRETO PURO & COMPLETO) */}
             {isDriverLegalOpen && (
                 <>
                     <div
@@ -6710,8 +6717,8 @@ function DriverPortalContent() {
                         style={{
                             position: 'fixed',
                             inset: 0,
-                            background: 'rgba(0, 0, 0, 0.85)',
-                            backdropFilter: 'blur(6px)',
+                            background: 'rgba(0, 0, 0, 0.92)',
+                            backdropFilter: 'blur(8px)',
                             zIndex: 9999998,
                             cursor: 'pointer'
                         }}
@@ -6722,15 +6729,17 @@ function DriverPortalContent() {
                         aria-modal="true"
                         style={{
                             zIndex: 9999999,
-                            background: darkMode ? '#111111' : '#ffffff',
-                            color: darkMode ? '#e2e8f0' : '#334155',
-                            border: darkMode ? '1px solid #27272a' : 'none'
+                            background: '#090d16',
+                            color: '#e2e8f0',
+                            border: '1px solid #1e293b',
+                            boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.95)'
                         }}
                     >
-                        {/* Header */}
-                        <div className="legal-modal-header" style={{ background: darkMode ? '#18181b' : '#0f172a' }}>
+                        {/* Header (Sempre Preto) */}
+                        <div className="legal-modal-header" style={{ background: '#030712', borderBottom: '1px solid #1e293b' }}>
                             <div className="legal-modal-title-wrap">
                                 <span className="legal-modal-icon">
+                                    {driverLegalTab === 'como-funciona' && '🚚'}
                                     {driverLegalTab === 'termos' && '📜'}
                                     {driverLegalTab === 'levantamento' && '📦'}
                                     {driverLegalTab === 'repasses' && '💰'}
@@ -6740,15 +6749,16 @@ function DriverPortalContent() {
                                 </span>
                                 <div>
                                     <h3 style={{ color: '#ffffff' }}>
-                                        {driverLegalTab === 'termos' && 'Termos de Parceria & Adesão'}
+                                        {driverLegalTab === 'como-funciona' && 'Como Funciona o Portal do Entregador'}
+                                        {driverLegalTab === 'termos' && 'Termos de Uso do Entregador'}
                                         {driverLegalTab === 'levantamento' && 'Regras de Levantamento & Loja'}
                                         {driverLegalTab === 'repasses' && 'Política de Repasses & Lucros'}
-                                        {driverLegalTab === 'entregas' && 'Prazos (24h) & Política de Rota'}
+                                        {driverLegalTab === 'entregas' && 'Política de Entregas (24h)'}
                                         {driverLegalTab === 'conduta' && 'Código de Conduta & Fraude Zero'}
-                                        {driverLegalTab === 'empresa' && 'Empresa & Suporte ao Entregador'}
+                                        {driverLegalTab === 'empresa' && 'Contacto & Informações da Empresa'}
                                     </h3>
                                     <span className="legal-modal-updated">
-                                        Portal do Entregador &bull; Z E U S Network, LDA &bull; Moçambique
+                                        Portal Oficial do Entregador &bull; Z E U S Network, LDA &bull; Moçambique
                                     </span>
                                 </div>
                             </div>
@@ -6775,21 +6785,24 @@ function DriverPortalContent() {
                             </button>
                         </div>
 
-                        {/* Navigation Tabs Bar */}
+                        {/* Navigation Tabs Bar (Sempre Preto) */}
                         <div
                             className="legal-tabs-bar"
                             style={{
-                                background: darkMode ? '#18181b' : '#f8fafc',
-                                borderBottom: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0'
+                                background: '#050811',
+                                borderBottom: '1px solid #1e293b',
+                                gap: '0.4rem',
+                                padding: '0.65rem 1.25rem'
                             }}
                         >
                             {[
-                                { id: 'termos', label: 'Termos de Adesão' },
+                                { id: 'como-funciona', label: 'Como Funciona' },
+                                { id: 'termos', label: 'Termos de Uso' },
                                 { id: 'levantamento', label: 'Regras de Levantamento' },
-                                { id: 'repasses', label: 'Lucros & Repasses' },
-                                { id: 'entregas', label: 'Prazos (24h) & Rota' },
+                                { id: 'repasses', label: 'Repasses & Lucros' },
+                                { id: 'entregas', label: 'Política de Entregas' },
                                 { id: 'conduta', label: 'Código de Conduta' },
-                                { id: 'empresa', label: 'Empresa & Suporte' }
+                                { id: 'empresa', label: 'Contacto' }
                             ].map(tab => (
                                 <button
                                     key={tab.id}
@@ -6798,9 +6811,14 @@ function DriverPortalContent() {
                                     onClick={() => setDriverLegalTab(tab.id)}
                                     style={{
                                         background: driverLegalTab === tab.id ? '#f59e0b' : 'transparent',
-                                        color: driverLegalTab === tab.id ? '#111827' : (darkMode ? '#94a3b8' : '#64748b'),
+                                        color: driverLegalTab === tab.id ? '#000000' : '#94a3b8',
                                         fontWeight: driverLegalTab === tab.id ? 800 : 600,
-                                        borderRadius: '10px'
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        padding: '0.5rem 0.9rem',
+                                        cursor: 'pointer',
+                                        fontSize: '0.82rem',
+                                        whiteSpace: 'nowrap'
                                     }}
                                 >
                                     {tab.label}
@@ -6808,23 +6826,115 @@ function DriverPortalContent() {
                             ))}
                         </div>
 
-                        {/* Document Content */}
+                        {/* Document Content (Sempre Fundo Preto e Texto Claro) */}
                         <div
                             className="legal-modal-body"
                             style={{
-                                color: darkMode ? '#cbd5e1' : '#334155',
-                                background: darkMode ? '#111111' : '#ffffff'
+                                color: '#cbd5e1',
+                                background: '#090d16',
+                                padding: '1.75rem 1.75rem'
                             }}
                         >
+                            {/* ABA 1: COMO FUNCIONA O PORTAL DO ENTREGADOR */}
+                            {driverLegalTab === 'como-funciona' && (
+                                <div className="legal-section active">
+                                    <h4 style={{ color: '#ffffff' }}>1. O Que É o Portal do Entregador Tchapo Tchapo?</h4>
+                                    <p>O <strong>Portal do Entregador Tchapo Tchapo</strong> é a plataforma operacional de entregas que conecta diretamente a loja online <strong>Tchapo Tchapo</strong> aos entregadores e estafetas credenciados em todo o território de Moçambique.</p>
+                                    
+                                    <div className="legal-highlight-box" style={{ background: '#111827', borderLeft: '4px solid #f59e0b', color: '#ffffff' }}>
+                                        <strong style={{ color: '#f59e0b', fontSize: '0.95rem' }}>🎯 Qual é o Objetivo Principal do Portal?</strong>
+                                        <p style={{ color: '#cbd5e1', marginTop: '0.35rem', lineHeight: 1.6 }}>
+                                            O portal serve para você <strong>receber em tempo real os pedidos feitos pelos clientes na loja online Tchapo Tchapo</strong>, fazer o levantamento físico dos produtos nos pontos parceiros (incluindo o catálogo oficial Kratos Empire) e realizar a entrega ao domicílio do cliente dentro de 24 horas, recebendo o pagamento no ato e embolsando o seu lucro líquido a cada corrida concluída.
+                                        </p>
+                                    </div>
+
+                                    <h4 style={{ color: '#ffffff', marginTop: '1.5rem' }}>2. Como Funciona na Prática: Ciclo Completo de uma Entrega</h4>
+                                    
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.75rem' }}>
+                                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                                            <strong style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.92rem' }}>
+                                                <span>🛒 Passo 1:</span> O Cliente Compra na Loja Online
+                                            </strong>
+                                            <p style={{ margin: '0.4rem 0 0', color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                                O cliente acede ao site da Tchapo Tchapo, escolhe os produtos do catálogo (eletrônicos, capas, relógios, utilidades ou itens da loja parceira oficial Kratos Empire) e finaliza o pedido indicando o seu nome, WhatsApp, província, bairro e optando por pagar na entrega (em Dinheiro, M-Pesa ou E-Mola).
+                                            </p>
+                                        </div>
+
+                                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                                            <strong style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.92rem' }}>
+                                                <span>📲 Passo 2:</span> O Pedido Aparece Instantaneamente no Seu Painel
+                                            </strong>
+                                            <p style={{ margin: '0.4rem 0 0', color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                                O pedido cai imediatamente na sua aba <strong>"Disponíveis"</strong> com todas as informações abertas: dados do cliente, bairro de destino, valor total de venda, valor de levantamento na loja e o <strong>seu lucro líquido estimado já calculado</strong>.
+                                            </p>
+                                        </div>
+
+                                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                                            <strong style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.92rem' }}>
+                                                <span>⚡ Passo 3:</span> Você Aceita o Pedido
+                                            </strong>
+                                            <p style={{ margin: '0.4rem 0 0', color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                                Ao clicar em <strong>"Aceitar Pedido"</strong>, a encomenda fica atribuída exclusivamente a si e passa para a sua aba <strong>"Em Rota"</strong>. O pedido deixa de estar visível para os outros condutores.
+                                            </p>
+                                        </div>
+
+                                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                                            <strong style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.92rem' }}>
+                                                <span>📦 Passo 4:</span> Levantamento na Loja Parceira / Kratos Empire
+                                            </strong>
+                                            <p style={{ margin: '0.4rem 0 0', color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                                Você dirige-se ao ponto de distribuição ou loja parceira credenciada (como a Kratos Empire com base nos preços oficiais do site <em>kratosempire.co.mz</em>). Apresenta o ID da encomenda, paga ou assina a retirada pelo valor de levantamento tabelado, confere o estado e quantidade dos artigos e retira a mercadoria.
+                                            </p>
+                                        </div>
+
+                                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                                            <strong style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.92rem' }}>
+                                                <span>🛵 Passo 5:</span> Deslocação e Contacto com o Cliente ("A Caminho")
+                                            </strong>
+                                            <p style={{ margin: '0.4rem 0 0', color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                                Você ativa o estado "A Caminho" no portal e liga ou envia mensagem no WhatsApp ao cliente avisando que está a caminho, alinhando o ponto de encontro exato para cumprir a meta da entrega em até 24 horas.
+                                            </p>
+                                        </div>
+
+                                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                                            <strong style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.92rem' }}>
+                                                <span>💵 Passo 6:</span> Entrega e Recebimento do Pagamento no Destino
+                                            </strong>
+                                            <p style={{ margin: '0.4rem 0 0', color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                                O cliente examina a encomenda e efetua o pagamento integral diretamente a si (em Dinheiro, M-Pesa ou E-Mola). Você clica em "Concluir Entrega" no portal.
+                                            </p>
+                                        </div>
+
+                                        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                                            <strong style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.92rem' }}>
+                                                <span>💰 Passo 7:</span> Seu Lucro Líquido e Saques Imediatos
+                                            </strong>
+                                            <p style={{ margin: '0.4rem 0 0', color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                                O lucro da entrega (Margem Bruta = Venda - Levantamento, descontada a taxa de 15% da plataforma) entra imediatamente no seu saldo da carteira digital. Você pode solicitar saque para o seu <strong>M-Pesa ou E-Mola</strong> a qualquer momento!
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <h4 style={{ color: '#ffffff', marginTop: '1.5rem' }}>3. Vantagens do Entregador Tchapo Tchapo</h4>
+                                    <ul>
+                                        <li><strong>Fluxo Constante de Encomendas:</strong> Vendas diárias originadas na loja online diretamente para o seu telemóvel;</li>
+                                        <li><strong>Transparência Total de Ganhos:</strong> Você sabe antecipadamente o valor de levantamento e o seu lucro líquido;</li>
+                                        <li><strong>Flexibilidade Total:</strong> Liberdade de horários e condução (motorizada, carro ou bicicleta);</li>
+                                        <li><strong>Reconhecimento & Prêmios:</strong> Suba de nível até Motorista Verificado (5k), Camisa Oficial (25k), Placa de Honra (100k) e Prêmios Exclusivos.</li>
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* ABA 2: TERMOS DE USO */}
                             {driverLegalTab === 'termos' && (
                                 <div className="legal-section active">
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>1. Identificação e Enquadramento da Parceria</h4>
+                                    <h4 style={{ color: '#ffffff' }}>1. Identificação e Enquadramento da Parceria</h4>
                                     <p>Bem-vindo ao <strong>Portal do Entregador Tchapo Tchapo</strong>, plataforma logística operada pela <strong>Z E U S Network, LDA</strong>, com endereço registado em <strong>Beira, Sofala, Moçambique</strong>. O presente documento regula a adesão e atuação de entregadores parceiros independentes na nossa rede de distribuição em todo o território moçambicano.</p>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>2. Natureza Jurídica Autônoma</h4>
+                                    <h4 style={{ color: '#ffffff' }}>2. Natureza Jurídica Autônoma</h4>
                                     <p>A relação entre a Tchapo Tchapo e o Entregador é de <strong>parceria comercial e prestação de serviços logísticos autônomos</strong>. O entregador não é funcionário subordinado, tendo total autonomia para gerir os seus horários, ativar ou desativar a sua disponibilidade (ficar online/offline) e selecionar as encomendas que melhor se adequam à sua rota e rotina.</p>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>3. Requisitos Obrigatórios de Cadastro & Verificação</h4>
+                                    <h4 style={{ color: '#ffffff' }}>3. Requisitos Obrigatórios de Cadastro & Verificação</h4>
                                     <p>Para se registar e manter a sua conta homologada na plataforma, o parceiro deve comprovar:</p>
                                     <ul>
                                         <li><strong>Idade Mínima:</strong> Ter pelo menos 18 anos completos na data de adesão;</li>
@@ -6834,33 +6944,34 @@ function DriverPortalContent() {
                                         <li><strong>PIN de Acesso Pessoal:</strong> Código de 4 dígitos exclusivo para login seguro.</li>
                                     </ul>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>4. Processo de Análise e Aprovação pelo Administrador</h4>
+                                    <h4 style={{ color: '#ffffff' }}>4. Processo de Análise e Aprovação pelo Administrador</h4>
                                     <p>Ao submeter o formulário de inscrição, a conta é colocada no estado <strong>"Pendente"</strong>. A equipa operacional da Tchapo Tchapo procede à análise e validação documental no prazo habitual de 24 horas úteis. O acesso à aceitação de encomendas requer a aprovação formal do Administrador.</p>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>5. Cobertura Nacional em Moçambique</h4>
+                                    <h4 style={{ color: '#ffffff' }}>5. Cobertura Nacional em Moçambique</h4>
                                     <p>A rede de entregas Tchapo Tchapo opera em todas as cidades e províncias do país (Sofala, Maputo Cidade e Província, Manica, Nampula, Zambézia, Tete, Inhambane, Gaza, Cabo Delgado e Niassa). O parceiro atua na zona e província informada no seu perfil.</p>
                                 </div>
                             )}
 
+                            {/* ABA 3: REGRAS DE LEVANTAMENTO */}
                             {driverLegalTab === 'levantamento' && (
                                 <div className="legal-section active">
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>1. Conceito e Funcionamento do Levantamento (Pickup)</h4>
+                                    <h4 style={{ color: '#ffffff' }}>1. Conceito e Funcionamento do Levantamento (Pickup)</h4>
                                     <p>Ao aceitar um pedido disponível, o entregador tem acesso a todos os detalhes da entrega: destinatário, endereço de entrega, valor final cobrado ao cliente e o <strong>Preço de Levantamento da Loja</strong>.</p>
 
-                                    <div className="legal-highlight-box" style={{ background: darkMode ? '#1e1e24' : '#f1f5f9', borderLeft: '4px solid #f59e0b' }}>
-                                        <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>📋 Tabela Oficial de Preços de Levantamento:</strong>
-                                        <p style={{ color: darkMode ? '#cbd5e1' : '#475569' }}>
+                                    <div className="legal-highlight-box" style={{ background: '#111827', borderLeft: '4px solid #f59e0b', color: '#ffffff' }}>
+                                        <strong style={{ color: '#f59e0b' }}>📋 Tabela Oficial de Preços de Levantamento:</strong>
+                                        <p style={{ color: '#cbd5e1', marginTop: '0.35rem' }}>
                                             A lista oficial de levantamento estipula o custo fixado para retirada de cada artigo junto à loja Tchapo Tchapo ou fornecedores credenciados. Estes valores são transparentes e permitem ao entregador conhecer a sua margem exata antes de aceitar o pedido.
                                         </p>
                                     </div>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>2. Integração com Lojas Parceiras & Catálogo Kratos Empire</h4>
+                                    <h4 style={{ color: '#ffffff' }}>2. Integração com Lojas Parceiras & Catálogo Kratos Empire</h4>
                                     <p>Os produtos disponíveis incluem o stock central Tchapo Tchapo e o catálogo oficial da parceira <strong>Kratos Empire</strong> (com preços de levantamento sincronizados com <em>kratosempire.co.mz</em>). O estafeta deve recolher o produto no ponto credenciado indicado na ordem de serviço.</p>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>3. Retirada de Mercadoria</h4>
+                                    <h4 style={{ color: '#ffffff' }}>3. Retirada de Mercadoria</h4>
                                     <p>O entregador apresenta-se no balcão da loja parceira informando o número do pedido. O pagamento ou baixa do valor de levantamento é realizado conforme as instruções operacionais fornecidas para o pedido.</p>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>4. Conferência Obrigatória Antes da Saída</h4>
+                                    <h4 style={{ color: '#ffffff' }}>4. Conferência Obrigatória Antes da Saída</h4>
                                     <p>É dever indispensável do entregador inspecionar fisicamente os artigos antes de sair da loja:</p>
                                     <ul>
                                         <li>Confirmar quantidade de unidades, modelos e variantes solicitadas;</li>
@@ -6868,14 +6979,15 @@ function DriverPortalContent() {
                                         <li>Testar o funcionamento básico de aparelhos eletrónicos quando indicado.</li>
                                     </ul>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>5. Transferência de Responsabilidade pela Carga</h4>
+                                    <h4 style={{ color: '#ffffff' }}>5. Transferência de Responsabilidade pela Carga</h4>
                                     <p>A partir do momento em que a mercadoria é retirada da loja, a responsabilidade integral pela guarda, zelo e conservação física do artigo é do entregador até a sua entrega bem-sucedida ao cliente.</p>
                                 </div>
                             )}
 
+                            {/* ABA 4: REPASSES & LUCROS */}
                             {driverLegalTab === 'repasses' && (
                                 <div className="legal-section active">
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>1. Modelo de Lucro Transparente</h4>
+                                    <h4 style={{ color: '#ffffff' }}>1. Modelo de Lucro Transparente</h4>
                                     <p>O modelo de comissões da Tchapo Tchapo é estruturado para garantir alta rentabilidade ao parceiro:</p>
                                     <ul>
                                         <li><strong>Margem Bruta do Pedido:</strong> Preço de Venda ao Cliente menos o Preço de Levantamento da Loja;</li>
@@ -6883,28 +6995,29 @@ function DriverPortalContent() {
                                         <li><strong>Lucro Líquido do Entregador:</strong> 85% da margem líquida, creditado imediatamente na carteira digital do motorista no portal.</li>
                                     </ul>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>2. Cobrança do Pedido no Destino</h4>
+                                    <h4 style={{ color: '#ffffff' }}>2. Cobrança do Pedido no Destino</h4>
                                     <p>Os clientes pagam no ato da recepção por <strong>M-Pesa, E-Mola ou Dinheiro Vivo</strong>. O parceiro recolhe o valor total da encomenda e confirma a conclusão no portal.</p>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>3. Regularização de Saldos & Débitos</h4>
+                                    <h4 style={{ color: '#ffffff' }}>3. Regularização de Saldos & Débitos</h4>
                                     <p>Os valores recolhidos referentes ao custo do produto levantado e taxa de serviço devem ser prestados de contas conforme as orientações do portal. Contas com débitos vencidos não liquidados sofrem bloqueio preventivo para novos pedidos até o envio do respectivo comprovativo.</p>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>4. Solicitação de Saques de Lucros</h4>
+                                    <h4 style={{ color: '#ffffff' }}>4. Solicitação de Saques de Lucros</h4>
                                     <p>O entregador pode solicitar a transferência dos seus lucros acumulados a qualquer momento para o seu número <strong>M-Pesa ou E-Mola</strong>. Os saques são analisados e processados pelo departamento financeiro com rapidez (normalmente em até 24h úteis).</p>
                                 </div>
                             )}
 
+                            {/* ABA 5: POLÍTICA DE ENTREGAS */}
                             {driverLegalTab === 'entregas' && (
                                 <div className="legal-section active">
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>1. Compromisso Nacional: Recebe Dentro de 24 Horas em Todo o País</h4>
-                                    <div className="legal-highlight-box" style={{ background: darkMode ? '#1e1e24' : '#f1f5f9', borderLeft: '4px solid #059669' }}>
-                                        <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>⚡ Rapidez e Pontualidade Tchapo Tchapo:</strong>
-                                        <p style={{ color: darkMode ? '#cbd5e1' : '#475569' }}>
+                                    <h4 style={{ color: '#ffffff' }}>1. Compromisso Nacional: Recebe Dentro de 24 Horas em Todo o País</h4>
+                                    <div className="legal-highlight-box" style={{ background: '#111827', borderLeft: '4px solid #059669', color: '#ffffff' }}>
+                                        <strong style={{ color: '#10b981' }}>⚡ Rapidez e Pontualidade Tchapo Tchapo:</strong>
+                                        <p style={{ color: '#cbd5e1', marginTop: '0.35rem' }}>
                                             O compromisso da Tchapo Tchapo com os clientes é a entrega dentro de 24 horas em todo o território de Moçambique. Ao aceitar um pedido, o entregador compromete-se a priorizar o envio para cumprimento célere do prazo.
                                         </p>
                                     </div>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>2. Comunicação Prévia com o Cliente</h4>
+                                    <h4 style={{ color: '#ffffff' }}>2. Comunicação Prévia com o Cliente</h4>
                                     <p>Assim que recolher a encomenda, o parceiro deve alterar o estado para <strong>"A Caminho"</strong> e entrar em contacto com o cliente via chamada ou WhatsApp:</p>
                                     <ul>
                                         <li>Confirmar o endereço detalhado e pontos de referência no bairro;</li>
@@ -6912,7 +7025,7 @@ function DriverPortalContent() {
                                         <li>Reconfirmar o valor a pagar e a forma de pagamento selecionada.</li>
                                     </ul>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>3. Protocolo em Caso de Dificuldade na Entrega</h4>
+                                    <h4 style={{ color: '#ffffff' }}>3. Protocolo em Caso de Dificuldade na Entrega</h4>
                                     <p>Se o cliente não atender ou não estiver presente no destino:</p>
                                     <ol>
                                         <li>Efetuar no mínimo 3 tentativas de contacto em momentos distintos;</li>
@@ -6923,9 +7036,10 @@ function DriverPortalContent() {
                                 </div>
                             )}
 
+                            {/* ABA 6: CÓDIGO DE CONDUTA */}
                             {driverLegalTab === 'conduta' && (
                                 <div className="legal-section active">
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>1. Política Rigorosa de Tolerância Zero com Fraudes</h4>
+                                    <h4 style={{ color: '#ffffff' }}>1. Política Rigorosa de Tolerância Zero com Fraudes</h4>
                                     <p>A Tchapo Tchapo opera com rigor máximo para garantir a integridade de clientes e parceiros. Constituem faltas gravíssimas:</p>
                                     <ul>
                                         <li>Apropriação indébita ou não repasse de pagamentos recolhidos de clientes;</li>
@@ -6938,37 +7052,38 @@ function DriverPortalContent() {
                                         ⚠️ A prática de qualquer conduta fraudulenta acarretará o cancelamento definitivo da conta, retenção de saldos para reparação de prejuízos e o acionamento das autoridades policiais moçambicanas (SERNIC e PRM).
                                     </p>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>2. Urbanidade e Atendimento Exemplar</h4>
+                                    <h4 style={{ color: '#ffffff' }}>2. Urbanidade e Atendimento Exemplar</h4>
                                     <p>O entregador é o embaixador físico da plataforma. Deve pautar a sua conduta pela educação, cordialidade, honestidade e respeito com clientes, lojistas e suporte.</p>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>3. Legislação de Trânsito e Segurança</h4>
+                                    <h4 style={{ color: '#ffffff' }}>3. Legislação de Trânsito e Segurança</h4>
                                     <p>O parceiro é responsável pelo cumprimento estrito do Código de Estrada moçambicano, uso obrigatório de capacete homologado (em motociclos) e manutenção preventiva do seu veículo de trabalho.</p>
                                 </div>
                             )}
 
+                            {/* ABA 7: CONTACTO & EMPRESA */}
                             {driverLegalTab === 'empresa' && (
                                 <div className="legal-section active">
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>1. Dados Oficiais da Sociedade Gestora</h4>
-                                    <ul className="legal-company-specs" style={{ color: darkMode ? '#cbd5e1' : '#475569' }}>
+                                    <h4 style={{ color: '#ffffff' }}>1. Dados Oficiais da Sociedade Gestora</h4>
+                                    <ul className="legal-company-specs" style={{ color: '#cbd5e1' }}>
                                         <li><strong>Company:</strong> Z E U S Network, LDA</li>
                                         <li><strong>Registered Address:</strong> Beira, Sofala &bull; Moçambique</li>
                                         <li><strong>Plataforma:</strong> Tchapo Tchapo &bull; Portal do Entregador</li>
-                                        <li><strong>E-mail Institucional:</strong> <a href="mailto:suporte@tchapotchapo.com" style={{ color: '#f59e0b', fontWeight: 700 }}>suporte@tchapotchapo.com</a></li>
-                                        <li><strong>Linha Direta do Entregador (WhatsApp):</strong> <a href="https://wa.me/258834533474" target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontWeight: 700 }}>+258 83 453 3474</a></li>
+                                        <li><strong>Email Institucional:</strong> <a href="mailto:suporte@tchapotchapo.com" style={{ color: '#f59e0b', fontWeight: 700 }}>suporte@tchapotchapo.com</a></li>
+                                        <li><strong>Linha Direta do Entregador (WhatsApp):</strong> <a href="https://wa.me/258834533474" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', fontWeight: 700 }}>+258 83 453 3474</a></li>
                                     </ul>
 
-                                    <h4 style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>2. Suporte Operacional ao Parceiro</h4>
+                                    <h4 style={{ color: '#ffffff' }}>2. Suporte Operacional ao Parceiro</h4>
                                     <div className="legal-contact-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-                                        <div className="legal-contact-card" style={{ background: darkMode ? '#18181b' : '#f8fafc', border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0' }}>
+                                        <div className="legal-contact-card" style={{ background: '#0f172a', border: '1px solid #1e293b' }}>
                                             <span className="lcc-icon">💬</span>
-                                            <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>WhatsApp Suporte</strong>
-                                            <a href="https://wa.me/258834533474" target="_blank" rel="noopener noreferrer">+258 83 453 3474</a>
+                                            <strong style={{ color: '#ffffff' }}>WhatsApp Suporte</strong>
+                                            <a href="https://wa.me/258834533474" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8' }}>+258 83 453 3474</a>
                                             <small style={{ color: '#94a3b8' }}>Dúvidas com pedidos, rotas e saques de lucros</small>
                                         </div>
-                                        <div className="legal-contact-card" style={{ background: darkMode ? '#18181b' : '#f8fafc', border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0' }}>
+                                        <div className="legal-contact-card" style={{ background: '#0f172a', border: '1px solid #1e293b' }}>
                                             <span className="lcc-icon">✉️</span>
-                                            <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>Correio Eletrónico</strong>
-                                            <a href="mailto:suporte@tchapotchapo.com">suporte@tchapotchapo.com</a>
+                                            <strong style={{ color: '#ffffff' }}>Correio Eletrónico</strong>
+                                            <a href="mailto:suporte@tchapotchapo.com" style={{ color: '#f59e0b' }}>suporte@tchapotchapo.com</a>
                                             <small style={{ color: '#94a3b8' }}>Validação documental e atendimento institucional</small>
                                         </div>
                                     </div>
@@ -6980,24 +7095,28 @@ function DriverPortalContent() {
                             )}
                         </div>
 
-                        {/* Footer */}
+                        {/* Footer (Sempre Preto) */}
                         <div
                             className="legal-modal-footer"
                             style={{
-                                background: darkMode ? '#18181b' : '#f8fafc',
-                                borderTop: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0'
+                                background: '#030712',
+                                borderTop: '1px solid #1e293b',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '1rem 1.75rem'
                             }}
                         >
                             <div className="legal-footer-support">
-                                <span style={{ color: darkMode ? '#94a3b8' : '#64748b', fontSize: '0.82rem' }}>
+                                <span style={{ color: '#94a3b8', fontSize: '0.82rem' }}>
                                     Dúvidas com a sua conta de entregador?
                                 </span>
                                 <a
                                     href="https://wa.me/258834533474?text=Ol%C3%A1%2C%20sou%20entregador%20e%20gostaria%20de%20esclarecer%20uma%20d%C3%BAvida%20sobre%20os%20termos."
                                     target="_blank"
-                                    rel="noreferrer"
+                                    rel="noopener noreferrer"
                                     className="legal-support-link"
-                                    style={{ color: '#059669', fontWeight: 800, textDecoration: 'none', fontSize: '0.82rem' }}
+                                    style={{ color: '#38bdf8', fontWeight: 800, textDecoration: 'none', fontSize: '0.82rem', marginLeft: '0.4rem' }}
                                 >
                                     WhatsApp: +258 83 453 3474 &rarr;
                                 </a>
@@ -7007,10 +7126,10 @@ function DriverPortalContent() {
                                 className="btn-primary legal-close-btn"
                                 onClick={closeDriverLegal}
                                 style={{
-                                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                                    color: '#ffffff',
+                                    background: '#f59e0b',
+                                    color: '#000000',
                                     border: 'none',
-                                    padding: '0.65rem 1.4rem',
+                                    padding: '0.65rem 1.5rem',
                                     borderRadius: '10px',
                                     fontWeight: 800,
                                     cursor: 'pointer'

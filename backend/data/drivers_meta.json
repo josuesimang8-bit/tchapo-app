@@ -51,5 +51,19 @@
     "pending_debt": null,
     "debt_history": [],
     "is_blocked": false
+  },
+  "12": {
+    "approval_status": "Pendente",
+    "is_online": false,
+    "last_seen_at": null,
+    "doc_type": "BI",
+    "doc_number": "",
+    "doc_photo_url": "",
+    "vehicle_type": "Mota",
+    "vehicle_plate": "",
+    "bairro": "Beira",
+    "pin": "1234",
+    "warnings": [],
+    "earnings_rate_per_delivery": 150
   }
 }

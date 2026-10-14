@@ -277,6 +277,7 @@
         .driver-badge-approved { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
         .driver-badge-pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
         .driver-badge-suspended { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .driver-badge-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .driver-badge-debt { background: #fef2f2; color: #dc2626; border: 1px solid #f87171; animation: pulse 2s infinite; }
 
         /* Finance Module Styles */
@@ -543,6 +544,7 @@
                             <button class="driver-filter-pill" onclick="setDriverStatusFilter('Pendente')" data-filter="Pendente">⏳ Pendentes</button>
                             <button class="driver-filter-pill" onclick="setDriverStatusFilter('Aprovado')" data-filter="Aprovado">✅ Aprovados</button>
                             <button class="driver-filter-pill" onclick="setDriverStatusFilter('Suspenso')" data-filter="Suspenso">🚫 Suspensos</button>
+                            <button class="driver-filter-pill" onclick="setDriverStatusFilter('Recusado')" data-filter="Recusado">❌ Recusados</button>
                             <button class="driver-filter-pill" onclick="setDriverStatusFilter('debt')" data-filter="debt">💰 Com Dívida</button>
                         </div>
                     </div>
@@ -1347,6 +1349,72 @@
     </div>
 </div>
 
+<!-- Modal: Reject Driver Modal with Rejection Reason -->
+<div id="modal-reject-driver" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 99999;">
+    <div class="modal-box" style="max-width: 520px; width: 92%; padding: 1.5rem; text-align: left; border: 1.5px solid #fecaca; border-radius: 16px; background: #fff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #fee2e2; padding-bottom: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.4rem;">❌</span>
+                <div>
+                    <h3 id="modal-reject-title" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #991b1b;">Recusar Inscrição</h3>
+                    <p id="modal-reject-subtitle" style="margin: 0.2rem 0 0; font-size: 0.82rem; color: #7f1d1d;">Entregador: Carlos José</p>
+                </div>
+            </div>
+            <button onclick="closeRejectModalHtml()" style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #991b1b; font-weight: 700;">✕</button>
+        </div>
+
+        <form id="form-reject-driver" onsubmit="submitRejectDriver(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+            <input type="hidden" id="reject-driver-id">
+            
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 0.75rem; font-size: 0.82rem; color: #92400e; line-height: 1.4;">
+                ℹ️ <strong>Importante:</strong> O motivo selecionado ou digitado será exibido para o entregador no Portal do Entregador, para que ele saiba exatamente o que corrigir.
+            </div>
+
+            <div class="form-field">
+                <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.4rem; display: block;">Selecione o motivo principal *</label>
+                <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #334155; cursor: pointer; padding: 0.45rem 0.65rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                        <input type="radio" name="reject_preset_html" value="Fotografia do documento (BI/Carta) ilegível, escura ou cortada" checked onchange="toggleCustomRejectReason(this.value)">
+                        <span>Fotografia do documento (BI/Carta) ilegível, escura ou cortada</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #334155; cursor: pointer; padding: 0.45rem 0.65rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                        <input type="radio" name="reject_preset_html" value="Fotografia de perfil (rosto) inadequada ou sem nitidez" onchange="toggleCustomRejectReason(this.value)">
+                        <span>Fotografia de perfil (rosto) inadequada ou sem nitidez</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #334155; cursor: pointer; padding: 0.45rem 0.65rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                        <input type="radio" name="reject_preset_html" value="Número de identificação inválido ou não correspondente" onchange="toggleCustomRejectReason(this.value)">
+                        <span>Número de identificação inválido ou não correspondente</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #334155; cursor: pointer; padding: 0.45rem 0.65rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                        <input type="radio" name="reject_preset_html" value="Área ou província fora da nossa cobertura atual" onchange="toggleCustomRejectReason(this.value)">
+                        <span>Área ou província fora da nossa cobertura atual</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #334155; cursor: pointer; padding: 0.45rem 0.65rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                        <input type="radio" name="reject_preset_html" value="Contacto de telefone / WhatsApp inacessível ou inválido" onchange="toggleCustomRejectReason(this.value)">
+                        <span>Contacto de telefone / WhatsApp inacessível ou inválido</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #334155; cursor: pointer; padding: 0.45rem 0.65rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                        <input type="radio" name="reject_preset_html" value="Outro motivo personalizado" onchange="toggleCustomRejectReason(this.value)">
+                        <span>Outro motivo personalizado</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label style="font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.3rem; display: block;">Explicação Adicional / Mensagem ao Candidato</label>
+                <textarea class="form-textarea" id="reject-custom-text" rows="3" placeholder="Opcional: explique o que o candidato deve fazer para ser aprovado..." style="width: 100%; border-radius: 8px; border: 1.5px solid #cbd5e1; padding: 0.6rem; font-family: inherit; font-size: 0.82rem; box-sizing: border-box; outline: none;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid #f1f5f9;">
+                <button type="button" class="btn-cancel" onclick="closeRejectModalHtml()">Cancelar</button>
+                <button type="submit" class="btn-danger" style="background: #dc2626; color: #fff; padding: 0.65rem 1.4rem; border: none; border-radius: 8px; font-weight: 800; font-size: 0.88rem; cursor: pointer;">
+                    Confirmar Rejeição
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────
 const ADMIN_PIN = '1234';
@@ -1899,7 +1967,11 @@ async function loadDebts() {
 function updateDriverStats() {
     const total = allDrivers.length;
     const online = allDrivers.filter(d => d.is_online).length;
-    const pending = allDrivers.filter(d => d.approval_status === 'Pendente').length;
+    const pending = allDrivers.filter(d => {
+        let s = d.approval_status || (d.active ? 'Aprovado' : 'Pendente');
+        if (d.active === false && s === 'Aprovado') s = 'Pendente';
+        return s === 'Pendente';
+    }).length;
     const totalDebtAmount = allDebts.reduce((sum, item) => sum + (Number(item.debt?.amount) || 0), 0);
 
     const elTotal = document.getElementById('stat-driver-total');
@@ -1951,11 +2023,15 @@ function filterAndRenderDrivers() {
     if (!el) return;
 
     let filtered = allDrivers.filter(d => {
+        let status = d.approval_status || (d.active ? 'Aprovado' : 'Pendente');
+        if (d.active === false && status === 'Aprovado') status = 'Pendente';
+
         // Status filter
         if (currentDriverFilter === 'online' && !d.is_online) return false;
-        if (currentDriverFilter === 'Pendente' && d.approval_status !== 'Pendente') return false;
-        if (currentDriverFilter === 'Aprovado' && d.approval_status !== 'Aprovado') return false;
-        if (currentDriverFilter === 'Suspenso' && d.approval_status !== 'Suspenso') return false;
+        if (currentDriverFilter === 'Pendente' && status !== 'Pendente') return false;
+        if (currentDriverFilter === 'Aprovado' && status !== 'Aprovado') return false;
+        if (currentDriverFilter === 'Suspenso' && status !== 'Suspenso') return false;
+        if (currentDriverFilter === 'Recusado' && status !== 'Recusado') return false;
         if (currentDriverFilter === 'debt' && !d.pending_debt) return false;
 
         // Search text
@@ -1977,9 +2053,11 @@ function filterAndRenderDrivers() {
 
     el.innerHTML = filtered.map(d => {
         const isOnline = Boolean(d.is_online);
-        const status = d.approval_status || 'Aprovado';
+        let status = d.approval_status || (d.active ? 'Aprovado' : 'Pendente');
+        if (d.active === false && status === 'Aprovado') status = 'Pendente';
         const isPending = status === 'Pendente';
         const isSuspended = status === 'Suspenso';
+        const isRejected = status === 'Recusado';
         const isBlocked = Boolean(d.is_blocked || (d.pending_debt && d.pending_debt.status !== 'Pago'));
         const cleanPhone = (d.phone || '').replace(/\D/g, '');
         const hasDocPhoto = Boolean(d.doc_photo_url);
@@ -1994,6 +2072,9 @@ function filterAndRenderDrivers() {
         } else if (isSuspended) {
             badgeClass = 'driver-badge-suspended';
             badgeLabel = '🚫 Suspenso';
+        } else if (isRejected) {
+            badgeClass = 'driver-badge-rejected';
+            badgeLabel = '❌ Recusado';
         }
 
         return `
@@ -2018,6 +2099,11 @@ function filterAndRenderDrivers() {
                             <span style="color: #cbd5e1;">•</span>
                             <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">ID #${formatDriverId(d.id)}</span>
                         </div>
+                        ${isRejected && (d.rejection_reason || d.approval_notes) ? `
+                            <div style="margin-top: 0.35rem; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; padding: 0.3rem 0.55rem; font-size: 0.74rem; color: #991b1b; line-height: 1.35;">
+                                <strong>Motivo:</strong> ${d.rejection_reason || d.approval_notes}
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
 
@@ -2088,14 +2174,24 @@ function filterAndRenderDrivers() {
                     <button onclick="approveDriver(${d.id}, 'Aprovado')" style="background: #16a34a; color: #fff; border: none; padding: 0.4rem 0.75rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
                         ✅ Aprovar
                     </button>
-                    <button onclick="approveDriver(${d.id}, 'Recusado')" style="background: #fee2e2; color: #991b1b; border: none; padding: 0.4rem 0.75rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                    <button onclick="openRejectModalHtml(${d.id}, '${d.name.replace(/'/g, "\\'")}')" style="background: #fee2e2; color: #991b1b; border: none; padding: 0.4rem 0.75rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
                         ❌ Recusar
                     </button>
                 ` : isSuspended ? `
                     <button onclick="approveDriver(${d.id}, 'Aprovado')" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; padding: 0.4rem 0.75rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
                         ✅ Reativar
                     </button>
+                ` : isRejected ? `
+                    <button onclick="approveDriver(${d.id}, 'Aprovado')" style="background: #16a34a; color: #fff; border: none; padding: 0.4rem 0.75rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                        ✅ Aprovar
+                    </button>
+                    <button onclick="openRejectModalHtml(${d.id}, '${d.name.replace(/'/g, "\\'")}')" style="background: #fff; color: #991b1b; border: 1px solid #fca5a5; padding: 0.4rem 0.65rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                        ✏️ Alterar Motivo
+                    </button>
                 ` : `
+                    <button onclick="openRejectModalHtml(${d.id}, '${d.name.replace(/'/g, "\\'")}')" style="background: #fee2e2; color: #991b1b; border: none; padding: 0.4rem 0.65rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                        ❌ Recusar
+                    </button>
                     <button onclick="approveDriver(${d.id}, 'Suspenso')" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 0.4rem 0.65rem; border-radius: 7px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
                         🚫 Suspender
                     </button>
@@ -2201,20 +2297,63 @@ async function confirmDriverDebt(driverId, name, amount) {
     }
 }
 
-async function approveDriver(id, status) {
+async function approveDriver(id, status, reason = '') {
     try {
         const res = await fetch(`/api/drivers/${id}/approval`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ approval_status: status })
+            body: JSON.stringify({ approval_status: status, reason })
         });
         if (res.ok) {
             loadDrivers();
-            toast(status === 'Aprovado' ? '✅ Entregador aprovado para corridas!' : `Entregador marcado como ${status}`);
+            toast(status === 'Aprovado' ? '✅ Entregador aprovado para corridas!' : `Entregador marcado como ${status}. Motivo gravado com sucesso.`);
         }
     } catch (err) {
         alert('Erro ao atualizar estado do entregador: ' + err.message);
     }
+}
+
+function openRejectModalHtml(id, name) {
+    const modal = document.getElementById('modal-reject-driver');
+    if (!modal) return;
+    document.getElementById('reject-driver-id').value = id;
+    document.getElementById('modal-reject-subtitle').textContent = `Entregador: ${name} (#${formatDriverId(id)})`;
+    document.getElementById('reject-custom-text').value = '';
+    const radios = document.getElementsByName('reject_preset_html');
+    if (radios.length > 0) radios[0].checked = true;
+    modal.style.display = 'flex';
+}
+
+function closeRejectModalHtml() {
+    const modal = document.getElementById('modal-reject-driver');
+    if (modal) modal.style.display = 'none';
+}
+
+function toggleCustomRejectReason(val) {
+    const txt = document.getElementById('reject-custom-text');
+    if (!txt) return;
+    if (val === 'Outro motivo personalizado') {
+        txt.required = true;
+        txt.placeholder = 'Digite obrigatoriamente a explicação para o candidato...';
+        txt.focus();
+    } else {
+        txt.required = false;
+        txt.placeholder = 'Opcional: explique o que o candidato deve fazer para ser aprovado...';
+    }
+}
+
+async function submitRejectDriver(e) {
+    e.preventDefault();
+    const id = document.getElementById('reject-driver-id').value;
+    const customTxt = (document.getElementById('reject-custom-text').value || '').trim();
+    const radios = document.getElementsByName('reject_preset_html');
+    let preset = '';
+    for (const r of radios) {
+        if (r.checked) { preset = r.value; break; }
+    }
+    const finalReason = customTxt || preset;
+    closeRejectModalHtml();
+    await approveDriver(id, 'Recusado', finalReason);
 }
 
 // ── Document Modal Functions ─────────────────────────────────────────────

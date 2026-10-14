@@ -107,13 +107,19 @@ function urlBase64ToUint8Array(base64String) {
  * Request notification permission from the user
  */
 export async function requestNotificationPermission() {
-    if (!isNotificationSupported()) return 'unsupported';
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+    if (Notification.permission === 'granted') return 'granted';
     try {
-        const permission = await Notification.requestPermission();
-        return permission;
+        let permission;
+        const p = Notification.requestPermission((res) => {
+            if (res) permission = res;
+        });
+        if (p && typeof p.then === 'function') {
+            permission = await p;
+        }
+        return permission || Notification.permission;
     } catch (e) {
-        console.warn('Error requesting notification permission:', e);
-        return 'denied';
+        return Notification.permission || 'denied';
     }
 }
 

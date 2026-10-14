@@ -12,11 +12,13 @@ self.addEventListener('activate', (event) => {
 
 // Listen for Web Push events (Background push for Store, Drivers, and Admin)
 self.addEventListener('push', (event) => {
+    const defaultIcon = (self.location && self.location.origin ? self.location.origin : '') + '/assets/logo_box.png';
+
     let data = {
         title: 'Tchapo Tchapo',
         body: 'Nova notificação da Tchapo Tchapo!',
-        icon: '/assets/logo_box.png',
-        badge: '/assets/logo_box.png',
+        icon: defaultIcon,
+        badge: defaultIcon,
         url: '/',
         tag: 'tchapo-general'
     };
@@ -44,8 +46,8 @@ self.addEventListener('push', (event) => {
 
     const options = {
         body: data.body,
-        icon: data.icon || '/assets/logo_box.png',
-        badge: data.badge || '/assets/logo_box.png',
+        icon: data.icon || defaultIcon,
+        badge: data.badge || defaultIcon,
         tag: notifTag,
         renotify: true,
         requireInteraction: true,

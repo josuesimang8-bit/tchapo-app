@@ -911,6 +911,93 @@ export default function Store() {
         };
     }, [activePromo, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, isCartCheckoutModalOpen, isLegalOpen, selectedProduct, quickOrderProduct, trackingOrder]);
 
+    // Active touchmove & wheel event interception to 100% block mobile scroll bleed
+    useEffect(() => {
+        const isModalOpen = (activePromo !== null) ||
+            isCartOpen ||
+            isAuthOpen ||
+            isMeusPedidosOpen ||
+            isReferralOpen ||
+            isCartCheckoutModalOpen ||
+            isLegalOpen ||
+            selectedProduct !== null ||
+            quickOrderProduct !== null ||
+            trackingOrder !== null;
+
+        if (!isModalOpen) return;
+
+        let touchStartY = 0;
+        const handleTouchStart = (e) => {
+            if (e.touches && e.touches.length === 1) {
+                touchStartY = e.touches[0].clientY;
+            }
+        };
+
+        const getScrollable = (target) => {
+            let el = target;
+            while (el && el !== document.body && el !== document.documentElement) {
+                if (el.matches && el.matches('.cart-items, .product-modal-content, .legal-modal-body, .auth-modal, .tracking-modal, .product-modal > div, [data-scrollable="true"]')) {
+                    return el;
+                }
+                try {
+                    const style = window.getComputedStyle(el);
+                    const overflowY = style.overflowY;
+                    if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+                        return el;
+                    }
+                } catch (err) {}
+                el = el.parentElement;
+            }
+            return null;
+        };
+
+        const handleTouchMove = (e) => {
+            const scrollable = getScrollable(e.target);
+            if (!scrollable) {
+                if (e.cancelable) e.preventDefault();
+                return;
+            }
+
+            const currentY = e.touches[0].clientY;
+            const deltaY = currentY - touchStartY;
+            const isScrollingUp = deltaY > 0;
+            const isScrollingDown = deltaY < 0;
+            const isAtTop = scrollable.scrollTop <= 0;
+            const isAtBottom = (scrollable.scrollTop + scrollable.clientHeight) >= (scrollable.scrollHeight - 1);
+
+            if ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)) {
+                if (e.cancelable) e.preventDefault();
+            }
+        };
+
+        const handleWheel = (e) => {
+            const scrollable = getScrollable(e.target);
+            if (!scrollable) {
+                if (e.cancelable) e.preventDefault();
+                return;
+            }
+
+            const isScrollingUp = e.deltaY < 0;
+            const isScrollingDown = e.deltaY > 0;
+            const isAtTop = scrollable.scrollTop <= 0;
+            const isAtBottom = (scrollable.scrollTop + scrollable.clientHeight) >= (scrollable.scrollHeight - 1);
+
+            if ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)) {
+                if (e.cancelable) e.preventDefault();
+            }
+        };
+
+        window.addEventListener('touchstart', handleTouchStart, { passive: true });
+        window.addEventListener('touchmove', handleTouchMove, { passive: false });
+        window.addEventListener('wheel', handleWheel, { passive: false });
+
+        return () => {
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('wheel', handleWheel);
+        };
+    }, [activePromo, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, isCartCheckoutModalOpen, isLegalOpen, selectedProduct, quickOrderProduct, trackingOrder]);
+
     const trackProductClick = async (productId) => {
         try {
             await fetch(`${import.meta.env.VITE_API_URL}/api/products/${productId}/click`, {

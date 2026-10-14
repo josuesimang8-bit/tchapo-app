@@ -2823,21 +2823,25 @@ window.updateWithdrawPlaceholder = function(val) {
 
 let bodyScrollLocked = false;
 let lockedScrollY = 0;
+let touchStartY = 0;
+
+function isAnyModalOpen() {
+    return !!document.querySelector(
+        '#cart-sidebar.active, #cart-overlay.active, ' +
+        '#auth-modal.active, #auth-overlay.active, ' +
+        '#checkout-modal.active, #checkout-overlay.active, ' +
+        '#product-modal.active, #product-modal-overlay.active, ' +
+        '#quick-order-modal.active, #quick-order-overlay.active, ' +
+        '#meus-pedidos-modal.active, #meus-pedidos-overlay.active, ' +
+        '#tracking-overlay.active, ' +
+        '#legal-modal.active, #legal-overlay.active, ' +
+        '#delivery-payment-promo-modal.active, #delivery-payment-promo-overlay.active, ' +
+        '.cart-sidebar.active, .product-modal.active, .modal.active, .tracking-overlay.active, .modal-overlay.active, .cart-overlay.active'
+    );
+}
 
 function updateScrollLock() {
-    const activeModals = document.querySelectorAll(
-        '.product-modal.active, .modal.active, .cart-sidebar.active, .tracking-overlay.active, .modal-overlay.active, .cart-overlay.active'
-    );
-    let anyOpen = false;
-    for (const el of activeModals) {
-        if (el.classList.contains('active')) {
-            const style = window.getComputedStyle(el);
-            if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
-                anyOpen = true;
-                break;
-            }
-        }
-    }
+    const anyOpen = isAnyModalOpen();
 
     if (anyOpen) {
         if (!bodyScrollLocked) {
@@ -2875,26 +2879,73 @@ function updateScrollLock() {
     }
 }
 
-function initBackdropScrollPrevention() {
-    const overlayIds = [
-        'cart-overlay',
-        'product-modal-overlay',
-        'checkout-overlay',
-        'meus-pedidos-overlay',
-        'quick-order-overlay',
-        'referrals-overlay',
-        'tracking-overlay',
-        'auth-overlay',
-        'delivery-payment-promo-overlay',
-        'legal-overlay'
-    ];
-    overlayIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
-            el.addEventListener('wheel', (e) => { e.preventDefault(); }, { passive: false });
+function getScrollableParent(target) {
+    let el = target;
+    while (el && el !== document.body && el !== document.documentElement) {
+        if (el.matches && el.matches('.cart-items, .product-modal-content, .legal-modal-body, .auth-modal, .tracking-modal, #checkout-modal > div, #quick-order-content, #meus-pedidos-content, [data-scrollable="true"]')) {
+            return el;
         }
-    });
+        try {
+            const style = window.getComputedStyle(el);
+            const overflowY = style.overflowY;
+            if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+                return el;
+            }
+        } catch (e) {}
+        el = el.parentElement;
+    }
+    return null;
+}
+
+function initBackdropScrollPrevention() {
+    window.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 1) {
+            touchStartY = e.touches[0].clientY;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isAnyModalOpen()) return;
+
+        const scrollable = getScrollableParent(e.target);
+        if (!scrollable) {
+            // Touch is on backdrop, header, footer, or background store -> prevent 100%
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
+        const currentY = e.touches[0].clientY;
+        const deltaY = currentY - touchStartY;
+        const isScrollingUp = deltaY > 0; // dragging downwards
+        const isScrollingDown = deltaY < 0; // dragging upwards
+
+        const isAtTop = scrollable.scrollTop <= 0;
+        const isAtBottom = (scrollable.scrollTop + scrollable.clientHeight) >= (scrollable.scrollHeight - 1);
+
+        // If at top and trying to pull down or at bottom trying to push up -> cancel to prevent viewport rubber-banding
+        if ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)) {
+            if (e.cancelable) e.preventDefault();
+        }
+    }, { passive: false });
+
+    window.addEventListener('wheel', (e) => {
+        if (!isAnyModalOpen()) return;
+
+        const scrollable = getScrollableParent(e.target);
+        if (!scrollable) {
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
+        const isScrollingUp = e.deltaY < 0;
+        const isScrollingDown = e.deltaY > 0;
+        const isAtTop = scrollable.scrollTop <= 0;
+        const isAtBottom = (scrollable.scrollTop + scrollable.clientHeight) >= (scrollable.scrollHeight - 1);
+
+        if ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)) {
+            if (e.cancelable) e.preventDefault();
+        }
+    }, { passive: false });
 }
 
 function initPromoPopup() {

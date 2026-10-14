@@ -1921,23 +1921,18 @@ export default function Store() {
                         {/* Coluna 1: Marca & Apresentação */}
                         <div className="footer-col brand-col">
                             <div className="footer-brand">
-                                <img src="/logo.png" alt="Tchapo Tchapo" className="footer-logo" />
+                                <img src="/assets/logo_box.png" alt="Tchapo Tchapo" className="footer-logo" />
                                 <span className="footer-brand-name">Tchapo Tchapo</span>
                             </div>
                             <p className="footer-desc">
-                                A sua loja online de confiança em Moçambique. Produtos selecionados, entregas ultra-rápidas em até 4 horas em Maputo e Matola, e pagamento 100% seguro no ato da entrega.
+                                Plataforma de compras online em Moçambique. Recebe a tua encomenda dentro de 24 horas em todo o país, com pagamento seguro no ato da entrega.
                             </p>
-                            <div className="footer-badges">
-                                <span className="footer-badge">🇲🇿 Moçambique</span>
-                                <span className="footer-badge">⚡ Entrega em 4h</span>
-                                <span className="footer-badge">🤝 Pague na Entrega</span>
-                            </div>
                         </div>
 
-                        {/* Coluna 2: Contacto & Atendimento */}
+                        {/* Coluna 2: Contato */}
                         <div className="footer-col">
-                            <h4 className="footer-title">Contacto</h4>
-                            <p className="footer-subtitle">Pode entrar em contacto com a nossa equipa pelos meios abaixo:</p>
+                            <h4 className="footer-title">Contato</h4>
+                            <p className="footer-subtitle">Você pode entrar em contato com nossa equipe pelos meios abaixo:</p>
                             <ul className="footer-contact-list">
                                 <li>
                                     <span className="contact-lbl">Email:</span>
@@ -1947,83 +1942,42 @@ export default function Store() {
                                     <span className="contact-lbl">WhatsApp:</span>
                                     <a href="https://wa.me/258834533474" target="_blank" rel="noopener noreferrer" className="footer-link-highlight">+258 83 453 3474</a>
                                 </li>
-                                <li>
-                                    <span className="contact-lbl">Horário de Atendimento:</span>
-                                    <span className="contact-val">Seg - Sáb: 08:00 às 19:00</span>
-                                </li>
-                                <li>
-                                    <span className="contact-lbl">Localização:</span>
-                                    <span className="contact-val">Cidade de Maputo, Moçambique</span>
-                                </li>
                             </ul>
                         </div>
 
-                        {/* Coluna 3: Loja & Apoio */}
+                        {/* Coluna 3: Plataforma */}
                         <div className="footer-col">
-                            <h4 className="footer-title">Loja & Apoio</h4>
+                            <h4 className="footer-title">Plataforma</h4>
                             <ul className="footer-links">
+                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('entregas')}>Como funciona</button></li>
                                 <li><a href="#catalogo" className="footer-link">Ver Produtos</a></li>
-                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('entregas')}>Como Funciona</button></li>
-                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => { const el = document.getElementById('order-search'); if (el) { el.scrollIntoView({ behavior: 'smooth' }); el.focus(); } }}>Rastrear Encomenda</button></li>
-                                <li><a href="#faq-section" className="footer-link">Perguntas Frequentes (FAQ)</a></li>
-                                <li><a href="https://wa.me/258834533474?text=Ol%C3%A1%2C%20gostaria%20de%20ajuda%20com%20um%20pedido%20na%20loja" target="_blank" rel="noopener noreferrer" className="footer-link">Falar com Suporte</a></li>
+                                <li><a href="#faq-section" className="footer-link">FAQ</a></li>
+                                <li><a href="https://wa.me/258834533474?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20um%20pedido%20na%20loja" target="_blank" rel="noopener noreferrer" className="footer-link">Ajuda</a></li>
                             </ul>
                         </div>
 
-                        {/* Coluna 4: Legal & Políticas */}
+                        {/* Coluna 4: Legal */}
                         <div className="footer-col">
-                            <h4 className="footer-title">Legal & Conformidade</h4>
+                            <h4 className="footer-title">Legal</h4>
                             <ul className="footer-links">
                                 <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('termos')}>Termos de Uso</button></li>
                                 <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('privacidade')}>Política de Privacidade</button></li>
-                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('entregas')}>Política de Entregas & Prazos</button></li>
-                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('reembolso')}>Devoluções & Reembolso</button></li>
-                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('seguranca')}>Segurança & Pagamentos</button></li>
-                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('empresa')}>Informações da Empresa</button></li>
+                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('entregas')}>Política de Entregas</button></li>
+                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('reembolso')}>Política de Reembolso</button></li>
+                                <li><button type="button" className="footer-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} onClick={() => openLegalModal('empresa')}>Contacto</button></li>
                             </ul>
                         </div>
                     </div>
 
-                    {/* Faixa de Confiança & Métodos de Pagamento */}
-                    <div className="footer-trust-strip">
-                        <div className="trust-card">
-                            <span className="trust-icon">🚚</span>
-                            <div className="trust-txt">
-                                <strong>Entrega Rápida</strong>
-                                <span>Até 4 horas em Maputo e Matola</span>
-                            </div>
-                        </div>
-                        <div className="trust-card">
-                            <span className="trust-icon">💵</span>
-                            <div className="trust-txt">
-                                <strong>Pagamento na Entrega</strong>
-                                <span>Confira o produto antes de pagar</span>
-                            </div>
-                        </div>
-                        <div className="trust-card">
-                            <span className="trust-icon">📱</span>
-                            <div className="trust-txt">
-                                <strong>M-Pesa & E-Mola</strong>
-                                <span>Pagamentos móveis ágeis e sem complicação</span>
-                            </div>
-                        </div>
-                        <div className="trust-card">
-                            <span className="trust-icon">🛡️</span>
-                            <div className="trust-txt">
-                                <strong>Garantia de 48h</strong>
-                                <span>Troca rápida para defeitos de fabrico</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Rodapé Inferior: Direitos, Dados Empresariais e Moçambique */}
+                    {/* Rodapé Inferior: Direitos e Empresa (Estilo EscalePay) */}
                     <div className="footer-bottom">
                         <div className="footer-bottom-info">
-                            <p className="copyright">&copy; 2026 Tchapo Tchapo. Todos os direitos reservados.</p>
-                            <p className="company-detail"><span className="lbl">Empresa:</span> <span className="val">Tchapo Tchapo Comercial, E.I.</span> &bull; <span className="lbl">Sede:</span> <span className="val">Av. 24 de Julho, Cidade de Maputo • Moçambique</span></p>
-                            <p className="company-detail"><span className="lbl">Email:</span> <a href="mailto:suporte@tchapotchapo.com" className="val">suporte@tchapotchapo.com</a> &bull; <span className="lbl">Contacto:</span> <a href="https://wa.me/258834533474" className="val">+258 83 453 3474</a></p>
+                            <p className="copyright">&copy; 2026 Todos os direitos reservados</p>
+                            <p className="company-detail"><span className="lbl">Company: </span><span className="val">Z E U S Network, LDA</span></p>
+                            <p className="company-detail"><span className="lbl">Registered Address: </span><span className="val">Beira, Sofala</span></p>
+                            <p className="company-detail"><span className="lbl">Email: </span><a href="mailto:suporte@tchapotchapo.com" className="val">suporte@tchapotchapo.com</a></p>
+                            <p className="footer-made-with">Feito com paixão em Moçambique</p>
                         </div>
-                        <p className="footer-made-with">Feito com paixão em Moçambique 🇲🇿</p>
                     </div>
                 </div>
             </footer>
@@ -2985,17 +2939,15 @@ export default function Store() {
                                     {legalTab === 'privacidade' && '🔒'}
                                     {legalTab === 'entregas' && '🚚'}
                                     {legalTab === 'reembolso' && '🔄'}
-                                    {legalTab === 'seguranca' && '🛡️'}
                                     {legalTab === 'empresa' && '🏢'}
                                 </span>
                                 <div>
                                     <h3>
                                         {legalTab === 'termos' && 'Termos de Uso'}
                                         {legalTab === 'privacidade' && 'Política de Privacidade'}
-                                        {legalTab === 'entregas' && 'Política de Entregas & Prazos'}
-                                        {legalTab === 'reembolso' && 'Trocas & Reembolso'}
-                                        {legalTab === 'seguranca' && 'Segurança & Pagamentos'}
-                                        {legalTab === 'empresa' && 'Empresa & Contacto'}
+                                        {legalTab === 'entregas' && 'Política de Entregas'}
+                                        {legalTab === 'reembolso' && 'Política de Reembolso'}
+                                        {legalTab === 'empresa' && 'Contacto'}
                                     </h3>
                                     <span className="legal-modal-updated">Última actualização: Fevereiro de 2026 &bull; Moçambique</span>
                                 </div>
@@ -3007,10 +2959,9 @@ export default function Store() {
                         <div className="legal-tabs-bar">
                             <button className={`legal-tab-btn ${legalTab === 'termos' ? 'active' : ''}`} onClick={() => setLegalTab('termos')}>Termos de Uso</button>
                             <button className={`legal-tab-btn ${legalTab === 'privacidade' ? 'active' : ''}`} onClick={() => setLegalTab('privacidade')}>Privacidade</button>
-                            <button className={`legal-tab-btn ${legalTab === 'entregas' ? 'active' : ''}`} onClick={() => setLegalTab('entregas')}>Entregas & Prazos</button>
-                            <button className={`legal-tab-btn ${legalTab === 'reembolso' ? 'active' : ''}`} onClick={() => setLegalTab('reembolso')}>Trocas & Reembolso</button>
-                            <button className={`legal-tab-btn ${legalTab === 'seguranca' ? 'active' : ''}`} onClick={() => setLegalTab('seguranca')}>Segurança & Pagamentos</button>
-                            <button className={`legal-tab-btn ${legalTab === 'empresa' ? 'active' : ''}`} onClick={() => setLegalTab('empresa')}>Empresa & Contacto</button>
+                            <button className={`legal-tab-btn ${legalTab === 'entregas' ? 'active' : ''}`} onClick={() => setLegalTab('entregas')}>Política de Entregas</button>
+                            <button className={`legal-tab-btn ${legalTab === 'reembolso' ? 'active' : ''}`} onClick={() => setLegalTab('reembolso')}>Política de Reembolso</button>
+                            <button className={`legal-tab-btn ${legalTab === 'empresa' ? 'active' : ''}`} onClick={() => setLegalTab('empresa')}>Contacto</button>
                         </div>
 
                         {/* Document Content */}
@@ -3018,24 +2969,24 @@ export default function Store() {
                             {legalTab === 'termos' && (
                                 <div className="legal-section active">
                                     <h4>1. Identificação e Âmbito da Plataforma</h4>
-                                    <p>Bem-vindo à <strong>Tchapo Tchapo</strong>, plataforma de comércio eletrónico gerida e operada pela Tchapo Tchapo Comercial, com sede na Cidade de Maputo, Moçambique. Ao aceder, navegar ou encomendar produtos na nossa loja online, o utilizador aceita integralmente estes Termos de Uso.</p>
+                                    <p>Bem-vindo à <strong>Tchapo Tchapo</strong>, plataforma de compras online operada pela <strong>Z E U S Network, LDA</strong>, com endereço registado em <strong>Beira, Sofala, Moçambique</strong>. Ao aceder, navegar ou encomendar produtos na nossa loja online, o utilizador aceita integralmente estes Termos de Uso.</p>
 
                                     <h4>2. Catálogo de Artigos, Preços e Disponibilidade</h4>
-                                    <p>Todos os produtos apresentados na plataforma são acompanhados de descrição, caraterísticas técnicas e fotografias reais ilustrativas. Os preços são apresentados em <strong>Meticais (MT / MZN)</strong> com todos os encargos aplicáveis incluídos.</p>
-                                    <p>A Tchapo Tchapo empenha-se em manter o stock constantemente atualizado, reservando-se o direito de rever valores e promoções conforme flutuações de mercado, assegurando sempre o valor contratado para pedidos já confirmados.</p>
+                                    <p>Todos os produtos apresentados na plataforma são acompanhados de descrição, caraterísticas técnicas e especificações. Os preços são apresentados em <strong>Meticais (MT / MZN)</strong> com todos os encargos aplicáveis incluídos.</p>
+                                    <p>A Tchapo Tchapo empenha-se em manter o stock constantemente atualizado, assegurando sempre o valor contratado para pedidos já confirmados.</p>
 
                                     <h4>3. Registo e Confirmação de Encomendas</h4>
-                                    <p>Para realizar uma encomenda, o utilizador fornece o seu Nome Completo, Número de Contacto (com WhatsApp activo), Província e Bairro de entrega. Não é necessário cartão de crédito prévio para a grande maioria das entregas na região de Maputo e Matola.</p>
+                                    <p>Para realizar uma encomenda, o utilizador fornece o seu Nome Completo, Número de Contacto (com WhatsApp activo), Província e Bairro de entrega. Não é exigido cartão de crédito prévio.</p>
                                     <p>Após a submissão, a nossa equipa operacional ou o estafeta parceiro poderá entrar em contacto telefónico ou via WhatsApp para validar o ponto de encontro e os detalhes do envio.</p>
 
                                     <h4>4. Modalidade de Pagamento na Entrega (Zero Risco)</h4>
                                     <p>Para assegurar a máxima confiança mútua, a Tchapo Tchapo privilegia o sistema de <strong>Pagamento no Ato da Entrega</strong>. O cliente tem o direito de conferir a embalagem exterior do produto quando o estafeta chegar antes de realizar o pagamento em dinheiro físico, M-Pesa ou E-Mola.</p>
 
                                     <h4>5. Deveres e Responsabilidade do Comprador</h4>
-                                    <p>O utilizador compromete-se a fornecer informações verdadeiras e exatas para a entrega, bem como a garantir disponibilidade de atendimento (pessoalmente ou por pessoa autorizada) no endereço indicado no momento acordado para a entrega.</p>
+                                    <p>O utilizador compromete-se a fornecer informações verdadeiras e exatas para a entrega, bem como a garantir disponibilidade de atendimento no endereço indicado no momento acordado para a entrega.</p>
 
                                     <h4>6. Lei Aplicável e Jurisdição</h4>
-                                    <p>Os presentes Termos de Uso regem-se e são interpretados em estrita conformidade com a legislação da República de Moçambique, designadamente as disposições de Defesa do Consumidor e Comércio Eletrónico. Para a resolução de eventuais litígios, é competente o foro da Cidade de Maputo.</p>
+                                    <p>Os presentes Termos de Uso regem-se e são interpretados em estrita conformidade com a legislação da República de Moçambique. Para a resolução de eventuais litígios, é competente o foro legal de Moçambique.</p>
                                 </div>
                             )}
 
@@ -3063,10 +3014,10 @@ export default function Store() {
                                     </ul>
 
                                     <h4>4. Política Rígida de Não Partilha</h4>
-                                    <p><strong>A Tchapo Tchapo NUNCA comercializa, aluga ou cede os dados dos seus utilizadores a terceiros para campanhas publicitárias ou de terceiros.</strong> Os seus dados são partilhados estritamente com o motorista encarregado da rota e pelo período estritamente necessário para efetivar a entrega.</p>
+                                    <p><strong>A Tchapo Tchapo NUNCA comercializa, aluga ou cede os dados dos seus utilizadores a terceiros.</strong> Os seus dados são partilhados estritamente com o motorista encarregado da rota e pelo período estritamente necessário para efetivar a entrega.</p>
 
                                     <h4>5. Segurança da Plataforma</h4>
-                                    <p>Implementamos tecnologias modernas de proteção, incluindo certificados de encriptação SSL/TLS de 256 bits, garantindo que todas as transmissões de dados entre o seu dispositivo e o nosso servidor permanecem invioláveis.</p>
+                                    <p>Implementamos tecnologias modernas de proteção, incluindo certificados de encriptação SSL/TLS, garantindo que todas as transmissões de dados entre o seu dispositivo e o nosso servidor permanecem invioláveis.</p>
 
                                     <h4>6. Direitos do Titular</h4>
                                     <p>Pode a qualquer instante requerer a consulta, retificação ou eliminação definitiva dos seus registos no nosso sistema, enviando uma solicitação para <a href="mailto:suporte@tchapotchapo.com">suporte@tchapotchapo.com</a> ou via WhatsApp oficial.</p>
@@ -3076,26 +3027,19 @@ export default function Store() {
                             {legalTab === 'entregas' && (
                                 <div className="legal-section active">
                                     <h4>1. O Compromisso de Velocidade Tchapo Tchapo</h4>
-                                    <p>O próprio nome da nossa loja reflete o nosso ADN: <strong>Tchapo Tchapo significa rapidez e pontualidade</strong>. Trabalhamos com uma malha logística ágil para garantir a melhor experiência de compra rápida em Moçambique.</p>
+                                    <p>O próprio nome da nossa loja reflete o nosso compromisso: <strong>Tchapo Tchapo significa rapidez, pontualidade e cobertura total</strong>.</p>
 
-                                    <h4>2. Prazos e Zonas de Cobertura</h4>
+                                    <h4>2. Prazos e Zonas de Cobertura Nacional</h4>
                                     <div className="legal-highlight-box">
-                                        <strong>🚀 Grande Maputo (Cidade de Maputo e Matola):</strong>
-                                        <p>Entregas em <strong>até 4 horas úteis</strong> para encomendas confirmadas dentro do horário operacional (entre as 08:00 e as 17:00). Pedidos confirmados no final da tarde ou noite são distribuídos na primeira rota da manhã seguinte.</p>
-                                    </div>
-                                    <div className="legal-highlight-box" style={{ marginTop: '0.75rem' }}>
-                                        <strong>📦 Restantes Províncias de Moçambique:</strong>
-                                        <p>Entregas coordenadas via operadores logísticos parceiros e transportadoras autorizadas (ex: Portador Diário, CityLink, transportes interprovinciais), com prazo médio entre 24 a 48 horas úteis.</p>
+                                        <strong>⚡ Recebe dentro de 24 horas em todo o país:</strong>
+                                        <p>Entregamos as encomendas dentro de 24 horas em todo o país. Dispomos de estafetas e entregadores credenciados distribuídos em todas as províncias e cidades de Moçambique para que o teu pedido chegue rápido e seguro.</p>
                                     </div>
 
                                     <h4>3. Rastreamento e Comunicação em Tempo Real</h4>
                                     <p>Ao submeter uma encomenda, o cliente recebe um identificador único de pedido (ID do Pedido). Pode acompanhar o estado do pedido diretamente no menu <em>Meus Pedidos</em> ou através do botão de rastreio no topo da loja.</p>
 
                                     <h4>4. Procedimento no Ponto de Entrega</h4>
-                                    <p>O motorista oficial efetua uma chamada de cortesia quando estiver a caminho e ao chegar ao seu bairro. O estafeta aguarda no local até 15 minutos. Solicitamos que o telemóvel fornecido esteja ligado e acessível para garantir a entrega no prazo estipulado.</p>
-
-                                    <h4>5. Taxa de Entrega</h4>
-                                    <p>As taxas de entrega são calculadas e apresentadas de forma transparente no ato da encomenda, variando de acordo com a distância e eventuais promoções sazonais com envio grátis.</p>
+                                    <p>O motorista oficial efetua uma chamada de cortesia quando estiver a caminho e ao chegar ao seu bairro. O estafeta aguarda no local para conferência do produto e realização do pagamento no ato.</p>
                                 </div>
                             )}
 
@@ -3104,91 +3048,51 @@ export default function Store() {
                                     <h4>1. Verificação no Ato da Entrega (Risco Zero)</h4>
                                     <p>Na Tchapo Tchapo, você nunca compra às cegas. Incentivamos que examine a embalagem exterior e o artigo no momento da recepção, antes de pagar ao estafeta. Caso verifique qualquer discrepância de modelo ou dano físico aparente, pode recusar o recebimento no local sem nenhum custo.</p>
 
-                                    <h4>2. Garantia de 48 Horas para Defeitos de Fabrico</h4>
-                                    <p>Todos os artigos eletrónicos e utilidades contam com uma <strong>Garantia de 48 horas</strong> a contar do momento da recepção para teste de funcionalidade:</p>
+                                    <h4>2. Garantia para Defeitos de Fabrico</h4>
+                                    <p>Todos os artigos eletrónicos e utilidades contam com garantia para verificação de funcionamento e defeitos de fabrico:</p>
                                     <ul>
-                                        <li>Se o produto apresentar falha técnica de fábrica ou avaria interna não causada pelo utilizador, efetuamos a substituição por uma unidade nova com entrega expressa prioritária.</li>
+                                        <li>Se o produto apresentar falha técnica de fábrica ou avaria interna não causada pelo utilizador, efetuamos a substituição por uma unidade nova com entrega prioritária.</li>
                                         <li>A garantia não cobre avarias decorrentes de quedas, quebras físicas, infiltração de líquidos em aparelhos sem certificação à prova de água, picos elétricos ou intervenções de terceiros.</li>
                                     </ul>
 
-                                    <h4>3. Como Solicitar uma Troca Rápida</h4>
+                                    <h4>3. Como Solicitar uma Troca ou Reembolso</h4>
                                     <ol>
                                         <li>Contacte a nossa equipa de apoio via WhatsApp (<a href="https://wa.me/258834533474" target="_blank" rel="noopener noreferrer">+258 83 453 3474</a>);</li>
                                         <li>Indique o seu Nome e Número da Encomenda;</li>
                                         <li>Envie um pequeno vídeo ou foto demonstrando a avaria ou inconformidade;</li>
-                                        <li>A nossa equipa valida o caso e agenda o estafeta para recolha e entrega do novo artigo.</li>
+                                        <li>A nossa equipa valida o caso e agenda o estafeta para recolha e substituição ou reembolso imediato via M-Pesa / E-Mola.</li>
                                     </ol>
-
-                                    <h4>4. Reembolso Financeiro</h4>
-                                    <p>Caso o artigo com defeito de fabrico comprovado não disponha de stock para reposição imediata e o cliente não opte por outro produto equivalente do catálogo, realizamos o reembolso integral do montante pago via M-Pesa ou E-Mola num prazo máximo de <strong>24 horas úteis</strong>.</p>
-                                </div>
-                            )}
-
-                            {legalTab === 'seguranca' && (
-                                <div className="legal-section active">
-                                    <h4>1. Por que comprar na Tchapo Tchapo é seguro?</h4>
-                                    <p>O comércio eletrónico em Moçambique deve ser baseado na transparência e segurança mútua. A Tchapo Tchapo foi estruturada com os seguintes pilares fundamentais:</p>
-                                    <ul>
-                                        <li><strong>Pagamento Após Recebimento:</strong> Não exigimos pagamentos antecipados duvidosos. O produto chega primeiro, o pagamento é feito depois.</li>
-                                        <li><strong>Motoristas Credenciados:</strong> Os estafetas passam por verificação de identidade oficial (BI / Documento e Registo de Contactos).</li>
-                                        <li><strong>Comunicação e Apoio Contínuos:</strong> Dispomos de suporte ativo via WhatsApp e telefone para acompanhar qualquer eventualidade.</li>
-                                    </ul>
-
-                                    <h4>2. Meios de Pagamento Suportados na Entrega</h4>
-                                    <div className="legal-payment-cards">
-                                        <div className="legal-pay-box">
-                                            <strong>💵 Dinheiro Físico (Numerário)</strong>
-                                            <p>Pagamento direto em notas no ato da entrega. Por favor, mencione se precisa de troco para que o estafeta venha preparado.</p>
-                                        </div>
-                                        <div className="legal-pay-box">
-                                            <strong>📱 M-Pesa (Vodacom Moçambique)</strong>
-                                            <p>Transferência móvel imediata para o número oficial corporativo indicado pelo estafeta no ato da recepção.</p>
-                                        </div>
-                                        <div className="legal-pay-box">
-                                            <strong>📱 E-Mola (Movitel Moçambique)</strong>
-                                            <p>Transferência móvel ágil via E-Mola no ato da entrega com confirmação por SMS em segundos.</p>
-                                        </div>
-                                    </div>
-
-                                    <h4>3. Proteção e Direitos do Consumidor</h4>
-                                    <p>Operamos em conformidade com o quadro legal da República de Moçambique, garantindo os direitos básicos do comprador à informação clara, preço correto, qualidade e assistência técnica pós-venda.</p>
                                 </div>
                             )}
 
                             {legalTab === 'empresa' && (
                                 <div className="legal-section active">
-                                    <h4>1. Dados Institucionais da Empresa</h4>
+                                    <h4>1. Dados da Empresa</h4>
                                     <ul className="legal-company-specs">
-                                        <li><strong>Denominação Comercial:</strong> Tchapo Tchapo Comercial, E.I.</li>
-                                        <li><strong>Sede Operacional:</strong> Av. 24 de Julho, Bairro Central, Cidade de Maputo, Moçambique.</li>
-                                        <li><strong>Área de Actuação:</strong> Comércio eletrónico de tecnologia, utilidades, som, wearables e acessórios de alta demanda.</li>
-                                        <li><strong>Moeda Oficial:</strong> Metical Moçambicano (MZN / MT).</li>
+                                        <li><strong>Company:</strong> Z E U S Network, LDA</li>
+                                        <li><strong>Registered Address:</strong> Beira, Sofala • Moçambique</li>
+                                        <li><strong>Plataforma:</strong> Tchapo Tchapo</li>
+                                        <li><strong>Email:</strong> <a href="mailto:suporte@tchapotchapo.com">suporte@tchapotchapo.com</a></li>
+                                        <li><strong>WhatsApp:</strong> <a href="https://wa.me/258834533474" target="_blank" rel="noopener noreferrer">+258 83 453 3474</a></li>
                                     </ul>
 
-                                    <h4>2. Contactos Oficiais de Atendimento</h4>
-                                    <div className="legal-contact-grid">
+                                    <h4>2. Contato</h4>
+                                    <div className="legal-contact-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
                                         <div className="legal-contact-card">
                                             <span className="lcc-icon">💬</span>
-                                            <strong>WhatsApp de Suporte</strong>
+                                            <strong>WhatsApp</strong>
                                             <a href="https://wa.me/258834533474" target="_blank" rel="noopener noreferrer">+258 83 453 3474</a>
-                                            <small>Atendimento rápido e esclarecimento de dúvidas</small>
+                                            <small>Atendimento rápido e apoio à compra</small>
                                         </div>
                                         <div className="legal-contact-card">
                                             <span className="lcc-icon">✉️</span>
-                                            <strong>Correio Electrónico</strong>
+                                            <strong>Email</strong>
                                             <a href="mailto:suporte@tchapotchapo.com">suporte@tchapotchapo.com</a>
-                                            <small>Para parcerias, fornecedores e questões formais</small>
-                                        </div>
-                                        <div className="legal-contact-card">
-                                            <span className="lcc-icon">⏰</span>
-                                            <strong>Horário de Funcionamento</strong>
-                                            <span>Segunda a Sábado: 08:00 – 19:00</span>
-                                            <small>Domingos e Feriados: 09:00 – 16:00</small>
+                                            <small>Equipa de apoio e contacto institucional</small>
                                         </div>
                                     </div>
 
-                                    <h4>3. Mensagem Institucional</h4>
-                                    <p style={{ marginTop: '1rem', fontStyle: 'italic', color: '#475569' }}>"A Tchapo Tchapo nasceu da vontade de simplificar a vida dos moçambicanos, combinando produtos modernos e acessíveis com entregas ultra-rápidas e a segurança do pagamento na entrega. Obrigado pela sua confiança!"</p>
+                                    <p style={{ marginTop: '1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Feito com paixão em Moçambique 🇲🇿</p>
                                 </div>
                             )}
                         </div>

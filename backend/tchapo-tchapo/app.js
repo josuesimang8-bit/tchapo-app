@@ -2864,10 +2864,9 @@ function initPromoPopup() {
 const legalMeta = {
     termos: { title: 'Termos de Uso', icon: '📜' },
     privacidade: { title: 'Política de Privacidade', icon: '🔒' },
-    entregas: { title: 'Política de Entregas & Prazos', icon: '🚚' },
-    reembolso: { title: 'Devoluções & Reembolso', icon: '🔄' },
-    seguranca: { title: 'Segurança & Pagamentos', icon: '🛡️' },
-    empresa: { title: 'Empresa & Contacto Oficial', icon: '🏢' }
+    entregas: { title: 'Política de Entregas', icon: '🚚' },
+    reembolso: { title: 'Política de Reembolso', icon: '🔄' },
+    empresa: { title: 'Contacto & Empresa', icon: '🏢' }
 };
 
 window.openLegalModal = function(docKey = 'termos') {

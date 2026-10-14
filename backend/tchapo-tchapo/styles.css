@@ -26,6 +26,38 @@ html, body {
     overflow-x: hidden;
 }
 
+html.scroll-locked,
+body.scroll-locked {
+    overflow: hidden !important;
+    height: 100% !important;
+    overscroll-behavior: none !important;
+}
+
+/* Modal Backdrops: Prevent gesture drag bleed */
+.modal-overlay,
+.cart-overlay,
+.tracking-overlay {
+    touch-action: none !important;
+    overscroll-behavior: contain !important;
+}
+
+/* Modals & Drawers: Smooth internal scrolling without background scroll chaining */
+.cart-sidebar,
+.product-modal,
+.modal,
+.tracking-modal,
+.legal-modal,
+.auth-modal,
+.promo-modal,
+.cart-items,
+.product-modal-content,
+.legal-modal-body,
+#checkout-modal > div,
+#quick-order-content {
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
+}
+
 body {
     background-color: var(--light);
     color: var(--dark);

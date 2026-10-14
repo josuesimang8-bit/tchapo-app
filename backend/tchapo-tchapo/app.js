@@ -510,6 +510,7 @@ async function init() {
     setupEventListeners();
     loadCart();
     initPromoPopup();
+    initBackdropScrollPrevention();
 }
 
 async function fetchActiveProducts() {
@@ -1853,8 +1854,12 @@ function handleCheckout(e) {
     })
     .then(res => res.ok ? res.json() : null)
     .then(order => {
-        if (order) saveOrderToHistory(order, name, cart);
-        toggleCart();
+        const cm = document.getElementById('checkout-modal');
+        const co = document.getElementById('checkout-overlay');
+        if (cm) cm.classList.remove('active');
+        if (co) co.classList.remove('active');
+        cartSidebar.classList.remove('active');
+        cartOverlay.classList.remove('active');
         cart = [];
         appliedCoupon = null; // Clear coupon on success
         const couponInput = document.getElementById('customer-coupon');
@@ -1868,7 +1873,12 @@ function handleCheckout(e) {
         startTracking(order ? order.id : null, name, order ? order.created_at : null, order ? order.status : 'Pendente');
     })
     .catch(() => {
-        toggleCart();
+        const cm = document.getElementById('checkout-modal');
+        const co = document.getElementById('checkout-overlay');
+        if (cm) cm.classList.remove('active');
+        if (co) co.classList.remove('active');
+        cartSidebar.classList.remove('active');
+        cartOverlay.classList.remove('active');
         cart = [];
         saveCart();
         updateCartUI();
@@ -2811,22 +2821,80 @@ window.updateWithdrawPlaceholder = function(val) {
     if (btn) btn.textContent = `Solicitar Saque (${val})`;
 };
 
+let bodyScrollLocked = false;
+let lockedScrollY = 0;
+
 function updateScrollLock() {
     const activeModals = document.querySelectorAll(
         '.product-modal.active, .modal.active, .cart-sidebar.active, .tracking-overlay.active, .modal-overlay.active, .cart-overlay.active'
     );
     let anyOpen = false;
     for (const el of activeModals) {
-        if (el.classList.contains('active') && el.style.display !== 'none') {
-            anyOpen = true;
-            break;
+        if (el.classList.contains('active')) {
+            const style = window.getComputedStyle(el);
+            if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+                anyOpen = true;
+                break;
+            }
         }
     }
+
     if (anyOpen) {
-        document.body.style.overflow = 'hidden';
+        if (!bodyScrollLocked) {
+            lockedScrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+            if (scrollbarWidth > 0) {
+                document.body.style.paddingRight = `${scrollbarWidth}px`;
+            }
+            document.documentElement.classList.add('scroll-locked');
+            document.body.classList.add('scroll-locked');
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${lockedScrollY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+            bodyScrollLocked = true;
+        }
     } else {
-        document.body.style.overflow = '';
+        if (bodyScrollLocked) {
+            document.documentElement.classList.remove('scroll-locked');
+            document.body.classList.remove('scroll-locked');
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+            document.body.style.paddingRight = '';
+            window.scrollTo(0, lockedScrollY);
+            bodyScrollLocked = false;
+        }
     }
+}
+
+function initBackdropScrollPrevention() {
+    const overlayIds = [
+        'cart-overlay',
+        'product-modal-overlay',
+        'checkout-overlay',
+        'meus-pedidos-overlay',
+        'quick-order-overlay',
+        'referrals-overlay',
+        'tracking-overlay',
+        'auth-overlay',
+        'delivery-payment-promo-overlay',
+        'legal-overlay'
+    ];
+    overlayIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+            el.addEventListener('wheel', (e) => { e.preventDefault(); }, { passive: false });
+        }
+    });
 }
 
 function initPromoPopup() {

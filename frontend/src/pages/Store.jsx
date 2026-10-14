@@ -844,15 +844,33 @@ export default function Store() {
         }
     }, [currentUser]);
 
-    // Lock body scroll when modals are open
+    // Lock body scroll when modals or cart or checkout are open
     useEffect(() => {
-        const isModalOpen = (activePromo !== null) || isCartOpen || isAuthOpen || isMeusPedidosOpen || isReferralOpen || selectedProduct !== null || quickOrderProduct !== null || trackingOrder !== null;
+        const isModalOpen = (activePromo !== null) ||
+            isCartOpen ||
+            isAuthOpen ||
+            isMeusPedidosOpen ||
+            isReferralOpen ||
+            isCartCheckoutModalOpen ||
+            isLegalOpen ||
+            selectedProduct !== null ||
+            quickOrderProduct !== null ||
+            trackingOrder !== null;
+
         if (isModalOpen) {
             if (document.body.style.position !== 'fixed') {
-                const scrollY = window.scrollY;
+                const scrollY = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+                const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+                if (scrollbarWidth > 0) {
+                    document.body.style.paddingRight = `${scrollbarWidth}px`;
+                }
                 document.body.setAttribute('data-scroll-y', scrollY.toString());
+                document.documentElement.classList.add('scroll-locked');
+                document.body.classList.add('scroll-locked');
                 document.body.style.position = 'fixed';
                 document.body.style.top = `-${scrollY}px`;
+                document.body.style.left = '0';
+                document.body.style.right = '0';
                 document.body.style.width = '100%';
                 document.body.style.overflow = 'hidden';
                 document.documentElement.style.overflow = 'hidden';
@@ -860,11 +878,16 @@ export default function Store() {
         } else {
             if (document.body.style.position === 'fixed') {
                 const scrollY = parseInt(document.body.getAttribute('data-scroll-y') || '0', 10);
+                document.documentElement.classList.remove('scroll-locked');
+                document.body.classList.remove('scroll-locked');
                 document.body.style.position = '';
                 document.body.style.top = '';
+                document.body.style.left = '';
+                document.body.style.right = '';
                 document.body.style.width = '';
                 document.body.style.overflow = '';
                 document.documentElement.style.overflow = '';
+                document.body.style.paddingRight = '';
                 document.body.removeAttribute('data-scroll-y');
                 window.scrollTo(0, scrollY);
             }
@@ -872,16 +895,21 @@ export default function Store() {
         return () => {
             if (document.body.style.position === 'fixed') {
                 const scrollY = parseInt(document.body.getAttribute('data-scroll-y') || '0', 10);
+                document.documentElement.classList.remove('scroll-locked');
+                document.body.classList.remove('scroll-locked');
                 document.body.style.position = '';
                 document.body.style.top = '';
+                document.body.style.left = '';
+                document.body.style.right = '';
                 document.body.style.width = '';
                 document.body.style.overflow = '';
                 document.documentElement.style.overflow = '';
+                document.body.style.paddingRight = '';
                 document.body.removeAttribute('data-scroll-y');
                 window.scrollTo(0, scrollY);
             }
         };
-    }, [activePromo, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, selectedProduct, quickOrderProduct, trackingOrder]);
+    }, [activePromo, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, isCartCheckoutModalOpen, isLegalOpen, selectedProduct, quickOrderProduct, trackingOrder]);
 
     const trackProductClick = async (productId) => {
         try {

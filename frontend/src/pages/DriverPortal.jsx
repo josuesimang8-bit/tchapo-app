@@ -2466,6 +2466,73 @@ function DriverPortalContent() {
                     </div>
                 )}
 
+                {/* VIEW: Rejected Approval Status Screen */}
+                {authDriver && authDriver.approval_status === 'Recusado' && (
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: '24px',
+                        padding: '3rem 2rem',
+                        maxWidth: '620px',
+                        margin: '2rem auto',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+                        border: '1.5px solid #fecaca',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', fontSize: '1.8rem' }}>
+                            ✕
+                        </div>
+                        <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.75rem' }}>
+                            Candidatura Não Aprovada
+                        </h2>
+                        <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 2rem' }}>
+                            Olá, <strong>{authDriver.name}</strong>. A sua candidatura para entregador da Tchapo Tchapo foi analisada e, de momento, não foi aprovada pelo Administrador.
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button
+                                onClick={async () => {
+                                    await fetchDashboard(authDriver.id);
+                                    showToast('Estado atualizado.', 'info');
+                                }}
+                                style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '0.75rem 1.5rem', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
+                            >
+                                Verificar Novamente
+                            </button>
+                            <button onClick={handleLogout} style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '0.75rem 1.25rem', borderRadius: '10px', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* VIEW: Suspended Account Status Screen */}
+                {authDriver && authDriver.approval_status === 'Suspenso' && (
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: '24px',
+                        padding: '3rem 2rem',
+                        maxWidth: '620px',
+                        margin: '2rem auto',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+                        border: '1.5px solid #fed7aa',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#ffedd5', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', fontSize: '1.8rem' }}>
+                            ⚠️
+                        </div>
+                        <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.75rem' }}>
+                            Conta Suspensa
+                        </h2>
+                        <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 2rem' }}>
+                            Olá, <strong>{authDriver.name}</strong>. A sua conta de entregador encontra-se temporariamente suspensa pelo Administrador. Por favor entre em contacto com a nossa equipa para mais informações.
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button onClick={handleLogout} style={{ background: '#475569', color: '#fff', border: 'none', padding: '0.75rem 1.25rem', borderRadius: '10px', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* VIEW 3: Approved Driver Portal Dashboard */}
                 {authDriver && authDriver.approval_status === 'Aprovado' && (
                     <div style={{ paddingBottom: '95px' }}>

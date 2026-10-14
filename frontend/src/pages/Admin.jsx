@@ -786,6 +786,12 @@ export default function Admin() {
 
     const handleApproveDriver = async (id, status) => {
         try {
+            // Optimistic update so UI reflects the change immediately
+            setDrivers(prev => (prev || []).map(d => d.id === id ? { ...d, approval_status: status, active: status === 'Aprovado' } : d));
+            if (detailsModalDriver && detailsModalDriver.id === id) {
+                setDetailsModalDriver(prev => prev ? { ...prev, approval_status: status, active: status === 'Aprovado' } : null);
+            }
+
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/drivers/${id}/approval`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -798,10 +804,12 @@ export default function Admin() {
             } else {
                 const data = await res.json();
                 alert('Erro ao atualizar aprovação: ' + (data.error || 'Falha na operação'));
+                fetchDrivers();
             }
         } catch (err) {
             console.error('Erro ao aprovar entregador:', err);
             alert('Erro ao aprovar entregador: ' + err.message);
+            fetchDrivers();
         }
     };
 
@@ -1955,19 +1963,22 @@ export default function Admin() {
             )}
 
             {activeTab === 'drivers' && (() => {
-                const pendingApprovalDrivers = drivers.filter(d => d.approval_status === 'Pendente');
+                const pendingApprovalDrivers = drivers.filter(d => (d.approval_status === 'Pendente') || (!d.approval_status && !d.active));
                 const debtDrivers = drivers.filter(d => d.pending_debt && d.pending_debt.status !== 'Pago');
                 const onlineDrivers = drivers.filter(d => d.is_online);
-                const approvedDrivers = drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status);
+                const approvedDrivers = drivers.filter(d => d.approval_status === 'Aprovado' || (!d.approval_status && d.active));
+                const rejectedDrivers = drivers.filter(d => d.approval_status === 'Recusado');
                 const suspendedDrivers = drivers.filter(d => d.approval_status === 'Suspenso');
                 const totalWarnings = drivers.reduce((acc, d) => acc + (d.warnings ? d.warnings.length : 0), 0);
 
                 const filteredDrivers = drivers
                     .filter(d => {
+                        const status = d.approval_status || (d.active ? 'Aprovado' : 'Pendente');
                         if (driverFilter === 'online') return d.is_online;
-                        if (driverFilter === 'pending') return d.approval_status === 'Pendente';
-                        if (driverFilter === 'approved') return d.approval_status === 'Aprovado' || !d.approval_status;
-                        if (driverFilter === 'suspended') return d.approval_status === 'Suspenso';
+                        if (driverFilter === 'pending') return status === 'Pendente';
+                        if (driverFilter === 'approved') return status === 'Aprovado';
+                        if (driverFilter === 'rejected') return status === 'Recusado';
+                        if (driverFilter === 'suspended') return status === 'Suspenso';
                         if (driverFilter === 'debt') return Boolean(d.pending_debt && d.pending_debt.status !== 'Pago');
                         return true;
                     })
@@ -2709,6 +2720,7 @@ export default function Admin() {
                                             { id: 'online', label: `🟢 Online (${onlineDrivers.length})` },
                                             { id: 'pending', label: `⏳ Pendentes (${pendingApprovalDrivers.length})` },
                                             { id: 'approved', label: `✅ Aprovados (${approvedDrivers.length})` },
+                                            { id: 'rejected', label: `❌ Recusados (${rejectedDrivers.length})` },
                                             { id: 'debt', label: `💳 Com Dívida (${debtDrivers.length})` },
                                             { id: 'suspended', label: `🔴 Suspensos (${suspendedDrivers.length})` }
                                         ].map(f => (
@@ -2748,12 +2760,12 @@ export default function Admin() {
                                 ) : (
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.25rem' }}>
                                         {filteredDrivers.map(d => {
-                                            const status = d.approval_status || 'Aprovado';
+                                            const status = d.approval_status || (d.active ? 'Aprovado' : 'Pendente');
                                             const statusBadge = {
                                                 Aprovado: { bg: '#dcfce7', text: '#15803d', label: '✅ Aprovado' },
                                                 Pendente: { bg: '#fef3c7', text: '#b45309', label: '⏳ Pendente' },
                                                 Suspenso: { bg: '#fee2e2', text: '#b91c1c', label: '🔴 Suspenso' },
-                                                Recusado: { bg: '#f1f5f9', text: '#64748b', label: '❌ Recusado' }
+                                                Recusado: { bg: '#fee2e2', text: '#991b1b', label: '❌ Recusado' }
                                             }[status] || { bg: '#f1f5f9', text: '#64748b', label: status };
 
                                             const totalEarn = d.total_earnings !== undefined
@@ -2976,6 +2988,23 @@ export default function Admin() {
                                                         </button>
 
                                                         {status === 'Pendente' && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => handleApproveDriver(d.id, 'Aprovado')}
+                                                                    style={{ flex: 1, padding: '0.45rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                                >
+                                                                    ✓ Aprovar
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleApproveDriver(d.id, 'Recusado')}
+                                                                    style={{ padding: '0.45rem 0.65rem', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                                >
+                                                                    ✕ Recusar
+                                                                </button>
+                                                            </>
+                                                        )}
+
+                                                        {status === 'Recusado' && (
                                                             <button
                                                                 onClick={() => handleApproveDriver(d.id, 'Aprovado')}
                                                                 style={{ flex: 1, padding: '0.45rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
@@ -3001,14 +3030,16 @@ export default function Admin() {
                                                             ⚠️ Advertir ({d.warnings ? d.warnings.length : 0})
                                                         </button>
 
-                                                        {status === 'Suspenso' ? (
+                                                        {status === 'Suspenso' && (
                                                             <button
                                                                 onClick={() => handleApproveDriver(d.id, 'Aprovado')}
                                                                 style={{ padding: '0.45rem 0.75rem', background: '#dcfce7', color: '#15803d', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
                                                             >
                                                                 Reativar
                                                             </button>
-                                                        ) : (
+                                                        )}
+
+                                                        {status === 'Aprovado' && (
                                                             <button
                                                                 onClick={() => handleApproveDriver(d.id, 'Suspenso')}
                                                                 style={{ padding: '0.45rem 0.75rem', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
@@ -4840,10 +4871,10 @@ export default function Admin() {
                                             padding: '0.15rem 0.6rem',
                                             borderRadius: '999px',
                                             textTransform: 'uppercase',
-                                            background: detailsModalDriver.approval_status === 'Aprovado' ? '#dcfce7' : detailsModalDriver.approval_status === 'Pendente' ? '#fef3c7' : '#fee2e2',
-                                            color: detailsModalDriver.approval_status === 'Aprovado' ? '#15803d' : detailsModalDriver.approval_status === 'Pendente' ? '#b45309' : '#991b1b'
+                                            background: (detailsModalDriver.approval_status || (detailsModalDriver.active ? 'Aprovado' : 'Pendente')) === 'Aprovado' ? '#dcfce7' : (detailsModalDriver.approval_status || (detailsModalDriver.active ? 'Aprovado' : 'Pendente')) === 'Pendente' ? '#fef3c7' : '#fee2e2',
+                                            color: (detailsModalDriver.approval_status || (detailsModalDriver.active ? 'Aprovado' : 'Pendente')) === 'Aprovado' ? '#15803d' : (detailsModalDriver.approval_status || (detailsModalDriver.active ? 'Aprovado' : 'Pendente')) === 'Pendente' ? '#b45309' : '#991b1b'
                                         }}>
-                                            {detailsModalDriver.approval_status || 'Pendente'}
+                                            {detailsModalDriver.approval_status || (detailsModalDriver.active ? 'Aprovado' : 'Pendente')}
                                         </span>
                                     </div>
                                 </div>
@@ -5071,7 +5102,7 @@ export default function Admin() {
                                         type="button"
                                         onClick={async () => {
                                             await handleApproveDriver(detailsModalDriver.id, 'Aprovado');
-                                            setDetailsModalDriver(prev => prev ? { ...prev, approval_status: 'Aprovado' } : null);
+                                            setDetailsModalDriver(prev => prev ? { ...prev, approval_status: 'Aprovado', active: true } : null);
                                         }}
                                         style={{
                                             padding: '0.75rem 1.4rem',
@@ -5093,7 +5124,7 @@ export default function Admin() {
                                         type="button"
                                         onClick={async () => {
                                             await handleApproveDriver(detailsModalDriver.id, 'Recusado');
-                                            setDetailsModalDriver(prev => prev ? { ...prev, approval_status: 'Recusado' } : null);
+                                            setDetailsModalDriver(prev => prev ? { ...prev, approval_status: 'Recusado', active: false } : null);
                                         }}
                                         style={{
                                             padding: '0.75rem 1.2rem',
@@ -5106,7 +5137,29 @@ export default function Admin() {
                                             cursor: 'pointer'
                                         }}
                                     >
-                                        ✕ Recusar
+                                        ✕ Recusar Candidatura
+                                    </button>
+                                )}
+
+                                {detailsModalDriver.approval_status === 'Aprovado' && (
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            await handleApproveDriver(detailsModalDriver.id, 'Suspenso');
+                                            setDetailsModalDriver(prev => prev ? { ...prev, approval_status: 'Suspenso', active: false } : null);
+                                        }}
+                                        style={{
+                                            padding: '0.75rem 1.2rem',
+                                            borderRadius: '10px',
+                                            border: 'none',
+                                            background: '#fee2e2',
+                                            color: '#b91c1c',
+                                            fontWeight: 700,
+                                            fontSize: '0.88rem',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        🔴 Suspender
                                     </button>
                                 )}
                             </div>

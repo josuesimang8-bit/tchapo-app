@@ -1008,6 +1008,33 @@ async function uploadToCatbox(file) {
     }
 }
 
+// Resilient helper for file upload: tries cloud hosts, falls back to persistent Base64 Data URL so files are never lost on Render restarts
+async function uploadOrBase64(file, bucket = 'drivers') {
+    if (!file || !file.path || !fs.existsSync(file.path)) return null;
+
+    // 1. Try Catbox
+    try {
+        const catboxUrl = await uploadToCatbox(file);
+        if (catboxUrl) return catboxUrl;
+    } catch (_) {}
+
+    // 2. Try Supabase Storage
+    try {
+        const supabaseUrl = await uploadToSupabaseStorage(bucket, file);
+        if (supabaseUrl) return supabaseUrl;
+    } catch (_) {}
+
+    // 3. Persistent Base64 fallback (guarantees photos survive Render container restarts/redeployments)
+    try {
+        const fileBuffer = fs.readFileSync(file.path);
+        const mime = file.mimetype || 'image/jpeg';
+        return `data:${mime};base64,${fileBuffer.toString('base64')}`;
+    } catch (e) {
+        console.error('Failed to encode base64 data URL:', e.message);
+        return `/uploads/${bucket}/${file.filename}`;
+    }
+}
+
 // Pickup prices allowed by the store (Geral + Kratos Empire)
 const STORE_PICKUP_PRICES = [
     // === Produtos Gerais & Acessórios ===
@@ -2331,15 +2358,13 @@ app.post('/api/drivers/register', upload.fields([
 
         const normalizedPhone = normalizeDriverPhone(phone);
 
-        // Upload Profile Photo
+        // Upload Profile Photo (Catbox -> Supabase -> Base64 data URL persistent fallback)
         const photoFile = req.files['photo'][0];
-        const publicPhotoUrl = await uploadToCatbox(photoFile) || await uploadToSupabaseStorage('drivers', photoFile);
-        const photoUrl = publicPhotoUrl || `/uploads/drivers/${photoFile.filename}`;
+        const photoUrl = await uploadOrBase64(photoFile, 'drivers') || `/uploads/drivers/${photoFile.filename}`;
 
-        // Upload Document Photo
+        // Upload Document Photo (Catbox -> Supabase -> Base64 data URL persistent fallback)
         const docFile = req.files['doc_photo'][0];
-        const publicDocUrl = await uploadToCatbox(docFile) || await uploadToSupabaseStorage('drivers', docFile);
-        const docPhotoUrl = publicDocUrl || `/uploads/drivers/${docFile.filename}`;
+        const docPhotoUrl = await uploadOrBase64(docFile, 'drivers') || `/uploads/drivers/${docFile.filename}`;
 
         // Insert into Supabase drivers table as INACTIVE until Admin approves
         const { data: newDriver, error: insertErr } = await supabase
@@ -3361,7 +3386,7 @@ app.post('/api/drivers/upload', upload.single('photo'), async (req, res) => {
         return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
     
-    let publicUrl = await uploadToCatbox(req.file) || await uploadToSupabaseStorage('drivers', req.file);
+    let publicUrl = await uploadOrBase64(req.file, 'drivers');
     
     if (publicUrl) {
         res.json({ photo_url: publicUrl });

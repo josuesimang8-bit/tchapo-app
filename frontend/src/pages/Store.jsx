@@ -1934,29 +1934,6 @@ export default function Store() {
                             <span className="cart-count">{totalItemsInCart}</span>
                         </div>
                     </div>
-                        <button
-                            type="button"
-                            className="btn-notification-toggle"
-                            onClick={handleEnableCustomerNotifications}
-                            title={customerNotifStatus === 'granted' ? "Notificações de Encomenda Ativas" : "Ativar Notificações de Encomendas no Telemóvel"}
-                            style={{
-                                background: customerNotifStatus === 'granted' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
-                                border: customerNotifStatus === 'granted' ? '1.5px solid #10b981' : '1.5px solid #f59e0b',
-                                color: customerNotifStatus === 'granted' ? '#10b981' : '#f59e0b',
-                                padding: '0.45rem 0.85rem',
-                                borderRadius: '999px',
-                                fontWeight: 800,
-                                fontSize: '0.78rem',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.4rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap'
-                            }}
-                        >
-                            <span>{customerNotifStatus === 'granted' ? '🔔 Notificações Ativas' : '🔔 Ativar Notificações'}</span>
-                        </button>
                 </div>
             </header>
 

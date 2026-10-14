@@ -3310,72 +3310,34 @@ setInterval(() => {
 }, 4 * 60 * 1000);
 
 
-// ─── INITIALIZE NOTIFICATIONS ─────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+// ─── INITIALIZE NOTIFICATIONS (NATIVE BROWSER AUTO-PROMPT) ───────────────────
+async function triggerNativeBrowserPrompt() {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+        try {
+            await subscribeToPush({ role: 'customer' });
+        } catch (_) {}
     }
-    updateNotificationUI();
+}
 
-    const btnToggle = document.getElementById('btn-notification-toggle');
-    if (btnToggle) {
-        btnToggle.addEventListener('click', async () => {
-            const sub = await subscribeToPush({ role: 'customer' });
-            if (sub) {
-                triggerDeviceNotification({
-                    title: '🔔 Notificações Ativadas!',
-                    body: 'Você receberá avisos em tempo real das suas encomendas no telemóvel.',
-                    chime: 'order'
-                });
-                showToast('🔔 Notificações ativadas com sucesso!');
-            } else {
-                showToast('Notificações não ativadas. Verifique as permissões do navegador.');
-            }
-        });
+// 1. Register service worker immediately
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+// 2. Trigger native browser system prompt automatically on site load
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    triggerNativeBrowserPrompt();
+} else {
+    document.addEventListener('DOMContentLoaded', triggerNativeBrowserPrompt);
+}
+
+// 3. Dual-trigger on user's first touch/click/scroll (ensures prompt fires on mobile browsers that require user gesture)
+const handleFirstUserInteraction = () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+        triggerNativeBrowserPrompt();
     }
-
-    const btnAcceptPrompt = document.getElementById('btn-accept-notif-prompt');
-    if (btnAcceptPrompt) {
-        btnAcceptPrompt.addEventListener('click', async () => {
-            const prompt = document.getElementById('customer-notif-prompt');
-            if (prompt) prompt.style.display = 'none';
-            try { sessionStorage.setItem('tchapo_notif_dismissed_session', 'true'); } catch (_) {}
-            const sub = await subscribeToPush({ role: 'customer' });
-            if (sub) {
-                triggerDeviceNotification({
-                    title: '🔔 Notificações Ativadas!',
-                    body: 'Você receberá avisos em tempo real das suas encomendas no telemóvel.',
-                    chime: 'order'
-                });
-                showToast('🔔 Notificações ativadas com sucesso!');
-            }
-        });
-    }
-
-    const btnDismissPrompt = document.getElementById('btn-dismiss-notif-prompt');
-    const btnClosePrompt = document.getElementById('btn-close-notif-prompt');
-    [btnDismissPrompt, btnClosePrompt].forEach(btn => {
-        if (btn) {
-            btn.addEventListener('click', () => {
-                const prompt = document.getElementById('customer-notif-prompt');
-                if (prompt) prompt.style.display = 'none';
-                try { sessionStorage.setItem('tchapo_notif_dismissed_session', 'true'); } catch (_) {}
-            });
-        }
-    });
-
-    const btnTrackingNotif = document.getElementById('btn-tracking-notif');
-    if (btnTrackingNotif) {
-        btnTrackingNotif.addEventListener('click', async () => {
-            const sub = await subscribeToPush({ role: 'customer', orderId: currentOrderId });
-            if (sub) {
-                triggerDeviceNotification({
-                    title: '🔔 Alertas Deste Pedido Ativados!',
-                    body: 'Você será notificado quando o motorista estiver a caminho e ao entregar.',
-                    chime: 'order'
-                });
-                showToast('🔔 Alertas ativados!');
-            }
-        });
-    }
+};
+['click', 'touchstart', 'scroll'].forEach(evt => {
+    window.addEventListener(evt, handleFirstUserInteraction, { once: true, passive: true });
 });

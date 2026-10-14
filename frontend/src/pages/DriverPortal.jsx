@@ -1192,7 +1192,11 @@ function DriverPortalContent() {
                     setIsOnline(Boolean(data.driver.is_online));
                     setAuthDriver(prev => {
                         if (isLoggedOutRef.current || !prev) return null;
-                        const updated = { ...prev, ...data.driver };
+                        const updated = {
+                            ...prev,
+                            ...data.driver,
+                            rejection_reason: data.rejection_reason || data.driver.rejection_reason || prev.rejection_reason || ''
+                        };
                         try {
                             localStorage.setItem('tchapo_driver_session', JSON.stringify(updated));
                         } catch (_) {}
@@ -2467,42 +2471,105 @@ function DriverPortalContent() {
                 )}
 
                 {/* VIEW: Rejected Approval Status Screen */}
-                {authDriver && authDriver.approval_status === 'Recusado' && (
-                    <div style={{
-                        background: '#fff',
-                        borderRadius: '24px',
-                        padding: '3rem 2rem',
-                        maxWidth: '620px',
-                        margin: '2rem auto',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
-                        border: '1.5px solid #fecaca',
-                        textAlign: 'center'
-                    }}>
-                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', fontSize: '1.8rem' }}>
-                            ✕
+                {authDriver && authDriver.approval_status === 'Recusado' && (() => {
+                    const rejectionReason = authDriver.rejection_reason || dashboardData?.driver?.rejection_reason || dashboardData?.rejection_reason || 'Documentos ou dados cadastrais não atenderam aos critérios da verificação.';
+                    const whatsappMsg = `Olá Tchapo Tchapo, sou o candidato a entregador ${authDriver.name} (ID: #${authDriver.id}, Tel: ${authDriver.phone}). Gostaria de obter ajuda sobre a não aprovação da minha candidatura pelo seguinte motivo: "${rejectionReason}". Como posso proceder para regularizar?`;
+                    return (
+                        <div style={{
+                            background: '#fff',
+                            borderRadius: '24px',
+                            padding: '2.5rem 1.75rem',
+                            maxWidth: '620px',
+                            margin: '2rem auto',
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+                            border: '1.5px solid #fecaca',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem', fontSize: '1.8rem', fontWeight: 900 }}>
+                                ✕
+                            </div>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.5rem' }}>
+                                Candidatura Não Aprovada
+                            </h2>
+                            <p style={{ color: '#64748b', fontSize: '0.92rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
+                                Olá, <strong>{authDriver.name}</strong>. A sua inscrição para entregador parceiro da Tchapo Tchapo foi analisada pelo Administrador.
+                            </p>
+
+                            {/* Motivo Detalhado da Rejeição */}
+                            <div style={{
+                                background: '#fef2f2',
+                                border: '1.5px solid #f87171',
+                                borderRadius: '16px',
+                                padding: '1.25rem',
+                                marginBottom: '1.5rem',
+                                textAlign: 'left'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#991b1b', fontWeight: 800, fontSize: '0.9rem' }}>
+                                    <span>⚠️</span>
+                                    <span>Motivo da Rejeição da Inscrição:</span>
+                                </div>
+                                <div style={{
+                                    fontSize: '0.92rem',
+                                    color: '#7f1d1d',
+                                    fontWeight: 700,
+                                    lineHeight: 1.5,
+                                    background: '#fff',
+                                    padding: '0.85rem 1rem',
+                                    borderRadius: '10px',
+                                    border: '1px solid #fecaca'
+                                }}>
+                                    {rejectionReason}
+                                </div>
+                                <p style={{ margin: '0.75rem 0 0', fontSize: '0.78rem', color: '#991b1b', lineHeight: 1.4 }}>
+                                    💡 Se você tiver os documentos corretos prontos ou se desejar esclarecer alguma divergência, entre em contacto com a nossa equipe de suporte pelo WhatsApp abaixo.
+                                </p>
+                            </div>
+
+                            {/* WhatsApp Support CTA */}
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <a
+                                    href={`https://wa.me/258852824364?text=${encodeURIComponent(whatsappMsg)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem',
+                                        background: '#25D366',
+                                        color: '#fff',
+                                        textDecoration: 'none',
+                                        padding: '0.85rem 1.5rem',
+                                        borderRadius: '12px',
+                                        fontWeight: 800,
+                                        fontSize: '0.92rem',
+                                        boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
+                                        width: '100%',
+                                        maxWidth: '380px',
+                                        boxSizing: 'border-box'
+                                    }}
+                                >
+                                    <span>💬 Falar com Suporte no WhatsApp</span>
+                                </a>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                                <button
+                                    onClick={async () => {
+                                        await fetchDashboard(authDriver.id);
+                                        showToast('Estado verificado com sucesso.', 'info');
+                                    }}
+                                    style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '0.75rem 1.25rem', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.88rem' }}
+                                >
+                                    🔄 Verificar Novamente
+                                </button>
+                                <button onClick={handleLogout} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '0.75rem 1.25rem', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.88rem' }}>
+                                    Sair da Conta
+                                </button>
+                            </div>
                         </div>
-                        <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.75rem' }}>
-                            Candidatura Não Aprovada
-                        </h2>
-                        <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 2rem' }}>
-                            Olá, <strong>{authDriver.name}</strong>. A sua candidatura para entregador da Tchapo Tchapo foi analisada e, de momento, não foi aprovada pelo Administrador.
-                        </p>
-                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                            <button
-                                onClick={async () => {
-                                    await fetchDashboard(authDriver.id);
-                                    showToast('Estado atualizado.', 'info');
-                                }}
-                                style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '0.75rem 1.5rem', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
-                            >
-                                Verificar Novamente
-                            </button>
-                            <button onClick={handleLogout} style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '0.75rem 1.25rem', borderRadius: '10px', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
-                                Sair
-                            </button>
-                        </div>
-                    </div>
-                )}
+                    );
+                })()}
 
                 {/* VIEW: Suspended Account Status Screen */}
                 {authDriver && authDriver.approval_status === 'Suspenso' && (

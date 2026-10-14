@@ -2113,27 +2113,27 @@ function getDriverMeta(driverId, driverRow = null) {
     const metaMap = loadDriversMeta();
     const idKey = String(driverId);
     
-    // If present in local memory/file
-    if (metaMap[idKey]) {
-        // Enforce strict safety: if driverRow is inactive in Supabase, approval_status CANNOT be Aprovado!
-        if (driverRow && driverRow.active === false && metaMap[idKey].approval_status === 'Aprovado') {
-            metaMap[idKey].approval_status = 'Pendente';
+    // Extract persistent metadata from Supabase photo_url if driverRow provided
+    let photoMeta = null;
+    if (driverRow && driverRow.photo_url) {
+        const extracted = extractDriverMetadataFromPhoto(driverRow.photo_url);
+        if (extracted && extracted.meta) {
+            photoMeta = extracted.meta;
         }
-        return metaMap[idKey];
     }
 
-    // Try extracting persistent metadata from Supabase photo_url
-    if (driverRow && driverRow.photo_url) {
-        const { meta } = extractDriverMetadataFromPhoto(driverRow.photo_url);
-        if (meta && typeof meta === 'object') {
-            const isApproved = driverRow.active === true;
-            metaMap[idKey] = {
-                ...meta,
-                approval_status: meta.approval_status || (isApproved ? 'Aprovado' : 'Pendente')
-            };
-            saveDriversMeta(metaMap);
-            return metaMap[idKey];
+    const merged = {
+        ...(metaMap[idKey] || {}),
+        ...(photoMeta || {})
+    };
+
+    if (Object.keys(merged).length > 0) {
+        // Enforce strict safety: if driverRow is inactive in Supabase, approval_status CANNOT be Aprovado!
+        if (driverRow && driverRow.active === false && merged.approval_status === 'Aprovado') {
+            merged.approval_status = 'Pendente';
         }
+        metaMap[idKey] = merged;
+        return merged;
     }
 
     // Default for driver without metadata:
@@ -2199,10 +2199,12 @@ async function syncDriversMetaFromSupabase() {
             const { meta, cleanPhotoUrl } = extractDriverMetadataFromPhoto(d.photo_url);
 
             if (meta) {
+                let effectiveStatus = meta.approval_status || (d.active ? 'Aprovado' : 'Pendente');
+                if (d.active === false && effectiveStatus === 'Aprovado') effectiveStatus = 'Pendente';
                 metaMap[idKey] = {
                     ...(metaMap[idKey] || {}),
                     ...meta,
-                    approval_status: meta.approval_status || (d.active ? 'Aprovado' : 'Pendente')
+                    approval_status: effectiveStatus
                 };
                 changed = true;
             } else if (!metaMap[idKey]) {
@@ -2255,9 +2257,10 @@ app.get('/api/drivers', async (req, res) => {
 
         const merged = (data || []).map(d => {
             const { meta: photoMeta, cleanPhotoUrl } = extractDriverMetadataFromPhoto(d.photo_url);
-            const meta = metaMap[String(d.id)] || photoMeta || getDriverMeta(d.id, d);
+            const meta = { ...(getDriverMeta(d.id, d) || {}), ...(metaMap[String(d.id)] || {}), ...(photoMeta || {}) };
             const isOnline = meta.is_online && meta.last_seen_at && new Date(meta.last_seen_at).getTime() > tenMinsAgo;
-            const effectiveStatus = (d.active === false && meta.approval_status === 'Aprovado') ? 'Pendente' : (meta.approval_status || (d.active ? 'Aprovado' : 'Pendente'));
+            let effectiveStatus = meta.approval_status || (d.active ? 'Aprovado' : 'Pendente');
+            if (d.active === false && effectiveStatus === 'Aprovado') effectiveStatus = 'Pendente';
             return sanitizeDriverForResponse({
                 ...d,
                 ...meta,
@@ -2291,14 +2294,15 @@ app.get('/api/drivers/admin/all', async (req, res) => {
 
         const enrichedDrivers = (drivers || []).map(d => {
             const { meta: photoMeta, cleanPhotoUrl } = extractDriverMetadataFromPhoto(d.photo_url);
-            const meta = metaMap[String(d.id)] || photoMeta || getDriverMeta(d.id, d);
+            const meta = { ...(getDriverMeta(d.id, d) || {}), ...(metaMap[String(d.id)] || {}), ...(photoMeta || {}) };
 
             const isOnline = meta.is_online && meta.last_seen_at && new Date(meta.last_seen_at).getTime() > tenMinsAgo;
             const driverOrders = (orders || []).filter(o => o.driver_id === d.id);
             const deliveredOrders = driverOrders.filter(o => o.status === 'Entregue');
             const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(o.status));
             const totalEarnings = deliveredOrders.length * (meta.earnings_rate_per_delivery || 150);
-            const effectiveStatus = (d.active === false && meta.approval_status === 'Aprovado') ? 'Pendente' : (meta.approval_status || (d.active ? 'Aprovado' : 'Pendente'));
+            let effectiveStatus = meta.approval_status || (d.active ? 'Aprovado' : 'Pendente');
+            if (d.active === false && effectiveStatus === 'Aprovado') effectiveStatus = 'Pendente';
 
             return sanitizeDriverForResponse({
                 ...d,
@@ -2472,7 +2476,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             return res.status(404).json({ error: 'Entregador não encontrado.' });
         }
 
-        const meta = getDriverMeta(numId);
+        const meta = getDriverMeta(numId, driver);
 
         // Fetch driver assigned orders
         const { data: orders, error: ordersErr } = await supabase
@@ -2579,6 +2583,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 ...meta,
                 is_blocked: Boolean(meta.pending_debt && meta.pending_debt.status !== 'Pago')
             },
+            rejection_reason: meta.rejection_reason || meta.approval_notes || '',
             pending_debt: meta.pending_debt || null,
             debt_history: meta.debt_history || [],
             stats: {
@@ -3261,13 +3266,14 @@ app.put('/api/drivers/:id/availability', async (req, res) => {
 app.put('/api/drivers/:id/approval', async (req, res) => {
     try {
         const { id } = req.params;
-        const { approval_status, notes } = req.body;
+        const { approval_status, notes, reason } = req.body;
 
         if (!['Aprovado', 'Pendente', 'Recusado', 'Suspenso'].includes(approval_status)) {
             return res.status(400).json({ error: 'Estado de aprovação inválido.' });
         }
 
         const isApproved = approval_status === 'Aprovado';
+        const rejectionReason = reason || notes || '';
 
         // Update Supabase active flag accordingly
         try {
@@ -3281,12 +3287,19 @@ app.put('/api/drivers/:id/approval', async (req, res) => {
 
         const updatedMeta = await updateDriverMeta(id, {
             approval_status,
-            approval_notes: notes || '',
+            rejection_reason: rejectionReason,
+            approval_notes: rejectionReason,
             approval_updated_at: new Date().toISOString(),
             is_online: isApproved ? undefined : false // force offline if not approved
         }, true);
 
-        res.json({ success: true, driver_id: id, approval_status: updatedMeta.approval_status, active: isApproved });
+        res.json({
+            success: true,
+            driver_id: id,
+            approval_status: updatedMeta.approval_status,
+            rejection_reason: updatedMeta.rejection_reason || '',
+            active: isApproved
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

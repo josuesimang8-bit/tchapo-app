@@ -64,6 +64,9 @@ export default function Admin() {
     const [warningNotes, setWarningNotes]           = useState('');
     const [docPreviewUrl, setDocPreviewUrl]         = useState(null);
     const [detailsModalDriver, setDetailsModalDriver] = useState(null);
+    const [rejectModalDriver, setRejectModalDriver]   = useState(null);
+    const [rejectReasonPreset, setRejectReasonPreset] = useState('Fotografia do documento (BI/Carta) ilegível, escura ou cortada');
+    const [customRejectReason, setCustomRejectReason] = useState('');
     const [newDriverName, setNewDriverName]         = useState('');
     const [newDriverPhone, setNewDriverPhone]       = useState('');
     const [newDriverProvince, setNewDriverProvince] = useState(DEFAULT_PROVINCE);
@@ -784,22 +787,32 @@ export default function Admin() {
         }
     };
 
-    const handleApproveDriver = async (id, status) => {
+    const handleApproveDriver = async (id, status, reason = '') => {
         try {
             // Optimistic update so UI reflects the change immediately
-            setDrivers(prev => (prev || []).map(d => d.id === id ? { ...d, approval_status: status, active: status === 'Aprovado' } : d));
+            setDrivers(prev => (prev || []).map(d => d.id === id ? {
+                ...d,
+                approval_status: status,
+                rejection_reason: status === 'Recusado' ? reason : '',
+                active: status === 'Aprovado'
+            } : d));
             if (detailsModalDriver && detailsModalDriver.id === id) {
-                setDetailsModalDriver(prev => prev ? { ...prev, approval_status: status, active: status === 'Aprovado' } : null);
+                setDetailsModalDriver(prev => prev ? {
+                    ...prev,
+                    approval_status: status,
+                    rejection_reason: status === 'Recusado' ? reason : '',
+                    active: status === 'Aprovado'
+                } : null);
             }
 
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/drivers/${id}/approval`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ approval_status: status })
+                body: JSON.stringify({ approval_status: status, reason })
             });
             if (res.ok) {
-                setToast(status === 'Aprovado' ? '✅ Entregador aprovado com sucesso!' : `Entregador marcado como ${status}`);
-                setTimeout(() => setToast(null), 3000);
+                setToast(status === 'Aprovado' ? '✅ Entregador aprovado com sucesso!' : `Entregador marcado como ${status}. Motivo enviado ao candidato.`);
+                setTimeout(() => setToast(null), 3500);
                 fetchDrivers();
             } else {
                 const data = await res.json();
@@ -811,6 +824,19 @@ export default function Admin() {
             alert('Erro ao aprovar entregador: ' + err.message);
             fetchDrivers();
         }
+    };
+
+    const openRejectModal = (driver) => {
+        setRejectModalDriver(driver);
+        setRejectReasonPreset('Fotografia do documento (BI/Carta) ilegível, escura ou cortada');
+        setCustomRejectReason('');
+    };
+
+    const handleConfirmReject = async () => {
+        if (!rejectModalDriver) return;
+        const finalReason = customRejectReason.trim() || rejectReasonPreset;
+        await handleApproveDriver(rejectModalDriver.id, 'Recusado', finalReason);
+        setRejectModalDriver(null);
     };
 
     const handleIssueWarning = async (e) => {
@@ -1746,7 +1772,7 @@ export default function Admin() {
                                                         }}
                                                     >
                                                         <option value="">Nenhum Entregador</option>
-                                                        {drivers.filter(d => d.approval_status === 'Aprovado' || !d.approval_status).map(d => (
+                                                        {drivers.filter(d => (d.approval_status === 'Aprovado' || (!d.approval_status && d.active)) && d.active === true).map(d => (
                                                             <option key={d.id} value={d.id}>
                                                                 {d.is_online ? '🟢 (Online)' : '⚪ (Offline)'} [#{formatDriverId(d.id)}] {d.name}
                                                             </option>
@@ -1963,17 +1989,23 @@ export default function Admin() {
             )}
 
             {activeTab === 'drivers' && (() => {
-                const pendingApprovalDrivers = drivers.filter(d => (d.approval_status === 'Pendente') || (!d.approval_status && !d.active));
+                const getEffectiveStatus = (d) => {
+                    let s = d.approval_status || (d.active ? 'Aprovado' : 'Pendente');
+                    if (d.active === false && s === 'Aprovado') s = 'Pendente';
+                    return s;
+                };
+
+                const pendingApprovalDrivers = drivers.filter(d => getEffectiveStatus(d) === 'Pendente');
                 const debtDrivers = drivers.filter(d => d.pending_debt && d.pending_debt.status !== 'Pago');
                 const onlineDrivers = drivers.filter(d => d.is_online);
-                const approvedDrivers = drivers.filter(d => d.approval_status === 'Aprovado' || (!d.approval_status && d.active));
-                const rejectedDrivers = drivers.filter(d => d.approval_status === 'Recusado');
-                const suspendedDrivers = drivers.filter(d => d.approval_status === 'Suspenso');
+                const approvedDrivers = drivers.filter(d => getEffectiveStatus(d) === 'Aprovado');
+                const rejectedDrivers = drivers.filter(d => getEffectiveStatus(d) === 'Recusado');
+                const suspendedDrivers = drivers.filter(d => getEffectiveStatus(d) === 'Suspenso');
                 const totalWarnings = drivers.reduce((acc, d) => acc + (d.warnings ? d.warnings.length : 0), 0);
 
                 const filteredDrivers = drivers
                     .filter(d => {
-                        const status = d.approval_status || (d.active ? 'Aprovado' : 'Pendente');
+                        const status = getEffectiveStatus(d);
                         if (driverFilter === 'online') return d.is_online;
                         if (driverFilter === 'pending') return status === 'Pendente';
                         if (driverFilter === 'approved') return status === 'Aprovado';
@@ -2680,7 +2712,7 @@ export default function Admin() {
                                                             ✓ Aprovar
                                                         </button>
                                                         <button
-                                                            onClick={() => handleApproveDriver(d.id, 'Recusado')}
+                                                            onClick={() => openRejectModal(d)}
                                                             style={{ padding: '0.6rem 1rem', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
                                                         >
                                                             ✕ Recusar
@@ -2760,7 +2792,7 @@ export default function Admin() {
                                 ) : (
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.25rem' }}>
                                         {filteredDrivers.map(d => {
-                                            const status = d.approval_status || (d.active ? 'Aprovado' : 'Pendente');
+                                            const status = getEffectiveStatus(d);
                                             const statusBadge = {
                                                 Aprovado: { bg: '#dcfce7', text: '#15803d', label: '✅ Aprovado' },
                                                 Pendente: { bg: '#fef3c7', text: '#b45309', label: '⏳ Pendente' },
@@ -2832,6 +2864,11 @@ export default function Admin() {
                                                                         </a>
                                                                         {d.bairro ? ` • 📍 ${d.bairro}` : ''}
                                                                     </div>
+                                                                    {status === 'Recusado' && (d.rejection_reason || d.approval_notes) && (
+                                                                        <div style={{ marginTop: '0.35rem', fontSize: '0.74rem', color: '#991b1b', background: '#fee2e2', padding: '0.25rem 0.5rem', borderRadius: '6px', border: '1px solid #fecaca', lineHeight: 1.3 }}>
+                                                                            <strong>Motivo:</strong> {d.rejection_reason || d.approval_notes}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
 
@@ -2996,7 +3033,7 @@ export default function Admin() {
                                                                     ✓ Aprovar
                                                                 </button>
                                                                 <button
-                                                                    onClick={() => handleApproveDriver(d.id, 'Recusado')}
+                                                                    onClick={() => openRejectModal(d)}
                                                                     style={{ padding: '0.45rem 0.65rem', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
                                                                 >
                                                                     ✕ Recusar
@@ -4776,6 +4813,157 @@ export default function Admin() {
                 </div>
             )}
 
+            {/* Modal de Rejeição de Candidatura com Motivo */}
+            {rejectModalDriver && (
+                <div
+                    onClick={() => setRejectModalDriver(null)}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 99999, backdropFilter: 'blur(5px)', padding: '1rem'
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: '#fff',
+                            borderRadius: '16px',
+                            maxWidth: '520px',
+                            width: '100%',
+                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)',
+                            overflow: 'hidden',
+                            border: '1px solid #fee2e2'
+                        }}
+                    >
+                        <div style={{ padding: '1.25rem 1.5rem', background: '#fef2f2', borderBottom: '1px solid #fecaca', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                <span style={{ fontSize: '1.35rem' }}>❌</span>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#991b1b' }}>
+                                        Recusar Inscrição do Entregador
+                                    </h3>
+                                    <span style={{ fontSize: '0.78rem', color: '#7f1d1d' }}>
+                                        #{formatDriverId(rejectModalDriver.id)} — {rejectModalDriver.name}
+                                    </span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setRejectModalDriver(null)}
+                                style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#991b1b', fontWeight: 700 }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '0.75rem', fontSize: '0.82rem', color: '#92400e', lineHeight: 1.4 }}>
+                                ℹ️ <strong>Importante:</strong> O motivo selecionado ou digitado será visível para o entregador quando ele acessar o Portal do Entregador, para que ele saiba exatamente o que corrigir.
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.4rem' }}>
+                                    Selecione o motivo principal:
+                                </label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                                    {[
+                                        'Fotografia do documento (BI/Carta) ilegível, escura ou cortada',
+                                        'Fotografia de perfil (rosto) inadequada ou sem nitidez',
+                                        'Número de identificação inválido ou não correspondente',
+                                        'Área ou província fora da nossa cobertura atual',
+                                        'Contacto de telefone / WhatsApp inacessível ou inválido',
+                                        'Outro motivo personalizado'
+                                    ].map((preset) => (
+                                        <label
+                                            key={preset}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.6rem',
+                                                padding: '0.55rem 0.75rem',
+                                                borderRadius: '8px',
+                                                border: `1.5px solid ${rejectReasonPreset === preset ? '#ef4444' : '#e2e8f0'}`,
+                                                background: rejectReasonPreset === preset ? '#fef2f2' : '#f8fafc',
+                                                cursor: 'pointer',
+                                                fontSize: '0.82rem',
+                                                color: rejectReasonPreset === preset ? '#991b1b' : '#334155',
+                                                fontWeight: rejectReasonPreset === preset ? 700 : 500
+                                            }}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="rejectPreset"
+                                                checked={rejectReasonPreset === preset}
+                                                onChange={() => setRejectReasonPreset(preset)}
+                                                style={{ accentColor: '#ef4444' }}
+                                            />
+                                            <span>{preset}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.35rem' }}>
+                                    Observação adicional ou motivo detalhado:
+                                </label>
+                                <textarea
+                                    rows="3"
+                                    value={customRejectReason}
+                                    onChange={(e) => setCustomRejectReason(e.target.value)}
+                                    placeholder={rejectReasonPreset === 'Outro motivo personalizado' ? 'Digite obrigatoriamente a explicação para o candidato...' : 'Opcional: explique o que o candidato deve fazer para ser aprovado...'}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.65rem 0.85rem',
+                                        borderRadius: '10px',
+                                        border: '1.5px solid #cbd5e1',
+                                        fontSize: '0.82rem',
+                                        boxSizing: 'border-box',
+                                        outline: 'none',
+                                        fontFamily: 'inherit'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid #f1f5f9' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setRejectModalDriver(null)}
+                                    style={{
+                                        padding: '0.65rem 1.25rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid #cbd5e1',
+                                        background: '#fff',
+                                        color: '#475569',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmReject}
+                                    style={{
+                                        padding: '0.65rem 1.5rem',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: '#dc2626',
+                                        color: '#fff',
+                                        fontWeight: 800,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
+                                    }}
+                                >
+                                    Confirmar Rejeição
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Document Image Zoom Lightbox Modal */}
             {docPreviewUrl && (
                 <div
@@ -4903,6 +5091,32 @@ export default function Admin() {
 
                         {/* Modal Scrollable Content */}
                         <div style={{ padding: '1.5rem 1.75rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+                            {/* Section: Rejection Notice if Recusado */}
+                            {detailsModalDriver.approval_status === 'Recusado' && (
+                                <div style={{
+                                    background: '#fef2f2',
+                                    border: '1.5px solid #fca5a5',
+                                    borderRadius: '12px',
+                                    padding: '1rem 1.25rem',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '0.85rem'
+                                }}>
+                                    <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>❌</span>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#991b1b', marginBottom: '0.25rem' }}>
+                                            Inscrição Recusada pelo Administrador
+                                        </div>
+                                        <div style={{ fontSize: '0.82rem', color: '#7f1d1d', lineHeight: 1.5 }}>
+                                            <strong>Motivo transmitido ao candidato:</strong>
+                                            <div style={{ marginTop: '0.35rem', padding: '0.5rem 0.75rem', background: '#fff', borderRadius: '8px', border: '1px solid #fecaca', fontWeight: 700, color: '#991b1b' }}>
+                                                {detailsModalDriver.rejection_reason || detailsModalDriver.approval_notes || 'Documentos ou dados não aprovados na verificação administrativa.'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Section: Photos (Profile & Document) */}
                             <div>
@@ -5119,13 +5333,10 @@ export default function Admin() {
                                     </button>
                                 )}
 
-                                {detailsModalDriver.approval_status !== 'Recusado' && (
+                                {detailsModalDriver.approval_status !== 'Recusado' ? (
                                     <button
                                         type="button"
-                                        onClick={async () => {
-                                            await handleApproveDriver(detailsModalDriver.id, 'Recusado');
-                                            setDetailsModalDriver(prev => prev ? { ...prev, approval_status: 'Recusado', active: false } : null);
-                                        }}
+                                        onClick={() => openRejectModal(detailsModalDriver)}
                                         style={{
                                             padding: '0.75rem 1.2rem',
                                             borderRadius: '10px',
@@ -5138,6 +5349,23 @@ export default function Admin() {
                                         }}
                                     >
                                         ✕ Recusar Candidatura
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => openRejectModal(detailsModalDriver)}
+                                        style={{
+                                            padding: '0.75rem 1.2rem',
+                                            borderRadius: '10px',
+                                            border: '1.5px solid #fca5a5',
+                                            background: '#fff',
+                                            color: '#991b1b',
+                                            fontWeight: 700,
+                                            fontSize: '0.88rem',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        ✏️ Alterar Motivo de Rejeição
                                     </button>
                                 )}
 

@@ -3732,38 +3732,98 @@ body.dark-mode .rp-history-card {
 }
 
 @media (max-width: 480px) {
+    .rp-driver-shell {
+        font-size: 14px;
+        -webkit-text-size-adjust: 100%;
+        touch-action: manipulation;
+    }
+
     .rp-mobile-container {
-        padding: 0 10px 105px !important;
+        padding: 0 12px calc(115px + env(safe-area-inset-bottom, 20px)) !important;
+    }
+
+    .rp-mobile-dock {
+        bottom: max(12px, env(safe-area-inset-bottom, 12px)) !important;
+        width: calc(100% - 16px) !important;
+        height: 60px !important;
+        padding: 0 4px !important;
+    }
+
+    .rp-dock-item {
+        font-size: 10px !important;
+        gap: 1px !important;
+    }
+
+    .rp-dock-fab {
+        width: 48px !important;
+        height: 48px !important;
+        top: -15px !important;
+    }
+
+    .rp-dock-fab-label {
+        font-size: 9.5px !important;
+        bottom: 5px !important;
+    }
+
+    .rp-driver-shell input,
+    .rp-driver-shell select,
+    .rp-driver-shell textarea {
+        font-size: 16px !important; /* Prevents auto-zoom on iOS */
+    }
+
+    .rp-stats-grid {
+        gap: 8px !important;
+        margin-bottom: 14px !important;
+    }
+
+    .rp-stat-card {
+        padding: 12px 10px !important;
+        border-radius: 16px !important;
+    }
+
+    .rp-stat-number {
+        font-size: 1.15rem !important;
+    }
+
+    .rp-hero-wallet {
+        padding: 16px 14px !important;
+        border-radius: 20px !important;
     }
 
     .rp-order-card {
-        padding: 12px 10px !important;
+        padding: 14px 12px !important;
         border-radius: 16px !important;
         margin-bottom: 12px !important;
     }
 
     .rp-active-order-card {
-        padding: 12px 10px !important;
-        border-radius: 16px !important;
+        padding: 14px 12px !important;
+        border-radius: 18px !important;
         margin-bottom: 12px !important;
     }
 
     .rp-history-card {
-        padding: 12px 10px !important;
+        padding: 14px 12px !important;
         border-radius: 16px !important;
     }
 
     .rp-btn-primary {
-        padding: 12px 12px !important;
-        font-size: 0.86rem !important;
+        padding: 12px 14px !important;
+        font-size: 0.88rem !important;
         border-radius: 14px !important;
-        min-height: 46px !important;
+        min-height: 48px !important;
+    }
+
+    .rp-segment-bar {
+        gap: 4px !important;
+        padding: 4px !important;
     }
 
     .rp-segment-btn {
         padding: 8px 10px !important;
-        font-size: 0.76rem !important;
+        font-size: 0.75rem !important;
         gap: 4px !important;
+        min-height: 38px !important;
     }
 
     .rp-modal-box {

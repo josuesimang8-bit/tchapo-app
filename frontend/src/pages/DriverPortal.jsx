@@ -1091,7 +1091,14 @@ function DriverPortalContent() {
     // Availability State
     const [isOnline, setIsOnline] = useState(false);
     const [driverNotifActive, setDriverNotifActive] = useState(() => {
-        return typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
+        try {
+            if (typeof window === 'undefined' || !('Notification' in window)) return false;
+            const pref = localStorage.getItem('driver_notif_enabled');
+            if (pref === 'false') return false;
+            return Notification.permission === 'granted';
+        } catch (_) {
+            return false;
+        }
     });
     const prevPoolOrderIdsRef = useRef(new Set());
     const warnedDebtIdRef = useRef(null);
@@ -1374,8 +1381,15 @@ function DriverPortalContent() {
         }
     };
 
-    // Toggle Availability
+    // Toggle Driver Notifications with sound & push
     const handleToggleDriverNotifications = async () => {
+        if (driverNotifActive) {
+            setDriverNotifActive(false);
+            try { localStorage.setItem('driver_notif_enabled', 'false'); } catch (_) {}
+            showToast('🔕 Notificações pausadas neste telemóvel.', 'info');
+            return;
+        }
+
         try {
             const res = await subscribeToPush({
                 role: 'driver',
@@ -1383,8 +1397,9 @@ function DriverPortalContent() {
                 province: authDriver?.bairro,
                 phone: authDriver?.phone
             });
-            if (res.success) {
+            if (res && res.success) {
                 setDriverNotifActive(true);
+                try { localStorage.setItem('driver_notif_enabled', 'true'); } catch (_) {}
                 playNotificationChime('driver');
                 showToast('🔔 Notificações de entregas ativadas com sucesso!', 'success');
                 triggerDeviceNotification({
@@ -1840,7 +1855,7 @@ function DriverPortalContent() {
                                 />
                             </div>
                             <div>
-                                <div style={{ fontWeight: 800, fontSize: '0.92rem', color: darkMode ? '#ffffff' : '#0f172a', lineHeight: 1.2 }}>
+                                <div style={{ fontWeight: 800, fontSize: '0.92rem', color: darkMode ? '#ffffff' : '#0f172a', lineHeight: 1.2, maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     Olá, {authDriver.name ? authDriver.name.split(' ')[0] : 'Entregador'}
                                 </div>
                                 <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
@@ -1922,28 +1937,9 @@ function DriverPortalContent() {
                                         }} />
                                         <span>{isOnline ? 'Online' : 'Offline'}</span>
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleToggleDriverNotifications}
-                                        title={driverNotifActive ? "Notificações Ativas" : "Ativar Notificações de Entregas"}
-                                        style={{
-                                            background: driverNotifActive ? 'rgba(245, 158, 11, 0.15)' : (darkMode ? '#1a1a1a' : '#f1f5f9'),
-                                            border: driverNotifActive ? '1.5px solid #f59e0b' : (darkMode ? '1px solid #2a2a2a' : '1px solid #cbd5e1'),
-                                            color: driverNotifActive ? '#f59e0b' : (darkMode ? '#94a3b8' : '#64748b'),
-                                            padding: '0.45rem 0.85rem',
-                                            borderRadius: '999px',
-                                            fontWeight: 800,
-                                            fontSize: '0.78rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.45rem',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            fontFamily: "'Montserrat', sans-serif"
-                                        }}
-                                    >
-                                        <span>{driverNotifActive ? '🔔 Notificações ON' : '🔕 Ativar Notificações'}</span>
-                                    </button></>)}\n                                {isDebtBlocked && (
+                                </>
+                                )}
+                                {isDebtBlocked && (
                                     <span style={{
                                         background: '#fee2e2',
                                         color: '#dc2626',
@@ -4882,6 +4878,121 @@ function DriverPortalContent() {
                                             />
                                             <span className="rp-slider" />
                                         </label>
+                                    </div>
+
+                                    {/* Mobile Optimized Notification Setting Card */}
+                                    <div style={{
+                                        background: driverNotifActive 
+                                            ? (darkMode ? '#132018' : '#f0fdf4') 
+                                            : (darkMode ? '#1c1917' : '#fefce8'),
+                                        border: driverNotifActive 
+                                            ? (darkMode ? '1.5px solid #166534' : '1.5px solid #86efac') 
+                                            : (darkMode ? '1.5px solid #78350f' : '1.5px solid #fde047'),
+                                        borderRadius: '18px',
+                                        padding: '1.1rem',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '0.85rem',
+                                        boxShadow: driverNotifActive 
+                                            ? '0 4px 20px -2px rgba(16, 185, 129, 0.12)' 
+                                            : '0 4px 20px -2px rgba(245, 158, 11, 0.12)'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                <div style={{
+                                                    width: '42px',
+                                                    height: '42px',
+                                                    borderRadius: '12px',
+                                                    background: driverNotifActive ? '#10b981' : '#f59e0b',
+                                                    color: '#ffffff',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: '1.25rem',
+                                                    flexShrink: 0,
+                                                    boxShadow: driverNotifActive ? '0 4px 12px rgba(16, 185, 129, 0.35)' : '0 4px 12px rgba(245, 158, 11, 0.35)'
+                                                }}>
+                                                    {driverNotifActive ? '🔔' : '🔕'}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 800, fontSize: '0.94rem', color: darkMode ? '#ffffff' : '#0f172a', lineHeight: 1.25 }}>
+                                                        Receber Notificações
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: driverNotifActive ? '#10b981' : '#f59e0b', fontWeight: 700, marginTop: '0.15rem' }}>
+                                                        {driverNotifActive ? '● Ativas no Telemóvel' : '○ Desativadas no Telemóvel'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <label className="rp-switch" aria-label="Alternar Notificações">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={driverNotifActive}
+                                                    onChange={handleToggleDriverNotifications}
+                                                />
+                                                <span className="rp-slider" />
+                                            </label>
+                                        </div>
+
+                                        <p style={{ margin: 0, fontSize: '0.8rem', color: darkMode ? '#94a3b8' : '#64748b', lineHeight: 1.45 }}>
+                                            {driverNotifActive
+                                                ? 'O seu telemóvel emitirá alertas sonoros e vibração instantaneamente quando novos pedidos ficarem disponíveis na sua região ou ao receber avisos da loja.'
+                                                : 'Ative para ser alertado no telemóvel assim que clientes comprarem produtos na sua região. Não perca nenhuma entrega!'}
+                                        </p>
+
+                                        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                            <button
+                                                type="button"
+                                                onClick={handleToggleDriverNotifications}
+                                                style={{
+                                                    flex: 1,
+                                                    minWidth: '140px',
+                                                    background: driverNotifActive ? '#10b981' : '#f59e0b',
+                                                    color: driverNotifActive ? '#ffffff' : '#000000',
+                                                    border: 'none',
+                                                    padding: '0.75rem 1rem',
+                                                    borderRadius: '12px',
+                                                    fontWeight: 800,
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '0.45rem',
+                                                    boxShadow: driverNotifActive ? '0 4px 14px rgba(16, 185, 129, 0.25)' : '0 4px 14px rgba(245, 158, 11, 0.35)',
+                                                    transition: 'all 0.15s ease'
+                                                }}
+                                            >
+                                                <span>{driverNotifActive ? '✓ Notificações Ativadas' : '🔔 Ativar Notificações'}</span>
+                                            </button>
+
+                                            {driverNotifActive && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        playNotificationChime('driver');
+                                                        showToast('🔊 Alerta sonoro testado com sucesso!', 'info');
+                                                    }}
+                                                    style={{
+                                                        background: darkMode ? '#27272a' : '#ffffff',
+                                                        color: darkMode ? '#ffffff' : '#0f172a',
+                                                        border: darkMode ? '1px solid #3f3f46' : '1px solid #cbd5e1',
+                                                        padding: '0.75rem 1rem',
+                                                        borderRadius: '12px',
+                                                        fontWeight: 700,
+                                                        fontSize: '0.82rem',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.4rem',
+                                                        transition: 'all 0.15s ease'
+                                                    }}
+                                                    title="Testar alerta no telemóvel"
+                                                >
+                                                    <span>🔊 Testar Som</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0', borderBottom: darkMode ? '1px solid #222222' : '1px solid #f1f5f9' }}>

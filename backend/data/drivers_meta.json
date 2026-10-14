@@ -17,7 +17,7 @@
     "debt_history": []
   },
   "9": {
-    "approval_status": "Recusado",
+    "approval_status": "Suspenso",
     "is_online": false,
     "last_seen_at": "2026-09-18T11:19:25.535Z",
     "doc_type": "BI",
@@ -30,10 +30,11 @@
     "warnings": [],
     "earnings_rate_per_delivery": 150,
     "approval_notes": "",
-    "approval_updated_at": "2026-09-18T10:53:40.274Z",
+    "approval_updated_at": "2026-10-14T21:47:18.092Z",
     "pending_debt": null,
     "debt_history": [],
-    "is_blocked": false
+    "is_blocked": false,
+    "rejection_reason": ""
   },
   "10": {
     "approval_status": "Pendente",
@@ -54,7 +55,7 @@
   },
   "12": {
     "approval_status": "Recusado",
-    "rejection_reason": "Documentos e dados em revisão pelo Administrador.",
+    "rejection_reason": "Documento ilegivel. Por favor envie foto nitida do BI.",
     "is_online": false,
     "last_seen_at": null,
     "doc_type": "BI",
@@ -65,6 +66,8 @@
     "bairro": "Beira",
     "pin": "1234",
     "warnings": [],
-    "earnings_rate_per_delivery": 150
+    "earnings_rate_per_delivery": 150,
+    "approval_notes": "Documento ilegivel. Por favor envie foto nitida do BI.",
+    "approval_updated_at": "2026-10-14T23:09:08.819Z"
   }
 }

@@ -1056,8 +1056,24 @@ function DriverPortalContent() {
     const [debtPaymentRef, setDebtPaymentRef] = useState('');
     const [debtReceiptFile, setDebtReceiptFile] = useState(null);
     const [debtReceiptPreview, setDebtReceiptPreview] = useState(null);
-    const [submittedProofPreview, setSubmittedProofPreview] = useState(null);
-    const [selectedProvinceFilter, setSelectedProvinceFilter] = useState('Todas');
+    const [selectedProvinceFilter, setSelectedProvinceFilter] = useState(() => {
+        try {
+            const saved = localStorage.getItem('tchapo_driver_province');
+            if (saved) return saved;
+            const driverSession = localStorage.getItem('tchapo_driver_session');
+            if (driverSession) {
+                const parsed = JSON.parse(driverSession);
+                if (parsed?.bairro && parsed.bairro.includes(' - ')) {
+                    const prov = parsed.bairro.split(' - ')[0].trim();
+                    if ((ALL_PROVINCES || []).includes(prov)) return prov;
+                }
+            }
+        } catch (_) {}
+        return 'Sofala';
+    });
+    const [isProvincePickerOpen, setIsProvincePickerOpen] = useState(false);
+    const [pendingProvinceChange, setPendingProvinceChange] = useState(null);
+    const [isProvinceConfirmOpen, setIsProvinceConfirmOpen] = useState(false);
     const [submittingDebt, setSubmittingDebt] = useState(false);
     const [debtSecondsLeft, setDebtSecondsLeft] = useState(7200);
     const [copiedId, setCopiedId] = useState(false);
@@ -1111,6 +1127,35 @@ function DriverPortalContent() {
     const showToast = (msg, type = 'info') => {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 3500);
+    };
+
+    // Handlers for Province Change with Safety Warning
+    const handleRequestProvinceChange = (targetProvince) => {
+        if (!targetProvince) return;
+        if (targetProvince.toLowerCase() === (selectedProvinceFilter || '').toLowerCase()) {
+            setIsProvincePickerOpen(false);
+            return;
+        }
+        setPendingProvinceChange(targetProvince);
+        setIsProvinceConfirmOpen(true);
+    };
+
+    const handleConfirmProvinceChange = () => {
+        if (pendingProvinceChange) {
+            setSelectedProvinceFilter(pendingProvinceChange);
+            try {
+                localStorage.setItem('tchapo_driver_province', pendingProvinceChange);
+            } catch (_) {}
+            showToast(`📍 Província alterada para ${pendingProvinceChange === 'Todas' ? 'Todas as Províncias' : pendingProvinceChange} com sucesso!`, 'success');
+        }
+        setIsProvinceConfirmOpen(false);
+        setIsProvincePickerOpen(false);
+        setPendingProvinceChange(null);
+    };
+
+    const handleCancelProvinceChange = () => {
+        setIsProvinceConfirmOpen(false);
+        setPendingProvinceChange(null);
     };
 
     // Save session
@@ -3692,148 +3737,180 @@ function DriverPortalContent() {
                                                     </div>
                                                 )}
 
-                                                {/* Filtro por Províncias */}
-                                                 <div style={{
-                                                     background: darkMode ? '#18181b' : '#f8fafc',
-                                                     border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
-                                                     borderRadius: '16px',
-                                                     padding: '12px 14px',
-                                                     marginBottom: '1.25rem',
-                                                     display: 'flex',
-                                                     flexDirection: 'column',
-                                                     gap: '10px'
-                                                 }}>
-                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', fontWeight: 800, color: darkMode ? '#f8fafc' : '#0f172a' }}>
-                                                             <span style={{ color: '#f64c00' }}><Icons.MapPin /></span>
-                                                             <span>Filtro de Pedidos por Província:</span>
-                                                         </div>
-                                                         {selectedProvinceFilter !== 'Todas' && (
-                                                             <button
-                                                                 type="button"
-                                                                 onClick={() => setSelectedProvinceFilter('Todas')}
-                                                                 style={{
-                                                                     background: 'transparent',
-                                                                     border: 'none',
-                                                                     color: '#f64c00',
-                                                                     fontSize: '0.8rem',
-                                                                     fontWeight: 700,
-                                                                     cursor: 'pointer',
-                                                                     textDecoration: 'underline'
-                                                                 }}
-                                                             >
-                                                                 Ver todas ({availableOrders.length})
-                                                             </button>
-                                                         )}
-                                                     </div>
+                                                {/* Seletor de Província de Atuação com Confirmação */}
+                                                <div style={{
+                                                    background: darkMode ? '#18181b' : '#ffffff',
+                                                    border: darkMode ? '1.5px solid #27272a' : '1.5px solid #fed7aa',
+                                                    borderRadius: '18px',
+                                                    padding: '14px 16px',
+                                                    marginBottom: '1.25rem',
+                                                    boxShadow: darkMode ? '0 4px 14px rgba(0,0,0,0.4)' : '0 4px 14px rgba(246,76,0,0.06)',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '12px'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <div style={{
+                                                                width: '40px',
+                                                                height: '40px',
+                                                                borderRadius: '12px',
+                                                                background: 'linear-gradient(135deg, #f64c00, #ff8c00)',
+                                                                color: '#fff',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                boxShadow: '0 4px 10px rgba(246,76,0,0.3)',
+                                                                flexShrink: 0
+                                                            }}>
+                                                                <Icons.MapPin />
+                                                            </div>
+                                                            <div>
+                                                                <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#f64c00', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                                    Em qual província estás?
+                                                                </div>
+                                                                <div style={{ fontSize: '1rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span>{selectedProvinceFilter === 'Todas' ? 'Todas as Províncias' : selectedProvinceFilter}</span>
+                                                                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', background: darkMode ? '#064e3b' : '#d1fae5', padding: '2px 8px', borderRadius: '999px' }}>
+                                                                        Local Ativo
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
 
-                                                     {/* Scrollable Province Pills */}
-                                                     <div style={{
-                                                         display: 'flex',
-                                                         alignItems: 'center',
-                                                         gap: '8px',
-                                                         overflowX: 'auto',
-                                                         paddingBottom: '4px',
-                                                         WebkitOverflowScrolling: 'touch'
-                                                     }}>
-                                                         {['Todas', ...ALL_PROVINCES].map(prov => {
-                                                             const count = prov === 'Todas'
-                                                                 ? availableOrders.length
-                                                                 : availableOrders.filter(o => {
+                                                        {/* Botão de Escolha de Província */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsProvincePickerOpen(true)}
+                                                            style={{
+                                                                background: darkMode ? '#27272a' : '#fff7ed',
+                                                                color: '#ea580c',
+                                                                border: '1.5px solid #fdba74',
+                                                                padding: '0.6rem 1rem',
+                                                                borderRadius: '12px',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.84rem',
+                                                                cursor: 'pointer',
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                transition: 'all 0.15s ease',
+                                                                boxShadow: '0 2px 6px rgba(246,76,0,0.1)'
+                                                            }}
+                                                        >
+                                                            <Icons.MapPin />
+                                                            <span>Escolher Província</span>
+                                                            <span style={{ fontSize: '0.75rem' }}>▾</span>
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Pílulas de Acesso Rápido */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        overflowX: 'auto',
+                                                        paddingBottom: '4px',
+                                                        WebkitOverflowScrolling: 'touch'
+                                                    }}>
+                                                        {['Todas', ...ALL_PROVINCES].map(prov => {
+                                                            const count = prov === 'Todas'
+                                                                ? availableOrders.length
+                                                                : availableOrders.filter(o => {
                                                                     const loc = extractOrderLocation(o);
                                                                     return (loc?.province || '').toLowerCase() === (prov || '').toLowerCase();
                                                                 }).length;
-                                                             const isSelected = (selectedProvinceFilter || 'Todas').toLowerCase() === (prov || '').toLowerCase();
+                                                            const isSelected = (selectedProvinceFilter || 'Todas').toLowerCase() === (prov || '').toLowerCase();
 
-                                                             return (
-                                                                 <button
-                                                                     key={prov}
-                                                                     type="button"
-                                                                     onClick={() => setSelectedProvinceFilter(prov)}
-                                                                     style={{
-                                                                         padding: '6px 14px',
-                                                                         borderRadius: '999px',
-                                                                         fontSize: '0.8rem',
-                                                                         fontWeight: isSelected ? 800 : 600,
-                                                                         border: isSelected ? '1.5px solid #f64c00' : (darkMode ? '1px solid #3f3f46' : '1px solid #cbd5e1'),
-                                                                         background: isSelected ? '#f64c00' : (darkMode ? '#27272a' : '#ffffff'),
-                                                                         color: isSelected ? '#ffffff' : (darkMode ? '#e4e4e7' : '#475569'),
-                                                                         cursor: 'pointer',
-                                                                         whiteSpace: 'nowrap',
-                                                                         display: 'inline-flex',
-                                                                         alignItems: 'center',
-                                                                         gap: '6px',
-                                                                         transition: 'all 0.15s ease',
-                                                                         flexShrink: 0
-                                                                     }}
-                                                                 >
-                                                                     <span>{prov}</span>
-                                                                     <span style={{
-                                                                         fontSize: '0.72rem',
-                                                                         background: isSelected ? 'rgba(255,255,255,0.28)' : (darkMode ? '#3f3f46' : '#e2e8f0'),
-                                                                         color: isSelected ? '#ffffff' : (darkMode ? '#a1a1aa' : '#64748b'),
-                                                                         padding: '1px 6px',
-                                                                         borderRadius: '999px',
-                                                                         fontWeight: 800
-                                                                     }}>
-                                                                         {count}
-                                                                     </span>
-                                                                 </button>
-                                                             );
-                                                         })}
-                                                     </div>
-                                                 </div>
+                                                            return (
+                                                                <button
+                                                                    key={prov}
+                                                                    type="button"
+                                                                    onClick={() => handleRequestProvinceChange(prov)}
+                                                                    style={{
+                                                                        padding: '6px 14px',
+                                                                        borderRadius: '999px',
+                                                                        fontSize: '0.8rem',
+                                                                        fontWeight: isSelected ? 800 : 600,
+                                                                        border: isSelected ? '1.5px solid #f64c00' : (darkMode ? '1px solid #3f3f46' : '1px solid #cbd5e1'),
+                                                                        background: isSelected ? '#f64c00' : (darkMode ? '#27272a' : '#ffffff'),
+                                                                        color: isSelected ? '#ffffff' : (darkMode ? '#e4e4e7' : '#475569'),
+                                                                        cursor: 'pointer',
+                                                                        whiteSpace: 'nowrap',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '6px',
+                                                                        transition: 'all 0.15s ease',
+                                                                        flexShrink: 0
+                                                                    }}
+                                                                >
+                                                                    <span>{prov}</span>
+                                                                    <span style={{
+                                                                        fontSize: '0.72rem',
+                                                                        background: isSelected ? 'rgba(255,255,255,0.28)' : (darkMode ? '#3f3f46' : '#e2e8f0'),
+                                                                        color: isSelected ? '#ffffff' : (darkMode ? '#a1a1aa' : '#64748b'),
+                                                                        padding: '1px 6px',
+                                                                        borderRadius: '999px',
+                                                                        fontWeight: 800
+                                                                    }}>
+                                                                        {count}
+                                                                    </span>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
 
-                                                 {availableOrders.length === 0 ? (
-                                                     <div style={{ background: '#fff', padding: '4rem 2rem', borderRadius: '24px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                                                         <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f1f5f9', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                                                             <Icons.Package />
-                                                         </div>
-                                                         <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                                                             Nenhum pedido novo disponível no momento
-                                                         </h4>
-                                                         <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', maxWidth: '480px', marginInline: 'auto' }}>
-                                                             Assim que um cliente fizer uma encomenda na loja, ela aparecerá aqui.
-                                                         </p>
-                                                     </div>
-                                                 ) : (() => {
-                                                     const filteredAvailableOrders = availableOrders.filter(order => {
-                                                         if (!selectedProvinceFilter || selectedProvinceFilter === 'Todas') return true;
-                                                          const loc = extractOrderLocation(order);
-                                                          return (loc?.province || '').toLowerCase() === (selectedProvinceFilter || '').toLowerCase();
-                                                     });
+                                                {availableOrders.length === 0 ? (
+                                                    <div style={{ background: '#fff', padding: '4rem 2rem', borderRadius: '24px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                                        <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f1f5f9', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                                            <Icons.Package />
+                                                        </div>
+                                                        <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                                                            Nenhum pedido novo disponível no momento
+                                                        </h4>
+                                                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', maxWidth: '480px', marginInline: 'auto' }}>
+                                                            Assim que um cliente fizer uma encomenda na loja, ela aparecerá aqui.
+                                                        </p>
+                                                    </div>
+                                                ) : (() => {
+                                                    const filteredAvailableOrders = availableOrders.filter(order => {
+                                                        if (!selectedProvinceFilter || selectedProvinceFilter === 'Todas') return true;
+                                                         const loc = extractOrderLocation(order);
+                                                         return (loc?.province || '').toLowerCase() === (selectedProvinceFilter || '').toLowerCase();
+                                                    });
 
-                                                     if (filteredAvailableOrders.length === 0) {
-                                                         return (
-                                                             <div style={{ background: darkMode ? '#18181b' : '#fff', padding: '3.5rem 1.5rem', borderRadius: '24px', border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0', textAlign: 'center' }}>
-                                                                 <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: darkMode ? '#27272a' : '#f1f5f9', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                                                                     <Icons.MapPin />
-                                                                 </div>
-                                                                 <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: darkMode ? '#fff' : '#0f172a' }}>
-                                                                     Nenhum pedido disponível na província de {selectedProvinceFilter}
-                                                                 </h4>
-                                                                 <p style={{ margin: '0 0 1.25rem', color: '#64748b', fontSize: '0.9rem', maxWidth: '420px', marginInline: 'auto' }}>
-                                                                     Existem {availableOrders.length} pedido(s) disponível(is) noutras províncias.
-                                                                 </p>
-                                                                 <button
-                                                                     type="button"
-                                                                     onClick={() => setSelectedProvinceFilter('Todas')}
-                                                                     style={{
-                                                                         background: '#f64c00',
-                                                                         color: '#fff',
-                                                                         border: 'none',
-                                                                         padding: '0.65rem 1.25rem',
-                                                                         borderRadius: '10px',
-                                                                         fontWeight: 800,
-                                                                         fontSize: '0.88rem',
-                                                                         cursor: 'pointer'
-                                                                     }}
-                                                                 >
-                                                                     Ver Todas as Províncias ({availableOrders.length})
-                                                                 </button>
-                                                             </div>
-                                                         );
-                                                     }
+                                                    if (filteredAvailableOrders.length === 0) {
+                                                        return (
+                                                            <div style={{ background: darkMode ? '#18181b' : '#fff', padding: '3.5rem 1.5rem', borderRadius: '24px', border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0', textAlign: 'center' }}>
+                                                                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: darkMode ? '#27272a' : '#f1f5f9', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                                                                    <Icons.MapPin />
+                                                                </div>
+                                                                <h4 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: darkMode ? '#fff' : '#0f172a' }}>
+                                                                    Nenhum pedido disponível na província de {selectedProvinceFilter}
+                                                                </h4>
+                                                                <p style={{ margin: '0 0 1.25rem', color: '#64748b', fontSize: '0.9rem', maxWidth: '420px', marginInline: 'auto' }}>
+                                                                    Existem {availableOrders.length} pedido(s) disponível(is) noutras províncias.
+                                                                </p>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleRequestProvinceChange('Todas')}
+                                                                    style={{
+                                                                        background: '#f64c00',
+                                                                        color: '#fff',
+                                                                        border: 'none',
+                                                                        padding: '0.65rem 1.25rem',
+                                                                        borderRadius: '10px',
+                                                                        fontWeight: 800,
+                                                                        fontSize: '0.88rem',
+                                                                        cursor: 'pointer'
+                                                                    }}
+                                                                >
+                                                                    Ver Todas as Províncias ({availableOrders.length})
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    }
 
                                                      return (
                                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -6828,6 +6905,209 @@ function DriverPortalContent() {
                                 }}
                             >
                                 {submittingExpiredRequest ? 'A enviar...' : 'Confirmar Solicitação ➔'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Escolha de Província de Atuação */}
+            {isProvincePickerOpen && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.78)',
+                    backdropFilter: 'blur(5px)',
+                    zIndex: 999998,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1rem'
+                }}>
+                    <div className="rp-modal-box" style={{
+                        background: darkMode ? '#111111' : '#ffffff',
+                        color: darkMode ? '#ffffff' : '#0f172a',
+                        borderRadius: '24px',
+                        maxWidth: '480px',
+                        width: '100%',
+                        padding: '1.5rem',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
+                        maxHeight: '85vh',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: '#fff7ed', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Icons.MapPin />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900 }}>Em qual província estás?</h3>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: darkMode ? '#94a3b8' : '#64748b' }}>Selecione onde você está a operar</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsProvincePickerOpen(false)}
+                                style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.6rem', cursor: 'pointer', lineHeight: 1 }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+
+                        <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                            {['Todas', ...ALL_PROVINCES].map(prov => {
+                                const isSelected = (selectedProvinceFilter || 'Todas').toLowerCase() === (prov || '').toLowerCase();
+                                const count = prov === 'Todas'
+                                    ? availableOrders.length
+                                    : availableOrders.filter(o => {
+                                        const loc = extractOrderLocation(o);
+                                        return (loc?.province || '').toLowerCase() === (prov || '').toLowerCase();
+                                    }).length;
+
+                                return (
+                                    <div
+                                        key={prov}
+                                        onClick={() => handleRequestProvinceChange(prov)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '12px 14px',
+                                            borderRadius: '14px',
+                                            border: isSelected ? '2px solid #f64c00' : (darkMode ? '1px solid #27272a' : '1px solid #e2e8f0'),
+                                            background: isSelected ? (darkMode ? '#2a1a12' : '#fff7ed') : (darkMode ? '#18181b' : '#f8fafc'),
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>{prov === 'Todas' ? '🇲🇿' : '📍'}</span>
+                                            <div>
+                                                <div style={{ fontWeight: 800, fontSize: '0.92rem', color: isSelected ? '#ea580c' : (darkMode ? '#fff' : '#0f172a') }}>
+                                                    {prov === 'Todas' ? 'Todas as Províncias' : prov}
+                                                </div>
+                                                <div style={{ fontSize: '0.76rem', color: darkMode ? '#94a3b8' : '#64748b' }}>
+                                                    {count} {count === 1 ? 'pedido disponível' : 'pedidos disponíveis'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {isSelected && (
+                                            <span style={{ color: '#ea580c', fontWeight: 800, fontSize: '0.85rem' }}>✓ Atual</span>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Aviso de Confirmação de Troca de Província */}
+            {isProvinceConfirmOpen && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.82)',
+                    backdropFilter: 'blur(6px)',
+                    zIndex: 999999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1rem'
+                }}>
+                    <div className="rp-modal-box" style={{
+                        background: darkMode ? '#111111' : '#ffffff',
+                        color: darkMode ? '#ffffff' : '#0f172a',
+                        borderRadius: '24px',
+                        maxWidth: '440px',
+                        width: '100%',
+                        padding: '1.75rem',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.35)',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            background: '#fffbeb',
+                            color: '#d97706',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1.25rem',
+                            fontSize: '1.8rem',
+                            boxShadow: '0 8px 20px rgba(217, 119, 6, 0.2)'
+                        }}>
+                            ⚠️
+                        </div>
+
+                        <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem', fontWeight: 900, color: darkMode ? '#ffffff' : '#0f172a' }}>
+                            Trocar de Província?
+                        </h3>
+
+                        <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: darkMode ? '#cbd5e1' : '#475569', lineHeight: 1.5 }}>
+                            Tens a certeza que desejas trocar a tua província de <strong>"{selectedProvinceFilter === 'Todas' ? 'Todas as Províncias' : selectedProvinceFilter}"</strong> para <strong>"{pendingProvinceChange === 'Todas' ? 'Todas as Províncias' : pendingProvinceChange}"</strong>?
+                        </p>
+
+                        <div style={{
+                            background: darkMode ? '#18181b' : '#f8fafc',
+                            padding: '12px 14px',
+                            borderRadius: '14px',
+                            border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
+                            marginBottom: '1.5rem',
+                            fontSize: '0.82rem',
+                            color: '#b45309',
+                            lineHeight: 1.45,
+                            textAlign: 'left',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '8px'
+                        }}>
+                            <span>💡</span>
+                            <span>
+                                {pendingProvinceChange === 'Todas' 
+                                    ? 'Você verá pedidos de todo o país. Certifique-se de aceitar apenas encomendas que consiga entregar.'
+                                    : `A sua lista de pedidos passará a exibir apenas as encomendas destinadas a ${pendingProvinceChange}.`}
+                            </span>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                                type="button"
+                                onClick={handleCancelProvinceChange}
+                                style={{
+                                    flex: 1,
+                                    background: darkMode ? '#27272a' : '#f1f5f9',
+                                    color: darkMode ? '#cbd5e1' : '#475569',
+                                    border: darkMode ? '1px solid #3f3f46' : '1px solid #cbd5e1',
+                                    padding: '0.85rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 700,
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancelar
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleConfirmProvinceChange}
+                                style={{
+                                    flex: 1.4,
+                                    background: '#f64c00',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    padding: '0.85rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 800,
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 14px rgba(246, 76, 0, 0.35)'
+                                }}
+                            >
+                                Sim, Trocar Província
                             </button>
                         </div>
                     </div>

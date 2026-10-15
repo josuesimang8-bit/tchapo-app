@@ -454,9 +454,23 @@ const COLOR_OPTIONS = [
     'Preto', 'Branco', 'Azul', 'Rosa', 'Vermelho', 'Verde', 'Amarelo', 'Roxo', 'Cinzento', 'Castanho'
 ];
 
+const normalizeFeatures = (f) => {
+    if (!f) return [];
+    if (Array.isArray(f)) return f;
+    if (typeof f === 'string') {
+        try {
+            const parsed = JSON.parse(f);
+            if (Array.isArray(parsed)) return parsed;
+        } catch(e) {}
+        return f.split(',').map(s => s.trim());
+    }
+    return [];
+};
+
 const getDeviceSelectionType = (product) => {
-    if (!product || !product.features) return 'none';
-    const flag = product.features.find(f => f.startsWith('_device_selection:'));
+    if (!product) return 'none';
+    const features = normalizeFeatures(product.features);
+    const flag = features.find(f => typeof f === 'string' && f.startsWith('_device_selection:'));
     if (flag) return flag.split(':')[1];
     
     if (product.name && product.name.includes("Pendrive")) return 'pendrive';
@@ -466,33 +480,36 @@ const getDeviceSelectionType = (product) => {
 };
 
 const getColorSelectionType = (product) => {
-    if (!product || !product.features) return 'show';
-    const flag = product.features.find(f => f.startsWith('_color_selection:'));
+    if (!product) return 'none';
+    const features = normalizeFeatures(product.features);
+    const flag = features.find(f => typeof f === 'string' && f.startsWith('_color_selection:'));
     if (flag) return flag.split(':')[1];
-    return 'show';
+    return 'none';
 };
 
 // --- Stock status helper ---
 const getStockStatus = (product) => {
-    if (!product || !product.features) return 'Em Stock';
-    const flag = (product.features || []).find(f => f.startsWith('_stock:'));
+    if (!product) return 'Em Stock';
+    const features = normalizeFeatures(product.features);
+    const flag = features.find(f => typeof f === 'string' && f.startsWith('_stock:'));
     return flag ? flag.split(':')[1] : 'Em Stock';
 };
 
 // --- Featured helper ---
 const isFeatured = (product) => {
-    if (!product || !product.features) return false;
-    return (product.features || []).some(f => f === '_featured:true');
+    if (!product) return false;
+    const features = normalizeFeatures(product.features);
+    return features.some(f => f === '_featured:true');
 };
 
 const getProductGalleryDetails = (product) => {
     if (!product) return { items: [] };
     const items = [];
-    const features = product.features || [];
+    const features = normalizeFeatures(product.features);
     
     // Image 1 (main)
-    const img1PriceFeature = features.find(f => f.startsWith('_img1_price:'));
-    const img1TitleFeature = features.find(f => f.startsWith('_img1_title:'));
+    const img1PriceFeature = features.find(f => typeof f === 'string' && f.startsWith('_img1_price:'));
+    const img1TitleFeature = features.find(f => typeof f === 'string' && f.startsWith('_img1_title:'));
     const img1Price = img1PriceFeature ? parseInt(img1PriceFeature.split(':')[1]) : product.price;
     const img1Title = img1TitleFeature ? img1TitleFeature.split(':').slice(1).join(':') : '';
     items.push({
@@ -503,11 +520,11 @@ const getProductGalleryDetails = (product) => {
 
     // Extra images
     for (let i = 2; i <= 8; i++) {
-        const imgFeature = features.find(f => f.startsWith(`_img${i}:`));
+        const imgFeature = features.find(f => typeof f === 'string' && f.startsWith(`_img${i}:`));
         if (imgFeature) {
             const src = imgFeature.split(':').slice(1).join(':');
-            const priceFeature = features.find(f => f.startsWith(`_img${i}_price:`));
-            const titleFeature = features.find(f => f.startsWith(`_img${i}_title:`));
+            const priceFeature = features.find(f => typeof f === 'string' && f.startsWith(`_img${i}_price:`));
+            const titleFeature = features.find(f => typeof f === 'string' && f.startsWith(`_img${i}_title:`));
             const price = priceFeature ? parseInt(priceFeature.split(':')[1]) : product.price;
             const title = titleFeature ? titleFeature.split(':').slice(1).join(':') : '';
             items.push({ src, price, title });
@@ -518,9 +535,10 @@ const getProductGalleryDetails = (product) => {
 
 // --- Extra images helper ---
 const getExtraImages = (product) => {
-    if (!product || !product.features) return [];
-    return (product.features || [])
-        .filter(f => f.startsWith('_img2:') || f.startsWith('_img3:') || f.startsWith('_img4:') || f.startsWith('_img5:') || f.startsWith('_img6:'))
+    if (!product) return [];
+    const features = normalizeFeatures(product.features);
+    return features
+        .filter(f => typeof f === 'string' && (f.startsWith('_img2:') || f.startsWith('_img3:') || f.startsWith('_img4:') || f.startsWith('_img5:') || f.startsWith('_img6:')))
         .map(f => f.split(':').slice(1).join(':'));
 };
 
@@ -671,9 +689,11 @@ const calcProductSearchScore = (product, query) => {
 
 const STATUS_STEPS = {
     'Pendente':      1,
+    'Aprovado':      1,
     'Processando':   1,
     'Preparando':    2,
     'Com Motorista': 3,
+    'Com Entregador': 3,
     'Entregue':      4,
     'Cancelado':     5,
 };
@@ -761,8 +781,12 @@ export default function Store() {
     const [selectedColor, setSelectedColor] = useState('Preto');
     const [customDevice, setCustomDevice] = useState('');
     const [cart, setCart] = useState(() => {
-        const saved = localStorage.getItem('tchapoTchapoCart');
-        return saved ? JSON.parse(saved) : [];
+        try {
+            const saved = localStorage.getItem('tchapoTchapoCart');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
     });
     // Web Push & Notification States
     const [customerNotifStatus, setCustomerNotifStatus] = useState(() => {
@@ -1312,7 +1336,7 @@ export default function Store() {
     useEffect(() => {
         if (!trackingOrder) return;
         if (['Entregue', 'Cancelado', 'Perdido'].includes(trackingStatus)) return;
-        if (trackingStatus === 'Pendente') return; // timer_remaining_secs is set by poll
+        if (trackingStatus === 'Pendente' || (trackingStatus === 'Aprovado' && !trackingDriver)) return; // timer is paused while pending
 
         // Active status: tick every second using timer_end_at
         const tick = () => {
@@ -1324,7 +1348,7 @@ export default function Store() {
         tick();
         const timer = setInterval(tick, 1000);
         return () => clearInterval(timer);
-    }, [trackingOrder, trackingStatus]);
+    }, [trackingOrder, trackingStatus, trackingDriver]);
 
     // Keep-alive heartbeat to prevent backend idle sleep
     useEffect(() => {
@@ -1460,6 +1484,7 @@ export default function Store() {
     };
 
     const addToCart = (product, device, color, customImage) => {
+        if (!product) return false;
         const devSelType = getDeviceSelectionType(product);
         const hasDeviceSel = devSelType !== 'none';
         const colorSelType = getColorSelectionType(product);
@@ -1468,15 +1493,21 @@ export default function Store() {
         let finalDevice = null;
         if (hasDeviceSel) {
             let rawDevice = device || selectedDevice;
+            if (!rawDevice) {
+                if (devSelType === 'pendrive') rawDevice = PENDRIVE_OPTIONS[0];
+                else if (devSelType === 'card') rawDevice = CARD_OPTIONS[0];
+                else rawDevice = 'iPhone 15 Pro Max';
+            }
             if (devSelType === 'pendrive' && (!rawDevice || !PENDRIVE_OPTIONS.includes(rawDevice))) {
                 rawDevice = PENDRIVE_OPTIONS[0];
             } else if (devSelType === 'card' && (!rawDevice || !CARD_OPTIONS.includes(rawDevice))) {
                 rawDevice = CARD_OPTIONS[0];
             }
             if (devSelType === 'outro' || (devSelType === 'iphone_outro' && rawDevice === 'outro')) {
-                const deviceName = customDevice.trim();
+                const deviceName = (customDevice || '').trim();
                 if (!deviceName) {
                     showToastMessage('⚠️ Por favor, introduza o modelo do dispositivo.');
+                    setSelectedProduct(product);
                     return false;
                 }
                 finalDevice = deviceName;
@@ -1485,7 +1516,7 @@ export default function Store() {
             }
         }
         
-        const finalColor = hasColorSel ? (color || selectedColor) : null;
+        const finalColor = hasColorSel ? (color || selectedColor || 'Preto') : null;
         const unitPrice = getEffectivePrice(product, finalDevice);
         const itemImage = customImage || product.image;
         
@@ -1509,7 +1540,8 @@ export default function Store() {
                 quantity: 1 
             }]);
         }
-        showToastMessage('Produto adicionado ao carrinho!');
+        showToastMessage('Produto adicionado ao carrinho! 🛒');
+        setIsCartOpen(true);
         return true;
     };
 
@@ -1769,23 +1801,54 @@ export default function Store() {
         }
         setRegLoading(true);
         try {
-            const { error } = await supabase.auth.signUp({
-                email: regEmail,
+            const cleanEmail = (regEmail || '').trim().toLowerCase();
+
+            // 1. Verificação se o email já existe
+            try {
+                const { data: existingRef } = await supabase
+                    .from('referrals')
+                    .select('id')
+                    .eq('user_email', cleanEmail)
+                    .limit(1);
+
+                if (existingRef && existingRef.length > 0) {
+                    setRegError('⚠️ Este email já está cadastrado no sistema! Por favor, utilize outro email ou inicie sessão.');
+                    setRegLoading(false);
+                    return;
+                }
+            } catch (_) {}
+
+            // 2. Registo no Supabase Auth
+            const { data, error } = await supabase.auth.signUp({
+                email: cleanEmail,
                 password: regPassword,
                 options: {
                     data: { full_name: regName, phone: regPhone }
                 }
             });
+
             if (error) {
-                setRegError(error.message);
-            } else {
-                setIsAuthOpen(false);
-                setRegName('');
-                setRegPhone('');
-                setRegEmail('');
-                setRegPassword('');
-                showToastMessage('Conta criada com sucesso!');
+                let msg = error.message;
+                const lower = (msg || '').toLowerCase();
+                if (lower.includes('already registered') || lower.includes('already in use') || lower.includes('already taken') || lower.includes('already exists') || lower.includes('user already') || error.code === 'user_already_exists' || error.status === 422) {
+                    msg = '⚠️ Este email já está cadastrado no sistema! Por favor, utilize outro email ou inicie sessão.';
+                }
+                setRegError(msg);
+                return;
             }
+
+            // O Supabase retorna array identities vazio quando o email já existe
+            if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+                setRegError('⚠️ Este email já está cadastrado no sistema! Por favor, utilize outro email ou inicie sessão.');
+                return;
+            }
+
+            setIsAuthOpen(false);
+            setRegName('');
+            setRegPhone('');
+            setRegEmail('');
+            setRegPassword('');
+            showToastMessage('Conta criada com sucesso!');
         } catch (err) {
             setRegError('Erro ao criar conta: ' + (err.message || ''));
         } finally {
@@ -2134,7 +2197,19 @@ export default function Store() {
                                 <p className="product-desc">{prod.desc || ''}</p>
                                 <div className="product-price">{formatCurrency(prod.price)}</div>
                                 <div className="product-actions">
-                                    <button className="btn-add-to-cart" disabled={isOut} onClick={() => { if (!isOut) { (getDeviceSelectionType(prod) !== 'none' || getColorSelectionType(prod) !== 'none') ? (setSelectedProduct(prod), setModalImageIndex(0)) : addToCart(prod); trackProductClick(prod.id); } }} style={{ opacity: isOut ? 0.5 : 1, cursor: isOut ? 'not-allowed' : 'pointer' }}>
+                                    <button className="btn-add-to-cart" disabled={isOut} onClick={() => { 
+                                        if (!isOut) { 
+                                            const devType = getDeviceSelectionType(prod);
+                                            if (devType === 'outro') {
+                                                setSelectedProduct(prod);
+                                                setModalImageIndex(0);
+                                                showToastMessage('Por favor, informe o modelo do seu dispositivo.');
+                                            } else {
+                                                addToCart(prod);
+                                            }
+                                            trackProductClick(prod.id); 
+                                        } 
+                                    }} style={{ opacity: isOut ? 0.5 : 1, cursor: isOut ? 'not-allowed' : 'pointer' }}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                                         Carrinho
                                     </button>
@@ -2428,7 +2503,7 @@ export default function Store() {
                                     const currentIdx = (modalImageIndex >= 0 && modalImageIndex < gallery.items.length) ? modalImageIndex : 0;
                                     const itemObj = gallery.items[currentIdx] || { src: activeSelectedProduct.image, price: activeSelectedProduct.price, title: '' };
                                     const prodToCart = { ...activeSelectedProduct, price: itemObj.price || activeSelectedProduct.price, name: itemObj.title ? `${activeSelectedProduct.name} (${itemObj.title})` : activeSelectedProduct.name };
-                                    if (addToCart(prodToCart, null, null, itemObj.src)) setSelectedProduct(null); 
+                                    if (addToCart(prodToCart, selectedDevice, selectedColor, itemObj.src)) setSelectedProduct(null); 
                                 }}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                                     <span>Carrinho</span>
@@ -2464,12 +2539,12 @@ export default function Store() {
                         cart.map(item => {
                             const baseId = typeof item.id === 'string' && item.id.includes('-') ? Number(item.id.split('-')[0]) : item.id;
                             const liveItem = products.find(p => p.id === baseId);
-                            const price = liveItem ? liveItem.price : item.price;
-                            const image = liveItem ? liveItem.image : item.image;
+                            const price = item.price != null ? item.price : (liveItem ? liveItem.price : 0);
+                            const image = item.image || (liveItem ? liveItem.image : '/assets/default_product.png');
                             const name = item.name;
                             return (
                                 <div key={item.id} className="cart-item">
-                                    <img src={image} alt={name} />
+                                    <img src={image} alt={name} onError={(e) => { e.target.onerror = null; e.target.src = '/assets/default_product.png'; }} />
                                     <div className="cart-item-info">
                                         <div className="cart-item-title">{name}</div>
                                         <div className="cart-item-price">{formatCurrency(price)}</div>
@@ -3067,11 +3142,11 @@ export default function Store() {
 
                         <div className="tracking-timer">
                             <p>Tempo estimado para entrega:</p>
-                            <div className="timer-display" style={{ color: trackingStatus === 'Cancelado' ? '#ef4444' : trackingStatus === 'Entregue' ? '#10b981' : trackingStatus === 'Pendente' ? '#f59e0b' : 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <div className="timer-display" style={{ color: trackingStatus === 'Cancelado' ? '#ef4444' : trackingStatus === 'Entregue' ? '#10b981' : (trackingStatus === 'Pendente' || (trackingStatus === 'Aprovado' && !trackingDriver)) ? '#f59e0b' : 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                                 {trackingStatus === 'Cancelado' ? 'CANCELADO' : trackingStatus === 'Entregue' ? 'ENTREGUE!' : (
                                     <>
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        {formatTimeLeft(trackingTimeLeft)} {trackingStatus === 'Pendente' ? '(Pausado)' : ''}
+                                        {formatTimeLeft(trackingTimeLeft)} {(trackingStatus === 'Pendente' || (trackingStatus === 'Aprovado' && !trackingDriver)) ? '(Pausado)' : ''}
                                     </>
                                 )}
                             </div>

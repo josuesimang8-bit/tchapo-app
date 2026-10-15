@@ -19,6 +19,14 @@ dotenv.config();
 
 const app = express();
 
+// ─── PROCESS ERROR SAFEGUARDS (Prevents unhandled crashes) ─────────────────
+process.on('uncaughtException', (err) => {
+    console.error('[CRITICAL] Uncaught exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[CRITICAL] Unhandled rejection at:', promise, 'reason:', reason);
+});
+
 // ─── SECURITY HEADERS & HARDENING ───────────────────────────────────────────
 app.use(helmet({
     contentSecurityPolicy: false,
@@ -33,16 +41,17 @@ app.use(express.json({ limit: '10mb' }));
 // ─── RATE LIMITERS (DDoS & Brute-Force Protection) ──────────────────────────
 const globalLimiter = rateLimit({
     windowMs: 5 * 60 * 1000,
-    max: 400,
+    max: 3000,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.path === '/ping' || req.path.startsWith('/products/image-proxy'),
     message: { error: 'Demasiadas requisições. Aguarde um momento.' }
 });
 app.use('/api/', globalLimiter);
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 12,
+    max: 60,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Demasiadas tentativas de acesso. Por segurança, tente novamente daqui a 15 minutos.' }
@@ -1886,7 +1895,6 @@ app.get('/api/orders/:id', async (req, res) => {
             }
             throw error;
         }
-        if (['Com Motorista', 'Com Entregador'].includes(status) && data) { const driverInfo = data.driver_id ? getDriverMeta(Number(data.driver_id)) : null; notifyCustomerOrderEvent({ phone: data.phone, user_id: data.user_id, order_id: data.id, event: 'order_accepted', order: data, driver: driverInfo }).catch(e => console.error('[Push] Notify customer accepted err:', e)); }
         res.json(formatOrderResponse(data));
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -2020,16 +2028,6 @@ app.put('/api/orders/:id/status', async (req, res) => {
             } else if (status === 'Pendente') {
                 updates.status = 'Pendente';
                 updateOrderMeta(id, { sent_to_driver_pool: false });
-        // Notify customer that driver accepted the order
-        const assignedDriverObj = getDriverMeta(numDriverId);
-        notifyCustomerOrderEvent({
-            phone: updated.phone,
-            user_id: updated.user_id,
-            order_id: updated.id,
-            event: 'order_accepted',
-            order: updated,
-            driver: assignedDriverObj
-        }).catch(e => console.error('[Push] Notify customer accepted err:', e));
             } else {
                 updates.status = status;
                 if (['Cancelado', 'Entregue', 'Perdido'].includes(status)) {
@@ -2083,6 +2081,19 @@ app.put('/api/orders/:id/status', async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // If marked as Com Motorista or Com Entregador, notify customer
+        if (['Com Motorista', 'Com Entregador'].includes(status) && data && data.driver_id) {
+            const assignedDriverObj = getDriverMeta(Number(data.driver_id));
+            notifyCustomerOrderEvent({
+                phone: data.phone,
+                user_id: data.user_id,
+                order_id: data.id,
+                event: 'order_accepted',
+                order: data,
+                driver: assignedDriverObj
+            }).catch(e => console.error('[Push] Notify customer accepted err:', e));
+        }
 
         // If marked as Entregue, record delivered_at timestamp and generate 15% debt based on estimated profit for the assigned driver
         if (status === 'Entregue' && data) {
@@ -2804,6 +2815,16 @@ app.put('/api/orders/:id/accept', async (req, res) => {
         if (updateErr) throw updateErr;
 
         updateOrderMeta(id, { sent_to_driver_pool: false });
+
+        const assignedDriverObj = getDriverMeta(numDriverId);
+        notifyCustomerOrderEvent({
+            phone: updated.phone,
+            user_id: updated.user_id,
+            order_id: updated.id,
+            event: 'order_accepted',
+            order: updated,
+            driver: assignedDriverObj
+        }).catch(e => console.error('[Push] Notify customer accepted err:', e));
 
         res.json({
             success: true,

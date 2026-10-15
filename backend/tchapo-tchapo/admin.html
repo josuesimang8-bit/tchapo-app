@@ -2645,7 +2645,7 @@ function renderProducts() {
     if (!allProducts.length) { el.innerHTML = '<div class="empty">Nenhum produto registado.</div>'; return; }
     el.innerHTML = allProducts.map(p => `
         <div class="product-item">
-            ${p.image ? `<img class="product-img" src="${p.image}" alt="${p.name}">` : '<div class="product-img"></div>'}
+            ${p.image ? `<img class="product-img" src="${p.image}" alt="${p.name}" onerror="this.onerror=null;this.src='/assets/default_product.png'">` : '<div class="product-img"></div>'}
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
                 <div style="font-size:0.75rem;color:#6b7280;">${p.category} · ${fmtCur(p.price)}</div>

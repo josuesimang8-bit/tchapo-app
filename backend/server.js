@@ -3578,14 +3578,28 @@ function resolveSingleImg(img, baseUrl, PLACEHOLDER) {
         if (needsProxy) {
             return `${baseUrl}/api/img?u=${encodeURIComponent(img)}`;
         }
-    } catch (_) {}
 
-    if (img.startsWith('http://localhost:3000') || img.startsWith('http://localhost:5173') || !img.startsWith('http')) {
-        const cleanPath = img.replace(/^https?:\/\/localhost:\d+/, '');
-        const relativePath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
-        return `${baseUrl}${relativePath}`;
+        const LOCAL_HOSTS = [
+            'localhost',
+            '127.0.0.1',
+            'tchapotchapo.store',
+            'www.tchapotchapo.store',
+            'tchapotchapo.com',
+            'www.tchapotchapo.com',
+            'tchapo-backend.onrender.com'
+        ];
+        const isLocalHost = LOCAL_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
+        const isLocalPath = parsed.pathname.startsWith('/assets/') || parsed.pathname.startsWith('/uploads/');
+
+        if (isLocalHost || isLocalPath) {
+            return `${baseUrl}${parsed.pathname}${parsed.search}`;
+        }
+
+        return img;
+    } catch (_) {
+        const cleanPath = img.replace(/^\/+/, '');
+        return `${baseUrl}/${cleanPath}`;
     }
-    return img;
 }
 
 function fixImageUrls(req, products) {

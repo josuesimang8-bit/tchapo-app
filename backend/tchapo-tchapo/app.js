@@ -427,7 +427,7 @@ let products = [
         id: 6, category: 'Smartphones',
         name: 'Celular Android',
         price: 7500,
-        image: 'assets/android_phone_1777769782866.png',
+        image: 'assets/products/prod_38.jpg',
         desc: 'O smartphone perfeito e acessível para o dia-a-dia, WhatsApp e redes sociais.',
         features: ['🔋 Bateria de Longa Duração', '📱 Ecrã HD+ Grande', '📸 Câmera Traseira e Frontal', '💾 2 Cartões SIM']
     },
@@ -473,7 +473,7 @@ let products = [
         id: 5, category: 'Acessórios',
         name: 'Fita LED RGB 5M',
         price: 1500,
-        image: 'assets/led_lights_1777769768426.png',
+        image: 'assets/products/prod_20.webp',
         desc: 'Transforma o teu quarto com iluminação vibrante e controlável por comando remoto.',
         features: ['💡 Milhões de Cores RGB', '📏 5 Metros', '🎮 Comando Remoto', '⚡ Fácil Instalação']
     },
@@ -506,7 +506,7 @@ let products = [
         id: 14, category: 'Jogos',
         name: 'Joystick de PS4 (Comando Sem Fios)',
         price: 2500,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_56.webp',
         desc: 'Joystick de PS4 (Comando Sem Fios) de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     },
@@ -514,7 +514,7 @@ let products = [
         id: 15, category: 'Jogos',
         name: 'Joystick de PS5 (Comando DualSense)',
         price: 4500,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_57.jpg',
         desc: 'Joystick de PS5 (Comando DualSense) de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     },
@@ -531,7 +531,7 @@ let products = [
         id: 17, category: 'Eletrodomésticos',
         name: 'Liquidificador Multifunções',
         price: 2800,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_59.webp',
         desc: 'Liquidificador Multifunções de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     },
@@ -539,7 +539,7 @@ let products = [
         id: 20, category: 'Acessórios',
         name: 'Pau de Selfie Bluetooth com Tripé',
         price: 850,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_62.jpg',
         desc: 'Pau de Selfie Bluetooth com Tripé de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     },
@@ -547,7 +547,7 @@ let products = [
         id: 21, category: 'Acessórios',
         name: 'Baterias para Android',
         price: 1200,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_63.webp',
         desc: 'Baterias para Android de alta qualidade',
         features: ['_device_selection:outro', '_color_selection:none', '✨ Alta Qualidade Garantida']
     },
@@ -555,7 +555,7 @@ let products = [
         id: 22, category: 'Acessórios',
         name: 'Tampas e Capas para iPhone',
         price: 450,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_12.jpg',
         desc: 'Tampas e Capas para iPhone de alta qualidade',
         features: ['_device_selection:iphone_outro', '_color_selection:show', '✨ Alta Qualidade Garantida']
     },
@@ -563,7 +563,7 @@ let products = [
         id: 23, category: 'Acessórios',
         name: 'Ring Light 10" com Tripé',
         price: 1850,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_65.jpg',
         desc: 'Ring Light 10" com Tripé de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     },
@@ -571,7 +571,7 @@ let products = [
         id: 24, category: 'Acessórios',
         name: 'Cabo USB para Type-C',
         price: 350,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_66.webp',
         desc: 'Cabo USB para Type-C de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     },
@@ -579,7 +579,7 @@ let products = [
         id: 25, category: 'Acessórios',
         name: 'Cabo Micro-USB Standard',
         price: 250,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_67.webp',
         desc: 'Cabo Micro-USB Standard de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     },
@@ -587,7 +587,7 @@ let products = [
         id: 26, category: 'Acessórios',
         name: 'Cabo Type-C para Type-C (iPhone / Android)',
         price: 550,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_68.webp',
         desc: 'Cabo Type-C para Type-C (iPhone / Android) de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     },
@@ -595,7 +595,7 @@ let products = [
         id: 27, category: 'Acessórios',
         name: 'Carregador Completo (Adaptador + Cabo)',
         price: 850,
-        image: 'assets/default_product.png',
+        image: 'assets/products/prod_69.jpg',
         desc: 'Carregador Completo (Adaptador + Cabo) de alta qualidade',
         features: ['✨ Alta Qualidade Garantida']
     }

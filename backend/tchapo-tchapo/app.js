@@ -626,6 +626,7 @@ const productModal          = document.getElementById('product-modal');
 const productModalOverlay   = document.getElementById('product-modal-overlay');
 const closeProductModal     = document.getElementById('close-product-modal');
 const productModalContent   = document.getElementById('product-modal-content');
+let selectedProduct         = null;
 
 const quickOrderModal       = document.getElementById('quick-order-modal');
 const quickOrderOverlay     = document.getElementById('quick-order-overlay');
@@ -1160,6 +1161,7 @@ function openProductModal(id, pushUrl = true) {
         }
         const product = products.find(p => p.id == id);
         if (!product) return;
+        selectedProduct = product;
         const devSelType = getDeviceSelectionType(product);
         
         let optionsHtml = '';
@@ -1726,8 +1728,9 @@ function handleQuickOrder(e) {
 }
 
 function closeModals() {
-    productModal.classList.remove('active');
-    productModalOverlay.classList.remove('active');
+    if (productModal) productModal.classList.remove('active');
+    if (productModalOverlay) productModalOverlay.classList.remove('active');
+    selectedProduct = null;
     try {
         const url = new URL(window.location.href);
         if (url.searchParams.has('p') || url.searchParams.has('produto')) {
@@ -1976,7 +1979,7 @@ window.handleContinueAsGuest = function() {
     }
     if (selectedProduct) {
         startQuickOrderModal(selectedProduct.id, true);
-        closeProductModal();
+        closeModals();
     }
 };
 
@@ -3057,8 +3060,7 @@ function isAnyModalOpen() {
         '#meus-pedidos-modal.active, #meus-pedidos-overlay.active, ' +
         '#tracking-overlay.active, ' +
         '#legal-modal.active, #legal-overlay.active, ' +
-        '#delivery-payment-promo-modal.active, #delivery-payment-promo-overlay.active, ' +
-        '.cart-sidebar.active, .product-modal.active, .modal.active, .tracking-overlay.active, .modal-overlay.active, .cart-overlay.active'
+        '#delivery-payment-promo-modal.active, #delivery-payment-promo-overlay.active'
     );
 }
 
@@ -3066,38 +3068,20 @@ function updateScrollLock() {
     const anyOpen = isAnyModalOpen();
 
     if (anyOpen) {
-        if (!bodyScrollLocked) {
-            lockedScrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-            if (scrollbarWidth > 0) {
-                document.body.style.paddingRight = `${scrollbarWidth}px`;
-            }
-            document.documentElement.classList.add('scroll-locked');
-            document.body.classList.add('scroll-locked');
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${lockedScrollY}px`;
-            document.body.style.left = '0';
-            document.body.style.right = '0';
-            document.body.style.width = '100%';
-            document.body.style.overflow = 'hidden';
-            document.documentElement.style.overflow = 'hidden';
-            bodyScrollLocked = true;
-        }
+        document.body.classList.add('scroll-locked');
+        bodyScrollLocked = true;
     } else {
-        if (bodyScrollLocked) {
-            document.documentElement.classList.remove('scroll-locked');
-            document.body.classList.remove('scroll-locked');
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.left = '';
-            document.body.style.right = '';
-            document.body.style.width = '';
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
-            document.body.style.paddingRight = '';
-            window.scrollTo(0, lockedScrollY);
-            bodyScrollLocked = false;
-        }
+        document.body.classList.remove('scroll-locked');
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        document.body.style.paddingRight = '';
+        document.documentElement.classList.remove('scroll-locked');
+        bodyScrollLocked = false;
     }
 }
 
@@ -3120,54 +3104,7 @@ function getScrollableParent(target) {
 }
 
 function initBackdropScrollPrevention() {
-    window.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches.length === 1) {
-            touchStartY = e.touches[0].clientY;
-        }
-    }, { passive: true });
-
-    window.addEventListener('touchmove', (e) => {
-        if (!isAnyModalOpen()) return;
-
-        const scrollable = getScrollableParent(e.target);
-        if (!scrollable) {
-            // Touch is on backdrop, header, footer, or background store -> prevent 100%
-            if (e.cancelable) e.preventDefault();
-            return;
-        }
-
-        const currentY = e.touches[0].clientY;
-        const deltaY = currentY - touchStartY;
-        const isScrollingUp = deltaY > 0; // dragging downwards
-        const isScrollingDown = deltaY < 0; // dragging upwards
-
-        const isAtTop = scrollable.scrollTop <= 0;
-        const isAtBottom = (scrollable.scrollTop + scrollable.clientHeight) >= (scrollable.scrollHeight - 1);
-
-        // If at top and trying to pull down or at bottom trying to push up -> cancel to prevent viewport rubber-banding
-        if ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)) {
-            if (e.cancelable) e.preventDefault();
-        }
-    }, { passive: false });
-
-    window.addEventListener('wheel', (e) => {
-        if (!isAnyModalOpen()) return;
-
-        const scrollable = getScrollableParent(e.target);
-        if (!scrollable) {
-            if (e.cancelable) e.preventDefault();
-            return;
-        }
-
-        const isScrollingUp = e.deltaY < 0;
-        const isScrollingDown = e.deltaY > 0;
-        const isAtTop = scrollable.scrollTop <= 0;
-        const isAtBottom = (scrollable.scrollTop + scrollable.clientHeight) >= (scrollable.scrollHeight - 1);
-
-        if ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)) {
-            if (e.cancelable) e.preventDefault();
-        }
-    }, { passive: false });
+    // Background scroll prevention handled safely via body.scroll-locked { overflow: hidden !important; }
 }
 
 function initPromoPopup() {
@@ -3295,6 +3232,9 @@ document.addEventListener('keydown', (e) => {
         const modal = document.getElementById('legal-modal');
         if (modal && modal.classList.contains('active')) {
             window.closeLegalModal();
+        }
+        if (productModal && productModal.classList.contains('active')) {
+            closeModals();
         }
     }
 });

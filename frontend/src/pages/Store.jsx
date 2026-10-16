@@ -901,7 +901,7 @@ export default function Store() {
         }
     }, [currentUser]);
 
-    // Lock body scroll when modals or cart or checkout are open
+    // Lock body scroll cleanly when modals or cart or checkout are open
     useEffect(() => {
         const isModalOpen = (activePromo !== null) ||
             isCartOpen ||
@@ -915,143 +915,31 @@ export default function Store() {
             trackingOrder !== null;
 
         if (isModalOpen) {
-            if (document.body.style.position !== 'fixed') {
-                const scrollY = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
-                const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-                if (scrollbarWidth > 0) {
-                    document.body.style.paddingRight = `${scrollbarWidth}px`;
-                }
-                document.body.setAttribute('data-scroll-y', scrollY.toString());
-                document.documentElement.classList.add('scroll-locked');
-                document.body.classList.add('scroll-locked');
-                document.body.style.position = 'fixed';
-                document.body.style.top = `-${scrollY}px`;
-                document.body.style.left = '0';
-                document.body.style.right = '0';
-                document.body.style.width = '100%';
-                document.body.style.overflow = 'hidden';
-                document.documentElement.style.overflow = 'hidden';
-            }
+            document.body.classList.add('scroll-locked');
         } else {
-            if (document.body.style.position === 'fixed') {
-                const scrollY = parseInt(document.body.getAttribute('data-scroll-y') || '0', 10);
-                document.documentElement.classList.remove('scroll-locked');
-                document.body.classList.remove('scroll-locked');
-                document.body.style.position = '';
-                document.body.style.top = '';
-                document.body.style.left = '';
-                document.body.style.right = '';
-                document.body.style.width = '';
-                document.body.style.overflow = '';
-                document.documentElement.style.overflow = '';
-                document.body.style.paddingRight = '';
-                document.body.removeAttribute('data-scroll-y');
-                window.scrollTo(0, scrollY);
-            }
+            document.body.classList.remove('scroll-locked');
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+            document.body.style.paddingRight = '';
+            document.documentElement.classList.remove('scroll-locked');
         }
-        return () => {
-            if (document.body.style.position === 'fixed') {
-                const scrollY = parseInt(document.body.getAttribute('data-scroll-y') || '0', 10);
-                document.documentElement.classList.remove('scroll-locked');
-                document.body.classList.remove('scroll-locked');
-                document.body.style.position = '';
-                document.body.style.top = '';
-                document.body.style.left = '';
-                document.body.style.right = '';
-                document.body.style.width = '';
-                document.body.style.overflow = '';
-                document.documentElement.style.overflow = '';
-                document.body.style.paddingRight = '';
-                document.body.removeAttribute('data-scroll-y');
-                window.scrollTo(0, scrollY);
-            }
-        };
-    }, [activePromo, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, isCartCheckoutModalOpen, isLegalOpen, selectedProduct, quickOrderProduct, trackingOrder]);
-
-    // Active touchmove & wheel event interception to 100% block mobile scroll bleed
-    useEffect(() => {
-        const isModalOpen = (activePromo !== null) ||
-            isCartOpen ||
-            isAuthOpen ||
-            isMeusPedidosOpen ||
-            isReferralOpen ||
-            isCartCheckoutModalOpen ||
-            isLegalOpen ||
-            selectedProduct !== null ||
-            quickOrderProduct !== null ||
-            trackingOrder !== null;
-
-        if (!isModalOpen) return;
-
-        let touchStartY = 0;
-        const handleTouchStart = (e) => {
-            if (e.touches && e.touches.length === 1) {
-                touchStartY = e.touches[0].clientY;
-            }
-        };
-
-        const getScrollable = (target) => {
-            let el = target;
-            while (el && el !== document.body && el !== document.documentElement) {
-                if (el.matches && el.matches('.cart-items, .product-modal-content, .legal-modal-body, .auth-modal, .tracking-modal, .product-modal > div, [data-scrollable="true"]')) {
-                    return el;
-                }
-                try {
-                    const style = window.getComputedStyle(el);
-                    const overflowY = style.overflowY;
-                    if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
-                        return el;
-                    }
-                } catch (err) {}
-                el = el.parentElement;
-            }
-            return null;
-        };
-
-        const handleTouchMove = (e) => {
-            const scrollable = getScrollable(e.target);
-            if (!scrollable) {
-                if (e.cancelable) e.preventDefault();
-                return;
-            }
-
-            const currentY = e.touches[0].clientY;
-            const deltaY = currentY - touchStartY;
-            const isScrollingUp = deltaY > 0;
-            const isScrollingDown = deltaY < 0;
-            const isAtTop = scrollable.scrollTop <= 0;
-            const isAtBottom = (scrollable.scrollTop + scrollable.clientHeight) >= (scrollable.scrollHeight - 1);
-
-            if ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)) {
-                if (e.cancelable) e.preventDefault();
-            }
-        };
-
-        const handleWheel = (e) => {
-            const scrollable = getScrollable(e.target);
-            if (!scrollable) {
-                if (e.cancelable) e.preventDefault();
-                return;
-            }
-
-            const isScrollingUp = e.deltaY < 0;
-            const isScrollingDown = e.deltaY > 0;
-            const isAtTop = scrollable.scrollTop <= 0;
-            const isAtBottom = (scrollable.scrollTop + scrollable.clientHeight) >= (scrollable.scrollHeight - 1);
-
-            if ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)) {
-                if (e.cancelable) e.preventDefault();
-            }
-        };
-
-        window.addEventListener('touchstart', handleTouchStart, { passive: true });
-        window.addEventListener('touchmove', handleTouchMove, { passive: false });
-        window.addEventListener('wheel', handleWheel, { passive: false });
 
         return () => {
-            window.removeEventListener('touchstart', handleTouchStart);
-            window.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('wheel', handleWheel);
+            document.body.classList.remove('scroll-locked');
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+            document.body.style.paddingRight = '';
+            document.documentElement.classList.remove('scroll-locked');
         };
     }, [activePromo, isCartOpen, isAuthOpen, isMeusPedidosOpen, isReferralOpen, isCartCheckoutModalOpen, isLegalOpen, selectedProduct, quickOrderProduct, trackingOrder]);
 

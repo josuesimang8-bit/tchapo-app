@@ -12,9 +12,6 @@ import webpush from 'web-push';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-
 dotenv.config();
 
 const app = express();
@@ -27,74 +24,8 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('[CRITICAL] Unhandled rejection at:', promise, 'reason:', reason);
 });
 
-// ─── SECURITY HEADERS & HARDENING ───────────────────────────────────────────
-app.use(helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false
-}));
-app.disable('x-powered-by');
-app.set('trust proxy', 1);
-
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-
-// ─── RATE LIMITERS (DDoS & Brute-Force Protection) ──────────────────────────
-const globalLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000,
-    max: 3000,
-    standardHeaders: true,
-    legacyHeaders: false,
-    skip: (req) => req.path === '/ping' || req.path.startsWith('/products/image-proxy'),
-    message: { error: 'Demasiadas requisições. Aguarde um momento.' }
-});
-app.use('/api/', globalLimiter);
-
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 60,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Demasiadas tentativas de acesso. Por segurança, tente novamente daqui a 15 minutos.' }
-});
-
-const orderLimiter = rateLimit({
-    windowMs: 10 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Muitos pedidos criados em pouco tempo. Aguarde alguns minutos.' }
-});
-
-const pdfLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000,
-    max: 15,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Demasiadas solicitações de PDF. Aguarde 5 minutos.' }
-});
-
-// ─── ADMIN AUTHENTICATION & ACCESS CONTROL ──────────────────────────────────
-const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ('tchapo_adm_' + Buffer.from(ADMIN_PIN + ':salt_tchapo_2026').toString('base64'));
-
-app.post('/api/admin/login', authLimiter, (req, res) => {
-    const { pin } = req.body || {};
-    if (!pin || String(pin).trim() !== String(ADMIN_PIN).trim()) {
-        return res.status(401).json({ error: 'PIN de acesso incorreto.' });
-    }
-    return res.json({ success: true, token: ADMIN_TOKEN });
-});
-
-function requireAdminAuth(req, res, next) {
-    const token = req.headers['x-admin-token'] || 
-                  (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7).trim() : null) || 
-                  req.query.admin_token;
-                  
-    if (token && token === ADMIN_TOKEN) {
-        return next();
-    }
-    return res.status(401).json({ error: 'Acesso restrito: Autenticação de Administrador necessária.' });
-}
 
 // Migration Notice for users accessing legacy .store domain
 app.use((req, res, next) => {
@@ -406,8 +337,8 @@ app.post('/api/notifications/subscribe', (req, res) => {
     }
 });
 
-// Admin Notification Settings endpoints (Protected - Admin only)
-app.get('/api/admin/settings', requireAdminAuth, (req, res) => {
+// Admin Notification Settings endpoints
+app.get('/api/admin/settings', (req, res) => {
     const settings = loadAdminSettings();
     res.json({
         ntfy_topic: settings.ntfy_topic || 'tchapo_pedidos_beira',
@@ -420,7 +351,7 @@ app.get('/api/admin/settings', requireAdminAuth, (req, res) => {
     });
 });
 
-app.post('/api/admin/settings', requireAdminAuth, (req, res) => {
+app.post('/api/admin/settings', (req, res) => {
     try {
         const { ntfy_topic, whatsapp_phone, whatsapp_apikey, telegram_bot_token, telegram_chat_id } = req.body;
         const current = loadAdminSettings();
@@ -850,8 +781,8 @@ app.post('/api/drivers/:id/fee-reminder', async (req, res) => {
     res.status(404).json({ error: 'No pending debt found for driver.' });
 });
 
-// Test Notification Endpoint (Protected - Admin only)
-app.post('/api/admin/test-notification', requireAdminAuth, async (req, res) => {
+// Test Notification Endpoint
+app.post('/api/admin/test-notification', async (req, res) => {
     try {
         const testOrder = {
             id: 'TESTE-999',
@@ -926,18 +857,7 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// Configurar multer para upload seguro de fotos
-const imageFilter = (req, file, cb) => {
-    const allowedExts = ['.jpg', '.jpeg', '.png', '.webp'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    const isMimeAllowed = (file.mimetype || '').startsWith('image/') && !file.mimetype.includes('svg');
-    if (allowedExts.includes(ext) && isMimeAllowed) {
-        cb(null, true);
-    } else {
-        cb(new Error('Apenas ficheiros de imagem seguros (JPG, PNG, WEBP) são permitidos.'), false);
-    }
-};
-
+// Configurar multer para upload das fotos dos motoristas
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const uploadDir = path.join(__dirname, 'uploads/drivers');
@@ -950,14 +870,10 @@ const storage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname).toLowerCase());
+        cb(null, Date.now() + path.extname(file.originalname));
     }
 });
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
-    fileFilter: imageFilter
-});
+const upload = multer({ storage: storage });
 
 // Configurar multer para upload das fotos dos produtos
 const productStorage = multer.diskStorage({
@@ -972,23 +888,18 @@ const productStorage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname).toLowerCase());
+        cb(null, Date.now() + path.extname(file.originalname));
     }
 });
-const uploadProduct = multer({ 
-    storage: productStorage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
-    fileFilter: imageFilter
-});
+const uploadProduct = multer({ storage: productStorage });
 
 // Servir ficheiros carregados de forma estática
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ─── IMAGE PROXY ──────────────────────────────────────────────────────────────
 // Serve external product images (Catbox etc.) through our server so they
-// load reliably on any network/region. Cache in memory for 24h with strict LRU cap.
+// load reliably on any network/region. Cache in memory for 24h.
 const _imgCache = new Map();
-const MAX_IMG_CACHE = 50;
 
 app.get('/api/img', async (req, res) => {
     const url = req.query.u;
@@ -1024,12 +935,8 @@ app.get('/api/img', async (req, res) => {
         const buf = Buffer.from(await upstream.arrayBuffer());
         const ct = upstream.headers.get('content-type') || 'image/jpeg';
 
-        // Only cache if < 3MB and ensure LRU cap to avoid OOM on Render free tier
+        // Only cache if < 3MB to avoid OOM on free tier
         if (buf.byteLength < 3145728) {
-            if (_imgCache.size >= MAX_IMG_CACHE) {
-                const oldestKey = _imgCache.keys().next().value;
-                if (oldestKey) _imgCache.delete(oldestKey);
-            }
             _imgCache.set(url, { d: buf, ct, t: Date.now() });
         }
 
@@ -1739,8 +1646,8 @@ function formatOrderResponse(order) {
     };
 }
 
-// GET orders (Protected - Admin only)
-app.get('/api/orders', requireAdminAuth, async (req, res) => {
+// GET orders
+app.get('/api/orders', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('orders')
@@ -1792,8 +1699,8 @@ app.get('/api/orders/user/:userId', async (req, res) => {
     }
 });
 
-// POST new order (Rate limited against spam)
-app.post('/api/orders', orderLimiter, async (req, res) => {
+// POST new order
+app.post('/api/orders', async (req, res) => {
     try {
         const { customer_name, phone, bairro, address, time, payment, total, items, user_id, referral_code, referral_discount } = req.body;
         
@@ -2380,8 +2287,8 @@ app.get('/api/drivers', async (req, res) => {
     }
 });
 
-// GET all drivers for Admin Dashboard (Protected - Admin only)
-app.get('/api/drivers/admin/all', requireAdminAuth, async (req, res) => {
+// GET all drivers for Admin Dashboard
+app.get('/api/drivers/admin/all', async (req, res) => {
     try {
         const { data: drivers, error } = await supabase
             .from('drivers')
@@ -2521,8 +2428,8 @@ app.post('/api/drivers/register', upload.fields([
     }
 });
 
-// POST Driver Login (Phone + PIN) - Protected by authLimiter & strict PIN validation
-app.post('/api/drivers/login', authLimiter, async (req, res) => {
+// POST Driver Login (Phone + PIN)
+app.post('/api/drivers/login', async (req, res) => {
     try {
         const { phone, pin } = req.body || {};
         if (!phone || !pin || !String(pin).trim()) {
@@ -3326,8 +3233,8 @@ app.put('/api/drivers/:id/confirm-debt', async (req, res) => {
     }
 });
 
-// GET Admin list all drivers with debts (Protected - Admin only)
-app.get('/api/drivers/admin/debts', requireAdminAuth, async (req, res) => {
+// GET Admin list all drivers with debts
+app.get('/api/drivers/admin/debts', async (req, res) => {
     try {
         const { data: drivers } = await supabase
             .from('drivers')
@@ -3376,8 +3283,8 @@ app.put('/api/drivers/:id/availability', async (req, res) => {
     }
 });
 
-// PUT Admin Update Driver Approval Status (Protected - Admin only)
-app.put('/api/drivers/:id/approval', requireAdminAuth, async (req, res) => {
+// PUT Admin Update Driver Approval Status
+app.put('/api/drivers/:id/approval', async (req, res) => {
     try {
         const { id } = req.params;
         const { approval_status, notes, reason } = req.body;
@@ -3419,8 +3326,8 @@ app.put('/api/drivers/:id/approval', requireAdminAuth, async (req, res) => {
     }
 });
 
-// POST Admin Issue Driver Warning (Protected - Admin only)
-app.post('/api/drivers/:id/warnings', requireAdminAuth, async (req, res) => {
+// POST Admin Issue Driver Warning
+app.post('/api/drivers/:id/warnings', async (req, res) => {
     try {
         const { id } = req.params;
         const { reason, severity, notes } = req.body;
@@ -3449,8 +3356,8 @@ app.post('/api/drivers/:id/warnings', requireAdminAuth, async (req, res) => {
     }
 });
 
-// DELETE Admin Remove Warning (Protected - Admin only)
-app.delete('/api/drivers/:id/warnings/:warningId', requireAdminAuth, async (req, res) => {
+// DELETE Admin Remove Warning
+app.delete('/api/drivers/:id/warnings/:warningId', async (req, res) => {
     try {
         const { id, warningId } = req.params;
         const meta = getDriverMeta(id);
@@ -3463,8 +3370,8 @@ app.delete('/api/drivers/:id/warnings/:warningId', requireAdminAuth, async (req,
 });
 
 
-// POST Admin create new driver directly (Protected - Admin only)
-app.post('/api/drivers', requireAdminAuth, async (req, res) => {
+// POST Admin create new driver directly
+app.post('/api/drivers', async (req, res) => {
     try {
         const { name, phone, photo_url, vehicle_type, vehicle_plate, bairro, province, doc_type, doc_number, doc_photo_url, pin } = req.body;
         if (!name || !phone) {
@@ -3566,8 +3473,8 @@ app.put('/api/drivers/:id', async (req, res) => {
     }
 });
 
-// DELETE driver (Protected - Admin only)
-app.delete('/api/drivers/:id', requireAdminAuth, async (req, res) => {
+// DELETE driver
+app.delete('/api/drivers/:id', async (req, res) => {
     try {
         const { id } = req.params;
         await supabase.from('orders').update({ driver_id: null }).eq('driver_id', id);
@@ -3754,8 +3661,8 @@ app.get('/api/products/admin', async (req, res) => {
     }
 });
 
-// POST new product (Protected - Admin only)
-app.post('/api/products', requireAdminAuth, async (req, res) => {
+// POST new product
+app.post('/api/products', async (req, res) => {
     try {
         const { name, price, category, image, desc, features, active } = req.body;
         const { data, error } = await supabase
@@ -3779,8 +3686,8 @@ app.post('/api/products', requireAdminAuth, async (req, res) => {
     }
 });
 
-// POST upload photo for product (Protected - Admin only)
-app.post('/api/products/upload', requireAdminAuth, uploadProduct.single('photo'), async (req, res) => {
+// POST upload photo for product
+app.post('/api/products/upload', uploadProduct.single('photo'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'Nenhum ficheiro enviado.' });
     }
@@ -3812,8 +3719,8 @@ app.post('/api/products/upload', requireAdminAuth, uploadProduct.single('photo')
     }
 });
 
-// PUT update product (Protected - Admin only)
-app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
+// PUT update product
+app.put('/api/products/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { name, price, category, image, desc, features, active } = req.body;
@@ -3841,8 +3748,8 @@ app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
     }
 });
 
-// PATCH toggle product active status (Protected - Admin only)
-app.patch('/api/products/:id/status', requireAdminAuth, async (req, res) => {
+// PATCH toggle product active status
+app.patch('/api/products/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
         const { active } = req.body;
@@ -3862,8 +3769,8 @@ app.patch('/api/products/:id/status', requireAdminAuth, async (req, res) => {
     }
 });
 
-// POST bulk toggle product active status (Protected - Admin only)
-app.post('/api/products/bulk-status', requireAdminAuth, async (req, res) => {
+// POST bulk toggle product active status
+app.post('/api/products/bulk-status', async (req, res) => {
     try {
         const { active } = req.body;
         const isAct = (active === true || active === 'true');
@@ -3881,8 +3788,8 @@ app.post('/api/products/bulk-status', requireAdminAuth, async (req, res) => {
     }
 });
 
-// DELETE product (Protected - Admin only)
-app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
+// DELETE product
+app.delete('/api/products/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { error } = await supabase.from('products').delete().eq('id', id);
@@ -3893,8 +3800,8 @@ app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
     }
 });
 
-// DEBUG: raw items stored in Supabase for an order (Protected - Admin only)
-app.get('/api/orders/:id/debug-items', requireAdminAuth, async (req, res) => {
+// DEBUG: raw items stored in Supabase for an order
+app.get('/api/orders/:id/debug-items', async (req, res) => {
     try {
         const { id } = req.params;
         const { data, error } = await supabase.from('orders').select('id, items').eq('id', id).single();
@@ -3910,8 +3817,8 @@ app.get('/api/orders/:id/debug-items', requireAdminAuth, async (req, res) => {
     }
 });
 
-// DELETE order (Protected - Admin only)
-app.delete('/api/orders/:id', requireAdminAuth, async (req, res) => {
+// DELETE order
+app.delete('/api/orders/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { error } = await supabase.from('orders').delete().eq('id', id);
@@ -3922,8 +3829,8 @@ app.delete('/api/orders/:id', requireAdminAuth, async (req, res) => {
     }
 });
 
-// GET PDF (Rate limited against CPU abuse)
-app.get('/api/orders/:id/pdf', pdfLimiter, async (req, res) => {
+// GET PDF
+app.get('/api/orders/:id/pdf', async (req, res) => {
     try {
         const { id } = req.params;
         const { data, error } = await supabase
@@ -4235,8 +4142,8 @@ app.post('/api/referrals/withdraw', async (req, res) => {
     }
 });
 
-// GET admin - list all withdrawals (Protected - Admin only)
-app.get('/api/referrals/admin/withdrawals', requireAdminAuth, async (req, res) => {
+// GET admin - list all withdrawals
+app.get('/api/referrals/admin/withdrawals', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('referral_withdrawals')
@@ -4250,8 +4157,8 @@ app.get('/api/referrals/admin/withdrawals', requireAdminAuth, async (req, res) =
     }
 });
 
-// PUT admin - update withdrawal status (Pago or Cancelado) (Protected - Admin only)
-app.put('/api/referrals/admin/withdrawals/:id', requireAdminAuth, async (req, res) => {
+// PUT admin - update withdrawal status (Pago or Cancelado)
+app.put('/api/referrals/admin/withdrawals/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body; // 'Pago' or 'Cancelado'
@@ -4347,8 +4254,8 @@ app.post('/api/users/heartbeat', async (req, res) => {
     }
 });
 
-// GET /api/users/admin - Listar contas criadas e estado de acesso (Protected - Admin only)
-app.get('/api/users/admin', requireAdminAuth, async (req, res) => {
+// GET /api/users/admin - Listar contas criadas e estado de acesso
+app.get('/api/users/admin', async (req, res) => {
     try {
         const { data: refUsers } = await supabase
             .from('referrals')
@@ -4427,8 +4334,8 @@ app.get('/api/users/admin', requireAdminAuth, async (req, res) => {
 // are defined above in the server initialization.
 
 
-// GET all financial entries with optional filters & computed summary (Protected - Admin only)
-app.get('/api/financial-entries', requireAdminAuth, async (req, res) => {
+// GET all financial entries with optional filters & computed summary
+app.get('/api/financial-entries', async (req, res) => {
     try {
         let entries = [];
         // Try Supabase first
@@ -4523,8 +4430,8 @@ app.get('/api/financial-entries', requireAdminAuth, async (req, res) => {
     }
 });
 
-// POST new financial entry (Protected - Admin only)
-app.post('/api/financial-entries', requireAdminAuth, async (req, res) => {
+// POST new financial entry
+app.post('/api/financial-entries', async (req, res) => {
     try {
         const { type, description, amount, category, payment_method, entry_date, notes } = req.body;
 
@@ -4573,8 +4480,8 @@ app.post('/api/financial-entries', requireAdminAuth, async (req, res) => {
     }
 });
 
-// PUT update financial entry (Protected - Admin only)
-app.put('/api/financial-entries/:id', requireAdminAuth, async (req, res) => {
+// PUT update financial entry
+app.put('/api/financial-entries/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { type, description, amount, category, payment_method, entry_date, notes } = req.body;
@@ -4616,8 +4523,8 @@ app.put('/api/financial-entries/:id', requireAdminAuth, async (req, res) => {
     }
 });
 
-// DELETE financial entry (Protected - Admin only)
-app.delete('/api/financial-entries/:id', requireAdminAuth, async (req, res) => {
+// DELETE financial entry
+app.delete('/api/financial-entries/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -4639,8 +4546,8 @@ app.delete('/api/financial-entries/:id', requireAdminAuth, async (req, res) => {
     }
 });
 
-// SYNC batch financial entries from persistent client storage (Protected - Admin only)
-app.post('/api/financial-entries/sync', requireAdminAuth, (req, res) => {
+// SYNC batch financial entries from persistent client storage
+app.post('/api/financial-entries/sync', (req, res) => {
     try {
         const { entries } = req.body;
         if (!Array.isArray(entries)) {

@@ -633,47 +633,12 @@ export default function Admin() {
             ? `(${newCount}) Novos Pedidos — Admin Tchapo`
             : 'Admin — Tchapo Tchapo';
     }, [newCount]);
-
-    useEffect(() => {
-        const savedToken = localStorage.getItem('tchapo_admin_token');
-        if (savedToken) setIsLoggedIn(true);
-
-        const _fetch = window.fetch;
-        window.fetch = function(url, options = {}) {
-            const token = localStorage.getItem('tchapo_admin_token');
-            if (token && typeof url === 'string') {
-                options = options || {};
-                options.headers = options.headers || {};
-                if (options.headers instanceof Headers) {
-                    options.headers.set('x-admin-token', token);
-                } else if (Array.isArray(options.headers)) {
-                    options.headers.push(['x-admin-token', token]);
-                } else {
-                    options.headers['x-admin-token'] = token;
-                }
-            }
-            return _fetch(url, options);
-        };
-    }, []);
-
-    const handleLogin = async (e) => {
+    const handleLogin = (e) => {
         e.preventDefault();
-        try {
-            const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
-            const res = await fetch(`${apiBase}/api/admin/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pin: pin.trim() })
-            });
-            const data = await res.json();
-            if (res.ok && data.token) {
-                localStorage.setItem('tchapo_admin_token', data.token);
-                setIsLoggedIn(true);
-            } else {
-                alert(data.error || 'PIN Incorreto. Tente novamente.');
-            }
-        } catch (_) {
-            alert('Erro de conexão ao validar o PIN de Administrador.');
+        if (pin === '1234') {
+            setIsLoggedIn(true);
+        } else {
+            alert('PIN Incorreto. Dica: 1234');
         }
     };
 

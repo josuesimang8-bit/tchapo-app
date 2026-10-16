@@ -367,8 +367,7 @@
             <span class="notif-badge" id="notif-badge" style="display:none;" onclick="clearNotif()">0 novos</span>
             <button class="btn-yellow" onclick="refreshAll()" style="display:inline-flex;align-items:center;gap:0.4rem;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            <button class="btn-yellow" onclick="logoutAdmin()" style="background:#dc2626;color:#fff;font-weight:700;display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.75rem;">
-                <span>🔒 Sair</span>
+                <span>Atualizar Dados</span>
             </button>
             <a class="back-link" href="/">← Loja</a>
         </div>
@@ -1417,32 +1416,8 @@
 </div>
 
 <script>
-// ── AUTH & SECURITY INTERCEPTOR ───────────────────────────────────────────
-let adminToken = sessionStorage.getItem('tchapo_admin_token') || '';
-const _originalFetch = window.fetch;
-window.fetch = function(url, options = {}) {
-    if (adminToken && typeof url === 'string') {
-        options = options || {};
-        options.headers = options.headers || {};
-        if (options.headers instanceof Headers) {
-            options.headers.set('x-admin-token', adminToken);
-        } else if (Array.isArray(options.headers)) {
-            options.headers.push(['x-admin-token', adminToken]);
-        } else {
-            options.headers['x-admin-token'] = adminToken;
-        }
-    }
-    return _originalFetch(url, options).then(res => {
-        if (res.status === 401 && typeof url === 'string' && (url.includes('/api/admin') || url.includes('/api/orders') || url.includes('/api/drivers/admin') || url.includes('/api/financial-entries'))) {
-            sessionStorage.removeItem('tchapo_admin_token');
-            adminToken = '';
-            document.getElementById('pin-screen').style.display = 'flex';
-            document.getElementById('admin-app').style.display = 'none';
-            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-        }
-        return res;
-    });
-};
+// ── CONFIG ──────────────────────────────────────────────────────────────
+const ADMIN_PIN = '1234';
 let nowMs = Date.now();
 let autoRefreshInterval = null;
 
@@ -1521,48 +1496,19 @@ function toast(msg) {
     toastTimer = setTimeout(() => el.classList.remove('show'), 5000);
 }
 
-// ── PIN & SESSION ────────────────────────────────────────────────────────
-async function checkPin() {
+// ── PIN ──────────────────────────────────────────────────────────────────
+function checkPin() {
     const val = document.getElementById('pin-input').value.trim();
-    if (!val) return;
-    const btn = document.querySelector('.pin-btn');
-    if (btn) btn.disabled = true;
-    try {
-        const res = await _originalFetch('/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pin: val })
-        });
-        const data = await res.json();
-        if (res.ok && data.token) {
-            adminToken = data.token;
-            sessionStorage.setItem('tchapo_admin_token', adminToken);
-            document.getElementById('pin-screen').style.display = 'none';
-            document.getElementById('admin-app').style.display = 'block';
-            startApp();
-        } else {
-            document.getElementById('pin-error').textContent = data.error || '❌ PIN incorreto. Tente novamente.';
-            document.getElementById('pin-input').value = '';
-            document.getElementById('pin-input').focus();
-        }
-    } catch (err) {
-        document.getElementById('pin-error').textContent = 'Erro de conexão ao verificar PIN.';
-    } finally {
-        if (btn) btn.disabled = false;
-    }
-}
-function logoutAdmin() {
-    sessionStorage.removeItem('tchapo_admin_token');
-    adminToken = '';
-    window.location.reload();
-}
-window.addEventListener('DOMContentLoaded', () => {
-    if (adminToken) {
+    if (val === ADMIN_PIN) {
         document.getElementById('pin-screen').style.display = 'none';
         document.getElementById('admin-app').style.display = 'block';
         startApp();
+    } else {
+        document.getElementById('pin-error').textContent = '❌ PIN incorreto. Tente novamente.';
+        document.getElementById('pin-input').value = '';
+        document.getElementById('pin-input').focus();
     }
-});
+}
 document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
 
 // ── APP INIT ─────────────────────────────────────────────────────────────

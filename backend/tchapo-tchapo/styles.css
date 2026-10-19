@@ -2776,6 +2776,39 @@ body {
     height: 35px;
 }
 
+/* Floating WhatsApp Button for Driver Portal */
+.driver-whatsapp-float {
+    position: fixed;
+    width: 56px;
+    height: 56px;
+    bottom: 24px;
+    right: 24px;
+    background-color: #25d366;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 22px rgba(37, 211, 102, 0.45);
+    z-index: 9998;
+    text-decoration: none;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.driver-whatsapp-float:hover {
+    transform: scale(1.08);
+    box-shadow: 0 8px 28px rgba(37, 211, 102, 0.6);
+}
+
+.driver-whatsapp-float svg {
+    width: 30px;
+    height: 30px;
+}
+
+.rp-wa-header-btn:hover {
+    transform: scale(1.08);
+}
+
 @media (max-width: 600px) {
     .whatsapp-float {
         width: 50px;
@@ -2787,6 +2820,23 @@ body {
     .whatsapp-float svg {
         width: 28px;
         height: 28px;
+    }
+
+    .driver-whatsapp-float {
+        width: 48px;
+        height: 48px;
+        bottom: calc(max(16px, env(safe-area-inset-bottom, 16px)) + 74px);
+        right: 16px;
+        box-shadow: 0 4px 18px rgba(37, 211, 102, 0.5);
+    }
+
+    .driver-whatsapp-float.no-dock {
+        bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    }
+
+    .driver-whatsapp-float svg {
+        width: 26px;
+        height: 26px;
     }
 
     .nav-btn-text {

@@ -984,6 +984,15 @@ function DriverPortalContent() {
         }
     });
 
+    const SUPPORT_WHATSAPP_PHONE = "258834533474";
+    const driverWaUrl = authDriver
+        ? `https://wa.me/${SUPPORT_WHATSAPP_PHONE}?text=${encodeURIComponent(
+            `Olá Tchapo Tchapo, sou o entregador ${authDriver.name || "Parceiro"} (ID: #${formatDriverId(authDriver.id)}, Tel: ${authDriver.phone || ""}). Preciso de suporte no Portal do Entregador.`
+          )}`
+        : `https://wa.me/${SUPPORT_WHATSAPP_PHONE}?text=${encodeURIComponent(
+            "Olá Tchapo Tchapo, preciso de suporte no Portal do Entregador."
+          )}`;
+
     const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'orders' | 'rewards' | 'warnings' | 'profile'
     const [ordersSubTab, setOrdersSubTab] = useState('available'); // 'available' | 'active' | 'history'
     const [dashboardData, setDashboardData] = useState(null);
@@ -1899,6 +1908,32 @@ function DriverPortalContent() {
 
                     {/* Right Header Actions */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {/* WhatsApp Support Header Button */}
+                        <a
+                            href={driverWaUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rp-wa-header-btn"
+                            title="Suporte no WhatsApp (+258 83 453 3474)"
+                            aria-label="Suporte no WhatsApp"
+                            style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
+                                background: '#25d366',
+                                color: '#ffffff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textDecoration: 'none',
+                                boxShadow: '0 2px 8px rgba(37, 211, 102, 0.35)',
+                                transition: 'transform 0.2s ease',
+                                flexShrink: 0
+                            }}
+                        >
+                            <Icons.WhatsApp />
+                        </a>
+
                         {/* Dark Mode Toggle Button */}
                         <button
                             type="button"
@@ -5165,6 +5200,33 @@ function DriverPortalContent() {
                                     </div>
                                 </div>
 
+                                <a
+                                    href={driverWaUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        width: '100%',
+                                        background: '#25d366',
+                                        color: '#ffffff',
+                                        padding: '0.85rem',
+                                        borderRadius: '12px',
+                                        fontWeight: 800,
+                                        fontSize: '0.88rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem',
+                                        textDecoration: 'none',
+                                        boxShadow: '0 4px 14px rgba(37, 211, 102, 0.3)',
+                                        marginBottom: '0.75rem',
+                                        boxSizing: 'border-box',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                >
+                                    <Icons.WhatsApp />
+                                    <span>Falar com Suporte no WhatsApp</span>
+                                </a>
+
                                 <button
                                     onClick={handleLogout}
                                     style={{
@@ -7420,6 +7482,18 @@ function DriverPortalContent() {
                     </div>
                 </>
             )}
+
+            {/* Floating WhatsApp Support Button */}
+            <a
+                href={driverWaUrl}
+                className={`driver-whatsapp-float ${!authDriver || isDebtBlocked ? "no-dock" : ""}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Suporte no WhatsApp (+258 83 453 3474)"
+                aria-label="Suporte no WhatsApp"
+            >
+                <Icons.WhatsApp />
+            </a>
         </div>
     );
 }

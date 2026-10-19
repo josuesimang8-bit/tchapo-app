@@ -1585,6 +1585,7 @@ function DriverPortalContent() {
                     delivered_at: newStatus === 'Entregue' ? new Date().toISOString() : undefined
                 })
             });
+            const data = await res.json().catch(() => ({}));
             if (res.ok) {
                 if (newStatus === 'Entregue') {
                     showToast('Entrega concluída! Efetue o pagamento da taxa da plataforma na tela a seguir.', 'success');
@@ -1592,6 +1593,8 @@ function DriverPortalContent() {
                     showToast(`Estado da entrega atualizado: ${newStatus}`, 'success');
                 }
                 fetchDashboard(authDriver?.id);
+            } else {
+                showToast(data.error || 'Erro ao atualizar entrega.', 'error');
             }
         } catch (err) {
             showToast('Erro ao atualizar entrega.', 'error');

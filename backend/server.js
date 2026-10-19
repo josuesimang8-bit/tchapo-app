@@ -1907,15 +1907,25 @@ app.put('/api/orders/:id/status', async (req, res) => {
         const { id } = req.params;
         const { status, driver_id } = req.body;
         
+        // Fetch current order state first
+        const { data: currentOrder } = await supabase
+            .from('orders')
+            .select('status, created_at, driver_id')
+            .eq('id', id)
+            .single();
+
         const updates = {};
         if (driver_id !== undefined) {
             if (driver_id) {
                 const numDId = Number(driver_id);
-                const dMeta = getDriverMeta(numDId);
-                if (!dMeta.is_online) {
-                    return res.status(400).json({
-                        error: 'Este entregador está offline no momento e não pode receber pedidos. Aguarde até que fique online.'
-                    });
+                const isAlreadyAssigned = currentOrder && Number(currentOrder.driver_id) === numDId;
+                if (!isAlreadyAssigned && status !== 'Entregue') {
+                    const dMeta = getDriverMeta(numDId);
+                    if (!dMeta.is_online) {
+                        return res.status(400).json({
+                            error: 'Este entregador está offline no momento e não pode receber pedidos. Aguarde até que fique online.'
+                        });
+                    }
                 }
             }
             updates.driver_id = driver_id;
@@ -1944,39 +1954,31 @@ app.put('/api/orders/:id/status', async (req, res) => {
         }
         
         // Timer management on status change
-        if (status !== undefined) {
-            const { data: currentOrder } = await supabase
-                .from('orders')
-                .select('status, created_at, driver_id')
-                .eq('id', id)
-                .single();
-                
-            if (currentOrder) {
-                const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente' || (currentOrder.status === 'Aprovado' && !currentOrder.driver_id);
-                const wasActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(currentOrder.status) || (currentOrder.status === 'Aprovado' && Boolean(currentOrder.driver_id));
-                const targetStatus = updates.status !== undefined ? updates.status : status;
-                const willHaveDriver = driver_id !== undefined ? Boolean(driver_id) : Boolean(currentOrder.driver_id);
-                const isNowActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(targetStatus) || (targetStatus === 'Aprovado' && willHaveDriver);
-                const isNowPendente = targetStatus === 'Pendente' || (targetStatus === 'Aprovado' && !willHaveDriver);
-                const createdDate = new Date(currentOrder.created_at);
-                const createdMs = createdDate.getTime();
-                const nowMs = Date.now();
-                
-                if (wasPendente && isNowActive) {
-                    // Resume or start the timer
-                    if (createdDate.getFullYear() === 1970) {
-                        // Was paused with frozen remaining seconds encoded in epoch marker
-                        const remainingSecs = Math.floor(createdMs / 1000);
-                        updates.created_at = new Date(nowMs - (14400 - remainingSecs) * 1000).toISOString();
-                    } else {
-                        // First activation: start fresh 4h timer
-                        updates.created_at = new Date().toISOString();
-                    }
-                } else if (wasActive && isNowPendente) {
-                    // Pause timer: calculate remaining time and store as frozen epoch marker (1970-01-01 + remainingSecs)
-                    const remainingSecs = Math.max(0, 14400 - Math.floor((nowMs - createdMs) / 1000));
-                    updates.created_at = new Date(remainingSecs * 1000).toISOString();
+        if (status !== undefined && currentOrder) {
+            const wasPendente = !currentOrder.status || currentOrder.status === 'Pendente' || (currentOrder.status === 'Aprovado' && !currentOrder.driver_id);
+            const wasActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(currentOrder.status) || (currentOrder.status === 'Aprovado' && Boolean(currentOrder.driver_id));
+            const targetStatus = updates.status !== undefined ? updates.status : status;
+            const willHaveDriver = driver_id !== undefined ? Boolean(driver_id) : Boolean(currentOrder.driver_id);
+            const isNowActive = ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(targetStatus) || (targetStatus === 'Aprovado' && willHaveDriver);
+            const isNowPendente = targetStatus === 'Pendente' || (targetStatus === 'Aprovado' && !willHaveDriver);
+            const createdDate = new Date(currentOrder.created_at);
+            const createdMs = createdDate.getTime();
+            const nowMs = Date.now();
+            
+            if (wasPendente && isNowActive) {
+                // Resume or start the timer
+                if (createdDate.getFullYear() === 1970) {
+                    // Was paused with frozen remaining seconds encoded in epoch marker
+                    const remainingSecs = Math.floor(createdMs / 1000);
+                    updates.created_at = new Date(nowMs - (14400 - remainingSecs) * 1000).toISOString();
+                } else {
+                    // First activation: start fresh 4h timer
+                    updates.created_at = new Date().toISOString();
                 }
+            } else if (wasActive && isNowPendente) {
+                // Pause timer: calculate remaining time and store as frozen epoch marker (1970-01-01 + remainingSecs)
+                const remainingSecs = Math.max(0, 14400 - Math.floor((nowMs - createdMs) / 1000));
+                updates.created_at = new Date(remainingSecs * 1000).toISOString();
             }
         }
         

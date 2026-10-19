@@ -1330,6 +1330,22 @@ function DriverPortalContent() {
             setRegStep(1);
             return;
         }
+        // Verify phone uniqueness early
+        try {
+            const checkRes = await fetch(`${API_URL}/api/auth/check-phone`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: regPhone.trim() })
+            });
+            if (checkRes.ok) {
+                const checkData = await checkRes.json();
+                if (checkData.exists) {
+                    showToast('Número de celular já usado.', 'error');
+                    setRegStep(1);
+                    return;
+                }
+            }
+        } catch (_) {}
         if (!regPin.trim() || regPin.trim().length !== 4) {
             showToast('Defina um PIN de segurança com 4 dígitos.', 'error');
             setRegStep(1);

@@ -962,7 +962,8 @@ export default function Store() {
                 body: JSON.stringify({
                     user_id: currentUser.id,
                     email: currentUser.email,
-                    name: currentUser.user_metadata?.full_name
+                    name: currentUser.user_metadata?.full_name,
+                    phone: currentUser.user_metadata?.phone || ''
                 })
             });
             if (codeRes.ok) {
@@ -1690,8 +1691,50 @@ export default function Store() {
         setRegLoading(true);
         try {
             const cleanEmail = (regEmail || '').trim().toLowerCase();
+            const cleanPhone = (regPhone || '').replace(/\D/g, '');
+            const normalizedPhone = cleanPhone.startsWith('258') && cleanPhone.length === 12
+                ? cleanPhone.substring(3)
+                : cleanPhone;
 
-            // 1. Verificação se o email já existe
+            if (!normalizedPhone || normalizedPhone.length < 8) {
+                setRegError('⚠️ Por favor introduza um número de celular válido.');
+                setRegLoading(false);
+                return;
+            }
+
+            // 1. Verificação se o número de celular já existe
+            try {
+                const checkRes = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/check-phone`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: normalizedPhone })
+                });
+                if (checkRes.ok) {
+                    const checkData = await checkRes.json();
+                    if (checkData.exists) {
+                        setRegError('⚠️ Número de celular já usado! Por favor, utilize outro número ou inicie sessão.');
+                        setRegLoading(false);
+                        return;
+                    }
+                }
+            } catch (_) {}
+
+            // Verificação de redundância no Supabase (referrals com tag #TEL:)
+            try {
+                const { data: existingPhoneRef } = await supabase
+                    .from('referrals')
+                    .select('id, user_name')
+                    .ilike('user_name', `%#TEL:${normalizedPhone}%`)
+                    .limit(1);
+
+                if (existingPhoneRef && existingPhoneRef.length > 0) {
+                    setRegError('⚠️ Número de celular já usado! Por favor, utilize outro número ou inicie sessão.');
+                    setRegLoading(false);
+                    return;
+                }
+            } catch (_) {}
+
+            // 2. Verificação se o email já existe
             try {
                 const { data: existingRef } = await supabase
                     .from('referrals')
@@ -1706,12 +1749,12 @@ export default function Store() {
                 }
             } catch (_) {}
 
-            // 2. Registo no Supabase Auth
+            // 3. Registo no Supabase Auth
             const { data, error } = await supabase.auth.signUp({
                 email: cleanEmail,
                 password: regPassword,
                 options: {
-                    data: { full_name: regName, phone: regPhone }
+                    data: { full_name: regName, phone: normalizedPhone }
                 }
             });
 
@@ -1729,6 +1772,22 @@ export default function Store() {
             if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
                 setRegError('⚠️ Este email já está cadastrado no sistema! Por favor, utilize outro email ou inicie sessão.');
                 return;
+            }
+
+            // 4. Salvar imediatamente no backend e referrals com o telefone vinculado
+            if (data?.user?.id) {
+                try {
+                    await fetch(`${import.meta.env.VITE_API_URL || ''}/api/referrals/my-code`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: data.user.id,
+                            email: cleanEmail,
+                            name: regName,
+                            phone: normalizedPhone
+                        })
+                    });
+                } catch (_) {}
             }
 
             setIsAuthOpen(false);

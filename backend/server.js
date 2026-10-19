@@ -2252,8 +2252,98 @@ async function syncDriversMetaFromSupabase() {
 
 function normalizeDriverPhone(phone) {
     if (!phone) return '';
-    return String(phone).replace(/\s+/g, '').replace('+', '').replace(/^258/, '');
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.startsWith('258') && digits.length === 12) {
+        return digits.substring(3);
+    }
+    return digits;
 }
+
+const REGISTERED_USERS_FILE = path.join(__dirname, 'data', 'registered_users.json');
+
+function ensureRegisteredUsersFile() {
+    const dir = path.dirname(REGISTERED_USERS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(REGISTERED_USERS_FILE)) fs.writeFileSync(REGISTERED_USERS_FILE, '{}', 'utf8');
+}
+
+function loadRegisteredUsers() {
+    try {
+        ensureRegisteredUsersFile();
+        const raw = fs.readFileSync(REGISTERED_USERS_FILE, 'utf8');
+        return JSON.parse(raw) || {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function saveRegisteredUser(userObj) {
+    try {
+        const users = loadRegisteredUsers();
+        const normPhone = normalizeDriverPhone(userObj.phone);
+        const key = normPhone || userObj.user_id || userObj.email;
+        if (!key) return;
+        users[key] = {
+            ...users[key],
+            ...userObj,
+            phone: normPhone,
+            updated_at: new Date().toISOString()
+        };
+        ensureRegisteredUsersFile();
+        fs.writeFileSync(REGISTERED_USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+    } catch (e) {
+        console.error('Error saving registered user:', e);
+    }
+}
+
+// POST /api/auth/check-phone - Check if phone number is already registered to any account
+app.post('/api/auth/check-phone', async (req, res) => {
+    try {
+        const { phone } = req.body;
+        if (!phone) {
+            return res.status(400).json({ error: 'Número de telefone é obrigatório.' });
+        }
+        const norm = normalizeDriverPhone(phone);
+        if (!norm || norm.length < 8) {
+            return res.status(400).json({ error: 'Número de telefone inválido.' });
+        }
+
+        // 1. Check in drivers
+        const { data: drivers } = await supabase
+            .from('drivers')
+            .select('id, phone');
+
+        if (drivers && Array.isArray(drivers)) {
+            const driverMatch = drivers.some(d => d.phone && normalizeDriverPhone(d.phone) === norm);
+            if (driverMatch) {
+                return res.json({ exists: true, message: 'Número de celular já usado.' });
+            }
+        }
+
+        // 2. Check in referrals (client accounts with #TEL: tag in user_name)
+        const { data: refUsers } = await supabase
+            .from('referrals')
+            .select('id, user_name')
+            .ilike('user_name', `%#TEL:${norm}%`)
+            .limit(1);
+
+        if (refUsers && refUsers.length > 0) {
+            return res.json({ exists: true, message: 'Número de celular já usado.' });
+        }
+
+        // 3. Check in registered users store
+        const userAccounts = loadRegisteredUsers();
+        const foundInFile = Object.values(userAccounts).some(u => u.phone && normalizeDriverPhone(u.phone) === norm);
+        if (foundInFile) {
+            return res.json({ exists: true, message: 'Número de celular já usado.' });
+        }
+
+        res.json({ exists: false });
+    } catch (err) {
+        console.error('Check phone error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // ─── DRIVERS ENDPOINTS ────────────────────────────────────────────────
 // GET approved drivers for customer tracking & selection
@@ -2374,6 +2464,32 @@ app.post('/api/drivers/register', upload.fields([
         }
 
         const normalizedPhone = normalizeDriverPhone(phone);
+        if (!normalizedPhone || normalizedPhone.length < 8) {
+            return res.status(400).json({ error: 'Por favor introduza um número de celular válido.' });
+        }
+
+        // Verify if phone is already used in drivers
+        const { data: existingDrivers } = await supabase
+            .from('drivers')
+            .select('id, phone');
+
+        if (existingDrivers && Array.isArray(existingDrivers)) {
+            const driverExists = existingDrivers.some(d => d.phone && normalizeDriverPhone(d.phone) === normalizedPhone);
+            if (driverExists) {
+                return res.status(400).json({ error: 'Número de celular já usado.' });
+            }
+        }
+
+        // Verify if phone is already used in client accounts
+        const { data: refPhoneMatch } = await supabase
+            .from('referrals')
+            .select('id, user_name')
+            .ilike('user_name', `%#TEL:${normalizedPhone}%`)
+            .limit(1);
+
+        if (refPhoneMatch && refPhoneMatch.length > 0) {
+            return res.status(400).json({ error: 'Número de celular já usado.' });
+        }
 
         // Upload Profile Photo (Catbox -> Supabase -> Base64 data URL persistent fallback)
         const photoFile = req.files['photo'][0];
@@ -3937,11 +4053,13 @@ app.get('/api/orders/:id/pdf', async (req, res) => {
 // GET user referral code and balance stats (or auto-generate code)
 app.post('/api/referrals/my-code', async (req, res) => {
     try {
-        const { user_id, email, name } = req.body;
+        const { user_id, email, name, phone } = req.body;
         if (!user_id || !email) {
             return res.status(400).json({ error: 'User ID and Email are required.' });
         }
         
+        const normPhone = phone ? normalizeDriverPhone(phone) : '';
+
         // Find existing referral record
         let { data, error } = await supabase
             .from('referrals')
@@ -3972,12 +4090,15 @@ app.post('/api/referrals/my-code', async (req, res) => {
                 uniqueCode = `${uniqueCode}${Math.floor(Math.random() * 10)}`;
             }
             
+            const rawName = (name || email.split('@')[0]).split('#TEL:')[0].trim();
+            const displayName = normPhone ? `${rawName} #TEL:${normPhone}` : rawName;
+
             const { data: newRecord, error: insertError } = await supabase
                 .from('referrals')
                 .insert([{
                     user_id,
                     user_email: email,
-                    user_name: name || email.split('@')[0],
+                    user_name: displayName,
                     code: uniqueCode,
                     balance: 0.00,
                     total_earned: 0.00,
@@ -3988,9 +4109,26 @@ app.post('/api/referrals/my-code', async (req, res) => {
                 
             if (insertError) throw insertError;
             data = newRecord;
+
+            if (normPhone) {
+                saveRegisteredUser({ user_id, email, name: rawName, phone: normPhone });
+            }
+        } else if (normPhone && (!data.user_name || !data.user_name.includes('#TEL:'))) {
+            const rawName = (data.user_name || name || email.split('@')[0]).split('#TEL:')[0].trim();
+            const displayName = `${rawName} #TEL:${normPhone}`;
+            await supabase
+                .from('referrals')
+                .update({ user_name: displayName })
+                .eq('id', data.id);
+            data.user_name = displayName;
+            saveRegisteredUser({ user_id, email, name: rawName, phone: normPhone });
         }
         
-        res.json(data);
+        const cleanResponse = {
+            ...data,
+            user_name: (data?.user_name || '').split('#TEL:')[0].trim()
+        };
+        res.json(cleanResponse);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -4274,11 +4412,14 @@ app.get('/api/users/admin', async (req, res) => {
         if (refUsers && Array.isArray(refUsers)) {
             refUsers.forEach(u => {
                 const key = u.user_email || u.user_id;
+                const rawName = u.user_name || (u.user_email ? u.user_email.split('@')[0] : 'Cliente');
+                const phoneFromTag = rawName.includes('#TEL:') ? rawName.split('#TEL:')[1].trim() : '';
+                const cleanName = rawName.split('#TEL:')[0].trim();
                 userMap.set(key, {
                     id: u.user_id,
-                    name: u.user_name || (u.user_email ? u.user_email.split('@')[0] : 'Cliente'),
+                    name: cleanName,
                     email: u.user_email || 'Sem email',
-                    phone: u.user_phone || 'Sem telefone',
+                    phone: phoneFromTag || u.user_phone || 'Sem telefone',
                     created_at: u.created_at,
                     last_seen_at: u.last_seen_at || u.created_at,
                     referral_code: u.referral_code || 'N/A',

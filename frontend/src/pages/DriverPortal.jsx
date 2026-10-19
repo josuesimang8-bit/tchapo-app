@@ -1908,31 +1908,6 @@ function DriverPortalContent() {
 
                     {/* Right Header Actions */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {/* WhatsApp Support Header Button */}
-                        <a
-                            href={driverWaUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rp-wa-header-btn"
-                            title="Suporte no WhatsApp (+258 83 453 3474)"
-                            aria-label="Suporte no WhatsApp"
-                            style={{
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '10px',
-                                background: '#25d366',
-                                color: '#ffffff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                textDecoration: 'none',
-                                boxShadow: '0 2px 8px rgba(37, 211, 102, 0.35)',
-                                transition: 'transform 0.2s ease',
-                                flexShrink: 0
-                            }}
-                        >
-                            <Icons.WhatsApp />
-                        </a>
 
                         {/* Dark Mode Toggle Button */}
                         <button

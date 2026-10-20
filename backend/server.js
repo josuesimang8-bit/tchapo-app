@@ -1624,6 +1624,7 @@ function formatOrderResponse(order) {
 
     const clientPhone = order.phone || order.customer_phone || order.contact || order.telefone || order.cellphone || order.whatsapp || order.customer_contact || null;
     const clientName = order.customer_name || order.client_name || order.customer || 'Cliente';
+    const profitInfo = calculateOrderProfitAndFee(order);
 
     return {
         ...order,
@@ -1633,6 +1634,10 @@ function formatOrderResponse(order) {
         phone: clientPhone,
         items: normalizedItems,
         order_items: normalizedItems,
+        pickup_total: profitInfo.pickupTotal,
+        estimated_profit: profitInfo.estimatedProfit,
+        platform_fee: profitInfo.platformFee,
+        driver_net_profit: profitInfo.driverNetProfit,
         timer_end_at,
         timer_remaining_secs,
         delivered_at,
@@ -2033,6 +2038,7 @@ app.put('/api/orders/:id/status', async (req, res) => {
                     order_id: data.id,
                     order_total: orderTotal,
                     profit: estimatedProfit,
+                    net_profit: driverNetProfit,
                     amount: platformFee,
                     percentage: 15,
                     created_at: now.toISOString(),
@@ -2043,13 +2049,13 @@ app.put('/api/orders/:id/status', async (req, res) => {
                     notes: `Taxa de 15% sobre o lucro estimado de ${estimatedProfit} MT (Lucro Líquido do Entregador: ${driverNetProfit} MT)`
                 };
 
-                updateDriverMeta(numDId, {
+                await updateDriverMeta(numDId, {
                     pending_debt: newDebt,
                     is_blocked: true,
                     is_online: false
                 });
 
-                console.log(`[DEBT] Created 15% profit-based debt of ${platformFee} MT for driver #${numDId} on order #${data.id} (Profit: ${estimatedProfit} MT). Due at: ${dueAt.toISOString()}`);
+                console.log(`[DEBT] Created 15% profit-based debt of ${platformFee} MT for driver #${numDId} on order #${data.id} (Profit: ${estimatedProfit} MT, Net: ${driverNetProfit} MT). Due at: ${dueAt.toISOString()}`);
                 // Notify driver of the fee/debt alert
                 if (newDebt) {
                     notifyDriverFeeAlert(numDId, newDebt).catch(e => console.error('[Push] Notify driver fee err:', e));
@@ -2136,8 +2142,8 @@ function getDriverMeta(driverId, driverRow = null) {
     }
 
     const merged = {
-        ...(metaMap[idKey] || {}),
-        ...(photoMeta || {})
+        ...(photoMeta || {}),
+        ...(metaMap[idKey] || {})
     };
 
     if (Object.keys(merged).length > 0) {
@@ -2390,20 +2396,20 @@ app.get('/api/drivers/admin/all', async (req, res) => {
 
         const { data: orders } = await supabase
             .from('orders')
-            .select('id, driver_id, status, total, created_at');
+            .select('id, driver_id, status, total, items, created_at');
 
         const metaMap = loadDriversMeta();
         const tenMinsAgo = Date.now() - 10 * 60 * 1000;
 
         const enrichedDrivers = (drivers || []).map(d => {
             const { meta: photoMeta, cleanPhotoUrl } = extractDriverMetadataFromPhoto(d.photo_url);
-            const meta = { ...(getDriverMeta(d.id, d) || {}), ...(metaMap[String(d.id)] || {}), ...(photoMeta || {}) };
+            const meta = { ...(photoMeta || {}), ...(getDriverMeta(d.id, d) || {}), ...(metaMap[String(d.id)] || {}) };
 
             const isOnline = meta.is_online && meta.last_seen_at && new Date(meta.last_seen_at).getTime() > tenMinsAgo;
             const driverOrders = (orders || []).filter(o => o.driver_id === d.id);
             const deliveredOrders = driverOrders.filter(o => o.status === 'Entregue');
             const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(o.status));
-            const totalEarnings = deliveredOrders.length * (meta.earnings_rate_per_delivery || 150);
+            const totalEarnings = deliveredOrders.reduce((acc, o) => acc + (calculateOrderProfitAndFee(o).driverNetProfit || 0), 0);
             let effectiveStatus = meta.approval_status || (d.active ? 'Aprovado' : 'Pendente');
             if (d.active === false && effectiveStatus === 'Aprovado') effectiveStatus = 'Pendente';
 
@@ -2667,7 +2673,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 const overdueWarning = {
                     id: 'W-' + Date.now(),
                     date: new Date().toISOString(),
-                    reason: `Atraso no repasse da comissão de 20% da empresa (${meta.pending_debt.amount} MT) após o prazo de 2 horas no pedido #${meta.pending_debt.order_id}.`,
+                    reason: `Atraso no repasse da comissão de 15% da empresa (${meta.pending_debt.amount} MT) após o prazo de 2 horas no pedido #${meta.pending_debt.order_id}.`,
                     severity: 'Média',
                     notes: 'Advertência gerada automaticamente pelo sistema devido ao não pagamento da comissão dentro do prazo regulamentar.'
                 };
@@ -2675,7 +2681,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 meta.warnings = [overdueWarning, ...existingWarnings];
                 meta.pending_debt.overdue_warned = true;
                 meta.is_blocked = true;
-                updateDriverMeta(numId, {
+                await updateDriverMeta(numId, {
                     warnings: meta.warnings,
                     pending_debt: meta.pending_debt,
                     is_blocked: true
@@ -2685,23 +2691,35 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
         const delivered = driverOrders.filter(o => o.status === 'Entregue');
         const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(o.status));
 
-        // Date calculations
+        // Date calculations using Mozambique time (CAT = UTC+2) and actual delivery timestamp
         const now = Date.now();
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const catOffsetMs = 2 * 60 * 60 * 1000;
+        const todayStr = new Date(now + catOffsetMs).toISOString().slice(0, 10);
         const oneWeekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
         const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
 
-        const todayDelivered = delivered.filter(o => (o.created_at || '').slice(0, 10) === todayStr);
-        const weekDelivered = delivered.filter(o => new Date(o.created_at) >= oneWeekAgo);
-        const monthDelivered = delivered.filter(o => new Date(o.created_at) >= thirtyDaysAgo);
+        const getOrderDeliveryDate = (o) => {
+            const om = getOrderMeta(o.id);
+            return om?.delivered_at || o.created_at || new Date().toISOString();
+        };
+        const toCatDateStr = (isoStr) => {
+            const ms = new Date(isoStr).getTime();
+            return isNaN(ms) ? '' : new Date(ms + catOffsetMs).toISOString().slice(0, 10);
+        };
 
+        const todayDelivered = delivered.filter(o => toCatDateStr(getOrderDeliveryDate(o)) === todayStr);
+        const weekDelivered = delivered.filter(o => new Date(getOrderDeliveryDate(o)) >= oneWeekAgo);
+        const monthDelivered = delivered.filter(o => new Date(getOrderDeliveryDate(o)) >= thirtyDaysAgo);
+
+        const sumDriverNetProfit = (list) => list.reduce((acc, o) => acc + (calculateOrderProfitAndFee(o).driverNetProfit || 0), 0);
         const rate = meta.earnings_rate_per_delivery || 150;
-        const todayEarnings = todayDelivered.length * rate;
-        const weekEarnings = weekDelivered.length * rate;
-        const monthEarnings = monthDelivered.length * rate;
-        const totalEarnings = delivered.length * rate;
+        const todayEarnings = sumDriverNetProfit(todayDelivered);
+        const weekEarnings = sumDriverNetProfit(weekDelivered);
+        const monthEarnings = sumDriverNetProfit(monthDelivered);
+        const totalEarnings = sumDriverNetProfit(delivered);
 
-        const totalSales = delivered.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+        // Career goals / Metas track the driver's accumulated net profit
+        const totalSales = totalEarnings;
         const salesTarget = 5000;
         const rewardUnlocked = totalSales >= salesTarget;
         const rewardProgress = Math.min(100, Math.round((totalSales / salesTarget) * 100));
@@ -2720,7 +2738,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
                 week_earnings: weekEarnings,
                 month_earnings: monthEarnings,
                 total_earnings: totalEarnings,
-                saldo: Math.max(0, totalEarnings - (meta.pending_debt && meta.pending_debt.status !== 'Pago' ? meta.pending_debt.amount : 0)),
+                saldo: totalEarnings,
                 pending_debt_amount: meta.pending_debt && meta.pending_debt.status !== 'Pago' ? meta.pending_debt.amount : 0,
                 today_deliveries: todayDelivered.length,
                 week_deliveries: weekDelivered.length,
@@ -2736,7 +2754,7 @@ app.get('/api/drivers/:id/dashboard', async (req, res) => {
             available_orders: availableOrders,
             expired_orders: expiredOrders,
             active_orders: activeOrders.map(formatOrderResponse),
-            recent_deliveries: delivered.slice(0, 15).map(formatOrderResponse),
+            recent_deliveries: delivered.map(formatOrderResponse),
             pending_expiration_request: getDriverPendingExpirationRequest(numId),
             has_pending_request: Boolean(getDriverPendingExpirationRequest(numId)),
             warnings: meta.warnings || []
@@ -3145,7 +3163,7 @@ app.post('/api/drivers/:id/pay-debt', upload.single('receipt'), async (req, res)
             paid_submission_at: new Date().toISOString()
         };
 
-        updateDriverMeta(numId, {
+        await updateDriverMeta(numId, {
             pending_debt: updatedDebt
         });
 
@@ -3281,7 +3299,7 @@ app.put('/api/drivers/:id/confirm-debt', async (req, res) => {
         const debtHistory = meta.debt_history || [];
         debtHistory.unshift(clearedDebt);
 
-        updateDriverMeta(numId, {
+        await updateDriverMeta(numId, {
             pending_debt: null,
             debt_history: debtHistory,
             is_blocked: false
@@ -3362,7 +3380,7 @@ app.get('/api/drivers/admin/debts', async (req, res) => {
         const debtList = [];
 
         for (const d of allDrivers) {
-            const m = getDriverMeta(d.id);
+            const m = getDriverMeta(d.id, d);
             if (m.pending_debt) {
                 const dueTime = new Date(m.pending_debt.due_at).getTime();
                 const isOverdue = Date.now() > dueTime;
@@ -3390,7 +3408,7 @@ app.put('/api/drivers/:id/availability', async (req, res) => {
         const { id } = req.params;
         const { is_online } = req.body;
 
-        const updatedMeta = updateDriverMeta(id, {
+        const updatedMeta = await updateDriverMeta(id, {
             is_online: Boolean(is_online),
             last_seen_at: new Date().toISOString()
         });
@@ -3466,7 +3484,7 @@ app.post('/api/drivers/:id/warnings', async (req, res) => {
         };
 
         warnings.unshift(newWarning);
-        updateDriverMeta(id, { warnings });
+        await updateDriverMeta(id, { warnings });
 
         res.status(201).json({ success: true, warning: newWarning, total_warnings: warnings.length });
     } catch (err) {
@@ -3480,7 +3498,7 @@ app.delete('/api/drivers/:id/warnings/:warningId', async (req, res) => {
         const { id, warningId } = req.params;
         const meta = getDriverMeta(id);
         const filtered = (meta.warnings || []).filter(w => String(w.id) !== String(warningId));
-        updateDriverMeta(id, { warnings: filtered });
+        await updateDriverMeta(id, { warnings: filtered });
         res.json({ success: true, remaining: filtered.length });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -3509,7 +3527,7 @@ app.post('/api/drivers', async (req, res) => {
 
         if (insertErr) throw insertErr;
 
-        const meta = updateDriverMeta(newDriver.id, {
+        const meta = await updateDriverMeta(newDriver.id, {
             approval_status: 'Aprovado',
             is_online: false,
             last_seen_at: new Date().toISOString(),
@@ -3583,7 +3601,7 @@ app.put('/api/drivers/:id', async (req, res) => {
         if (pin !== undefined) metaUpdates.pin = pin;
         if (earnings_rate_per_delivery !== undefined) metaUpdates.earnings_rate_per_delivery = Number(earnings_rate_per_delivery);
 
-        const meta = updateDriverMeta(id, metaUpdates);
+        const meta = await updateDriverMeta(id, metaUpdates);
 
         res.json({ ...data, ...meta });
     } catch (error) {

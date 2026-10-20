@@ -1768,11 +1768,15 @@ function DriverPortalContent() {
         return () => clearInterval(timer);
     }, [pendingDebt?.due_at]);
 
-    // Saldo calculado
-    const saldoLiquido = stats.saldo !== undefined ? stats.saldo : Math.max(0, stats.total_earnings - (pendingDebt ? pendingDebt.amount : 0));
+    // Saldo líquido e metas de carreira baseados no lucro líquido real das entregas (já com os 15% da plataforma deduzidos)
+    const computedDeliveredNetProfit = recentDeliveries.reduce((acc, d) => {
+        const net = d.driver_net_profit ?? calcOrderPickupAndProfit(d).driverNetProfit;
+        return acc + (Number(net) || 0);
+    }, 0);
+    const saldoLiquido = stats.total_earnings ? stats.total_earnings : (stats.saldo || computedDeliveredNetProfit || 0);
 
-    // Milestone calculations: 5k, 25k, 100k, 1M
-    const currentSales = stats.total_sales || (stats.total_deliveries * 150);
+    // Milestone calculations: 5k, 25k, 100k, 1M (baseado no lucro líquido acumulado do entregador)
+    const currentSales = stats.total_earnings ? stats.total_earnings : (computedDeliveredNetProfit || stats.total_sales || 0);
     const hasUnlocked100k = currentSales >= 100000;
 
     const rewards = [
@@ -2815,7 +2819,7 @@ function DriverPortalContent() {
                                                 </div>
                                                 {pendingDebt?.profit ? (
                                                     <div style={{ fontSize: '0.74rem', color: '#10b981', fontWeight: 700, marginTop: '2px' }}>
-                                                        Seu Lucro neste pedido: +{formatMZCurrency(pendingDebt.profit)}
+                                                        Seu Lucro Líquido neste pedido: +{formatMZCurrency(pendingDebt.net_profit ?? Math.max(0, (Number(pendingDebt.profit) || 0) - (Number(pendingDebt.amount) || 0)))}
                                                     </div>
                                                 ) : null}
                                             </div>
@@ -4744,58 +4748,62 @@ function DriverPortalContent() {
                                             </div>
                                         ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                                                {recentDeliveries.map(d => (
-                                                    <div key={d.id} style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'space-between',
-                                                        padding: '1.15rem',
-                                                        background: '#f8fafc',
-                                                        borderRadius: '14px',
-                                                        border: '1px solid #e2e8f0',
-                                                        flexWrap: 'wrap',
-                                                        gap: '0.5rem'
-                                                    }}>
-                                                        <div>
-                                                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>
-                                                                Pedido #{d.id} • {d.customer_name}
+                                                {recentDeliveries.map(d => {
+                                                    const dProfit = d.driver_net_profit ?? calcOrderPickupAndProfit(d).driverNetProfit;
+                                                    const dDate = d.delivered_at || d.created_at;
+                                                    return (
+                                                        <div key={d.id} style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            padding: '1.15rem',
+                                                            background: darkMode ? '#18181b' : '#f8fafc',
+                                                            borderRadius: '14px',
+                                                            border: darkMode ? '1px solid #27272a' : '1px solid #e2e8f0',
+                                                            flexWrap: 'wrap',
+                                                            gap: '0.5rem'
+                                                        }}>
+                                                            <div>
+                                                                <div style={{ fontWeight: 800, color: darkMode ? '#ffffff' : '#0f172a', fontSize: '0.95rem' }}>
+                                                                    Pedido #{d.id} • {d.customer_name}
+                                                                </div>
+                                                                <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '3px' }}>
+                                                                    📍 {d.address || d.bairro || 'Beira'} • {dDate ? new Date(dDate).toLocaleDateString('pt-MZ') : ''}
+                                                                </div>
                                                             </div>
-                                                            <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '3px' }}>
-                                                                📍 {d.address || d.bairro || 'Beira'} • {d.created_at ? new Date(d.created_at).toLocaleDateString('pt-MZ') : ''}
+                                                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
+                                                                <div style={{ fontWeight: 900, color: '#059669', fontSize: '1rem' }}>
+                                                                    {formatMZCurrency(d.total)}
+                                                                </div>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                                    <a
+                                                                        href={`${API_URL}/api/orders/${d.id}/pdf`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        style={{
+                                                                            fontSize: '0.75rem',
+                                                                            fontWeight: 800,
+                                                                            color: '#0f172a',
+                                                                            background: '#e2e8f0',
+                                                                            padding: '0.2rem 0.6rem',
+                                                                            borderRadius: '999px',
+                                                                            textDecoration: 'none',
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '0.25rem'
+                                                                        }}
+                                                                    >
+                                                                        <Icons.FileText />
+                                                                        <span>Fatura PDF</span>
+                                                                    </a>
+                                                                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', padding: '0.2rem 0.6rem', borderRadius: '999px' }}>
+                                                                        Entregue (+{formatMZCurrency(dProfit)})
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
-                                                            <div style={{ fontWeight: 900, color: '#059669', fontSize: '1rem' }}>
-                                                                {formatMZCurrency(d.total)}
-                                                            </div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                                <a
-                                                                    href={`${API_URL}/api/orders/${d.id}/pdf`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    style={{
-                                                                        fontSize: '0.75rem',
-                                                                        fontWeight: 800,
-                                                                        color: '#0f172a',
-                                                                        background: '#e2e8f0',
-                                                                        padding: '0.2rem 0.6rem',
-                                                                        borderRadius: '999px',
-                                                                        textDecoration: 'none',
-                                                                        display: 'inline-flex',
-                                                                        alignItems: 'center',
-                                                                        gap: '0.25rem'
-                                                                    }}
-                                                                >
-                                                                    <Icons.FileText />
-                                                                    <span>Fatura PDF</span>
-                                                                </a>
-                                                                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', padding: '0.2rem 0.6rem', borderRadius: '999px' }}>
-                                                                    Entregue (+150 MT)
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>
@@ -4811,7 +4819,7 @@ function DriverPortalContent() {
                                         Metas de Carreira & Premiações
                                     </h3>
                                     <p style={{ margin: 0, color: '#64748b', fontSize: '0.92rem' }}>
-                                        O seu volume total de vendas e entregas acumulado é de: <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{formatMZCurrency(currentSales)}</strong>
+                                        O seu lucro líquido acumulado em entregas é de: <strong style={{ color: darkMode ? '#ffffff' : '#0f172a' }}>{formatMZCurrency(currentSales)}</strong>
                                     </p>
                                 </div>
 

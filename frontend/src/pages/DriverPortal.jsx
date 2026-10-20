@@ -1001,6 +1001,7 @@ function DriverPortalContent() {
     const [showBalance, setShowBalance] = useState(true);
     const [earningsPeriod, setEarningsPeriod] = useState('today'); // 'today' | '7days' | '30days'
     const [dailyGoalTarget, setDailyGoalTarget] = useState(3); // Meta diária no simulador de incentivo (1, 3, 5, 8)
+    const [isHowItWorksVideoOpen, setIsHowItWorksVideoOpen] = useState(false);
 
     // Unified Dark Mode (Preto Puro)
     const [darkMode, setDarkMode] = useState(() => {
@@ -2115,6 +2116,30 @@ function DriverPortalContent() {
                                 >
                                     <Icons.LogIn />
                                     <span>Já Tenho Conta / Entrar</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setIsHowItWorksVideoOpen(true)}
+                                    style={{
+                                        background: 'linear-gradient(135deg, rgba(246, 76, 0, 0.22) 0%, rgba(234, 88, 12, 0.14) 100%)',
+                                        color: '#fed7aa',
+                                        border: '1.5px solid rgba(251, 146, 60, 0.45)',
+                                        padding: '0.85rem',
+                                        borderRadius: '16px',
+                                        fontSize: '0.88rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem',
+                                        fontFamily: "'Montserrat', sans-serif",
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                >
+                                    <span>🎬</span>
+                                    <span>Ver Mini Vídeo: Como Funciona o Portal?</span>
                                 </button>
                             </div>
                         </div>
@@ -3235,6 +3260,29 @@ function DriverPortalContent() {
                                                 <span>Atualizar Ganhos</span>
                                             </button>
                                         )}
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsHowItWorksVideoOpen(true)}
+                                            style={{
+                                                flex: 1,
+                                                background: 'rgba(246, 76, 0, 0.22)',
+                                                color: '#fed7aa',
+                                                border: '1px solid rgba(251, 146, 60, 0.4)',
+                                                padding: '10px 14px',
+                                                borderRadius: '14px',
+                                                fontWeight: 800,
+                                                fontSize: '0.82rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                fontFamily: "'Montserrat', sans-serif"
+                                            }}
+                                        >
+                                            <span>🎬</span>
+                                            <span>Como Funciona?</span>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -7483,6 +7531,117 @@ function DriverPortalContent() {
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* Mini Vídeo Explicativo - Como Funciona o Portal */}
+            {isHowItWorksVideoOpen && (
+                <div
+                    onClick={() => setIsHowItWorksVideoOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(9, 9, 11, 0.85)',
+                        backdropFilter: 'blur(6px)',
+                        zIndex: 9999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '1rem'
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            width: '100%',
+                            maxWidth: '720px',
+                            background: '#0f172a',
+                            border: '1px solid rgba(255, 255, 255, 0.14)',
+                            borderRadius: '22px',
+                            padding: '1.15rem',
+                            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.65)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.85rem'
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                <span style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '10px',
+                                    background: 'rgba(246, 76, 0, 0.2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '1.1rem'
+                                }}>🎬</span>
+                                <div>
+                                    <h3 style={{ margin: 0, color: '#ffffff', fontSize: '0.98rem', fontWeight: 800 }}>
+                                        Como Funciona o Portal do Entregador
+                                    </h3>
+                                    <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.76rem' }}>
+                                        Passo a passo: levantar produto na loja, entregar ao cliente e pagar a taxa de 15%
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsHowItWorksVideoOpen(false)}
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.1)',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    width: '34px',
+                                    height: '34px',
+                                    borderRadius: '10px',
+                                    fontSize: '1rem',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                aria-label="Fechar vídeo"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <video
+                            src="/assets/como_funciona_entregador.mp4"
+                            controls
+                            autoPlay
+                            playsInline
+                            style={{
+                                width: '100%',
+                                maxHeight: '68vh',
+                                borderRadius: '14px',
+                                background: '#000000',
+                                border: '1px solid rgba(255, 255, 255, 0.1)'
+                            }}
+                        />
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <button
+                                type="button"
+                                onClick={() => setIsHowItWorksVideoOpen(false)}
+                                style={{
+                                    background: '#f64c00',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    padding: '0.65rem 1.35rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 800,
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Entendido, Fechar Vídeo
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Floating WhatsApp Support Button */}

@@ -58,6 +58,7 @@ function urlBase64ToUint8Array(base64String) {
 
 async function requestNotificationPermission() {
     if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+    if (typeof Notification === 'undefined') return 'unsupported';
     if (Notification.permission === 'granted') return 'granted';
     try {
         let permission;
@@ -1986,15 +1987,15 @@ window.handleContinueAsGuest = function() {
 function handleCheckout(e) {
     e.preventDefault();
 
-    const name     = (document.getElementById('customer-name')?.value || '').trim();
-    const phone    = (document.getElementById('customer-phone')?.value || '').trim();
+    const name     = ((document.getElementById('customer-name') || {}).value || '').trim();
+    const phone    = ((document.getElementById('customer-phone') || {}).value || '').trim();
     const provEl   = document.getElementById('customer-province');
     const province = provEl ? provEl.value : '';
     const bairroEl = document.getElementById('customer-bairro');
-    const bairro   = (bairroEl?.value || '').trim();
-    const address  = (document.getElementById('customer-address')?.value || '').trim();
-    const time     = document.getElementById('customer-time')?.value;
-    const payment  = document.getElementById('customer-payment')?.value;
+    const bairro   = ((bairroEl || {}).value || '').trim();
+    const address  = ((document.getElementById('customer-address') || {}).value || '').trim();
+    const time     = (document.getElementById('customer-time') || {}).value;
+    const payment  = (document.getElementById('customer-payment') || {}).value;
 
     if (provEl && !province) {
         showStatusToast('⚠️ Por favor, selecione a sua província.');
@@ -2216,7 +2217,7 @@ function applyRealStatus(status, driver, createdAt = null, timerEndAt = null, ti
         if (['Com Motorista', 'Com Entregador'].includes(status)) {
             triggerDeviceNotification({
                 title: `🛵 Motorista a Caminho! (Pedido #${currentOrderId || ''})`,
-                body: `O seu pedido foi aceite pelo estafeta ${driver?.name || 'parceiro'} e está em rota de entrega!`,
+                body: `O seu pedido foi aceite pelo estafeta ${(driver && driver.name) || 'parceiro'} e está em rota de entrega!`,
                 url: `/?track=${currentOrderId || ''}`,
                 tag: `order-${currentOrderId || ''}-accepted`,
                 chime: 'order'
@@ -2505,7 +2506,7 @@ function initAuth() {
         
         // Listen for auth state changes
         supabaseClient.auth.onAuthStateChange((event, session) => {
-            currentUser = session?.user || null;
+            currentUser = (session && session.user) || null;
             updateAuthUI();
         });
 
@@ -2555,8 +2556,8 @@ function updateAuthUI() {
         if (btnOpenAuth) btnOpenAuth.style.display = 'none';
         if (authUserInfo) authUserInfo.style.display = 'flex';
         if (btnReferrals) btnReferrals.style.display = 'inline-flex';
-        const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
-        const phone = currentUser.user_metadata?.phone || '';
+        const name = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email.split('@')[0];
+        const phone = (currentUser.user_metadata && currentUser.user_metadata.phone) || '';
         if (authUserName) authUserName.innerHTML = `<span class="welcome-text">Olá, </span>${name.split(' ')[0]}`;
         fillUserForms(name, phone);
     } else {
@@ -2796,7 +2797,7 @@ async function loadReferralsData() {
         referralsContent.innerHTML = '<div style="text-align: center; padding: 2rem; color: #9ca3af;">A carregar dados do programa...</div>';
 
         // 1. Get or generate user's referral code and balance
-        const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+        const name = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email.split('@')[0];
         const resCode = await fetch('/api/referrals/my-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3253,7 +3254,7 @@ setInterval(() => {
 // ─── INITIALIZE NOTIFICATIONS (NATIVE BROWSER AUTO-PROMPT) ───────────────────
 async function triggerNativeBrowserPrompt() {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
-    if (Notification.permission === 'default') {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
         try {
             await subscribeToPush({ role: 'customer' });
         } catch (_) {}

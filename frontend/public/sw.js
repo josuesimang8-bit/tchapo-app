@@ -63,7 +63,7 @@ self.addEventListener('push', (event) => {
 // Notification click event -> Focus existing tab or open new window
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const targetUrl = event.notification.data?.url || '/';
+    const targetUrl = (event.notification.data && event.notification.data.url) || '/';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

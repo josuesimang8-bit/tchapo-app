@@ -38,6 +38,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
+      if (typeof globalThis === 'undefined') { window.globalThis = window; }
+      if (!String.prototype.replaceAll) {
+        String.prototype.replaceAll = function(str, newStr) {
+          if (Object.prototype.toString.call(str).toLowerCase() === '[object regexp]') return this.replace(str, newStr);
+          return this.split(str).join(newStr);
+        };
+      }
+      if (!Array.prototype.at) {
+        Array.prototype.at = function(n) {
+          n = Math.trunc(n) || 0;
+          if (n < 0) n += this.length;
+          if (n < 0 || n >= this.length) return undefined;
+          return this[n];
+        };
+      }
       (function() {
         try {
           var saved = localStorage.getItem('darkMode') || localStorage.getItem('tchapo_dark_mode');

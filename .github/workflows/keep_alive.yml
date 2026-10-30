@@ -13,7 +13,7 @@ jobs:
       - name: Ping Tchapo Tchapo Server
         run: |
           echo "Sending keep-alive ping to Tchapo Tchapo..."
-          for URL in "https://tchapotchapo.store/api/ping" "https://tchapo-backend-hszc.onrender.com/api/ping" "https://tchapotchapo.com/api/ping"; do
+          for URL in "https://www.tchapotchapo.com/api/ping" "https://tchapotchapo.store/api/ping" "https://tchapo-backend-hszc.onrender.com/api/ping" "https://tchapotchapo.com/api/ping"; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "failed")
             echo "$URL -> Status: $STATUS"
           done

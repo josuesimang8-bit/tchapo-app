@@ -13,12 +13,7 @@ jobs:
       - name: Ping Tchapo Tchapo Server
         run: |
           echo "Sending keep-alive ping to Tchapo Tchapo..."
-          URL="https://tchapotchapo.com/api/ping"
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "failed")
-          echo "Status: $STATUS"
-          if [ "$STATUS" = "200" ]; then
-            echo "✅ Server is alive and awake!"
-          else
-            echo "⚠️ Ping response: $STATUS - Retrying health check..."
-            curl -s https://tchapotchapo.com/api/health || true
-          fi
+          for URL in "https://tchapotchapo.store/api/ping" "https://tchapo-backend-hszc.onrender.com/api/ping" "https://tchapotchapo.com/api/ping"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "failed")
+            echo "$URL -> Status: $STATUS"
+          done

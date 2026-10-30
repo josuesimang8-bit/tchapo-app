@@ -7553,7 +7553,7 @@ function DriverPortalContent() {
                         onClick={(e) => e.stopPropagation()}
                         style={{
                             width: '100%',
-                            maxWidth: '720px',
+                            maxWidth: '400px',
                             background: '#0f172a',
                             border: '1px solid rgba(255, 255, 255, 0.14)',
                             borderRadius: '22px',
@@ -7609,13 +7609,16 @@ function DriverPortalContent() {
                         </div>
 
                         <video
-                            src="/assets/como_funciona_entregador.mp4"
+                            src="/assets/como_funciona_entregador.mp4?v=916"
                             controls
                             autoPlay
                             playsInline
                             style={{
                                 width: '100%',
-                                maxHeight: '68vh',
+                                maxHeight: '72vh',
+                                aspectRatio: '9 / 16',
+                                objectFit: 'contain',
+                                margin: '0 auto',
                                 borderRadius: '14px',
                                 background: '#000000',
                                 border: '1px solid rgba(255, 255, 255, 0.1)'

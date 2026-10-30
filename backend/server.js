@@ -831,7 +831,14 @@ const getDriverIndex = () => {
     return null;
 };
 
-app.get(['/drivers', '/drivers/*', '/driver', '/driver/*'], (req, res) => {
+app.get([
+    '/drivers', '/drivers/*',
+    '/driver', '/driver/*',
+    '/entregador', '/entregador/*',
+    '/entregadores', '/entregadores/*',
+    '/motorista', '/motorista/*',
+    '/motoristas', '/motoristas/*'
+], (req, res) => {
     const driverIndex = getDriverIndex();
     if (driverIndex) {
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');

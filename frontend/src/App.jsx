@@ -13,6 +13,8 @@ function App() {
         <Route path="/driver" element={<DriverPortal />} />
         <Route path="/entregador" element={<DriverPortal />} />
         <Route path="/entregadores" element={<DriverPortal />} />
+        <Route path="/motorista" element={<DriverPortal />} />
+        <Route path="/motoristas" element={<DriverPortal />} />
       </Routes>
     </BrowserRouter>
   );

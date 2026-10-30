@@ -4747,4 +4747,21 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Backend server running on http://localhost:${PORT}`);
     syncDriversMetaFromSupabase().catch(e => console.error('Driver sync startup error:', e));
+
+    // 24/7 Anti-Sleep Keep-Alive Pinger (every 4 minutes via external edge)
+    const KEEP_ALIVE_URLS = [
+        'https://tchapotchapo.com/api/ping',
+        'https://www.tchapotchapo.com/api/ping',
+        'https://tchapotchapo.store/api/ping',
+        'https://tchapo-backend-hszc.onrender.com/api/ping'
+    ];
+    const runKeepAlivePing = async () => {
+        for (const url of KEEP_ALIVE_URLS) {
+            try {
+                await fetch(url, { headers: { 'User-Agent': 'Tchapo-KeepAlive/1.0' } });
+            } catch (_) {}
+        }
+    };
+    setInterval(runKeepAlivePing, 4 * 60 * 1000);
+    setTimeout(runKeepAlivePing, 15 * 1000);
 });

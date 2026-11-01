@@ -2,27 +2,21 @@ name: 24/7 Keep-Alive (Prevent Render Sleep)
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 concurrency:
   group: keep-alive-pinger
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 5
     steps:
-      - name: Continuous 4-Minute Keep-Alive Loop
+      - name: Ping All Tchapo Endpoints
         run: |
-          for i in $(seq 1 14); do
-            echo "--- Keep-Alive Cycle $i ($(date -u)) ---"
-            for URL in "https://tchapotchapo.com/api/ping" "https://www.tchapotchapo.com/api/ping" "https://tchapotchapo.store/api/ping" "https://tchapo-backend-hszc.onrender.com/api/ping"; do
-              STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "failed")
-              echo "$URL -> Status: $STATUS"
-            done
-            if [ "$i" -lt 14 ]; then
-              sleep 240
-            fi
+          for URL in "https://tchapotchapo.com/api/ping" "https://tchapotchapo.store/api/ping" "https://tchapo-backend-hszc.onrender.com/api/ping"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "failed")
+            echo "$URL -> Status: $STATUS"
           done

@@ -2,7 +2,7 @@
   "7": {
     "approval_status": "Aprovado",
     "is_online": false,
-    "last_seen_at": "2026-09-20T01:33:41.816Z",
+    "last_seen_at": "2026-10-30T18:28:20.141Z",
     "doc_type": "BI",
     "doc_number": "",
     "doc_photo_url": "",
@@ -10,11 +10,93 @@
     "vehicle_plate": "",
     "bairro": "Beira",
     "pin": "1234",
-    "warnings": [],
+    "warnings": [
+      {
+        "id": "W-1792395686816",
+        "date": "2026-10-19T07:41:26.816Z",
+        "reason": "Atraso no repasse da comissão de 20% da empresa (37 MT) após o prazo de 2 horas no pedido #110.",
+        "severity": "Média",
+        "notes": "Advertência gerada automaticamente pelo sistema devido ao não pagamento da comissão dentro do prazo regulamentar."
+      },
+      {
+        "id": 1792372629129,
+        "reason": "Desistência de corrida após aceite",
+        "severity": "Grave",
+        "notes": "",
+        "issued_at": "2026-10-19T01:17:09.129Z"
+      },
+      {
+        "id": 1792372600156,
+        "reason": "Dívida de taxa/comissão não regularizada no prazo",
+        "severity": "Grave",
+        "notes": "",
+        "issued_at": "2026-10-19T01:16:40.156Z"
+      },
+      {
+        "id": 1792372561639,
+        "reason": "Atraso grave sem justificativa",
+        "severity": "Leve",
+        "notes": "",
+        "issued_at": "2026-10-19T01:16:01.639Z"
+      }
+    ],
     "earnings_rate_per_delivery": 150,
     "pending_debt": null,
     "is_blocked": false,
-    "debt_history": []
+    "debt_history": [
+      {
+        "id": "DEBT-1792374562969",
+        "order_id": 110,
+        "order_total": 499,
+        "profit": 249,
+        "amount": 37,
+        "percentage": 15,
+        "created_at": "2026-10-19T01:49:22.969Z",
+        "due_at": "2026-10-19T03:49:22.969Z",
+        "status": "Pago",
+        "payment_proof": null,
+        "overdue_warned": true,
+        "notes": "Taxa de 15% sobre o lucro estimado de 249 MT (Lucro Líquido do Entregador: 212 MT)",
+        "confirmed_at": "2026-10-30T18:08:20.659Z"
+      },
+      {
+        "id": "DEBT-1792370582459",
+        "order_id": 115,
+        "order_total": 899,
+        "profit": 549,
+        "amount": 82,
+        "percentage": 15,
+        "created_at": "2026-10-19T00:43:02.459Z",
+        "due_at": "2026-10-19T02:43:02.459Z",
+        "status": "Pago",
+        "payment_proof": "1",
+        "overdue_warned": false,
+        "notes": "Taxa de 15% sobre o lucro estimado de 549 MT (Lucro Líquido do Entregador: 467 MT)",
+        "payment_proof_url": null,
+        "paid_submission_at": "2026-10-19T00:43:39.603Z",
+        "confirmed_at": "2026-10-19T00:45:14.003Z"
+      },
+      {
+        "id": "DEBT-1792027862648",
+        "order_id": 111,
+        "order_total": 799,
+        "profit": 449,
+        "amount": 67,
+        "percentage": 15,
+        "created_at": "2026-10-15T01:31:02.648Z",
+        "due_at": "2026-10-15T03:31:02.648Z",
+        "status": "Pago",
+        "payment_proof": "Dania",
+        "overdue_warned": false,
+        "notes": "Taxa de 15% sobre o lucro estimado de 449 MT (Lucro Líquido do Entregador: 382 MT)",
+        "payment_proof_url": null,
+        "paid_submission_at": "2026-10-15T01:31:32.278Z",
+        "confirmed_at": "2026-10-15T01:32:59.670Z"
+      }
+    ],
+    "rejection_reason": "",
+    "approval_notes": "",
+    "approval_updated_at": "2026-10-30T18:13:35.948Z"
   },
   "9": {
     "approval_status": "Suspenso",
@@ -69,5 +151,59 @@
     "earnings_rate_per_delivery": 150,
     "approval_notes": "Documento ilegivel. Por favor envie foto nitida do BI.",
     "approval_updated_at": "2026-10-14T23:09:08.819Z"
+  },
+  "14": {
+    "approval_status": "Aprovado",
+    "last_seen_at": "2026-10-20T13:47:14.217Z",
+    "doc_type": "BI",
+    "doc_number": "654667775444",
+    "doc_photo_url": "https://files.catbox.moe/85mp03.jpeg",
+    "vehicle_type": "Mota",
+    "vehicle_plate": "",
+    "bairro": "Sofala - Baixa",
+    "pin": "0000",
+    "warnings": [],
+    "earnings_rate_per_delivery": 150,
+    "rejection_reason": "",
+    "approval_notes": "",
+    "approval_updated_at": "2026-10-19T23:31:23.322Z",
+    "is_online": false,
+    "pending_debt": null,
+    "is_blocked": false,
+    "debt_history": [
+      {
+        "id": "DEBT-1792455132574",
+        "order_id": 116,
+        "order_total": 1199,
+        "profit": 499,
+        "amount": 75,
+        "percentage": 15,
+        "created_at": "2026-10-20T00:12:12.574Z",
+        "due_at": "2026-10-20T02:12:12.574Z",
+        "status": "Pago",
+        "payment_proof": "Gsgshshh",
+        "overdue_warned": false,
+        "notes": "Taxa de 15% sobre o lucro estimado de 499 MT (Lucro Líquido do Entregador: 424 MT)",
+        "payment_proof_url": null,
+        "paid_submission_at": "2026-10-20T00:13:07.173Z",
+        "confirmed_at": "2026-10-20T00:13:26.579Z"
+      }
+    ]
+  },
+  "15": {
+    "approval_status": "Aprovado",
+    "last_seen_at": "2026-10-30T18:42:11.694Z",
+    "doc_type": "BI",
+    "doc_number": "070106352491I",
+    "doc_photo_url": "https://files.catbox.moe/9gqnpy.jpg",
+    "vehicle_type": "Mota",
+    "vehicle_plate": "",
+    "bairro": "Sofala - Ponta-Gêa",
+    "pin": "1235",
+    "warnings": [],
+    "earnings_rate_per_delivery": 150,
+    "rejection_reason": "",
+    "approval_notes": "",
+    "approval_updated_at": "2026-10-30T18:54:44.981Z"
   }
 }

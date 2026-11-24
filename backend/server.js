@@ -2308,10 +2308,7 @@ app.post('/api/drivers/register', upload.fields([
         if (!pin || String(pin).trim().length !== 4) {
             return res.status(400).json({ error: 'O PIN de acesso deve conter exatamente 4 dígitos.' });
         }
-        if (!req.files || !req.files['photo'] || !req.files['photo'][0]) {
-            return res.status(400).json({ error: 'A fotografia de perfil (rosto) é obrigatória.' });
-        }
-        if (!req.files['doc_photo'] || !req.files['doc_photo'][0]) {
+        if (!req.files || !req.files['doc_photo'] || !req.files['doc_photo'][0]) {
             return res.status(400).json({ error: 'A fotografia do documento (BI / Carta) é obrigatória.' });
         }
 
@@ -2343,9 +2340,12 @@ app.post('/api/drivers/register', upload.fields([
             return res.status(400).json({ error: 'Número de celular já usado.' });
         }
 
-        // Upload Profile Photo (Catbox -> Supabase -> Base64 data URL persistent fallback)
-        const photoFile = req.files['photo'][0];
-        const photoUrl = await uploadOrBase64(photoFile, 'drivers') || `/uploads/drivers/${photoFile.filename}`;
+        // Upload Profile Photo (Optional: Catbox -> Supabase -> Base64 data URL persistent fallback)
+        let photoUrl = '/assets/logo_original.png';
+        if (req.files && req.files['photo'] && req.files['photo'][0]) {
+            const photoFile = req.files['photo'][0];
+            photoUrl = await uploadOrBase64(photoFile, 'drivers') || `/uploads/drivers/${photoFile.filename}`;
+        }
 
         // Upload Document Photo (Catbox -> Supabase -> Base64 data URL persistent fallback)
         const docFile = req.files['doc_photo'][0];

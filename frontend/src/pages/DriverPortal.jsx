@@ -1316,11 +1316,6 @@ function DriverPortalContent() {
         if (e && e.preventDefault) e.preventDefault();
 
         // Strict verification of all fields
-        if (!photoFile) {
-            showToast('A fotografia de perfil (rosto) é obrigatória para identificação.', 'error');
-            setRegStep(1);
-            return;
-        }
         if (!regName.trim()) {
             showToast('Por favor introduza o seu nome completo.', 'error');
             setRegStep(1);
@@ -1383,7 +1378,9 @@ function DriverPortalContent() {
             formData.append('doc_type', regDocType);
             formData.append('doc_number', regDocNumber.trim());
             formData.append('pin', regPin.trim());
-            formData.append('photo', photoFile);
+            if (photoFile) {
+                formData.append('photo', photoFile);
+            }
             formData.append('doc_photo', docPhotoFile);
 
             const res = await fetch(`${API_URL}/api/drivers/register`, {
@@ -5909,10 +5906,10 @@ function DriverPortalContent() {
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ fontSize: '0.84rem', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a', marginBottom: '0.15rem' }}>
-                                                Foto de Perfil (Rosto) *
+                                                Foto de Perfil (Rosto - Opcional)
                                             </div>
                                             <p style={{ margin: '0 0 0.5rem', fontSize: '0.72rem', color: darkMode ? '#a1a1aa' : '#64748b', lineHeight: 1.3 }}>
-                                                Foto nítida e obrigatória para identificação perante clientes.
+                                                Foto de rosto para identificação perante clientes (opcional).
                                             </p>
                                             <label style={{
                                                 display: 'inline-flex',
@@ -5929,7 +5926,7 @@ function DriverPortalContent() {
                                                 boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                                             }}>
                                                 <Icons.UploadCloud />
-                                                <span>{photoFile ? 'Foto Carregada ✓' : 'Carregar Fotografia *'}</span>
+                                                <span>{photoFile ? 'Foto Carregada ✓' : 'Carregar Fotografia (Opcional)'}</span>
                                                 <input
                                                     type="file"
                                                     accept="image/*"
@@ -6095,10 +6092,6 @@ function DriverPortalContent() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            if (!photoFile) {
-                                                showToast('A fotografia de perfil (rosto) é obrigatória.', 'error');
-                                                return;
-                                            }
                                             if (!regName.trim()) {
                                                 showToast('Por favor introduza o seu nome completo.', 'error');
                                                 return;
@@ -7330,7 +7323,7 @@ function DriverPortalContent() {
                                     <ul>
                                         <li><strong>Idade Mínima:</strong> Ter pelo menos 18 anos completos na data de adesão;</li>
                                         <li><strong>Documento de Identificação Oficial:</strong> Cópia fotográfica legível de Bilhete de Identidade (BI), DIRE, Passaporte ou Carta de Condução válida emitida pela República de Moçambique;</li>
-                                        <li><strong>Fotografia de Rosto (Selfie):</strong> Fotografia nítida do rosto para identificação perante clientes e equipa de supervisão;</li>
+                                        <li><strong>Fotografia de Rosto (Selfie - Opcional):</strong> Fotografia do rosto para identificação perante clientes (opcional);</li>
                                         <li><strong>Contacto Telefónico com WhatsApp:</strong> Número de telemóvel ativo e funcional para receber notificações de pedidos e contactar compradores;</li>
                                         <li><strong>PIN de Acesso Pessoal:</strong> Código de 4 dígitos exclusivo para login seguro.</li>
                                     </ul>

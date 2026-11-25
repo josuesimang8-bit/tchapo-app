@@ -2298,17 +2298,40 @@ async function confirmDriverDebt(driverId, name, amount) {
 }
 
 async function approveDriver(id, status, reason = '') {
+    const dIndex = allDrivers.findIndex(d => String(d.id) === String(id));
+    const prevDriverState = dIndex !== -1 ? { ...allDrivers[dIndex] } : null;
+
+    // Optimistic UI update: instantly update UI without waiting for network
+    if (dIndex !== -1) {
+        allDrivers[dIndex].approval_status = status;
+        allDrivers[dIndex].active = (status === 'Aprovado');
+        if (reason) allDrivers[dIndex].rejection_reason = reason;
+        updateDriverStats();
+        filterAndRenderDrivers();
+    }
+    toast(status === 'Aprovado' ? '✅ Entregador aprovado para corridas!' : `Entregador marcado como ${status}.`);
+
     try {
         const res = await fetch(`/api/drivers/${id}/approval`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ approval_status: status, reason })
         });
-        if (res.ok) {
-            loadDrivers();
-            toast(status === 'Aprovado' ? '✅ Entregador aprovado para corridas!' : `Entregador marcado como ${status}. Motivo gravado com sucesso.`);
+        if (!res.ok) {
+            throw new Error(`Servidor respondeu com código ${res.status}`);
+        }
+        const data = await res.json();
+        if (dIndex !== -1 && data) {
+            allDrivers[dIndex].approval_status = data.approval_status || status;
+            allDrivers[dIndex].active = data.active !== undefined ? data.active : (status === 'Aprovado');
         }
     } catch (err) {
+        // Rollback on failure
+        if (dIndex !== -1 && prevDriverState) {
+            allDrivers[dIndex] = prevDriverState;
+            updateDriverStats();
+            filterAndRenderDrivers();
+        }
         alert('Erro ao atualizar estado do entregador: ' + err.message);
     }
 }

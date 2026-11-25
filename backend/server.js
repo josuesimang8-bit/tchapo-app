@@ -810,8 +810,7 @@ async function uploadToSupabaseStorage(bucketName, file) {
         const { data, error } = await supabase.storage
             .from(bucketName)
             .upload(fileName, fileBuffer, {
-                contentType: file.mimetype,
-                upsert: true
+                contentType: file.mimetype
             });
 
         if (error) {
@@ -840,10 +839,15 @@ async function uploadToCatbox(file) {
         const blob = new Blob([fileBuffer], { type: file.mimetype });
         formData.append('fileToUpload', blob, file.filename || file.originalname || 'upload.jpg');
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
         const response = await fetch('https://catbox.moe/user/api.php', {
             method: 'POST',
-            body: formData
+            body: formData,
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             console.error(`Catbox upload HTTP error for ${file.filename}:`, response.statusText);
@@ -863,31 +867,24 @@ async function uploadToCatbox(file) {
     }
 }
 
-// Resilient helper for file upload: tries cloud hosts, falls back to persistent Base64 Data URL so files are never lost on Render restarts
+// Resilient helper for file upload: tries Supabase Storage first (fast & permanent), then Catbox, then local static
 async function uploadOrBase64(file, bucket = 'drivers') {
     if (!file || !file.path || !fs.existsSync(file.path)) return null;
 
-    // 1. Try Catbox
-    try {
-        const catboxUrl = await uploadToCatbox(file);
-        if (catboxUrl) return catboxUrl;
-    } catch (_) {}
-
-    // 2. Try Supabase Storage
+    // 1. Try Supabase Storage FIRST (fastest, permanent, native)
     try {
         const supabaseUrl = await uploadToSupabaseStorage(bucket, file);
         if (supabaseUrl) return supabaseUrl;
     } catch (_) {}
 
-    // 3. Persistent Base64 fallback (guarantees photos survive Render container restarts/redeployments)
+    // 2. Try Catbox (fallback with 6s timeout)
     try {
-        const fileBuffer = fs.readFileSync(file.path);
-        const mime = file.mimetype || 'image/jpeg';
-        return `data:${mime};base64,${fileBuffer.toString('base64')}`;
-    } catch (e) {
-        console.error('Failed to encode base64 data URL:', e.message);
-        return `/uploads/${bucket}/${file.filename}`;
-    }
+        const catboxUrl = await uploadToCatbox(file);
+        if (catboxUrl) return catboxUrl;
+    } catch (_) {}
+
+    // 3. Fallback to local uploaded file path (served by Express static /uploads)
+    return `/uploads/${bucket}/${file.filename}`;
 }
 
 // Pickup prices allowed by the store (Geral + Kratos Empire)
@@ -1968,9 +1965,14 @@ function sanitizeDriverForResponse(driverWithMeta) {
     if (typeof cleanPhoto === 'string' && cleanPhoto.includes('#META:')) {
         cleanPhoto = cleanPhoto.split('#META:')[0];
     }
+    let cleanDocPhoto = driverWithMeta.doc_photo_url || '';
+    if (typeof cleanDocPhoto === 'string' && cleanDocPhoto.startsWith('data:image')) {
+        cleanDocPhoto = ''; // Never leak huge base64 in list responses
+    }
     return {
         ...driverWithMeta,
-        photo_url: cleanPhoto
+        photo_url: cleanPhoto,
+        doc_photo_url: cleanDocPhoto
     };
 }
 
@@ -2071,6 +2073,9 @@ async function syncDriversMetaFromSupabase() {
                     ...meta,
                     approval_status: effectiveStatus
                 };
+                if (metaMap[idKey].doc_photo_url && typeof metaMap[idKey].doc_photo_url === 'string' && metaMap[idKey].doc_photo_url.startsWith('data:image')) {
+                    metaMap[idKey].doc_photo_url = meta.doc_photo_url && !meta.doc_photo_url.startsWith('data:image') ? meta.doc_photo_url : '';
+                }
                 changed = true;
             } else if (!metaMap[idKey]) {
                 metaMap[idKey] = {
@@ -3277,16 +3282,6 @@ app.put('/api/drivers/:id/approval', async (req, res) => {
 
         const isApproved = approval_status === 'Aprovado';
         const rejectionReason = reason || notes || '';
-
-        // Update Supabase active flag accordingly
-        try {
-            await supabase
-                .from('drivers')
-                .update({ active: isApproved })
-                .eq('id', id);
-        } catch (dbErr) {
-            console.warn('Could not update Supabase driver active column:', dbErr.message);
-        }
 
         const updatedMeta = await updateDriverMeta(id, {
             approval_status,

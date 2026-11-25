@@ -892,6 +892,59 @@ class DriverPortalErrorBoundary extends React.Component {
     }
 }
 
+// Client-side image compression: reduces 5-10MB mobile camera photos to ~100-200KB for ultra-fast uploads
+const compressImage = (file, maxWidth = 1280, maxHeight = 1280, quality = 0.8) => {
+    return new Promise((resolve) => {
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+            return resolve(file);
+        }
+        const reader = new FileReader();
+        reader.onload = (readerEvent) => {
+            const img = new Image();
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth || height > maxHeight) {
+                    if (width > height) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    } else {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (!blob) {
+                            return resolve(file);
+                        }
+                        const safeName = (file.name || 'image').replace(/\.[^/.]+$/, "") + ".jpg";
+                        const compressedFile = new File([blob], safeName, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        resolve(compressedFile);
+                    },
+                    'image/jpeg',
+                    quality
+                );
+            };
+            img.onerror = () => resolve(file);
+            img.src = readerEvent.target.result;
+        };
+        reader.onerror = () => resolve(file);
+        reader.readAsDataURL(file);
+    });
+};
+
 function DriverPortalContent() {
     const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -3060,11 +3113,12 @@ function DriverPortalContent() {
                                                 <input
                                                     type="file"
                                                     accept="image/*"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files[0];
-                                                        if (file) {
-                                                            setDebtReceiptFile(file);
-                                                            setDebtReceiptPreview(URL.createObjectURL(file));
+                                                    onChange={async (e) => {
+                                                        const rawFile = e.target.files[0];
+                                                        if (rawFile) {
+                                                            setDebtReceiptPreview(URL.createObjectURL(rawFile));
+                                                            const compressed = await compressImage(rawFile);
+                                                            setDebtReceiptFile(compressed);
                                                         }
                                                     }}
                                                     style={{
@@ -5931,10 +5985,13 @@ function DriverPortalContent() {
                                                     type="file"
                                                     accept="image/*"
                                                     style={{ display: 'none' }}
-                                                    onChange={(e) => {
-                                                        const file = e.target.files[0];
-                                                        setPhotoFile(file);
-                                                        if (file) setPhotoPreview(URL.createObjectURL(file));
+                                                    onChange={async (e) => {
+                                                        const rawFile = e.target.files[0];
+                                                        if (rawFile) {
+                                                            setPhotoPreview(URL.createObjectURL(rawFile));
+                                                            const compressed = await compressImage(rawFile);
+                                                            setPhotoFile(compressed);
+                                                        }
                                                     }}
                                                 />
                                             </label>
@@ -6277,10 +6334,13 @@ function DriverPortalContent() {
                                                         accept="image/*"
                                                         required
                                                         style={{ display: 'none' }}
-                                                        onChange={(e) => {
-                                                            const file = e.target.files[0];
-                                                            setDocPhotoFile(file);
-                                                            if (file) setDocPhotoPreview(URL.createObjectURL(file));
+                                                        onChange={async (e) => {
+                                                            const rawFile = e.target.files[0];
+                                                            if (rawFile) {
+                                                                setDocPhotoPreview(URL.createObjectURL(rawFile));
+                                                                const compressed = await compressImage(rawFile);
+                                                                setDocPhotoFile(compressed);
+                                                            }
                                                         }}
                                                     />
                                                 </label>

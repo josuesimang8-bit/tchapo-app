@@ -1995,16 +1995,19 @@ function getDriverMeta(driverId, driverRow = null) {
     };
 
     if (Object.keys(merged).length > 0) {
-        // Enforce strict safety: if driverRow is inactive in Supabase, approval_status CANNOT be Aprovado!
-        if (driverRow && driverRow.active === false && merged.approval_status === 'Aprovado') {
-            merged.approval_status = 'Pendente';
+        // Enforce strict consistency with Supabase active state
+        if (driverRow) {
+            if (driverRow.active === true && (!merged.approval_status || merged.approval_status === 'Pendente')) {
+                merged.approval_status = 'Aprovado';
+            } else if (driverRow.active === false && merged.approval_status === 'Aprovado') {
+                merged.approval_status = 'Pendente';
+            }
         }
         metaMap[idKey] = merged;
         return merged;
     }
 
     // Default for driver without metadata:
-    // CRITICAL SECURITY RULE: Default is ALWAYS 'Pendente' unless driverRow.active is explicitly true!
     const isApproved = driverRow ? Boolean(driverRow.active) : false;
     const defaultMeta = {
         approval_status: isApproved ? 'Aprovado' : 'Pendente',
@@ -2028,23 +2031,42 @@ function getDriverMeta(driverId, driverRow = null) {
 async function updateDriverMeta(driverId, updates, persistToSupabase = true) {
     const metaMap = loadDriversMeta();
     const idKey = String(driverId);
-    const current = metaMap[idKey] || getDriverMeta(driverId);
+
+    // If driver not in memory cache, fetch existing record from Supabase first
+    let d = null;
+    if (persistToSupabase || !metaMap[idKey]) {
+        try {
+            const res = await supabase.from('drivers').select('id, photo_url, active').eq('id', driverId).single();
+            d = res.data;
+        } catch (_) {}
+    }
+
+    const current = metaMap[idKey] || getDriverMeta(driverId, d);
     const updated = { ...current, ...updates };
+
+    // Maintain consistent approval status unless explicitly overridden in updates
+    if (updates.approval_status !== undefined) {
+        updated.approval_status = updates.approval_status;
+    } else if (d) {
+        if (d.active === true && (!updated.approval_status || updated.approval_status === 'Pendente')) {
+            updated.approval_status = 'Aprovado';
+        } else if (d.active === false && updated.approval_status === 'Aprovado') {
+            updated.approval_status = 'Pendente';
+        }
+    }
+
     metaMap[idKey] = updated;
     saveDriversMeta(metaMap);
 
-    if (persistToSupabase) {
+    if (persistToSupabase && d) {
         try {
-            const { data: d } = await supabase.from('drivers').select('id, photo_url, active').eq('id', driverId).single();
-            if (d) {
-                const { cleanPhotoUrl } = extractDriverMetadataFromPhoto(d.photo_url);
-                const newPhotoUrl = `${cleanPhotoUrl}#META:${JSON.stringify(updated)}`;
-                const supabaseUpdates = { photo_url: newPhotoUrl };
-                if (updated.approval_status !== undefined) {
-                    supabaseUpdates.active = updated.approval_status === 'Aprovado';
-                }
-                await supabase.from('drivers').update(supabaseUpdates).eq('id', driverId);
+            const { cleanPhotoUrl } = extractDriverMetadataFromPhoto(d.photo_url);
+            const newPhotoUrl = `${cleanPhotoUrl}#META:${JSON.stringify(updated)}`;
+            const supabaseUpdates = { photo_url: newPhotoUrl };
+            if (updated.approval_status !== undefined) {
+                supabaseUpdates.active = updated.approval_status === 'Aprovado';
             }
+            await supabase.from('drivers').update(supabaseUpdates).eq('id', driverId);
         } catch (err) {
             console.error('Failed to sync driver meta to Supabase:', err.message);
         }
@@ -2065,9 +2087,14 @@ async function syncDriversMetaFromSupabase() {
             const idKey = String(d.id);
             const { meta, cleanPhotoUrl } = extractDriverMetadataFromPhoto(d.photo_url);
 
+            let effectiveStatus;
+            if (d.active === true) {
+                effectiveStatus = (meta && meta.approval_status && meta.approval_status !== 'Pendente') ? meta.approval_status : 'Aprovado';
+            } else {
+                effectiveStatus = (meta && meta.approval_status && meta.approval_status !== 'Aprovado') ? meta.approval_status : 'Pendente';
+            }
+
             if (meta) {
-                let effectiveStatus = meta.approval_status || (d.active ? 'Aprovado' : 'Pendente');
-                if (d.active === false && effectiveStatus === 'Aprovado') effectiveStatus = 'Pendente';
                 metaMap[idKey] = {
                     ...(metaMap[idKey] || {}),
                     ...meta,
@@ -2079,7 +2106,7 @@ async function syncDriversMetaFromSupabase() {
                 changed = true;
             } else if (!metaMap[idKey]) {
                 metaMap[idKey] = {
-                    approval_status: d.active ? 'Aprovado' : 'Pendente',
+                    approval_status: effectiveStatus,
                     is_online: false,
                     last_seen_at: null,
                     doc_type: 'BI',
@@ -2219,8 +2246,14 @@ app.get('/api/drivers', async (req, res) => {
             const { meta: photoMeta, cleanPhotoUrl } = extractDriverMetadataFromPhoto(d.photo_url);
             const meta = { ...(getDriverMeta(d.id, d) || {}), ...(metaMap[String(d.id)] || {}), ...(photoMeta || {}) };
             const isOnline = meta.is_online && meta.last_seen_at && new Date(meta.last_seen_at).getTime() > tenMinsAgo;
-            let effectiveStatus = meta.approval_status || (d.active ? 'Aprovado' : 'Pendente');
-            if (d.active === false && effectiveStatus === 'Aprovado') effectiveStatus = 'Pendente';
+            let effectiveStatus = meta.approval_status;
+            if (d.active === true && (!effectiveStatus || effectiveStatus === 'Pendente')) {
+                effectiveStatus = 'Aprovado';
+            } else if (d.active === false && effectiveStatus === 'Aprovado') {
+                effectiveStatus = 'Pendente';
+            } else if (!effectiveStatus) {
+                effectiveStatus = d.active ? 'Aprovado' : 'Pendente';
+            }
             return sanitizeDriverForResponse({
                 ...d,
                 ...meta,
@@ -2261,8 +2294,14 @@ app.get('/api/drivers/admin/all', async (req, res) => {
             const deliveredOrders = driverOrders.filter(o => o.status === 'Entregue');
             const activeOrders = driverOrders.filter(o => ['Processando', 'Preparando', 'Com Motorista', 'Com Entregador'].includes(o.status));
             const totalEarnings = deliveredOrders.reduce((acc, o) => acc + (calculateOrderProfitAndFee(o).driverNetProfit || 0), 0);
-            let effectiveStatus = meta.approval_status || (d.active ? 'Aprovado' : 'Pendente');
-            if (d.active === false && effectiveStatus === 'Aprovado') effectiveStatus = 'Pendente';
+            let effectiveStatus = meta.approval_status;
+            if (d.active === true && (!effectiveStatus || effectiveStatus === 'Pendente')) {
+                effectiveStatus = 'Aprovado';
+            } else if (d.active === false && effectiveStatus === 'Aprovado') {
+                effectiveStatus = 'Pendente';
+            } else if (!effectiveStatus) {
+                effectiveStatus = d.active ? 'Aprovado' : 'Pendente';
+            }
 
             return sanitizeDriverForResponse({
                 ...d,
